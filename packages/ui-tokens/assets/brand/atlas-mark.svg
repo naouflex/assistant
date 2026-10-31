@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Atlas">
+  <defs>
+    <linearGradient id="atlas-stroke" gradientUnits="userSpaceOnUse" x1="76" y1="40" x2="436" y2="476">
+      <stop offset="0" stop-color="#FFF8EE"/>
+      <stop offset="0.45" stop-color="#F8E2BC"/>
+      <stop offset="1" stop-color="#F0B35A"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#atlas-stroke)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="256" cy="222" r="190"/>
+    <ellipse cx="256" cy="222" rx="96" ry="190"/>
+    <path d="M256 32V412"/>
+    <path d="M128 470H384"/>
+  </g>
+</svg>

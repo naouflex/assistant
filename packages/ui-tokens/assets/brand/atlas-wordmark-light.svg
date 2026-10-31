@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 112 1110 320" width="1110" height="320" role="img" aria-label="Atlas">
+  <!-- Use on light backgrounds. -->
+  <defs>
+    <linearGradient id="atlas-stroke" gradientUnits="userSpaceOnUse" x1="76" y1="40" x2="436" y2="476">
+      <stop offset="0" stop-color="#2A2622"/>
+      <stop offset="0.45" stop-color="#6B4E26"/>
+      <stop offset="1" stop-color="#C98A2E"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(20 118) scale(0.6)" fill="none" stroke="url(#atlas-stroke)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="256" cy="222" r="190"/>
+    <ellipse cx="256" cy="222" rx="96" ry="190"/>
+    <path d="M256 32V412"/>
+    <path d="M128 470H384"/>
+  </g>
+  <g fill="none" stroke="#0E0D0C" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M380 400L460 150L540 400M409 310H511"/>
+    <path d="M610 170V364Q610 400 646 400M580 240H648"/>
+    <path d="M710 150V400"/>
+    <circle cx="830" cy="315" r="85"/>
+    <path d="M915 230V400"/>
+    <path d="M1075 252C1060 235 1040 230 1020 230C990 230 972 247 972 270C972 300 1000 308 1025 315C1055 323 1080 333 1080 360C1080 385 1058 400 1025 400C1000 400 980 392 968 378"/>
+  </g>
+</svg>
