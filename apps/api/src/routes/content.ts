@@ -15,6 +15,7 @@ import {
   listArtifactVersions,
   listSpaceArtifacts,
 } from "../artifacts.js";
+import { loadBotUsage } from "../bot-usage.js";
 import { requireIdentityConfirmation } from "../identity-confirmation.js";
 import { listSpaceRuns } from "../runs.js";
 import { querySpaceSearch } from "../search.js";
@@ -152,7 +153,7 @@ export function contentRoutes(ctx: RouterContext) {
           costUsd: true,
         } as const;
         const counts = { _all: true, ...sums } as const;
-        const [result, modelGroups, runGroups] = await Promise.all([
+        const [result, modelGroups, runGroups, bots] = await Promise.all([
           deps.prisma.usageRecord.aggregate({ where, _sum: sums, _count: counts }),
           deps.prisma.usageRecord.groupBy({
             by: ["provider", "model"],
@@ -161,6 +162,8 @@ export function contentRoutes(ctx: RouterContext) {
             _count: counts,
           }),
           deps.prisma.usageRecord.groupBy({ by: ["runId", "parentRunId"], where }),
+          // Per-bot view; a failure here must not hide the totals above it.
+          loadBotUsage(deps.prisma, where.spaceId, where.userId).catch(() => undefined),
         ]);
         const runs = new Set(runGroups.map((row) => row.parentRunId ?? row.runId).filter(Boolean))
           .size;
@@ -191,6 +194,7 @@ export function contentRoutes(ctx: RouterContext) {
             .sort(
               (a, b) => (b.totalTokens ?? 0) - (a.totalTokens ?? 0) || b.modelCalls - a.modelCalls,
             ),
+          ...(bots ? { bots } : {}),
         };
       }),
     },

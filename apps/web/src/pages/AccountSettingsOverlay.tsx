@@ -488,6 +488,15 @@ export function UsageSettingsPanel({
   const cost = (value: number | null | undefined) =>
     value == null ? "—" : value > 0 && value < 0.01 ? `<${usd.format(0.01)}` : usd.format(value);
   const models = usage?.models ?? [];
+  const bots = usage?.bots ?? [];
+  const percent = new Intl.NumberFormat(i18n.locale, {
+    style: "percent",
+    maximumFractionDigits: 0,
+  });
+  const seconds = new Intl.NumberFormat(i18n.locale, { maximumFractionDigits: 1 });
+  const share = (value: number | null) => (value == null ? "?" : percent.format(value));
+  const latency = (ms: number | null) =>
+    ms == null ? "?" : ms < 1000 ? `${count.format(ms)} ms` : `${seconds.format(ms / 1000)} s`;
   return (
     <div ref={panelRef} tabIndex={-1} data-testid="usage-settings" className="outline-none">
       {usage ? (
@@ -545,6 +554,64 @@ export function UsageSettingsPanel({
                     {number(row.outputTokens)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{cost(row.costUsd)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
+      {bots.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-border px-2" data-testid="usage-by-bot">
+          <Table className="text-[13.5px]">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-muted-foreground">
+                  <Trans>Bot</Trans>
+                </TableHead>
+                <TableHead className="text-right text-muted-foreground">
+                  <Trans>Tokens</Trans>
+                </TableHead>
+                <TableHead
+                  className="text-right text-muted-foreground"
+                  title={t`Share of prompt tokens served from the model's cache`}
+                >
+                  <Trans>From cache</Trans>
+                </TableHead>
+                <TableHead
+                  className="text-right text-muted-foreground"
+                  title={t`Median time from your message to the bot's first reply, tool call or question`}
+                >
+                  <Trans>First response</Trans>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bots.map((row) => (
+                <TableRow key={row.botId} className="hover:bg-transparent">
+                  <TableCell>
+                    <div className="text-foreground">{row.name ?? t`Deleted bot`}</div>
+                    <div className="text-[12px] text-muted-foreground">
+                      {row.deleted ? t`Deleted` : null}
+                      {row.deleted ? " ? " : null}
+                      {t`${count.format(row.modelCalls)} model calls`}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {number(row.totalTokens)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {share(row.cachedShare)}
+                  </TableCell>
+                  <TableCell
+                    className="text-right tabular-nums"
+                    title={
+                      row.firstResponseRuns
+                        ? t`Median of ${count.format(row.firstResponseRuns)} recent runs`
+                        : undefined
+                    }
+                  >
+                    {latency(row.firstResponseMs)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

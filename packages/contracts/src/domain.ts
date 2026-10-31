@@ -1134,11 +1134,32 @@ const UsageTotalsSchema = z.object({
   costUsd: z.number().nullable().optional(),
   modelCalls: z.number().optional(),
 });
+/** One bot's spend, prompt-cache reuse and responsiveness. */
+export const BotUsageSchema = z.object({
+  botId: z.string(),
+  /** Null when the bot no longer exists and left no deletion record. */
+  name: z.string().nullable(),
+  deleted: z.boolean().optional(),
+  modelCalls: z.number(),
+  totalTokens: z.number(),
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  cacheReadTokens: z.number(),
+  /** Share of prompt tokens served from the provider's cache, 0-1; null without prompt tokens. */
+  cachedShare: z.number().nullable(),
+  /** Median ms from a user's message to the bot's first reply, tool call or question. */
+  firstResponseMs: z.number().nullable(),
+  /** How many recent user runs the median covers. */
+  firstResponseRuns: z.number(),
+});
+export type BotUsage = z.infer<typeof BotUsageSchema>;
+
 export const UsageSummarySchema = UsageTotalsSchema.extend({
   runs: z.number(),
   models: z
     .array(UsageTotalsSchema.required().extend({ provider: z.string(), model: z.string() }))
     .optional(),
+  bots: z.array(BotUsageSchema).optional(),
 });
 export type UsageSummary = z.infer<typeof UsageSummarySchema>;
 

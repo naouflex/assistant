@@ -578,3 +578,57 @@ it("closes the name editor before refresh finishes and ignores a refresh failure
     await editor.cleanup();
   }
 });
+
+it("shows tokens, cached share and first response per bot", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const bot = {
+    modelCalls: 4,
+    inputTokens: 400,
+    outputTokens: 100,
+    cacheReadTokens: 9600,
+    firstResponseRuns: 12,
+  };
+  try {
+    await act(async () =>
+      root.render(
+        <UsageSettingsPanel
+          usage={{
+            runs: 3,
+            inputTokens: 400,
+            outputTokens: 100,
+            bots: [
+              {
+                ...bot,
+                botId: "chief",
+                name: "Chief",
+                totalTokens: 10_100,
+                cachedShare: 0.96,
+                firstResponseMs: 3247,
+              },
+              {
+                ...bot,
+                botId: "gone",
+                name: null,
+                totalTokens: 50,
+                cachedShare: null,
+                firstResponseMs: 640,
+              },
+            ],
+          }}
+        />,
+      ),
+    );
+    const table = container.querySelector('[data-testid="usage-by-bot"]');
+    const rows = [...(table?.querySelectorAll("tbody tr") ?? [])].map((row) =>
+      [...row.querySelectorAll("td")].map((cell) => cell.textContent),
+    );
+    expect(rows[0]?.slice(1)).toEqual(["10,100", "96%", "3.2 s"]);
+    expect(rows[0]?.[0]).toContain("Chief");
+    expect(rows[1]?.slice(1)).toEqual(["50", "?", "640 ms"]);
+    expect(rows[1]?.[0]).toContain("Deleted bot");
+  } finally {
+    act(() => root.unmount());
+  }
+});
