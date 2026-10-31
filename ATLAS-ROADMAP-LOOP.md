@@ -12,3 +12,18 @@
 1. Approval cards for risky shell commands.
 2. Draft-before-send cards.
 3. Routines list UI.
+
+## Round 2 (2026-10-31)
+
+| Planned | Found | Shipped |
+|---|---|---|
+| Approval cards for risky shell commands | Shell commands only asked when the bot's approval mode said so; "Never ask" ran `rm -rf` silently | 0e804a9d: `riskyShellCommand` (rm -rf, force push, reset --hard, sudo, DROP/TRUNCATE, mkfs/dd, chmod -R /, curl\|sh) always shows "Run this risky command? It ?" with Allow once / Deny, in every mode. Message sends now always ask too (closes the "Never ask" send gap). |
+| Draft-before-send cards | Sends had a confirm card with the body as read-only detail | 04c03531: send cards show To / Cc / Subject / Message fields you can edit, with Send and Discard. Edits are checked against the card's own fields and rewrite the stored request before replay. No card is editable when a value holds a secret. |
+| Routines list UI | Per-bot routine list in the bot side panel only | 31519aa1: /app/routines (sidebar menu > Routines) lists every bot's routines with next run, last run, Pause/Resume, Edit (opens the bot's routine editor), Delete. |
+
+Also this round: prompt-cache reuse (b9346f1f, 87ba8ec0): stable system+tools prefix, history as real turns, volatile context last; repeated questions keep their order on warm turns. Warm turn 2 reuses ~4.8-4.9K of ~5.2K prompt tokens.
+
+### Round 3 candidates
+1. Interactive option cards (bot offers 2-4 choices; one tap answers).
+2. Local model auto-discovery in the model picker (Ollama /api/tags and llama-server /v1/models).
+3. Usage view per bot (tokens, cached share, time to first token).
