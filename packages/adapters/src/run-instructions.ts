@@ -416,9 +416,53 @@ export function compactSandboxInstruction(
 ): string {
   const mounts = sandboxMountTargets(env);
   const shared = mounts.length
-    ? ` Owner folders mounted into it: ${mounts.map((mount) => `${mount.target}${mount.readOnly ? " (read-only)" : ""} = their ${mount.source}`).join("; ")}. Use these paths for questions about the owner's files.`
+    ? ` Owner folders mounted into it: ${describeMountGroups(mounts)}. For questions about the owner's files or git repos, use these paths (for example ls them) instead of saying you cannot see their PC.`
     : " It cannot see the owner's files or apps.";
   return `Your shell and file tools run in your own Linux sandbox computer (home /home/atlas), not on the owner's PC or WSL. It is already Linux: never tell the owner to install WSL, and its private 172.x address is not theirs.${shared} If a task needs the owner's machine, say so in one sentence and offer what you can do here, or ask them to paste the output.`;
+}
+
+/** Groups mounts that share a source and target parent (/home/x/a -> /mnt/x/a) into one short line. */
+export function describeMountGroups(
+  mounts: { source: string; target: string; readOnly: boolean }[],
+): string {
+  const groups = new Map<
+    string,
+    { source: string; target: string; readOnly: boolean; names: string[] }
+  >();
+  const singles: string[] = [];
+  for (const mount of mounts) {
+    const source = mount.source.split("/").filter(Boolean);
+    const target = mount.target.split("/").filter(Boolean);
+    let shared = 0;
+    while (
+      shared < Math.min(source.length - 1, target.length - 2) &&
+      source[source.length - 1 - shared] === target[target.length - 1 - shared]
+    )
+      shared += 1;
+    if (shared === 0) {
+      singles.push(
+        `${mount.target}${mount.readOnly ? " (read-only)" : ""} = their ${mount.source}`,
+      );
+      continue;
+    }
+    const sourceBase = `/${source.slice(0, source.length - shared).join("/")}`;
+    const targetBase = `/${target.slice(0, target.length - shared).join("/")}`;
+    const key = `${sourceBase}|${targetBase}|${mount.readOnly}`;
+    const group = groups.get(key) ?? {
+      source: sourceBase,
+      target: targetBase,
+      readOnly: mount.readOnly,
+      names: [],
+    };
+    group.names.push(source.slice(source.length - shared).join("/"));
+    groups.set(key, group);
+  }
+  const grouped = [...groups.values()].map((group) =>
+    group.names.length === 1
+      ? `${group.target}/${group.names[0]}${group.readOnly ? " (read-only)" : ""} = their ${group.source}/${group.names[0]}`
+      : `their ${group.source}/<name> at ${group.target}/<name>${group.readOnly ? " (read-only)" : ""} for ${group.names.join(", ")}`,
+  );
+  return [...grouped, ...singles].join("; ");
 }
 
 /** SANDBOX_COMPUTER_MOUNTS entries, parsed loosely for the prompt; the supervisor validates them. */

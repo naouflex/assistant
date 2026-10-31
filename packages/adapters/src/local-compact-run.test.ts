@@ -185,4 +185,15 @@ describe("self-hosted chat-completions payloads", () => {
     expect(mounted).toContain("/mnt/naoufel/code (read-only) = their /home/naoufel/code");
     expect(mounted).toContain("/srv/x = their /srv/x");
   });
+
+  it("groups many repo mounts under one parent into a short list", () => {
+    const grouped = compactSandboxInstruction({
+      SANDBOX_COMPUTER_MOUNTS:
+        "/home/naoufel/a:/mnt/naoufel/a:ro,/home/naoufel/b:/mnt/naoufel/b:ro,/home/naoufel/c/d:/mnt/naoufel/c/d:ro",
+    });
+    expect(grouped).toContain(
+      "their /home/naoufel/<name> at /mnt/naoufel/<name> (read-only) for a, b, c/d",
+    );
+    expect(grouped).toContain("git repos");
+  });
 });
