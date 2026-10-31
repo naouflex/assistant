@@ -33,6 +33,23 @@ export function localModelThinks(
   return THINKING_MODEL_NAME.test(id) && !/instruct/i.test(id);
 }
 
+/**
+ * Ollama and llama.cpp keep the last prompt's KV cache per slot while the model stays loaded
+ * (OLLAMA_KEEP_ALIVE). Declaring that window makes context selection keep the prefix stable
+ * across turns instead of sliding a recent-message window that is re-read every turn.
+ */
+export function localCacheCapabilities(): {
+  scope: "connection";
+  retentionMode: "short";
+  retentionMs: number;
+} {
+  return {
+    scope: "connection",
+    retentionMode: "short",
+    retentionMs: tokenLimit("ATLAS_LOCAL_CACHE_RETENTION_MS", 30 * 60_000),
+  };
+}
+
 export function localVisionModelIds(): ReadonlySet<string> {
   return declaredVisionModelIds(LOCAL_VISION_MODELS_ENV);
 }

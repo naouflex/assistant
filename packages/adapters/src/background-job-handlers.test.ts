@@ -229,6 +229,7 @@ describe("createBackgroundJobHandlers", () => {
       baseUrl: undefined,
       thinkingLevel: null,
       oauth: undefined,
+      cacheCapabilities: { scope: "connection", retentionMode: "short", retentionMs: 1_800_000 },
     });
   });
 });

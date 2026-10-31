@@ -3,7 +3,12 @@ import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
 import { getLogger } from "@atlas/logging";
 import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
 import { describe, expect, it, vi } from "vitest";
-import { ContextBudgetError, ContextCacheTracker } from "./context-selection.js";
+import {
+  ContextBudgetError,
+  ContextCacheTracker,
+  providerContextPrefix,
+} from "./context-selection.js";
+import { localCacheCapabilities } from "./pi-local-provider.js";
 import { createRuntimeContextPolicy } from "./runtime-context.js";
 
 const model = {
@@ -198,6 +203,44 @@ describe("runtime context policy", () => {
     expect(continued.messages.slice(0, initial.messages.length)).toEqual(initial.messages);
     expect(continued.messages).toHaveLength(initial.messages.length + 1);
   });
+  it("keeps a local model's prefix byte-identical through the last history message across turns", () => {
+    const providerPrefix = (prepared: Context, upTo: number) =>
+      JSON.stringify(
+        providerContextPrefix(
+          prepared.systemPrompt ?? "",
+          prepared.tools ?? [],
+          prepared.messages.slice(0, upTo),
+        ),
+      );
+    const turn = (count: number, threadId: string, cache: boolean) => {
+      const { request, context } = fixture(count);
+      request.threadId = threadId;
+      enableHistoryRetrieval(request);
+      if (cache) request.model.cacheCapabilities = localCacheCapabilities();
+      // The volatile date rides on the current message, after the history.
+      const last = context.messages.at(-1)!;
+      context.messages[context.messages.length - 1] = {
+        ...last,
+        content: `Question ${count}\n\nCurrent date and time: turn ${count}`,
+      } as Message;
+      const policy = createRuntimeContextPolicy(request);
+      const prepared = policy.prepareContext(context, model);
+      policy.onUsage({ inputTokens: 1000, outputTokens: 10, cacheReadTokens: 0 });
+      return prepared;
+    };
+    const first = turn(30, "local-prefix-thread", true);
+    const second = turn(31, "local-prefix-thread", true);
+    // Everything before turn one's current message is still the start of turn two.
+    const sharedThrough = first.messages.length - 1;
+    expect(providerPrefix(second, sharedThrough)).toBe(providerPrefix(first, sharedThrough));
+    // Without a declared window the recent-message window slides and the prefix breaks.
+    const slidA = turn(30, "sliding-thread", false);
+    const slidB = turn(31, "sliding-thread", false);
+    expect(providerPrefix(slidB, slidA.messages.length - 1)).not.toBe(
+      providerPrefix(slidA, slidA.messages.length - 1),
+    );
+  });
+
   it("honors an explicit retrieval override even with a declared cache window", () => {
     const { request, context } = fixture(30);
     enableHistoryRetrieval(request);

@@ -757,6 +757,26 @@ export class ContextCacheTracker {
     this.entries.set(key, {
       at: previousAt === undefined ? at : Math.max(previousAt, at),
     });
+    // The provider caches every prefix of what it read. The current message usually carries
+    // volatile context (date, run status) and is stored without it, so the next turn extends
+    // the prefix through the previous history, not through the decorated current message.
+    const prefix = request.prefix;
+    if (
+      prefix &&
+      typeof prefix === "object" &&
+      "messages" in prefix &&
+      Array.isArray(prefix.messages) &&
+      prefix.messages.length > 1
+    ) {
+      const stable = this.key(request, { ...prefix, messages: prefix.messages.slice(0, -1) });
+      if (stable !== key) {
+        const previousStable = this.entries.get(stable)?.at;
+        this.entries.delete(stable);
+        this.entries.set(stable, {
+          at: previousStable === undefined ? at : Math.max(previousStable, at),
+        });
+      }
+    }
     while (this.entries.size > this.maxEntries)
       this.entries.delete(this.entries.keys().next().value!);
     return { observedReuse: observedCacheReadTokens == null ? null : observedCacheReadTokens > 0 };

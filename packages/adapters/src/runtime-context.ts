@@ -236,6 +236,9 @@ export function createRuntimeContextPolicy(
         catalogMessage = rebuilt;
       } else {
         const index = indexesByHash.get(entry.hash)?.shift();
+        // The previous run's current message carried volatile context (date, run status) that
+        // history stores without; the matched messages before it are still the cached prefix.
+        if (index === undefined && latestMatchedIndex >= 0) break;
         if (index === undefined) return;
         result.push(ctx.messages[index]!);
         latestMatchedIndex = Math.max(latestMatchedIndex, index);

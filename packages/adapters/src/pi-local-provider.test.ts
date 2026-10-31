@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   LOCAL_PROVIDER_ID,
   localBaseUrl,
+  localCacheCapabilities,
   localProvider,
   registerLocalProvider,
 } from "./pi-local-provider.js";
@@ -113,5 +114,24 @@ describe("local model provider", () => {
     setModels("qwen3:4b");
     const withLocal = registerLocalProvider(builtinModels());
     expect(withLocal.getModel(LOCAL_PROVIDER_ID, "qwen3:4b")).toBeDefined();
+  });
+});
+
+describe("localCacheCapabilities", () => {
+  it("declares a connection-scoped cache window that follows ATLAS_LOCAL_CACHE_RETENTION_MS", () => {
+    const previous = process.env.ATLAS_LOCAL_CACHE_RETENTION_MS;
+    try {
+      delete process.env.ATLAS_LOCAL_CACHE_RETENTION_MS;
+      expect(localCacheCapabilities()).toEqual({
+        scope: "connection",
+        retentionMode: "short",
+        retentionMs: 1_800_000,
+      });
+      process.env.ATLAS_LOCAL_CACHE_RETENTION_MS = "60000";
+      expect(localCacheCapabilities().retentionMs).toBe(60_000);
+    } finally {
+      if (previous === undefined) delete process.env.ATLAS_LOCAL_CACHE_RETENTION_MS;
+      else process.env.ATLAS_LOCAL_CACHE_RETENTION_MS = previous;
+    }
   });
 });

@@ -34,7 +34,7 @@ import { modelIdSupportsImages } from "./model-vision.js";
 import { assertAllowedOpenAiCompatibleUrl } from "./openai-compatible-url.js";
 import { codexLiveModel } from "./pi-codex-catalog.js";
 import { toOAuthCredential } from "./pi-credentials.js";
-import { LOCAL_PROVIDER_ID } from "./pi-local-provider.js";
+import { LOCAL_PROVIDER_ID, localCacheCapabilities } from "./pi-local-provider.js";
 import type { StoredModelSecret } from "./pi-oauth.js";
 import {
   CHATGPT_OAUTH_PROVIDER,
@@ -469,7 +469,9 @@ export async function resolveConnectedRunModel(
     apiProtocol: resolved.apiProtocol,
     headers: resolved.headers,
     allowPrivateEndpoint: resolved.allowPrivateEndpoint,
-    cacheCapabilities: resolved.cacheCapabilities,
+    cacheCapabilities:
+      resolved.cacheCapabilities ??
+      (provider === LOCAL_PROVIDER_ID ? localCacheCapabilities() : undefined),
     contextWindow: resolved.contextWindow,
 
     reasoning: resolved.reasoning,
@@ -567,7 +569,9 @@ export async function resolveRunModel(
     apiProtocol: resolved.apiProtocol,
     headers: resolved.headers,
     allowPrivateEndpoint: resolved.allowPrivateEndpoint,
-    cacheCapabilities: resolved.cacheCapabilities,
+    cacheCapabilities:
+      resolved.cacheCapabilities ??
+      (provider === LOCAL_PROVIDER_ID ? localCacheCapabilities() : undefined),
     contextWindow: resolved.contextWindow,
 
     reasoning: resolved.reasoning,
