@@ -50,6 +50,7 @@ export * from "./logo-avatar-motion.js";
 export * from "./logo-avatar-traits.js";
 export * from "./markdown-plain.js";
 export * from "./mcp.js";
+export * from "./message-draft.js";
 export * from "./message-pages.js";
 export * from "./message-reactions.js";
 export * from "./message-replies.js";

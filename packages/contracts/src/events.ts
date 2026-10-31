@@ -140,6 +140,21 @@ export const MessageBlock = z.discriminatedUnion("kind", [
     loginFields: LoginFieldLabels.optional(),
     /** On a fetch approval, the site an "always" answer allows. */
     site: z.string().optional(),
+    /** On a confirm-before-send card, the recipient, subject and body the owner may edit. */
+    draft: z
+      .object({
+        fields: z
+          .array(
+            z.object({
+              key: z.string().max(64),
+              label: z.string().max(64),
+              value: z.string(),
+              multiline: z.boolean().optional(),
+            }),
+          )
+          .max(8),
+      })
+      .optional(),
     status: z.enum(["pending", "answered"]).optional(),
     answer: z.string().optional(),
     /** A secret request the user dismissed instead of answering. */

@@ -2,6 +2,38 @@ import { describe, expect, it } from "vitest";
 import { approvalDetailLength, buildApprovalAskBlock } from "./approval-ask.js";
 
 describe("buildApprovalAskBlock", () => {
+  it("makes a send card an editable draft with Send and Discard", () => {
+    const block = buildApprovalAskBlock(
+      "effect-d",
+      "gmail_send_email",
+      { to: "person@example.test", subject: "Lunch", body: "Free at noon?" },
+      [],
+    );
+    expect(block).toMatchObject({
+      draft: {
+        fields: [
+          { key: "to", value: "person@example.test" },
+          { key: "subject", value: "Lunch" },
+          { key: "body", value: "Free at noon?", multiline: true },
+        ],
+      },
+      actions: [
+        { id: "allow", label: "Send" },
+        { id: "deny", label: "Discard" },
+      ],
+    });
+  });
+
+  it("keeps a send card read-only when the draft holds a secret", () => {
+    const block = buildApprovalAskBlock(
+      "effect-s",
+      "gmail_send_email",
+      { to: "person@example.test", body: "code token-secret" },
+      ["token-secret"],
+    );
+    expect(block).not.toHaveProperty("draft");
+  });
+
   it("shows a risky shell command with its reason and no always-allow", () => {
     const block = buildApprovalAskBlock(
       "effect-r",

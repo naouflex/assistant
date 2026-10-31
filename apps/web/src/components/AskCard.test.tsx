@@ -603,3 +603,55 @@ it("undoes a settings change from chat while it still holds", async () => {
   });
   expect(button("Restored")?.disabled).toBe(true);
 });
+
+const draftCard: AskBlock = {
+  kind: "ask",
+  text: "Send this email?",
+  detail: "Free at noon?",
+  status: "pending",
+  approvalEffectId: "effect-d",
+  draft: {
+    fields: [
+      { key: "to", label: "To", value: "person@example.test" },
+      { key: "body", label: "Message", value: "Free at noon?", multiline: true },
+    ],
+  },
+  actions: [
+    { id: "allow", label: "Send" },
+    { id: "deny", label: "Discard" },
+  ],
+} as AskBlock;
+
+it("sends an edited draft as only the changed fields", async () => {
+  const onAnswer = vi.fn(async (_text: string) => undefined);
+  await render(draftCard, undefined, onAnswer);
+  expect(container.querySelectorAll("textarea")).toHaveLength(1);
+  await act(async () => {
+    const field = container.querySelector<HTMLTextAreaElement>("#draft-body")!;
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(
+      field,
+      "Free at one?",
+    );
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  await act(async () => button("Send")!.click());
+
+  expect(onAnswer.mock.calls[0]?.[0]).toBe(JSON.stringify({ draft: { body: "Free at one?" } }));
+  expect(container.textContent).toContain("Sent");
+});
+
+it("sends an unedited draft as a plain allow", async () => {
+  const onAnswer = vi.fn(async (_text: string) => undefined);
+  await render(draftCard, undefined, onAnswer);
+  await act(async () => button("Send")!.click());
+  expect(onAnswer.mock.calls[0]?.[0]).toBe("allow");
+});
+
+it("discards a draft as a deny", async () => {
+  const denied = vi.fn(async (_text: string) => undefined);
+  await render(draftCard, undefined, denied);
+  await act(async () => button("Discard")!.click());
+  expect(denied.mock.calls[0]?.[0]).toBe("deny");
+  expect(container.textContent).toContain("Discarded");
+});

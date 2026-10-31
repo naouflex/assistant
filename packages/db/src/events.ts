@@ -17,6 +17,7 @@ import {
 } from "@atlas/contracts";
 import {
   ACTIVE_RUN_STATUSES,
+  applyMessageDraftEdits,
   blocksToAgentHistoryText,
   callIdFromClientNonce,
   instructionUpdateDiff,
@@ -885,6 +886,24 @@ async function commitAnswerRunInput(
       return null;
     }
   }
+  let draftEdits: Record<string, string> | undefined;
+  let draftRequest: unknown;
+  if (approvalAsk && pendingAsk.draft && input.answer.startsWith("{")) {
+    try {
+      const edited = JSON.parse(input.answer);
+      if (
+        !edited ||
+        typeof edited.draft !== "object" ||
+        Array.isArray(edited.draft) ||
+        Object.keys(edited).length !== 1
+      )
+        return null;
+      draftEdits = edited.draft as Record<string, string>;
+      approvalAnswer = "allow";
+    } catch {
+      return null;
+    }
+  }
   let approvalUserId: string | null = null;
 
   if (approvalAsk) {
@@ -898,6 +917,15 @@ async function commitAnswerRunInput(
       },
     });
     if (!approvalEffect) return null;
+    if (draftEdits && pendingAsk.draft) {
+      // Edits may only change the fields the card showed, in the request the card was built from.
+      draftRequest = applyMessageDraftEdits(
+        approvalEffect.request,
+        pendingAsk.draft.fields,
+        draftEdits,
+      );
+      if (draftRequest === undefined) return null;
+    }
     if (pendingAsk.instructionUpdate) {
       if (
         approvalEffect.kind !== "update_bot" ||
@@ -976,6 +1004,21 @@ async function commitAnswerRunInput(
           },
         });
       }
+    }
+    if (draftRequest !== undefined) {
+      // The owner edited the draft on the card: send their words, not the model's.
+      const request = draftRequest;
+      await tx.externalEffect.update({
+        where: { id: approvalEffect!.id },
+        data: {
+          request: request as Prisma.InputJsonValue,
+          idempotencyKey: approvalEffectKey(
+            input.runId,
+            approvalEffect!.kind,
+            request as Record<string, unknown>,
+          ),
+        },
+      });
     }
     const allowed = approvalAnswer === "allow" || approvalAnswer === "always";
     await tx.externalEffect.update({
@@ -1056,6 +1099,17 @@ async function commitAnswerRunInput(
           answer: recordedAnswer,
           ...(dismissed ? { dismissed: true as const } : {}),
           ...(input.remember === false ? { remembered: false as const } : {}),
+          ...(draftEdits && pendingAsk.draft
+            ? {
+                draft: {
+                  fields: pendingAsk.draft.fields.map((field) =>
+                    draftEdits![field.key] === undefined
+                      ? field
+                      : { ...field, value: draftEdits![field.key]! },
+                  ),
+                },
+              }
+            : {}),
           ...(editedInstructions !== undefined && pendingAsk.instructionUpdate
             ? {
                 instructionUpdate: { ...pendingAsk.instructionUpdate, after: editedInstructions },

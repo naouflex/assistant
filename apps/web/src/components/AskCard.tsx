@@ -94,6 +94,9 @@ export function AskCard({
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState(block.instructionUpdate?.after ?? "");
   const [dismissed, setDismissed] = useState(false);
+  const [draftValues, setDraftValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries((block.draft?.fields ?? []).map((field) => [field.key, field.value])),
+  );
   const [acceptedAnswer, setAcceptedAnswer] = useState<string>();
   const [acceptedRemembered, setAcceptedRemembered] = useState<false>();
   const [undone, setUndone] = useState(false);
@@ -130,6 +133,7 @@ export function AskCard({
     !approvalActions &&
     !secretInput &&
     !block.instructionUpdate &&
+    !block.draft &&
     displayedAnswer !== "approved"
       ? displayedAnswer
       : undefined;
@@ -293,7 +297,15 @@ export function AskCard({
           )}
         </div>
       ) : null}
-      {block.detail && !secretInput ? (
+      {block.draft ? (
+        <MessageDraftFields
+          fields={block.draft.fields}
+          values={draftValues}
+          editable={canAnswer && !answered && !ownerOnly && !submitting}
+          onChange={(key, value) => setDraftValues((current) => ({ ...current, [key]: value }))}
+        />
+      ) : null}
+      {block.detail && !secretInput && !block.draft ? (
         <pre
           data-testid="ask-detail"
           className={
@@ -356,19 +368,23 @@ export function AskCard({
             "cancelled" ? null : (
             <Check aria-hidden className="size-4" />
           )}
-          {block.instructionUpdate
+          {block.draft
             ? displayedAnswer === "deny"
-              ? t`Dismissed`
-              : t`Allowed once`
-            : formatAnsweredState(
-                displayedAnswer,
-                Boolean(approvalActions),
-                secretInput,
-                approvalActions?.find((action) => action.id === displayedAnswer)?.outcome,
-                askActions,
-                displayedDismissed,
-                displayedRemembered,
-              )}
+              ? t`Discarded`
+              : t`Sent`
+            : block.instructionUpdate
+              ? displayedAnswer === "deny"
+                ? t`Dismissed`
+                : t`Allowed once`
+              : formatAnsweredState(
+                  displayedAnswer,
+                  Boolean(approvalActions),
+                  secretInput,
+                  approvalActions?.find((action) => action.id === displayedAnswer)?.outcome,
+                  askActions,
+                  displayedDismissed,
+                  displayedRemembered,
+                )}
         </div>
       ) : !canAnswer ? (
         <div className="mt-3.5 text-[13.5px] font-medium text-muted-foreground">
@@ -386,13 +402,22 @@ export function AskCard({
               onClick={() =>
                 action.id === "edit" && block.instructionUpdate
                   ? setEditing(true)
-                  : void submitAnswer(action.id)
+                  : action.id === "allow" && block.draft
+                    ? void submitAnswer(draftAnswer(block.draft.fields, draftValues))
+                    : void submitAnswer(action.id)
               }
             >
-              {pendingAction === action.id ? (
+              {pendingAction === action.id ||
+              (action.id === "allow" && block.draft && pendingAction?.startsWith("{")) ? (
                 <Trans>Sending…</Trans>
               ) : action.id === "edit" ? (
                 action.label
+              ) : block.draft ? (
+                action.id === "allow" ? (
+                  t`Send`
+                ) : (
+                  t`Discard`
+                )
               ) : block.instructionUpdate ? (
                 action.id === "allow" ? (
                   t`Apply`
@@ -543,5 +568,62 @@ export function AskCard({
       )}
       {error ? <p className="mt-3 text-[13px] text-destructive">{error}</p> : null}
     </BuiCard>
+  );
+}
+
+/** "allow" when the owner kept the draft as written, otherwise the edited fields to send instead. */
+export function draftAnswer(
+  fields: Array<{ key: string; value: string }>,
+  values: Record<string, string>,
+): string {
+  const edits = Object.fromEntries(
+    fields
+      .filter((field) => values[field.key] !== undefined && values[field.key] !== field.value)
+      .map((field) => [field.key, values[field.key]!]),
+  );
+  return Object.keys(edits).length ? JSON.stringify({ draft: edits }) : "allow";
+}
+
+function MessageDraftFields({
+  fields,
+  values,
+  editable,
+  onChange,
+}: {
+  fields: Array<{ key: string; label: string; value: string; multiline?: boolean }>;
+  values: Record<string, string>;
+  editable: boolean;
+  onChange: (key: string, value: string) => void;
+}) {
+  return (
+    <div data-testid="message-draft" className="mt-3 flex flex-col gap-2">
+      {fields.map((field) => {
+        const id = `draft-${field.key}`;
+        const value = values[field.key] ?? field.value;
+        return (
+          <div key={field.key} className="flex flex-col gap-1">
+            <Label htmlFor={id} className="text-[13px] text-muted-foreground">
+              {field.label}
+            </Label>
+            {field.multiline ? (
+              <Textarea
+                id={id}
+                value={value}
+                readOnly={!editable}
+                rows={Math.min(12, Math.max(4, value.split("\n").length + 1))}
+                onChange={(event) => onChange(field.key, event.target.value)}
+              />
+            ) : (
+              <Input
+                id={id}
+                value={value}
+                readOnly={!editable}
+                onChange={(event) => onChange(field.key, event.target.value)}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
