@@ -42,3 +42,10 @@ Time to first response (llama-server MTP on 11436, monotonic clock): direct API 
 1. Streamed reply text in the thread (first token visible before the whole message lands).
 2. Model picker refresh button and per-model health (reachable, context size from /props).
 3. Make the bot reach for option cards: a prompt or tool-hint tweak so 2-4 way choices come out as ask_user options, plus an eval case.
+
+## Round 4 (2026-10-31)
+- d5b79ba4 Streaming: reply text already streamed, but only when the preference was explicitly on; now on by default (Settings > "Stream replies" still turns it off).
+- 424484a5 Model picker: refresh button (refresh-local-models) plus per-local-model notes: offline, context size (e.g. "16K ctx", or "8K ctx, Atlas sends 32K" on mismatch), "slow on 8 GB GPU" for models > 7 GiB or >= 14B. New RPC models.localStatus({refresh}).
+- 5f59e8a4 Testkit: models/localStatus added to the unauthenticated RPC sweep.
+- d17a689a Option cards: per-turn ask_user note when the user asks to choose/get options (EN + FR), compact guidance updated, eval cases ask-choice-three-way / ask-choice-open. Live on qwen3.5:4b-mtp: 2/6 -> 8/8 runs ended in ask_user.
+- Scoped down: worker re-scans on its own 60 s timer only; Ollama context shown only for loaded models; GPU flag is a static size heuristic; ask_user tool description unchanged (30.5 KB tool-definition budget).
