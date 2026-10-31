@@ -108,6 +108,7 @@ import {
   runModelChoice,
 } from "./model-selection.js";
 import { modelAcceptsImageInput } from "./model-vision.js";
+import { ownFilesNote } from "./mounted-files.js";
 import { usesNativeShell } from "./native-shell.js";
 import { optionChoiceNote } from "./option-choice.js";
 import { paymentWalletConnected } from "./payment-wallets.js";
@@ -1404,6 +1405,13 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
             ? optionChoiceNote(taskPrompt, {
                 askUserOffered: tools.some((tool) => tool.name === "ask_user"),
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? ownFilesNote(taskPrompt, {
+                shellOffered: tools.some((tool) => tool.name === "shell"),
+                mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
                 voiceCall: Boolean(voiceCall),
               })
             : undefined,

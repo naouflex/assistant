@@ -459,6 +459,15 @@ export const TOOL_CHOICE_DEFINITIONS: ToolChoiceCase[] = [
     expect: { calls: [{ tool: "ask_user" }] },
   },
   {
+    id: "files-own-repos",
+    area: "shell",
+    kind: "guard",
+    purpose:
+      "Look in the computer (mounted folders) before claiming the user's repos can't be seen.",
+    prompt: "What are the main git repos in my WSL home folder?",
+    expect: { anyOf: [{ tool: "shell" }, { tool: "list_files" }] },
+  },
+  {
     id: "ask-choice-three-way",
     area: "ask",
     kind: "guard",
