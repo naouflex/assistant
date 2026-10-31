@@ -13,6 +13,26 @@ export const LOCAL_PROVIDER_ID = "local";
 /** Model ids the local server serves with vision, declared by the operator. */
 export const LOCAL_VISION_MODELS_ENV = "ATLAS_LOCAL_VISION_MODELS";
 
+/** Model ids the local server can think with; unset means a name heuristic. */
+export const LOCAL_REASONING_MODELS_ENV = "ATLAS_LOCAL_REASONING_MODELS";
+
+const THINKING_MODEL_NAME = /qwen3|qwq|deepseek-r1|gpt-oss|magistral|reason|think/i;
+
+/** Whether a local model can switch thinking on, so the chat offers a thinking toggle. */
+export function localModelThinks(
+  id: string,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  const declared = env[LOCAL_REASONING_MODELS_ENV]?.trim();
+  if (declared) {
+    return declared
+      .split(",")
+      .map((entry) => entry.trim())
+      .includes(id);
+  }
+  return THINKING_MODEL_NAME.test(id) && !/instruct/i.test(id);
+}
+
 export function localVisionModelIds(): ReadonlySet<string> {
   return declaredVisionModelIds(LOCAL_VISION_MODELS_ENV);
 }
@@ -61,7 +81,7 @@ function localModel(id: string): Model<"openai-completions"> {
     api: "openai-completions",
     provider: LOCAL_PROVIDER_ID,
     baseUrl: localBaseUrl(),
-    reasoning: false,
+    reasoning: localModelThinks(id),
     compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
     input: inputModalities(localVisionModelIds().has(id)),
     // Runs on the operator's own hardware, so there is nothing to bill.

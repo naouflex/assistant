@@ -19,7 +19,7 @@ import {
 import { Button } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowUp, Box, Paperclip, Plus, Settings, Square, X } from "lucide-react";
-import type { ClipboardEvent, DragEvent, RefObject } from "react";
+import type { ClipboardEvent, DragEvent, ReactNode, RefObject } from "react";
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   HoldToTalkControls,
@@ -86,6 +86,7 @@ export const Composer = memo(function Composer({
   onSlashAction,
   draftKey,
   enterToSend,
+  toolbar,
 }: {
   activeName?: string;
   running: boolean;
@@ -126,6 +127,8 @@ export const Composer = memo(function Composer({
   onSlashAction?: (action: SlashActionId) => void;
   draftKey: string;
   enterToSend: boolean;
+  /** Controls shown under the message bar, such as the chat's model and thinking switch. */
+  toolbar?: ReactNode;
 }) {
   const { t } = useLingui();
   const [composition, setComposition] = useState(() => ({
@@ -925,6 +928,11 @@ export const Composer = memo(function Composer({
           )}
         </div>
       </div>
+      {toolbar ? (
+        <div data-testid="composer-toolbar" className="flex min-w-0 items-center gap-2 px-3 pt-1.5">
+          {toolbar}
+        </div>
+      ) : null}
     </fieldset>
   );
 });

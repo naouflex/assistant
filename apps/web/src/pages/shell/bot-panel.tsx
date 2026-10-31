@@ -49,6 +49,7 @@ import { useSpaceQueries } from "../../lib/query";
 import { errorText } from "../../lib/user-error";
 import { AvatarStudioPopover } from "./avatar-studio-popover";
 import { ChatModelPicker } from "./chat-model-picker";
+import { selectableThinkingLevels } from "./composer-thinking";
 
 const ScratchpadSection = lazyComponent(() =>
   import("../ScratchpadSection").then((module) => module.ScratchpadSection),
@@ -316,12 +317,11 @@ export function BotSettings({
         )
       : undefined;
   const effectiveCredential = credentialForModel(credentials, effectiveProvider, effectiveModelId);
-  const thinkingOptions = (
-    effectiveCredential?.thinkingLevels ??
-    effectiveEntry?.thinkingLevels ??
-    []
-  ).filter((level) => level !== "off");
-  const defaultThinkingLevel = effectiveCredential?.thinkingLevel ?? "medium";
+  const thinkingOptions = selectableThinkingLevels(
+    effectiveCredential?.thinkingLevels ?? effectiveEntry?.thinkingLevels ?? [],
+  );
+  const defaultThinkingLevel =
+    effectiveCredential?.thinkingLevel ?? effectiveEntry?.defaultThinkingLevel ?? "medium";
 
   async function executeSave(
     patchOverrides?: {

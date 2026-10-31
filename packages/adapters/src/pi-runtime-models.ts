@@ -9,6 +9,7 @@ import type {
 } from "@earendil-works/pi-ai";
 import { clampThinkingLevel } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
+import { localThinkingDisabled } from "./chat-completions-compat.js";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
 import { PiRuntimeCredentialStore, toOAuthCredential } from "./pi-credentials.js";
 import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
@@ -44,6 +45,8 @@ export function thinkingLevelFor(
 ): ModelThinkingLevel {
   if (!model.reasoning) return "off";
   if (preferred) return clampThinkingLevel(model, preferred);
+  // ATLAS_LOCAL_DISABLE_THINKING is the default for self-hosted models with no saved level.
+  if (localThinkingDisabled(model.provider, process.env)) return "off";
   return clampThinkingLevel(model, REASONING_MODEL_THINKING_LEVEL);
 }
 

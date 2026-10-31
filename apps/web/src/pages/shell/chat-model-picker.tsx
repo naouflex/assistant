@@ -24,8 +24,13 @@ export function ChatModelPicker({
   choices,
   value,
   onChange,
+  compact = false,
+  ariaLabel,
 }: {
   id: string;
+  /** Small inline control, as under the composer, labelled by ariaLabel. */
+  compact?: boolean;
+  ariaLabel?: string;
   choices: readonly ChatModelChoice[];
   value: string;
   onChange: (key: string) => void;
@@ -41,11 +46,13 @@ export function ChatModelPicker({
 
   if (choices.length <= MODEL_SEARCH_THRESHOLD) {
     return (
-      <div className="mt-2 flex items-center gap-2">
+      <div className={compact ? "flex items-center gap-2" : "mt-2 flex items-center gap-2"}>
         {imagesHint}
         <NativeSelect
           id={id}
-          className="w-full"
+          aria-label={ariaLabel}
+          size={compact ? "sm" : undefined}
+          className={compact ? "max-w-[18rem] text-xs" : "w-full"}
           aria-describedby={textOnly ? imagesHintId : undefined}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -75,8 +82,9 @@ export function ChatModelPicker({
       {imagesHint}
       <PopoverTrigger
         id={id}
+        aria-label={ariaLabel}
         aria-describedby={textOnly ? imagesHintId : undefined}
-        className="mt-2 flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent pr-2.5 pl-2.5 text-start text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50"
+        className={`${compact ? "h-7 max-w-[18rem] text-xs" : "mt-2 h-8 w-full text-sm"} flex items-center justify-between gap-2 rounded-lg border border-input bg-transparent pr-2.5 pl-2.5 text-start text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50`}
       >
         <span className="min-w-0 truncate">{selected?.label}</span>
         <span className="flex shrink-0 items-center gap-2 text-muted-foreground">

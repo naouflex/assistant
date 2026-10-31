@@ -10,7 +10,7 @@ import type { Api, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
  * after every other payload hook, so each chat-completions provider gets the same shape.
  */
 export function withChatCompletionsCompatibility<O extends SimpleStreamOptions>(
-  model: Pick<Model<Api>, "api" | "id" | "baseUrl"> & { provider?: string },
+  model: Pick<Model<Api>, "api" | "id" | "baseUrl"> & { provider?: string; reasoning?: boolean },
   options: O,
   env: Record<string, string | undefined> = process.env,
 ): O {
@@ -19,7 +19,13 @@ export function withChatCompletionsCompatibility<O extends SimpleStreamOptions>(
   const stringContent = requiresStringContent(model);
   const selfHosted = model.provider === "local" || model.provider === "openai-compatible";
   const local = selfHosted
-    ? { disableThinking: localThinkingDisabled(model.provider, env) }
+    ? {
+        // A thinking-capable model follows the run's level (off arrives as no reasoning);
+        // any other self-hosted model keeps the env switch.
+        disableThinking: model.reasoning
+          ? !options.reasoning
+          : localThinkingDisabled(model.provider, env),
+      }
     : undefined;
   return {
     ...options,
@@ -57,7 +63,7 @@ function dumpLocalPayload(env: Record<string, string | undefined>, payload: unkn
 /** Env switch that turns model thinking off on self-hosted servers (Ollama, llama.cpp, vLLM). */
 export const LOCAL_DISABLE_THINKING_ENV = "ATLAS_LOCAL_DISABLE_THINKING";
 
-function localThinkingDisabled(
+export function localThinkingDisabled(
   provider: string | undefined,
   env: Record<string, string | undefined>,
 ): boolean {

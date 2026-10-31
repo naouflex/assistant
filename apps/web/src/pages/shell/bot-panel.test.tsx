@@ -395,7 +395,7 @@ describe("BotSettings thinking options", () => {
     if (!(model instanceof HTMLSelectElement)) throw new Error("Missing model select");
     expect(model.value).toBe("openai-compatible::beta");
     if (!(thinking instanceof HTMLSelectElement)) throw new Error("Missing thinking select");
-    expect([...thinking.options].map((option) => option.value)).toEqual(["", "low", "high"]);
+    expect([...thinking.options].map((option) => option.value)).toEqual(["", "off", "low", "high"]);
   });
 });
 

@@ -7,6 +7,7 @@ import {
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
+import { localThinkingDisabled } from "./chat-completions-compat.js";
 import { LOCAL_PROVIDER_ID, registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
 import { loadProviderOAuth, SUBSCRIPTION_SIGN_IN_PROVIDERS } from "./pi-oauth.js";
@@ -308,6 +309,9 @@ function buildPiCatalog(): PiCatalogEntry[] {
         signIn: signInMeta?.mode,
         reasoning: Boolean(model.reasoning),
         thinkingLevels,
+        ...(model.reasoning && localThinkingDisabled(provider.id, process.env)
+          ? { defaultThinkingLevel: "off" as const }
+          : {}),
         // Compatibility metadata does not prove a model is served by a user's
         // endpoint. Keep each custom connection scoped to its entered model ID.
         // Its image support is the connection's own setting, not the catalog's.

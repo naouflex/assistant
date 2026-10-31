@@ -38,6 +38,7 @@ import { spaceQueries } from "../lib/query";
 import { useSpaceRpc } from "../lib/space-rpc";
 import type { ConnectableProvider, RoleModelOption } from "./model-settings/role-model-picker";
 import { RoleModelPicker } from "./model-settings/role-model-picker";
+import { selectableThinkingLevels } from "./shell/composer-thinking";
 
 export type ModelRoleConnectIntent = {
   /** Only the main role's empty first slot takes the new connection's model on connect. */
@@ -154,9 +155,7 @@ export function ModelRoleSettings({
         entry.id === choice.modelId,
     );
   const thinkingLevels =
-    thinking && primary
-      ? (entryFor(primary)?.thinkingLevels ?? []).filter((level) => level !== "off")
-      : [];
+    thinking && primary ? selectableThinkingLevels(entryFor(primary)?.thinkingLevels ?? []) : [];
   // Grouped by the connection that runs them.
   const options: RoleModelOption[] = connectedBackupOptions(state.catalog, credentials).map(
     (choice) => ({
