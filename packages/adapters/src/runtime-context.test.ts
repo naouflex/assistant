@@ -212,10 +212,12 @@ describe("runtime context policy", () => {
           prepared.messages.slice(0, upTo),
         ),
       );
-    const turn = (count: number, threadId: string, cache: boolean) => {
+    const turn = (count: number, threadId: string, cache: boolean, local = false) => {
       const { request, context } = fixture(count);
       request.threadId = threadId;
-      enableHistoryRetrieval(request);
+      // Local compact runs offer no history tools; the others can follow snapshots back.
+      if (local) request.model.provider = "local";
+      else enableHistoryRetrieval(request);
       if (cache) request.model.cacheCapabilities = localCacheCapabilities();
       // The volatile date rides on the current message, after the history.
       const last = context.messages.at(-1)!;
@@ -233,6 +235,10 @@ describe("runtime context policy", () => {
     // Everything before turn one's current message is still the start of turn two.
     const sharedThrough = first.messages.length - 1;
     expect(providerPrefix(second, sharedThrough)).toBe(providerPrefix(first, sharedThrough));
+    const localFirst = turn(30, "local-compact-thread", true, true);
+    const localSecond = turn(31, "local-compact-thread", true, true);
+    const localShared = localFirst.messages.length - 1;
+    expect(providerPrefix(localSecond, localShared)).toBe(providerPrefix(localFirst, localShared));
     // Without a declared window the recent-message window slides and the prefix breaks.
     const slidA = turn(30, "sliding-thread", false);
     const slidB = turn(31, "sliding-thread", false);

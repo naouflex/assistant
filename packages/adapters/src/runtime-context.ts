@@ -13,6 +13,7 @@ import {
   selectContext,
   shortenToolResultText,
 } from "./context-selection.js";
+import { LOCAL_PROVIDER_ID } from "./pi-local-provider.js";
 import { effectiveOutputReserve, resolveCompletionMaxTokens } from "./pi-runtime-limits.js";
 import { withoutThinkingFrom } from "./thinking-signatures.js";
 
@@ -270,7 +271,9 @@ export function createRuntimeContextPolicy(
       (request.turnCheckpoint && request.contextStrategy === "current"
         ? DEFAULT_CONTEXT_STRATEGY
         : request.contextStrategy) ??
-      (!standaloneHistoryFallback &&
+      // Local runs offer a compact tool set without the history tools; their prefix cache
+      // still needs append-only history, or each turn's sliding window rewrites it.
+      ((!standaloneHistoryFallback || request.model.provider === LOCAL_PROVIDER_ID) &&
       request.model.cacheCapabilities?.retentionMode !== "none" &&
       typeof retention === "number" &&
       Number.isFinite(retention) &&
