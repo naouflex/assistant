@@ -451,8 +451,12 @@ async function prepareOwnBotUpdate(
   if (ownWords || unguarded) return undefined;
   if (run.trigger !== "routine" && !ctx.source.ownerStartedRun)
     return { error: "Instruction changes are blocked for runs someone else started." };
-  if (Object.keys(args).some((key) => key !== "instructions"))
-    return { error: "Change your instructions in their own update_bot call." };
+  const alongside = Object.keys(args).filter((key) => key !== "instructions");
+  if (alongside.length)
+    // Small models often stop at a bare rejection, so say exactly what to send next.
+    return {
+      error: `Nothing was saved: instruction changes need the owner's approval, so they go in their own update_bot call. Call update_bot again now with only { instructions }, then make a separate update_bot call for ${alongside.join(", ")}.`,
+    };
   const current = await deps.prisma.bot.findUniqueOrThrow({
     where: { id: bot.id },
     select: { instructions: true },

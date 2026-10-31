@@ -107,6 +107,11 @@ describe("Pi runtime attachments", () => {
         instructions: "test",
         history: [
           {
+            id: "message-0",
+            role: "assistant",
+            content: "Hi there.",
+          },
+          {
             id: "message-1",
             role: "user",
             content: "[image: ticket.png]",
@@ -135,6 +140,15 @@ describe("Pi runtime attachments", () => {
     }
 
     expect(promptCalls.initialMessages).toEqual([
+      // A reply before any user message keeps the user-role form.
+      {
+        role: "user",
+        content: "Assistant: Hi there.",
+        timestamp: expect.any(Number),
+        atlasHistory: true,
+        atlasMessageId: "message-0",
+        atlasCreatedAt: undefined,
+      },
       {
         role: "user",
         content: [
@@ -151,8 +165,12 @@ describe("Pi runtime attachments", () => {
         atlasCreatedAt: undefined,
       },
       {
-        role: "user",
-        content: "Assistant: Got it.",
+        role: "assistant",
+        content: [{ type: "text", text: "Got it." }],
+        provider: "test",
+        model: "vision-test-model",
+        usage: expect.objectContaining({ totalTokens: 0 }),
+        stopReason: "stop",
         timestamp: expect.any(Number),
         atlasHistory: true,
         atlasMessageId: "message-2",

@@ -196,6 +196,8 @@ export function createRuntimeContextPolicy(
     return request.history.find(
       (stored) =>
         content === stored.content ||
+        // Replies now replay as assistant turns; older checkpoints and a reply that opens the
+        // conversation still use the user-role "Assistant: " form.
         (stored.role === "assistant" && content === `Assistant: ${stored.content}`),
     );
   }

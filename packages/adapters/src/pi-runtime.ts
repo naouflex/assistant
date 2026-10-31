@@ -282,6 +282,7 @@ export class PiAgentRuntime implements AgentRuntime {
             withoutSteeringMessages(request.history, initialSteering),
             request.prompt,
             request.sourceMessageId,
+            model,
           );
         const representedHistoryIds = new Set(
           restored
@@ -853,7 +854,15 @@ export class PiAgentRuntime implements AgentRuntime {
               const addedHistory = withoutSteeringMessages(request.history, initialSteering).filter(
                 (message) => message.id && !representedHistoryIds.has(message.id),
               );
-              agent.state.messages.push(...toHistory(addedHistory, ""));
+              agent.state.messages.push(
+                ...toHistory(
+                  addedHistory,
+                  "",
+                  undefined,
+                  model,
+                  agent.state.messages.some((message) => message.role === "user"),
+                ),
+              );
               for (const message of addedHistory)
                 if (message.id) representedHistoryIds.add(message.id);
               for (const item of initialSteering) {
@@ -1012,11 +1021,29 @@ function toPiImages(images: AgentRunRequest["currentTurnImages"]) {
   }));
 }
 
+type HistoryModel = Pick<Model<Api>, "api" | "provider" | "id">;
+
+const EMPTY_USAGE = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+  totalTokens: 0,
+  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+};
+
+/**
+ * Stored replies replay as real assistant turns, so the model sees a normal conversation and the
+ * latest user message stays last. A reply before any user message stays in the older user-role
+ * form, since some providers require the conversation to open with the user.
+ */
 function toHistory(
   history: AgentRunRequest["history"],
   prompt: string,
-  sourceMessageId?: string | null,
-) {
+  sourceMessageId: string | null | undefined,
+  model: HistoryModel,
+  afterUser = false,
+): Message[] {
   let duplicatePromptIndex = -1;
   for (let index = history.length - 1; index >= 0; index -= 1) {
     const message = history[index];
@@ -1032,19 +1059,35 @@ function toHistory(
     duplicatePromptIndex < 0
       ? history
       : history.filter((_, index) => index !== duplicatePromptIndex);
+  let seenUser = afterUser;
   return prior
     .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => {
-      const text = m.role === "assistant" ? `Assistant: ${m.content}` : m.content;
-      const images = m.role === "assistant" ? [] : toPiImages(m.images);
-      return {
-        role: "user" as const,
-        content: images.length ? [{ type: "text" as const, text }, ...images] : text,
+    .map((m): Message => {
+      const metadata = {
         timestamp: Date.now(),
         atlasHistory: true,
         atlasMessageId: m.id,
         atlasCreatedAt: m.createdAt,
       };
+      if (m.role === "assistant" && seenUser)
+        return {
+          role: "assistant",
+          content: [{ type: "text", text: m.content }],
+          api: model.api,
+          provider: model.provider,
+          model: model.id,
+          usage: EMPTY_USAGE,
+          stopReason: "stop",
+          ...metadata,
+        } as Message;
+      if (m.role === "user") seenUser = true;
+      const text = m.role === "assistant" ? `Assistant: ${m.content}` : m.content;
+      const images = m.role === "assistant" ? [] : toPiImages(m.images);
+      return {
+        role: "user" as const,
+        content: images.length ? [{ type: "text" as const, text }, ...images] : text,
+        ...metadata,
+      } as Message;
     });
 }
 
