@@ -2,11 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import {
-  CLIENT_BUILD_HEADER,
-  CLIENT_UPDATE_REQUIRED,
-  SERVER_BUILD_HEADER,
-} from "@rakazo/contracts";
+import { CLIENT_BUILD_HEADER, CLIENT_UPDATE_REQUIRED, SERVER_BUILD_HEADER } from "@atlas/contracts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { clientBuildMiddleware, readDeployedWebBuild } from "./client-build.js";

@@ -1,17 +1,16 @@
-import { ORPCError } from "@orpc/server";
 import {
   effectiveModelRole,
   hasHostedModelCredits,
   isAutoReviewCheckerConfigured,
   PushSessionEndedError,
-} from "@rakazo/adapters";
-import type { ActionApprovalRule, Actor, Me, SettingsScope } from "@rakazo/contracts";
+} from "@atlas/adapters";
+import type { ActionApprovalRule, Actor, Me, SettingsScope } from "@atlas/contracts";
 import {
   approvalModeFromPreference,
   approvalPreferenceFromMode,
   previewActionApprovalRule,
-} from "@rakazo/core";
-import { urlSite } from "@rakazo/core/egress";
+} from "@atlas/core";
+import { urlSite } from "@atlas/core/egress";
 import {
   auditLogOrganization,
   findAutoReviewPreference,
@@ -30,7 +29,8 @@ import {
   saveAutoReviewPreference,
   selectVoicePreference,
   voicePreferenceTarget,
-} from "@rakazo/db";
+} from "@atlas/db";
+import { ORPCError } from "@orpc/server";
 import { aiConsentStatus, allowAiConsent } from "../ai-consent.js";
 import type { BillingService } from "../billing.js";
 import { firstModelConnectAnalytics } from "../model-connect-analytics.js";

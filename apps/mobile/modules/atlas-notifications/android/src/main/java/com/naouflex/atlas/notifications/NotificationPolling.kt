@@ -1,4 +1,4 @@
-package com.rakazo.notifications
+package com.naouflex.atlas.notifications
 
 internal class PollTokenCache {
   @Volatile private var token: String? = null

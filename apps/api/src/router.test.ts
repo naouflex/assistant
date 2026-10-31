@@ -1,13 +1,10 @@
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { InferRouterInitialContext } from "@orpc/server";
-import { createRouterClient } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
-import type { ManagedConnectorProvider } from "@rakazo/adapter-kit";
-import { ConnectorAuthUnavailableError, SecretStoreUnavailableError } from "@rakazo/adapter-kit";
-import type { McpOAuthSummary } from "@rakazo/adapters";
-import * as adapters from "@rakazo/adapters";
+import type { ManagedConnectorProvider } from "@atlas/adapter-kit";
+import { ConnectorAuthUnavailableError, SecretStoreUnavailableError } from "@atlas/adapter-kit";
+import type { McpOAuthSummary } from "@atlas/adapters";
+import * as adapters from "@atlas/adapters";
 import {
   COMPUTER_SCREEN_UNAVAILABLE,
   CodexCatalogCache,
@@ -24,22 +21,25 @@ import {
   parseModelSecret,
   screenLeaseIdForRun,
   serializeModelSecret,
-} from "@rakazo/adapters";
-import type { Actor, Bot, ProductEvent } from "@rakazo/contracts";
+} from "@atlas/adapters";
+import type { Actor, Bot, ProductEvent } from "@atlas/contracts";
 import {
   CONNECTOR_AUTH_UNAVAILABLE,
   MCP_OAUTH_CLIENT_REQUIRED,
   MODEL_KEY_FORMAT_ERROR,
   REPLY_QUOTE_MAX_LENGTH,
-} from "@rakazo/contracts";
-import { openScreenCapability } from "@rakazo/core/node/screen-capability";
-import type { PrismaClient } from "@rakazo/db";
+} from "@atlas/contracts";
+import { openScreenCapability } from "@atlas/core/node/screen-capability";
+import type { PrismaClient } from "@atlas/db";
 import {
   AnswerTooLongError,
   configureProviderTransactionPool,
   runProviderTransaction,
-} from "@rakazo/db";
-import { createLogger, createTestSink, installLogger } from "@rakazo/logging";
+} from "@atlas/db";
+import { createLogger, createTestSink, installLogger } from "@atlas/logging";
+import type { InferRouterInitialContext } from "@orpc/server";
+import { createRouterClient } from "@orpc/server";
+import { RPCHandler } from "@orpc/server/fetch";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mainRole, withModelRoles } from "../../../packages/adapters/src/testing/model-roles.js";
 import type { RouterDeps } from "./router.js";
@@ -72,7 +72,7 @@ async function handle(handler: RouterHandler, ...args: Parameters<RouterHandler[
 describe("account preferences", () => {
   function preferencesDeps(avatarStyle: string, timezone: string | null = null) {
     const update = vi.fn().mockResolvedValue({});
-    const user = { email: "user@rakazo.test", name: "Test User", avatarStyle, timezone };
+    const user = { email: "user@atlas.test", name: "Test User", avatarStyle, timezone };
     const updateMany = vi.fn(
       async ({ where, data }: { where: { timezone: null }; data: { timezone: string } }) => {
         if (user.timezone !== where.timezone) return { count: 0 };
@@ -98,12 +98,12 @@ describe("account preferences", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     return { update, updateMany, deps, actor, handler: new RPCHandler(createRouter(deps)) };
@@ -446,7 +446,7 @@ describe("billing", () => {
     const prisma = {
       user: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
-          email: "user@rakazo.test",
+          email: "user@atlas.test",
           name: "Test User",
           avatarStyle: "robot",
           signupSurvey,
@@ -467,12 +467,12 @@ describe("billing", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner,
     } satisfies Actor;
     return createRouterClient(createRouter(deps), { context: { actor } });
@@ -592,7 +592,7 @@ describe("model setup gate", () => {
     const prisma = {
       user: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
-          email: "user@rakazo.test",
+          email: "user@atlas.test",
           name: "Test User",
           avatarStyle: "robot",
         }),
@@ -629,12 +629,12 @@ describe("model setup gate", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     return { actor, handler: new RPCHandler(createRouter(deps)) };
@@ -803,7 +803,7 @@ describe("thread answer delivery", () => {
     const answerRunInput = vi.fn().mockResolvedValue(true);
     const enqueue = vi.fn().mockRejectedValue(new Error("job broker unavailable"));
     const sink = createTestSink();
-    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
     const prisma = {
       bot: {
         findFirst: vi.fn().mockResolvedValue({
@@ -824,12 +824,12 @@ describe("thread answer delivery", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const handler = new RPCHandler(createRouter(deps));
@@ -864,7 +864,7 @@ describe("thread answer delivery", () => {
     );
     expect(enqueue).toHaveBeenCalledOnce();
     expect(sink.events.some((event) => event.message === "thread answer enqueue")).toBe(true);
-    installLogger(createLogger({ service: "rakazo-api", level: "off", sinks: [] }));
+    installLogger(createLogger({ service: "atlas-api", level: "off", sinks: [] }));
   });
 });
 
@@ -892,7 +892,7 @@ describe("oversized one-time answer", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
@@ -945,7 +945,7 @@ describe("secret request dismissal", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
@@ -1132,12 +1132,12 @@ describe("thread stream authorization", () => {
       prisma,
       events: { follow: vi.fn(() => follow) },
       env: { webOrigin: "http://127.0.0.1:5173", screenProxySecret: "fake-test-secret" },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const stillAuthorized = vi.fn().mockResolvedValue(true);
@@ -1234,12 +1234,12 @@ describe("MCP server deletion", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const handler = new RPCHandler(createRouter(deps));
@@ -1381,12 +1381,12 @@ describe("MCP prepared credential updates", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "space",
       userId: "user",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const client = createRouterClient(createRouter(deps), { context: { actor } as never });
@@ -1466,7 +1466,7 @@ describe("MCP pre-registered OAuth client", () => {
         }),
       },
       user: {
-        findUnique: vi.fn(async () => ({ email: "owner@rakazo.test", emailVerified: true })),
+        findUnique: vi.fn(async () => ({ email: "owner@atlas.test", emailVerified: true })),
       },
       deploymentSettings: { findUnique: vi.fn().mockResolvedValue({ ownerUserId: "owner-1" }) },
       $executeRaw: vi.fn(async () => 1),
@@ -1493,14 +1493,14 @@ describe("MCP pre-registered OAuth client", () => {
         mcpAllowPrivateEndpoint: isDeploymentOwner,
         mcpStdioEnabled: true,
         mcpStdioAllowedCommands: allowedCommands,
-        adminEmails: ["owner@rakazo.test"],
+        adminEmails: ["owner@atlas.test"],
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: isDeploymentOwner ? "owner-1" : "member-1",
-      email: "owner@rakazo.test",
+      email: "owner@atlas.test",
       isDeploymentOwner,
     } satisfies Actor;
     return {
@@ -2020,7 +2020,7 @@ describe("MCP loopback endpoints", () => {
         sandboxProvider: "fake",
         mcpAllowPrivateEndpoint,
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     return { create, handler: new RPCHandler(createRouter(deps)) };
   }
@@ -2029,7 +2029,7 @@ describe("MCP loopback endpoints", () => {
     return {
       spaceId: "workspace-1",
       userId: isDeploymentOwner ? "owner-1" : "member-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner,
     };
   }
@@ -2166,8 +2166,8 @@ describe("MCP server health", () => {
       mcpServerSpace: { findMany: vi.fn(async () => []) },
       secret: { findFirst: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
       user: {
-        findUnique: vi.fn(async () => ({ email: "owner@rakazo.test", emailVerified: true })),
-        findUniqueOrThrow: vi.fn(async () => ({ email: "owner@rakazo.test", name: "Owner" })),
+        findUnique: vi.fn(async () => ({ email: "owner@atlas.test", emailVerified: true })),
+        findUniqueOrThrow: vi.fn(async () => ({ email: "owner@atlas.test", name: "Owner" })),
       },
       deploymentSettings: { findUnique: vi.fn().mockResolvedValue({ ownerUserId: "owner-1" }) },
       $executeRaw: vi.fn(async () => 1),
@@ -2189,9 +2189,9 @@ describe("MCP server health", () => {
         sandboxProvider: "fake",
         mcpStdioEnabled: true,
         mcpStdioAllowedCommands: ["npx"],
-        adminEmails: ["owner@rakazo.test"],
+        adminEmails: ["owner@atlas.test"],
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const clientFor = (actor: Partial<Actor> = {}) =>
       createRouterClient(createRouter(deps), {
@@ -2199,7 +2199,7 @@ describe("MCP server health", () => {
           actor: {
             spaceId: "workspace-1",
             userId: "owner-1",
-            email: "owner@rakazo.test",
+            email: "owner@atlas.test",
             isDeploymentOwner: true,
             ...actor,
           },
@@ -2218,7 +2218,7 @@ describe("MCP server health", () => {
             actor: {
               spaceId: "workspace-1",
               userId: "owner-1",
-              email: "owner@rakazo.test",
+              email: "owner@atlas.test",
               isDeploymentOwner: true,
             },
           } as never,
@@ -2268,7 +2268,7 @@ describe("MCP server health", () => {
 
   it("lets only admins add or change stdio servers", async () => {
     const h = harness();
-    Object.assign(h.deps.env, { adminEmails: ["someone-else@rakazo.test"] });
+    Object.assign(h.deps.env, { adminEmails: ["someone-else@atlas.test"] });
     const refusal = { code: "FORBIDDEN", message: "Only admins can add local MCP servers" };
 
     expect((await h.client.me()).mcpStdioEnabled).toBe(false);
@@ -2580,7 +2580,7 @@ describe("MCP server health", () => {
           actor: {
             spaceId: "workspace-1",
             userId: "owner-1",
-            email: "owner@rakazo.test",
+            email: "owner@atlas.test",
             isDeploymentOwner: true,
           },
         } as never,
@@ -2613,7 +2613,7 @@ describe("MCP server health", () => {
           actor: {
             spaceId: "workspace-1",
             userId: "owner-1",
-            email: "owner@rakazo.test",
+            email: "owner@atlas.test",
             isDeploymentOwner: true,
           },
         } as never,
@@ -2646,7 +2646,7 @@ describe("MCP server health", () => {
           actor: {
             spaceId: "workspace-1",
             userId: "owner-1",
-            email: "owner@rakazo.test",
+            email: "owner@atlas.test",
             isDeploymentOwner: true,
           },
         } as never,
@@ -2685,7 +2685,7 @@ describe("private API connectors", () => {
         sandboxProvider: "fake",
         mcpAllowPrivateEndpoint,
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     return { create, handler: new RPCHandler(createRouter(deps)) };
   }
@@ -2694,7 +2694,7 @@ describe("private API connectors", () => {
     return {
       spaceId: "workspace-1",
       userId: isDeploymentOwner ? "owner-1" : "member-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner,
     };
   }
@@ -2782,12 +2782,12 @@ describe("connections.begin", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const handler = new RPCHandler(createRouter(deps));
@@ -2874,7 +2874,7 @@ describe("connections.begin", () => {
           screenProxySecret: "fake-test-secret",
           sandboxProvider: "fake",
         },
-        dataDir: "/tmp/rakazo-router-test",
+        dataDir: "/tmp/atlas-router-test",
       } as unknown as RouterDeps),
     );
     try {
@@ -2893,7 +2893,7 @@ describe("connections.begin", () => {
             actor: {
               spaceId: "workspace-1",
               userId: "user-1",
-              email: "user@rakazo.test",
+              email: "user@atlas.test",
               isDeploymentOwner: true,
             },
           },
@@ -2945,7 +2945,7 @@ describe("connections.begin", () => {
           screenProxySecret: "fake-test-secret",
           sandboxProvider: "fake",
         },
-        dataDir: "/tmp/rakazo-router-test",
+        dataDir: "/tmp/atlas-router-test",
       } as unknown as RouterDeps),
     );
 
@@ -2964,7 +2964,7 @@ describe("connections.begin", () => {
           actor: {
             spaceId: "workspace-1",
             userId: "user-1",
-            email: "user@rakazo.test",
+            email: "user@atlas.test",
             isDeploymentOwner: true,
           },
         },
@@ -3096,7 +3096,7 @@ describe("connections.complete", () => {
             actor: {
               spaceId: "workspace-1",
               userId: "user-1",
-              email: "user@rakazo.test",
+              email: "user@atlas.test",
               isDeploymentOwner: true,
             },
           },
@@ -3172,12 +3172,12 @@ describe("connections.complete", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const handler = new RPCHandler(createRouter(deps));
@@ -3238,7 +3238,7 @@ describe("connections.complete", () => {
             screenProxySecret: "fake-test-secret",
             sandboxProvider: "fake",
           },
-          dataDir: "/tmp/rakazo-router-test",
+          dataDir: "/tmp/atlas-router-test",
         } as unknown as RouterDeps),
       );
       let releaseSlot = () => {};
@@ -3267,7 +3267,7 @@ describe("connections.complete", () => {
               actor: {
                 spaceId: "workspace-1",
                 userId: "user-1",
-                email: "user@rakazo.test",
+                email: "user@atlas.test",
                 isDeploymentOwner: true,
               },
             },
@@ -3364,7 +3364,7 @@ describe("connections.complete", () => {
           screenProxySecret: "fake-test-secret",
           sandboxProvider: "fake",
         },
-        dataDir: "/tmp/rakazo-router-test",
+        dataDir: "/tmp/atlas-router-test",
       } as unknown as RouterDeps),
     );
     const completeRequest = (connectionId: string, spaceId: string, userId: string) =>
@@ -3378,7 +3378,7 @@ describe("connections.complete", () => {
         {
           prefix: "/rpc",
           context: {
-            actor: { spaceId, userId, email: `${userId}@rakazo.test`, isDeploymentOwner: true },
+            actor: { spaceId, userId, email: `${userId}@atlas.test`, isDeploymentOwner: true },
           },
         },
       );
@@ -3406,7 +3406,7 @@ describe("connections.complete", () => {
   });
 
   afterEach(() => {
-    installLogger(createLogger({ service: "rakazo-api", level: "off", sinks: [] }));
+    installLogger(createLogger({ service: "atlas-api", level: "off", sinks: [] }));
   });
 
   function pollFixture(status: string) {
@@ -3470,7 +3470,7 @@ describe("connections.complete", () => {
       } as unknown as RouterDeps),
     );
     const sink = createTestSink();
-    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
     async function complete(connectionId = row.id, signal?: AbortSignal) {
       return call("complete", connectionId, signal);
     }
@@ -3491,7 +3491,7 @@ describe("connections.complete", () => {
             actor: {
               spaceId: "workspace-1",
               userId: "user-1",
-              email: "user@rakazo.test",
+              email: "user@atlas.test",
               isDeploymentOwner: true,
             },
             signal,
@@ -3648,14 +3648,14 @@ describe("connections.complete", () => {
           actor: {
             spaceId: "workspace-1",
             userId: "user-1",
-            email: "user@rakazo.test",
+            email: "user@atlas.test",
             isDeploymentOwner: true,
           },
         } as never,
       },
     );
     const sink = createTestSink();
-    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
 
     await client.connections.catalog({ connectorId: "composio" });
     await client.connections.catalog({ connectorId: "composio" });
@@ -3682,7 +3682,7 @@ describe("updater owner gate", () => {
     const prisma = {
       user: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
-          email: "user@rakazo.test",
+          email: "user@atlas.test",
           name: "Test User",
           avatarStyle: "robot",
         }),
@@ -3700,7 +3700,7 @@ describe("updater owner gate", () => {
         sandboxProvider: "fake",
         gitSha: "deadbeef",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     return { deps, handler: new RPCHandler(createRouter(deps)) };
   }
@@ -3710,7 +3710,7 @@ describe("updater owner gate", () => {
     const actor = {
       spaceId: "workspace-1",
       userId: "user-2",
-      email: "member@rakazo.test",
+      email: "member@atlas.test",
       isDeploymentOwner: false,
     } satisfies Actor;
 
@@ -3732,7 +3732,7 @@ describe("updater owner gate", () => {
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "owner@rakazo.test",
+      email: "owner@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
 
@@ -3754,7 +3754,7 @@ describe("updater owner gate", () => {
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "owner@rakazo.test",
+      email: "owner@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
 
@@ -3776,7 +3776,7 @@ describe("computer screen url", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const computerRow = {
@@ -3823,7 +3823,7 @@ describe("computer screen url", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "e2b",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const handler = new RPCHandler(createRouter(deps));
     const response = await handle(
@@ -3916,7 +3916,7 @@ describe("computer terminal and file transfer", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const controlled = {
@@ -3974,7 +3974,7 @@ describe("computer terminal and file transfer", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "docker",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const handler = new RPCHandler(createRouter(deps));
     const call = async (procedure: string, json: Record<string, unknown>) => {
@@ -4238,7 +4238,7 @@ describe("integration setup authorization", () => {
             actor: {
               userId: "user",
               spaceId: "space",
-              email: "user@rakazo.test",
+              email: "user@atlas.test",
               isDeploymentOwner: owner,
             },
           },
@@ -4272,7 +4272,7 @@ describe("integration setup authorization", () => {
           actor: {
             userId: "member",
             spaceId: "space",
-            email: "member@rakazo.test",
+            email: "member@atlas.test",
             isDeploymentOwner: false,
           },
         },
@@ -4325,7 +4325,7 @@ describe("OpenAI-compatible model probes", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const baseUrl = "https://127.0.0.1:8000/v1";
@@ -4622,7 +4622,7 @@ describe("OpenAI-compatible model probes", () => {
   });
 
   it("still rejects saved keys on public HTTP endpoints", async () => {
-    vi.stubEnv("RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC", "1");
+    vi.stubEnv("ATLAS_OPENAI_COMPAT_ALLOW_PUBLIC", "1");
     try {
       const { client, fetch, load } = fixture();
       const baseUrl = "http://example.invalid/v1";
@@ -4641,7 +4641,7 @@ describe("model credential persistence", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
 
@@ -5393,7 +5393,7 @@ describe("model disconnect", () => {
   const actor = {
     spaceId: "space-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const connection = (id: string) => ({
@@ -5494,7 +5494,7 @@ describe("bot intro run", () => {
   const actor = {
     spaceId: "space-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const bot = { id: "bot-1", threadId: "thread-1" } as unknown as Bot;
@@ -5636,7 +5636,7 @@ describe("codex catalog auth", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const spark = "gpt-5.3-codex-spark";
@@ -5725,7 +5725,7 @@ describe("codex live catalog", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const spark = "gpt-5.3-codex-spark";
@@ -6244,7 +6244,7 @@ describe("model set default auth", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const spark = "gpt-5.3-codex-spark";
@@ -6630,7 +6630,7 @@ describe("bot model auth on save", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const spark = "gpt-5.3-codex-spark";
@@ -6927,7 +6927,7 @@ describe("bot restore computer quota", () => {
             actor: {
               spaceId: "space-1",
               userId: "user-1",
-              email: "user@rakazo.test",
+              email: "user@atlas.test",
               isDeploymentOwner: true,
             },
           },
@@ -6985,7 +6985,7 @@ describe("group restore with archived bots", () => {
     const call = async () =>
       handle(
         handler,
-        new Request("http://rakazo.test/rpc/groups/restore", {
+        new Request("http://atlas.test/rpc/groups/restore", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ json: { groupId: "group-1" } }),
@@ -7043,7 +7043,7 @@ describe("routine live Codex model validation", () => {
   it.each(["create", "update"] as const)(
     "saves a listed live-only model on %s and rejects an unlisted id",
     async (operation) => {
-      const actor = { userId: "user-1", spaceId: "space-1", email: "user@rakazo.test" };
+      const actor = { userId: "user-1", spaceId: "space-1", email: "user@atlas.test" };
       const modelId = "gpt-6-luna-latest";
       const stamp = new Date("2026-01-01T00:00:00Z");
       const row = {
@@ -7203,7 +7203,7 @@ describe("routines.update", () => {
   const actor = {
     spaceId: "space-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const routine = {
@@ -7558,7 +7558,7 @@ describe("openai-compatible enabled models", () => {
   const actor = {
     spaceId: "space-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const compatible = "openai-compatible";
@@ -8484,7 +8484,7 @@ describe("threads.answerCall and threads.declineCall", () => {
     const actor = {
       spaceId: "space-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const handler = new RPCHandler(createRouter(deps));
@@ -8601,7 +8601,7 @@ describe("threads.endCall", () => {
     const actor = {
       spaceId: "space-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
     const handler = new RPCHandler(createRouter(deps));
@@ -8778,14 +8778,14 @@ describe("groups.archive", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "fake",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
       sandbox: { releaseScreen, execute },
       jobs: { cancel: vi.fn().mockResolvedValue(undefined) },
     } as unknown as RouterDeps;
     const actor = {
       spaceId: "workspace-1",
       userId: "user-1",
-      email: "user@rakazo.test",
+      email: "user@atlas.test",
       isDeploymentOwner: true,
     } satisfies Actor;
 
@@ -8841,7 +8841,7 @@ describe("boards.rename", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
 
@@ -8996,7 +8996,7 @@ describe("boards.tickets.list", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
 
@@ -9044,7 +9044,7 @@ describe("export.bot", () => {
   const actor = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
   const roots: string[] = [];
@@ -9054,7 +9054,7 @@ describe("export.bot", () => {
   });
 
   async function homeWith(files: Record<string, string | Uint8Array>) {
-    const root = await mkdtemp(path.join(tmpdir(), "rakazo-export-"));
+    const root = await mkdtemp(path.join(tmpdir(), "atlas-export-"));
     roots.push(root);
     const home = new LocalAgentHomeStore(root);
     for (const [file, content] of Object.entries(files)) {
@@ -9068,7 +9068,7 @@ describe("export.bot", () => {
   async function exportManifest(
     scope: "team" | "dedicated",
     home: LocalAgentHomeStore,
-    appearance?: { color: string; avatarSet?: "organic" | "rakazo" },
+    appearance?: { color: string; avatarSet?: "organic" | "atlas" },
   ) {
     const prisma = {
       bot: {
@@ -9095,7 +9095,7 @@ describe("export.bot", () => {
         screenProxySecret: "fake-test-secret",
         sandboxProvider: "docker",
       },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const client = createRouterClient(createRouter(deps), { context: { actor } as never });
     const manifest = await client.export.bot({ botId: "bot-1" });
@@ -9111,9 +9111,9 @@ describe("export.bot", () => {
     async (color) => {
       const manifest = await exportManifest("team", await homeWith({}), {
         color,
-        avatarSet: "rakazo",
+        avatarSet: "atlas",
       });
-      expect(manifest.bot).toMatchObject({ color, avatarSet: "rakazo" });
+      expect(manifest.bot).toMatchObject({ color, avatarSet: "atlas" });
     },
   );
 
@@ -9202,7 +9202,7 @@ describe("link favicons", () => {
       prisma: {} as PrismaClient,
       favicons: { favicon },
       env: { webOrigin: "http://127.0.0.1:5173", screenProxySecret: "fake-test-secret" },
-      dataDir: "/tmp/rakazo-router-test",
+      dataDir: "/tmp/atlas-router-test",
     } as unknown as RouterDeps;
     const client = createRouterClient(createRouter(deps), { context: { actor } });
     return { client, favicon };
@@ -9211,7 +9211,7 @@ describe("link favicons", () => {
   const reader = {
     spaceId: "workspace-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: false,
   } satisfies Actor;
 
@@ -9255,7 +9255,7 @@ describe("link favicons", () => {
 });
 
 describe("memory documents", () => {
-  const actor = { userId: "user-1", spaceId: "space-1", email: "user@rakazo.test" };
+  const actor = { userId: "user-1", spaceId: "space-1", email: "user@atlas.test" };
 
   function memoryClient(
     doc: { id: string; path: string; scope: string; botId: string | null } | null,
@@ -9328,7 +9328,7 @@ describe("routine watch creation boundaries", () => {
   const actor = {
     spaceId: "space-1",
     userId: "user-1",
-    email: "user@rakazo.test",
+    email: "user@atlas.test",
     isDeploymentOwner: true,
   } satisfies Actor;
 
@@ -9558,7 +9558,7 @@ describe("quarantined computer stop", () => {
               actor: {
                 userId: "user",
                 spaceId: "space",
-                email: "user@rakazo.test",
+                email: "user@atlas.test",
                 isDeploymentOwner: true,
               },
             },

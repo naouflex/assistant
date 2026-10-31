@@ -1,4 +1,4 @@
-import { displayIdentityResult, identitySource } from "@rakazo/core";
+import { displayIdentityResult, identitySource } from "@atlas/core";
 import { Directory, File, Paths } from "expo-file-system";
 import type {
   MobileBot,

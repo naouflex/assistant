@@ -3,9 +3,9 @@ Description=Notify operators when a production backup fails
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/rakazo-host-alert backup-failure "Nightly backup failed. Inspect rakazo-backup.service on the server."
-StateDirectory=rakazo/alerts
+ExecStart=/usr/local/sbin/atlas-host-alert backup-failure "Nightly backup failed. Inspect atlas-backup.service on the server."
+StateDirectory=atlas/alerts
 StateDirectoryMode=0700
 ProtectSystem=strict
-ReadWritePaths=/var/lib/rakazo/alerts
+ReadWritePaths=/var/lib/atlas/alerts
 PrivateTmp=true

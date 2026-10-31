@@ -1,5 +1,5 @@
-import type { AdapterContext, ComputerRef } from "@rakazo/adapter-kit";
-import * as Logging from "@rakazo/logging";
+import type { AdapterContext, ComputerRef } from "@atlas/adapter-kit";
+import * as Logging from "@atlas/logging";
 import { describe, expect, it, vi } from "vitest";
 import {
   browserActFromTool,

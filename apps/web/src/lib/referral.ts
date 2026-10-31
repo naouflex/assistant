@@ -1,6 +1,6 @@
 import { rpc } from "./rpc";
 
-const STORAGE_KEY = "rakazo:referral";
+const STORAGE_KEY = "atlas:referral";
 
 /** Keeps an invite code from the landing URL until the account exists to claim it. */
 export function captureReferral(search: string): void {

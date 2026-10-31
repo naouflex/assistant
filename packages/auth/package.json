@@ -1,5 +1,5 @@
 {
-  "name": "@rakazo/auth",
+  "name": "@atlas/auth",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -17,11 +17,11 @@
   "dependencies": {
     "@better-auth/expo": "1.7.12",
     "@better-auth/passkey": "1.7.12",
-    "@rakazo/adapter-kit": "workspace:*",
-    "@rakazo/contracts": "workspace:*",
-    "@rakazo/core": "workspace:*",
-    "@rakazo/db": "workspace:*",
-    "@rakazo/ui-tokens": "workspace:*",
+    "@atlas/adapter-kit": "workspace:*",
+    "@atlas/contracts": "workspace:*",
+    "@atlas/core": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/ui-tokens": "workspace:*",
     "better-auth": "1.7.12",
     "react": "19.2.3",
     "react-dom": "19.2.3",

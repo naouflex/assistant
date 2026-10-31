@@ -1,6 +1,6 @@
-import type { Connection, ConnectionCatalogItem, Routine } from "@rakazo/contracts";
-import type { MentionPickerConnector } from "@rakazo/core";
-import { createRoutineMentionBatcher, mentionConnectorsFrom } from "@rakazo/core";
+import type { Connection, ConnectionCatalogItem, Routine } from "@atlas/contracts";
+import type { MentionPickerConnector } from "@atlas/core";
+import { createRoutineMentionBatcher, mentionConnectorsFrom } from "@atlas/core";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { captureApiRequestContext, currentApiBase, rpc, selectedSpaceId } from "./api";
 import { currentSessionGeneration, subscribeSessionGeneration } from "./session";
@@ -90,7 +90,7 @@ export function useThreadMentionCatalog(owner: string, bots: readonly MentionBot
       if (
         requestContext.apiBase !== apiBase ||
         requestContext.sessionGeneration !== generation ||
-        (requestContext.headers["x-rakazo-space-id"] ?? null) !== spaceId
+        (requestContext.headers["x-atlas-space-id"] ?? null) !== spaceId
       ) {
         invalidateActivation();
         return;

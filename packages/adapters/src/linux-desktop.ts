@@ -9,8 +9,8 @@ import type {
   ScreenRequest,
   ScreenSession,
   TerminalRequest,
-} from "@rakazo/adapter-kit";
-import type { DesktopEnvironment } from "@rakazo/core/node/desktop-runtime";
+} from "@atlas/adapter-kit";
+import type { DesktopEnvironment } from "@atlas/core/node/desktop-runtime";
 import {
   BROWSER_APPLICATIONS,
   browserLauncherPath,
@@ -24,7 +24,7 @@ import {
   screenPorts,
   shellQuote,
   stopAllDesktopBrowsersCommand,
-} from "@rakazo/core/node/desktop-runtime";
+} from "@atlas/core/node/desktop-runtime";
 import {
   BrowserStoppedReleaseError,
   ComputerScreenUnavailableError,
@@ -92,7 +92,7 @@ export class LinuxDesktop {
       managedDesktopCommand(key, context.screenLeaseId, env, randomUUID()),
       context,
     );
-    const match = output.match(/RAKAZO_DESKTOP=(\d+):([a-zA-Z0-9_-]+)/);
+    const match = output.match(/ATLAS_DESKTOP=(\d+):([a-zA-Z0-9_-]+)/);
     if (!match) throw new ComputerScreenUnavailableError();
     const index = Number(match[1]);
     const ports = screenPorts(index, env);
@@ -244,7 +244,7 @@ export class LinuxDesktop {
       releaseDesktopCommand(key, context.screenLeaseId, env),
       context,
     );
-    if (result.stdout.includes("RAKAZO_DESKTOP_RELEASED=")) {
+    if (result.stdout.includes("ATLAS_DESKTOP_RELEASED=")) {
       if (result.code !== 0 && result.code !== 75) throw new BrowserStoppedReleaseError();
       return;
     }
@@ -272,7 +272,7 @@ function browserActionCommand(
         ? (action.uri ?? "about:blank")
         : undefined;
   if (browser !== undefined) {
-    return `nohup ${browserLauncherPath(layout.displayNumber)} ${shellQuote(browser)} </dev/null >/tmp/rakazo/browser-open-${layout.displayNumber}.log 2>&1 &`;
+    return `nohup ${browserLauncherPath(layout.displayNumber)} ${shellQuote(browser)} </dev/null >/tmp/atlas/browser-open-${layout.displayNumber}.log 2>&1 &`;
   }
   const workspace = env.workspaceDir;
   return `cd ${shellQuote(workspace)}\n${extraDisplayActionCommand(layout, action.kind === "open" ? { ...action, path: workspacePath(workspace, action.path) } : action)}`;
@@ -288,7 +288,7 @@ function isChromiumBrowser(application: string) {
   return BROWSER_APPLICATIONS.has(application.toLowerCase());
 }
 
-// Same 0.2s quick-failure window as rakazo-focus-or-launch. A GUI that stays
+// Same 0.2s quick-failure window as atlas-focus-or-launch. A GUI that stays
 // up is success; an immediate non-zero exit fails the focus before the old
 // window is raised or a new one is awaited.
 const FOCUS_LAUNCH_PROBE = [
@@ -302,7 +302,7 @@ const FOCUS_LAUNCH_PROBE = [
 
 /**
  * Raise an app's existing window by WM_CLASS, else spawn it — the focus primitive
- * rakazo-focus-or-launch provides inside the computer image, inline for provider desktops.
+ * atlas-focus-or-launch provides inside the computer image, inline for provider desktops.
  * A URI still starts the launcher (Chrome forwards URLs into its live window) without
  * waiting for that process to exit before the match is raised.
  */
@@ -314,10 +314,10 @@ function focusOrLaunchActionCommand(
   const binary = (action.application.split("/").pop() ?? "").replaceAll(/[^A-Za-z0-9_-]/g, "");
   const quotedApp = shellQuote(action.application);
   const quotedArg = action.uri === undefined ? "" : ` ${shellQuote(action.uri)}`;
-  // Like rakazo-focus-or-launch, the launch never adopts the app's lifetime: a GUI that stays
+  // Like atlas-focus-or-launch, the launch never adopts the app's lifetime: a GUI that stays
   // up must not hold the command open, and one that exits at once with an error still fails.
   const launch = browser
-    ? `nohup ${browserLauncherPath(layout.displayNumber)} ${shellQuote(action.uri ?? "about:blank")} </dev/null >/tmp/rakazo/browser-open-${layout.displayNumber}.log 2>&1 &`
+    ? `nohup ${browserLauncherPath(layout.displayNumber)} ${shellQuote(action.uri ?? "about:blank")} </dev/null >/tmp/atlas/browser-open-${layout.displayNumber}.log 2>&1 &`
     : `DISPLAY=${layout.display} python3 -c ${shellQuote(FOCUS_LAUNCH_PROBE)} ${quotedApp}${quotedArg} || exit $?`;
   if (!browser && !binary) return launch;
   const classCase = browser ? CHROME_WM_CLASSES : binary.toLowerCase();
@@ -356,9 +356,9 @@ function focusOrLaunchActionCommand(
           "  fi",
         ]
       : ["  wid=$id", "  break"]),
-    "done <<RAKAZO_WINDOWS",
+    "done <<ATLAS_WINDOWS",
     `$(DISPLAY=${layout.display} wmctrl -lxp 2>/dev/null || true)`,
-    "RAKAZO_WINDOWS",
+    "ATLAS_WINDOWS",
     'if [ -z "$wid" ] && [ "$saw_profile" -eq 0 ]; then wid=$fallback; fi',
     'if [ -n "$wid" ]; then',
     ...(action.uri !== undefined ? [`  ${launch}`] : []),
@@ -379,7 +379,7 @@ const FIND_MISSING_DESKTOP_TOOLS = [
 ];
 
 /**
- * Same as infra/sandboxes/computer/browser-policy.json. Rakazo keeps credentials itself, so
+ * Same as infra/sandboxes/computer/browser-policy.json. Atlas keeps credentials itself, so
  * the browser's save-password, address, and card prompts only cover the page.
  */
 export const BROWSER_POLICY = JSON.stringify({
@@ -417,9 +417,9 @@ export const PREPARE_LINUX_DESKTOP = [
   "fi",
   `policy=${shellQuote(BROWSER_POLICY)}`,
   `for dir in ${BROWSER_POLICY_DIRS.join(" ")}; do`,
-  '  [ "$(cat "$dir/rakazo-browser.json" 2>/dev/null)" = "$policy" ] && continue',
+  '  [ "$(cat "$dir/atlas-browser.json" 2>/dev/null)" = "$policy" ] && continue',
   // A sandbox without root keeps working; its browser just shows the prompts.
-  '  printf \'%s\\n\' "$policy" | $root sh -c \'mkdir -p "$1" && cat > "$1/rakazo-browser.json"\' sh "$dir" || echo "could not set browser policy in $dir" >&2',
+  '  printf \'%s\\n\' "$policy" | $root sh -c \'mkdir -p "$1" && cat > "$1/atlas-browser.json"\' sh "$dir" || echo "could not set browser policy in $dir" >&2',
   "done",
 ].join("\n");
 
@@ -427,7 +427,7 @@ export const PREPARE_LINUX_DESKTOP = [
 export const INSTALL_LINUX_BROWSER = [
   "if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then",
   '  if [ "$(id -u)" -eq 0 ]; then root=""; else root="sudo -n"; fi',
-  "  package=$(mktemp /tmp/rakazo-chrome-XXXXXX.deb)",
+  "  package=$(mktemp /tmp/atlas-chrome-XXXXXX.deb)",
   "  trap 'rm -f \"$package\"' EXIT",
   '  curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o "$package"',
   '  $root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$package"',

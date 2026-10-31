@@ -1,17 +1,5 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import type { CreateSandboxFromSnapshotParams, DaytonaConfig, Sandbox } from "@daytona/sdk";
-import {
-  Daytona,
-  DaytonaBadRequestError,
-  DaytonaConflictError,
-  DaytonaError,
-  DaytonaGoneError,
-  DaytonaNotFoundError,
-  DaytonaProcessExecutionTimeoutError,
-  DaytonaTimeoutError,
-  SandboxState,
-} from "@daytona/sdk";
 import type {
   AdapterContext,
   CommandRequest,
@@ -27,9 +15,21 @@ import type {
   ScreenRequest,
   ScreenSession,
   TerminalRequest,
-} from "@rakazo/adapter-kit";
-import { abortableDelay, boundedSandboxCommandTimeoutMs } from "@rakazo/core";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/adapter-kit";
+import { abortableDelay, boundedSandboxCommandTimeoutMs } from "@atlas/core";
+import { getLogger } from "@atlas/logging";
+import type { CreateSandboxFromSnapshotParams, DaytonaConfig, Sandbox } from "@daytona/sdk";
+import {
+  Daytona,
+  DaytonaBadRequestError,
+  DaytonaConflictError,
+  DaytonaError,
+  DaytonaGoneError,
+  DaytonaNotFoundError,
+  DaytonaProcessExecutionTimeoutError,
+  DaytonaTimeoutError,
+  SandboxState,
+} from "@daytona/sdk";
 import { screenSessionKey } from "./computer-screens.js";
 import { normalizeWorkspacePath, shellQuote, workspacePath } from "./computer-support.js";
 import { PORTABLE_TRANSFER_BATCH_BYTES } from "./computer-workspace.js";
@@ -198,14 +198,14 @@ export class DaytonaSandboxProvider implements SandboxProvider {
 
     // The unique name lets a create that fails after Daytona accepted it find and delete the
     // sandbox: it never auto-stops or auto-deletes, so a leaked one bills until removed.
-    const name = `rakazo-${randomUUID()}`;
+    const name = `atlas-${randomUUID()}`;
     let sandbox: DaytonaSandbox;
     try {
       sandbox = await this.client.create(
         {
           name,
           ...(this.snapshotName ? { snapshot: this.snapshotName } : {}),
-          labels: { botId: request.botId, rakazo: "computer" },
+          labels: { botId: request.botId, atlas: "computer" },
           envVars: { VNC_RESOLUTION: "1280x800" },
           autoStopInterval: 0,
           autoDeleteInterval: -1,
@@ -540,7 +540,7 @@ export class DaytonaSandboxProvider implements SandboxProvider {
     if (cached) return cached;
     const home = (await sandbox.getUserHomeDir()) ?? (await sandbox.getWorkDir());
     if (!home) throw new Error("Daytona did not report a sandbox home directory");
-    const root = path.posix.join(home, "rakazo-home");
+    const root = path.posix.join(home, "atlas-home");
     if (this.boxes.get(sandbox.id) === sandbox) this.workspaceRoots.set(sandbox.id, root);
     return root;
   }
@@ -853,7 +853,7 @@ function daytonaCwd(root: string, cwd: string | undefined): string {
     !cwd ||
     cwd === "." ||
     cwd === "/" ||
-    cwd === "/home/rakazo" ||
+    cwd === "/home/atlas" ||
     cwd === "/home/user" ||
     cwd === "/home/daytona" ||
     cwd === root

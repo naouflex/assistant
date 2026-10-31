@@ -1,5 +1,5 @@
-import type { LoginFieldInput } from "@rakazo/contracts";
-import { LoginSecretValue, loginCardFields } from "@rakazo/contracts";
+import type { LoginFieldInput } from "@atlas/contracts";
+import { LoginSecretValue, loginCardFields } from "@atlas/contracts";
 import { useEffect, useRef, useState } from "react";
 import type { TextInput } from "react-native";
 import { Modal, Platform, ScrollView, StyleSheet, Text, View } from "react-native";

@@ -1,8 +1,8 @@
+import { MEMORY_REVISION_CONFLICT_ERROR } from "@atlas/adapter-kit";
+import { isScratchpadStatus, listScratchpadItems, mapScratchpadItem } from "@atlas/adapters";
+import { isDeletableMemoryDocument } from "@atlas/contracts";
+import { findSpaceMemoryConfig, IsolationError } from "@atlas/db";
 import { ORPCError } from "@orpc/server";
-import { MEMORY_REVISION_CONFLICT_ERROR } from "@rakazo/adapter-kit";
-import { isScratchpadStatus, listScratchpadItems, mapScratchpadItem } from "@rakazo/adapters";
-import { isDeletableMemoryDocument } from "@rakazo/contracts";
-import { findSpaceMemoryConfig, IsolationError } from "@rakazo/db";
 import {
   disconnectMemoryProvider,
   persistMemoryProviderConfig,

@@ -17,13 +17,13 @@ import type {
   ScreenSession,
   WorkspaceDirectoryRequest,
   WorkspaceExportLimits,
-} from "@rakazo/adapter-kit";
+} from "@atlas/adapter-kit";
 import {
   SandboxUnavailableError,
   SandboxUnresponsiveError,
   WorkspaceTooLargeError,
-} from "@rakazo/adapter-kit";
-import { boundedSandboxCommandTimeoutMs } from "@rakazo/core";
+} from "@atlas/adapter-kit";
+import { boundedSandboxCommandTimeoutMs } from "@atlas/core";
 import { boundedComputerActions, computerObservation } from "./computer-support.js";
 import { normalizeDesktopWorkspacePath } from "./desktop-sandbox-paths.js";
 import { McpSession } from "./mcp-transport.js";
@@ -47,7 +47,7 @@ const RUN_POLL_MS = 1_000;
 const MAX_STREAM_BYTES = 8 * 1024 * 1024;
 const HOME_KEY = /^[A-Za-z0-9_-]+$/;
 /** Windows has no executable bit, so each home records which of its files carry one. */
-const EXECUTABLES_FILE = ".rakazo-executables.json";
+const EXECUTABLES_FILE = ".atlas-executables.json";
 
 /** A tool the gateway ran and refused, with the gateway's error code such as `not_found`. */
 export class WuyingToolError extends Error {
@@ -143,7 +143,7 @@ export class WuyingMcpTools implements WuyingDesktopTools {
 
   private connect(signal: AbortSignal) {
     this.session ??= (async () => {
-      const session = new McpSession({ name: "rakazo-wuying" });
+      const session = new McpSession({ name: "atlas-wuying" });
       await session.connectRemote({
         url: this.options.url,
         headerPolicy: { headers: { Authorization: `Bearer ${this.options.token}` } },
@@ -544,7 +544,7 @@ export class WuyingSandboxProvider implements SandboxProvider {
     context: AdapterContext,
   ): AsyncIterable<ProcessEvent> {
     const { signal } = context;
-    const dir = `${await this.userProfile(signal)}\\rakazo\\.runs\\${randomUUID()}`;
+    const dir = `${await this.userProfile(signal)}\\atlas\\.runs\\${randomUUID()}`;
     const paths = {
       cwd: command.cwd,
       out: `${dir}\\stdout`,
@@ -662,7 +662,7 @@ export class WuyingSandboxProvider implements SandboxProvider {
    * Windows' own SendKeys from a windowless script that leaves the foreground window focused.
    */
   private async sendKeys(keys: string, signal: AbortSignal) {
-    const dir = `${await this.userProfile(signal)}\\rakazo\\.runs\\${randomUUID()}`;
+    const dir = `${await this.userProfile(signal)}\\atlas\\.runs\\${randomUUID()}`;
     const done = `${dir}\\done`;
     await this.mkdirs(dir, signal);
     try {
@@ -979,7 +979,7 @@ export class WuyingSandboxProvider implements SandboxProvider {
 
   private async home(homeKey: string, signal: AbortSignal) {
     if (!HOME_KEY.test(homeKey)) throw new Error("computer home key is not portable");
-    return `${await this.userProfile(signal)}\\rakazo\\${homeKey}`;
+    return `${await this.userProfile(signal)}\\atlas\\${homeKey}`;
   }
 
   private userProfile(signal: AbortSignal) {

@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import Mock, patch
 from urllib.parse import urlsplit
 
-loader = importlib.machinery.SourceFileLoader("page_browser", str(Path(__file__).with_name("rakazo-page-browser")))
+loader = importlib.machinery.SourceFileLoader("page_browser", str(Path(__file__).with_name("atlas-page-browser")))
 spec = importlib.util.spec_from_loader(loader.name, loader)
 helper = importlib.util.module_from_spec(spec)
 loader.exec_module(helper)
@@ -150,8 +150,8 @@ class PageBrowserTest(unittest.TestCase):
         self.assertEqual(client._requests[("s", "r1")], [5.0, None])
 
     def test_closed_stdin_cancels_helper_without_a_browser(self):
-        with subprocess.Popen([sys.executable, str(Path(__file__).with_name("rakazo-page-browser")), "snapshot", "{}"],
-                              env={**os.environ, "RAKAZO_BROWSER_WATCH_STDIN": "1", "RAKAZO_CDP_PORT": "0"},
+        with subprocess.Popen([sys.executable, str(Path(__file__).with_name("atlas-page-browser")), "snapshot", "{}"],
+                              env={**os.environ, "ATLAS_BROWSER_WATCH_STDIN": "1", "ATLAS_CDP_PORT": "0"},
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
             process.stdin.close()
             self.assertEqual(process.wait(timeout=3), 130)
@@ -160,7 +160,7 @@ class PageBrowserTest(unittest.TestCase):
         out = []
         with patch.object(helper, "wait_for_cdp", side_effect=RuntimeError("CDP not ready on port 9222: refused")), \
                 patch("builtins.print", side_effect=out.append):
-            code = helper.run(["rakazo-page-browser", "act", json.dumps({"actions": [{"kind": "click", "ref": "e1"}]})])
+            code = helper.run(["atlas-page-browser", "act", json.dumps({"actions": [{"kind": "click", "ref": "e1"}]})])
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(out[0]), {"ok": False, "error": "CDP not ready on port 9222: refused",
                                               "fallback": "computer_act", "uncertain": False})
@@ -425,7 +425,7 @@ class PageBrowserTest(unittest.TestCase):
             ])
         self.assertEqual(
             evaluate.call_args_list[1].args[2],
-            'window.__rakazoPageBrowser.fill("e1", "fake-password", "https://login.example.test", "password")',
+            'window.__atlasPageBrowser.fill("e1", "fake-password", "https://login.example.test", "password")',
         )
 
     def test_reports_a_refused_fill_as_settled_with_its_reason(self):
@@ -464,7 +464,7 @@ class PageBrowserTest(unittest.TestCase):
             ])
         self.assertEqual(
             evaluate.call_args_list[1].args[2],
-            'window.__rakazoPageBrowser.fill("e1", "4242424242424242", "https://shop.example.test", "card")',
+            'window.__atlasPageBrowser.fill("e1", "4242424242424242", "https://shop.example.test", "card")',
         )
 
     def test_rejects_card_fill_without_its_origin_before_any_action(self):
@@ -739,8 +739,8 @@ class PageBrowserTest(unittest.TestCase):
     def test_type_presses_each_key_into_the_focused_field(self):
         result, sent, evaluated = self.type_once({"focused": True, "multiline": False}, "6é")
         self.assertEqual(result, {"ok": True, "completed": 1})
-        self.assertEqual(evaluated[1], 'window.__rakazoPageBrowser.focusForKeys("e1", true)')
-        self.assertEqual(evaluated[-1], 'window.__rakazoPageBrowser.typed("e1", "6\\u00e9")')
+        self.assertEqual(evaluated[1], 'window.__atlasPageBrowser.focusForKeys("e1", true)')
+        self.assertEqual(evaluated[-1], 'window.__atlasPageBrowser.typed("e1", "6\\u00e9")')
         self.assertEqual(sent, [
             ("Input.dispatchKeyEvent", {"type": "keyDown", "key": "6", "code": "Digit6", "text": "6",
                                         "windowsVirtualKeyCode": 54, "unmodifiedText": "6"}),
@@ -774,13 +774,13 @@ class PageBrowserTest(unittest.TestCase):
     def test_type_of_one_character_replaces_only_the_box_it_is_typed_into(self):
         result, sent, evaluated = self.type_once({"focused": True, "multiline": False}, "8")
         self.assertEqual(result, {"ok": True, "completed": 1})
-        self.assertEqual(evaluated[1], 'window.__rakazoPageBrowser.focusForKeys("e1", false)')
+        self.assertEqual(evaluated[1], 'window.__atlasPageBrowser.focusForKeys("e1", false)')
         self.assertEqual([params["key"] for _, params in sent if params.get("type") == "keyDown"], ["8"])
 
     def test_type_checks_the_page_before_every_key_and_after_the_last(self):
         _, sent, evaluated = self.type_once({"focused": True, "multiline": False}, "482913")
         self.assertEqual(len([params for _, params in sent if params.get("type") == "keyDown"]), 6)
-        self.assertEqual(evaluated.count("window.__rakazoPageBrowser.focusHolds()"), 7)
+        self.assertEqual(evaluated.count("window.__atlasPageBrowser.focusHolds()"), 7)
 
     def test_type_presses_no_key_when_emptying_the_field_made_the_page_navigate(self):
         def on_clear(client, _):
@@ -877,7 +877,7 @@ class PageBrowserTest(unittest.TestCase):
     def test_type_into_a_select_chooses_the_option_as_fill_does(self):
         result, sent, evaluated = self.type_once({"select": True}, "Blue")
         self.assertEqual(result, {"ok": True, "completed": 1})
-        self.assertEqual(evaluated[2], 'window.__rakazoPageBrowser.fill("e1", "Blue")')
+        self.assertEqual(evaluated[2], 'window.__atlasPageBrowser.fill("e1", "Blue")')
         self.assertEqual(sent, [])
 
     def test_type_presses_nothing_when_the_field_does_not_take_focus(self):
@@ -1066,12 +1066,12 @@ class PageBrowserTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as home:
             for name in ("a", "b"):
                 Path(home, name).write_bytes(b"123")
-            with patch.dict(os.environ, {"RAKAZO_BROWSER_UPLOAD_MAX_BYTES": "5"}):
+            with patch.dict(os.environ, {"ATLAS_BROWSER_UPLOAD_MAX_BYTES": "5"}):
                 self.assertEqual(helper.resolve_upload_paths(["a"], home), [str(Path(home, "a").resolve())])
                 with self.assertRaisesRegex(RuntimeError, "upload files are larger than .* MB in total"):
                     helper.resolve_upload_paths(["a", "b"], home)
             for override in ("invalid", "0", "-1"):
-                with patch.dict(os.environ, {"RAKAZO_BROWSER_UPLOAD_MAX_BYTES": override}):
+                with patch.dict(os.environ, {"ATLAS_BROWSER_UPLOAD_MAX_BYTES": override}):
                     self.assertEqual(len(helper.resolve_upload_paths(["a", "b"], home)), 2)
             with patch.dict(os.environ, {}, clear=True):
                 with patch.object(helper.os, "stat", return_value=Mock(
@@ -1092,12 +1092,12 @@ class PageBrowserTest(unittest.TestCase):
         client = Mock()
         client.context_id = 7
         client.call.side_effect = [{"result": {"objectId": "node-1"}}, {}, {}]
-        helper.upload(client, "session", "e1", ["/home/rakazo/receipt.pdf"])
+        helper.upload(client, "session", "e1", ["/home/atlas/receipt.pdf"])
         methods = [call.args[0] for call in client.call.call_args_list]
         self.assertEqual(methods, ["Runtime.evaluate", "DOM.setFileInputFiles", "Runtime.releaseObject"])
         self.assertEqual(
             client.call.call_args_list[1].args[1],
-            {"files": ["/home/rakazo/receipt.pdf"], "objectId": "node-1"},
+            {"files": ["/home/atlas/receipt.pdf"], "objectId": "node-1"},
         )
 
     def test_upload_rejects_a_bad_path_before_touching_the_page(self):

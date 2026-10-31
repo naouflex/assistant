@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { buildComposerMentionOptions } from "@rakazo/core";
-import { MAX_FONT_SCALE } from "@rakazo/ui-tokens";
+import { buildComposerMentionOptions } from "@atlas/core";
+import { MAX_FONT_SCALE } from "@atlas/ui-tokens";
 import type { ComponentProps, ReactNode, Ref } from "react";
 import { act, Children, createElement, createRef, isValidElement, useMemo } from "react";
 import type { Root } from "react-dom/client";
@@ -298,7 +298,7 @@ describe("thread composer isolation", () => {
     mentionApi.capture.mockReset().mockImplementation(async () => ({
       apiBase: "https://api.test",
       sessionGeneration: mentionApi.generation,
-      headers: { authorization: "Bearer account-a", "x-rakazo-space-id": "space-a" },
+      headers: { authorization: "Bearer account-a", "x-atlas-space-id": "space-a" },
     }));
     container = document.createElement("div");
     document.body.append(container);

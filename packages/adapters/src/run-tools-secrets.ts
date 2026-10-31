@@ -1,8 +1,8 @@
-import { runContinueJob } from "@rakazo/adapter-kit";
-import { BotSecretName, botSecretSubmissionSchema } from "@rakazo/contracts";
-import { createStreamingRedactor, displayName } from "@rakazo/core";
-import { runLoginKind, runSecretKind } from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+import { runContinueJob } from "@atlas/adapter-kit";
+import { BotSecretName, botSecretSubmissionSchema } from "@atlas/contracts";
+import { createStreamingRedactor, displayName } from "@atlas/core";
+import { runLoginKind, runSecretKind } from "@atlas/db";
+import { getLogger } from "@atlas/logging";
 import {
   completeExternalEffect,
   replaceCompletedExternalEffectResult,

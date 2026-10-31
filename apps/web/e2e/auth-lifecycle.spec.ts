@@ -26,19 +26,19 @@ test(
     });
 
     await page.goto("/sign-up");
-    await expect(page.locator('[data-rakazo-app-state="session-pending"]')).toBeVisible();
+    await expect(page.locator('[data-atlas-app-state="session-pending"]')).toBeVisible();
     await expect(page.locator("#root")).toHaveText("");
     await captureScreenshot(page, testInfo, "signup-session-pending");
 
     const capabilitiesRequested = page.waitForRequest("**/api/auth/capabilities");
     releaseSession();
     await capabilitiesRequested;
-    await expect(page.locator('[data-rakazo-app-state="ready"]')).toBeVisible();
+    await expect(page.locator('[data-atlas-app-state="ready"]')).toBeVisible();
     await expect(page.locator("#root")).toHaveText("");
     await captureScreenshot(page, testInfo, "signup-options-pending");
 
     releaseCapabilities();
-    await expect(page.getByRole("heading", { name: "Create your Rakazo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create your Atlas" })).toBeVisible();
     await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
     await captureScreenshot(page, testInfo, "signup-ready");
   },
@@ -69,7 +69,7 @@ test(
     await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
     await captureScreenshot(page, testInfo, "signup-verification-required");
     await page.getByRole("link", { name: "Back to sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Sign in to Rakazo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to Atlas" })).toBeVisible();
   },
 );
 
@@ -86,13 +86,13 @@ test(
     await page.setViewportSize({ width: 320, height: 640 });
     await page.goto("/");
     const main = page.getByRole("main");
-    await expect(main.getByRole("heading", { name: "Rakazo", level: 1 })).toBeVisible();
+    await expect(main.getByRole("heading", { name: "Atlas", level: 1 })).toBeVisible();
     await expect(main.getByRole("button", { name: "Sign up", exact: true })).toBeVisible();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
     await captureScreenshot(page, testInfo, "logged-out-welcome-phone");
     await main.getByRole("link", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL(/\/sign-in$/);
-    await expect(page.getByRole("heading", { name: "Sign in to Rakazo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to Atlas" })).toBeVisible();
   },
 );
 
@@ -102,14 +102,14 @@ test("an unknown page offers a way home", async ({ page }, testInfo) => {
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await captureScreenshot(page, testInfo, "not-found");
   await page.getByRole("link", { name: "Go home" }).click();
-  await expect(page.locator('[data-rakazo-surface="welcome"]')).toBeVisible();
+  await expect(page.locator('[data-atlas-surface="welcome"]')).toBeVisible();
 });
 
 test("logout protects bot deep links and sign-in restores the session", async ({
   page,
 }, testInfo) => {
   const stamp = Date.now();
-  const email = `auth-lifecycle-${stamp}@rakazo.test`;
+  const email = `auth-lifecycle-${stamp}@atlas.test`;
   const password = "password12";
   const userName = "Auth Lifecycle";
 
@@ -155,23 +155,23 @@ test("logout protects bot deep links and sign-in restores the session", async ({
   };
   page.on("request", trackRefresh);
   await page.getByRole("button", { name: "Log out" }).click();
-  await expect(page.getByRole("heading", { name: "Sign in to Rakazo" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to Atlas" })).toBeVisible();
   page.off("request", trackRefresh);
   await Promise.all(refreshes);
   await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 250)));
   expect(pageErrors).toEqual([]);
   await page.goto("/");
-  await expect(page.locator('[data-rakazo-surface="welcome"]')).toBeVisible();
+  await expect(page.locator('[data-atlas-surface="welcome"]')).toBeVisible();
   await expect(page.getByText(/Your team of always-on agents/)).toBeVisible();
   await page.getByRole("button", { name: /Sign up/ }).click();
   await expect(page).toHaveURL(/\/sign-up$/);
-  await expect(page.getByRole("heading", { name: "Create your Rakazo" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create your Atlas" })).toBeVisible();
   await page.goto("/");
   await captureScreenshot(page, testInfo, "37-logged-out-welcome");
 
   await page.goto(protectedBotPath);
   await page.waitForURL((url) => url.pathname === "/sign-in");
-  await expect(page.getByRole("heading", { name: "Sign in to Rakazo" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to Atlas" })).toBeVisible();
   await expect(page.getByText("Chief", { exact: true })).toHaveCount(0);
   await expect(page.getByText(userName, { exact: true })).toHaveCount(0);
   await expect(page.getByLabel("Email")).toHaveAttribute("autocomplete", "username webauthn");
@@ -232,7 +232,7 @@ test("logout protects bot deep links and sign-in restores the session", async ({
 
 test("changes and recovers an email password", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  const email = `password-recovery-${stamp}@rakazo.test`;
+  const email = `password-recovery-${stamp}@atlas.test`;
   const originalPassword = "password12";
   const changedPassword = "changed-password12";
   const resetPassword = "reset-password12";
@@ -308,7 +308,7 @@ test("changes and recovers an email password", async ({ page }, testInfo) => {
       html: string;
     }>;
     return messages.filter(
-      (message) => message.to === email && message.subject === "Reset your Rakazo password",
+      (message) => message.to === email && message.subject === "Reset your Atlas password",
     );
   };
   await expect.poll(async () => (await sentToUser()).length).toBeGreaterThan(0);

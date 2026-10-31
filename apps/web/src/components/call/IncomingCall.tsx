@@ -1,6 +1,6 @@
+import type { Bot } from "@atlas/contracts";
+import { BotAvatar, Button, defaultBotAvatarValue } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
-import type { Bot } from "@rakazo/contracts";
-import { BotAvatar, Button, defaultBotAvatarValue } from "@rakazo/ui-web";
 import { Phone, PhoneOff } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isLeavingSession, startCall, useCallSession } from "../../lib/call-session";

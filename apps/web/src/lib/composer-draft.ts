@@ -1,8 +1,8 @@
-import type { ComposerMentionBinding } from "@rakazo/core";
-import { validateComposerMentionBindings } from "@rakazo/core";
+import type { ComposerMentionBinding } from "@atlas/core";
+import { validateComposerMentionBindings } from "@atlas/core";
 
-export const COMPOSER_DRAFT_STORAGE_PREFIX = "rakazo.composerDraft.";
-const COMPOSER_BINDINGS_STORAGE_PREFIX = "rakazo.composerBindings.";
+export const COMPOSER_DRAFT_STORAGE_PREFIX = "atlas.composerDraft.";
+const COMPOSER_BINDINGS_STORAGE_PREFIX = "atlas.composerBindings.";
 
 type ComposerDraftSubmission = { text: string; bindingRecord: string | null };
 const pendingSubmissions = new Map<string, ComposerDraftSubmission>();

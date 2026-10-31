@@ -7,7 +7,7 @@ import type {
   VoiceProvider,
   VoiceSynthesizeRequest,
   VoiceVerifyResult,
-} from "@rakazo/adapter-kit";
+} from "@atlas/adapter-kit";
 import {
   readVoiceAudio,
   readVoiceJson,

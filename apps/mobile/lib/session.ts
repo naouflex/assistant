@@ -4,8 +4,8 @@ import { stopLiveNotifications } from "./live-notifications";
 import { clearNetworkCache } from "./network-cache";
 import { clearFailedSends } from "./thread-feedback";
 
-const SESSION_KEY = "rakazo.session_token";
-const INTEGRATIONS_SCOPE_KEY = "rakazo.integrations-scope";
+const SESSION_KEY = "atlas.session_token";
+const INTEGRATIONS_SCOPE_KEY = "atlas.integrations-scope";
 
 export type VerifiedIntegrationsScope = {
   apiBase: string;

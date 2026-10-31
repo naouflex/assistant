@@ -1,13 +1,13 @@
 import { fileURLToPath } from "node:url";
-import { isBuildId } from "@rakazo/contracts/client-build";
-import { webDarkTokens } from "@rakazo/ui-tokens";
+import { isBuildId } from "@atlas/contracts/client-build";
+import { webDarkTokens } from "@atlas/ui-tokens";
 import type { Plugin, Rolldown } from "vite";
 import { CACHE_PREFIX } from "./service-worker.js";
 
 const SERVICE_WORKER_FILE = "sw.js";
 const MANIFEST_FILE = "site.webmanifest";
-const PRECACHE_PLACEHOLDER = "__RAKAZO_SW_PRECACHE__";
-const CACHE_PLACEHOLDER = "__RAKAZO_SW_CACHE__";
+const PRECACHE_PLACEHOLDER = "__ATLAS_SW_PRECACHE__";
+const CACHE_PLACEHOLDER = "__ATLAS_SW_CACHE__";
 
 export function webManifest() {
   const icons = [192, 512].map((size) => ({
@@ -17,8 +17,8 @@ export function webManifest() {
   }));
   return {
     id: "/",
-    name: "Rakazo",
-    short_name: "Rakazo",
+    name: "Atlas",
+    short_name: "Atlas",
     description: "Your team of always-on agents.",
     start_url: "/",
     scope: "/",
@@ -74,11 +74,11 @@ export function injectShell(code: string, precache: readonly string[], buildId: 
 }
 
 /** Installable PWA shell: the web manifest and the service worker. */
-export function rakazoPwa(buildId: string): Plugin[] {
+export function atlasPwa(buildId: string): Plugin[] {
   const manifest = () => JSON.stringify(webManifest(), null, 2);
   return [
     {
-      name: "rakazo-pwa-manifest",
+      name: "atlas-pwa-manifest",
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           if (req.url?.split("?", 1)[0] !== `/${MANIFEST_FILE}`) {
@@ -91,7 +91,7 @@ export function rakazoPwa(buildId: string): Plugin[] {
       },
     },
     {
-      name: "rakazo-pwa-service-worker",
+      name: "atlas-pwa-service-worker",
       apply: "build",
       enforce: "post",
       buildStart() {

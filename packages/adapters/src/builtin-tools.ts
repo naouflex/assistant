@@ -1,4 +1,4 @@
-import type { ConnectorTool } from "@rakazo/adapter-kit";
+import type { ConnectorTool } from "@atlas/adapter-kit";
 import {
   BOT_DESCRIPTION_MAX_LENGTH,
   BOT_INSTRUCTIONS_MAX_LENGTH,
@@ -18,7 +18,7 @@ import {
   TICKET_PRIORITIES,
   TICKET_STATUSES,
   TICKET_TITLE_MAX_LENGTH,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import { z } from "zod";
 import { allowPrivateHttpSecretOrigins } from "./bot-secrets.js";
 import { BROWSER_ACT_KINDS } from "./browser-tools.js";
@@ -1671,7 +1671,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "update_preferences",
     description:
-      "Read or change the user's own account preferences: timezone and Rakazo marketing emails. Change them only when the user asks. Call with no fields to read the current values. Email, password, sign-in, billing and account deletion are only in the app's settings.",
+      "Read or change the user's own account preferences: timezone and Atlas marketing emails. Change them only when the user asks. Call with no fields to read the current values. Email, password, sign-in, billing and account deletion are only in the app's settings.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1681,7 +1681,7 @@ export const builtinAgentTools: ConnectorTool[] = [
         },
         marketingEmails: {
           type: "boolean",
-          description: "false unsubscribes from Rakazo's product emails; true resubscribes.",
+          description: "false unsubscribes from Atlas's product emails; true resubscribes.",
         },
       },
       additionalProperties: false,

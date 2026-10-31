@@ -1,13 +1,13 @@
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { createLogger, createTestSink, getLogger, installLogger } from "@atlas/logging";
 import { StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
   InvalidClientMetadataError,
   ServerError,
   TooManyRequestsError,
 } from "@modelcontextprotocol/sdk/server/auth/errors.js";
-import { createLogger, createTestSink, getLogger, installLogger } from "@rakazo/logging";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectorRegistry } from "./composio-connector.js";
 import { InfisicalSecretStore } from "./infisical-secret-store.js";
@@ -31,7 +31,7 @@ afterEach(() => vi.unstubAllGlobals());
 const unavailableOnly = (slug = "demo") => [
   expect.objectContaining({
     name: `mcp__${slug}__unavailable`,
-    route: expect.objectContaining({ toolName: "__rakazo_unavailable" }),
+    route: expect.objectContaining({ toolName: "__atlas_unavailable" }),
   }),
 ];
 
@@ -2483,7 +2483,7 @@ describe("MCP connector stdio credential files", () => {
   }
 
   const credentialDirs = () =>
-    readdirSync(credentialRoot).filter((name) => name.startsWith("rakazo-mcp-"));
+    readdirSync(credentialRoot).filter((name) => name.startsWith("atlas-mcp-"));
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -2623,7 +2623,7 @@ describe("MCP connector stdio credential files", () => {
     const file = launch?.files.MAIL_CREDENTIALS;
     expect(launch?.env.MAIL_REGION).toBe("eu");
     expect(launch?.env.MAIL_CREDENTIALS).toMatch(/\/MAIL_CREDENTIALS$/);
-    expect(file?.dir.startsWith(`${credentialRoot}/rakazo-mcp-`)).toBe(true);
+    expect(file?.dir.startsWith(`${credentialRoot}/atlas-mcp-`)).toBe(true);
     expect(file?.dirMode).toBe(0o700);
     expect(file?.mode).toBe(0o600);
     expect(JSON.parse(file?.content ?? "")).toEqual({

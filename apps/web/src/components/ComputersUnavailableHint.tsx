@@ -1,5 +1,5 @@
+import { Button, Spinner } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Button, Spinner } from "@rakazo/ui-web";
 import { useEffect, useRef, useState } from "react";
 import type { SandboxAvailabilityPhase } from "../lib/computer-sandbox";
 import {

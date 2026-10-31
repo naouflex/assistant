@@ -1,7 +1,6 @@
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import type { ThinkingLevel } from "@rakazo/contracts";
-import { isOllamaCloudBaseUrl } from "@rakazo/contracts";
-import { MODEL_SEARCH_THRESHOLD, matchesSearchQuery, toggleEnabledModelId } from "@rakazo/core";
+import type { ThinkingLevel } from "@atlas/contracts";
+import { isOllamaCloudBaseUrl } from "@atlas/contracts";
+import { MODEL_SEARCH_THRESHOLD, matchesSearchQuery, toggleEnabledModelId } from "@atlas/core";
 import {
   Button,
   Checkbox,
@@ -14,7 +13,8 @@ import {
   ModelThinkingOptions,
   NativeSelect,
   NativeSelectOption,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ModelPreflightFeedback } from "../../components/ModelConnectionPreflightNotice";
@@ -151,7 +151,7 @@ export function CompatibleModelFields({
           summary={<Trans>Setup help</Trans>}
         >
           <p className="mt-1">
-            {t`Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed.`}
+            {t`Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed.`}
           </p>
         </Disclosure>
       ) : null}

@@ -1,7 +1,7 @@
+import type { SkillPlaybook } from "@atlas/contracts";
+import { formatSkillRunPrompt } from "@atlas/core";
+import { Button, Input, Label, Textarea } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { SkillPlaybook } from "@rakazo/contracts";
-import { formatSkillRunPrompt } from "@rakazo/core";
-import { Button, Input, Label, Textarea } from "@rakazo/ui-web";
 import { useEffect, useId, useRef, useState } from "react";
 import { rpc } from "../../lib/rpc";
 import { errorText } from "../../lib/user-error";

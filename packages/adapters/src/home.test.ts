@@ -14,7 +14,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { AgentHomeStore } from "@rakazo/adapter-kit";
+import type { AgentHomeStore } from "@atlas/adapter-kit";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { LocalAgentHomeStore, removeAgentHome } from "./home.js";
 
@@ -65,7 +65,7 @@ afterEach(async () => {
 });
 
 async function fixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "rakazo-home-"));
+  const root = await mkdtemp(path.join(tmpdir(), "atlas-home-"));
   dirs.push(root);
   const store = new LocalAgentHomeStore(root);
   const home = store.pathFor("bot-1");

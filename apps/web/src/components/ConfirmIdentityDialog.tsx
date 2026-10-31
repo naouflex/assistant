@@ -1,6 +1,5 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import type { AccountSecurity } from "@rakazo/contracts";
-import { runWithIdentityConfirmation } from "@rakazo/contracts";
+import type { AccountSecurity } from "@atlas/contracts";
+import { runWithIdentityConfirmation } from "@atlas/contracts";
 import {
   Button,
   Dialog,
@@ -9,7 +8,8 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   confirmIdentity,

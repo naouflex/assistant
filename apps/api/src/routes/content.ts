@@ -1,10 +1,10 @@
+import type { UsageOperationKind } from "@atlas/adapter-kit";
+import { resolveBotWorkspacePath } from "@atlas/adapters";
+import type { ExportManifest } from "@atlas/contracts";
+import { attachmentMaxBytes, resolveBotAvatarSet } from "@atlas/contracts";
+import { AttachmentValidationError } from "@atlas/core";
+import { IsolationError, parseComputerMode } from "@atlas/db";
 import { ORPCError } from "@orpc/server";
-import type { UsageOperationKind } from "@rakazo/adapter-kit";
-import { resolveBotWorkspacePath } from "@rakazo/adapters";
-import type { ExportManifest } from "@rakazo/contracts";
-import { attachmentMaxBytes, resolveBotAvatarSet } from "@rakazo/contracts";
-import { AttachmentValidationError } from "@rakazo/core";
-import { IsolationError, parseComputerMode } from "@rakazo/db";
 import {
   ArtifactListCursorError,
   createOwnedArtifact,

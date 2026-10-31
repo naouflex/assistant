@@ -1,6 +1,26 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type {
+  AdapterContext,
+  ConnectorCall,
+  ConnectorEvent,
+  ConnectorProvider,
+  ConnectorTool,
+  SecretStore,
+} from "@atlas/adapter-kit";
+import { SecretStoreUnavailableError } from "@atlas/adapter-kit";
+import type { McpOAuthEnvField } from "@atlas/contracts";
+import {
+  isLocalhostOrLoopbackIp,
+  mcpOAuthEnvReferences,
+  resolveMcpOAuthEnv,
+  resolveMcpOAuthFileTemplate,
+} from "@atlas/contracts";
+import type { McpServer, PrismaClient, ThreadEvents } from "@atlas/db";
+import { availableInSpace, itemSecretIn } from "@atlas/db";
+import { getLogger } from "@atlas/logging";
+import { sanitizedError } from "@atlas/logging/monitoring";
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
 import { StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
@@ -10,26 +30,6 @@ import {
   TooManyRequestsError,
 } from "@modelcontextprotocol/sdk/server/auth/errors.js";
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
-import type {
-  AdapterContext,
-  ConnectorCall,
-  ConnectorEvent,
-  ConnectorProvider,
-  ConnectorTool,
-  SecretStore,
-} from "@rakazo/adapter-kit";
-import { SecretStoreUnavailableError } from "@rakazo/adapter-kit";
-import type { McpOAuthEnvField } from "@rakazo/contracts";
-import {
-  isLocalhostOrLoopbackIp,
-  mcpOAuthEnvReferences,
-  resolveMcpOAuthEnv,
-  resolveMcpOAuthFileTemplate,
-} from "@rakazo/contracts";
-import type { McpServer, PrismaClient, ThreadEvents } from "@rakazo/db";
-import { availableInSpace, itemSecretIn } from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
-import { sanitizedError } from "@rakazo/logging/monitoring";
 import { catalogToolPrefix } from "./approval-effect.js";
 import { composioToolBatch } from "./composio-batch.js";
 import {
@@ -198,7 +198,7 @@ function recoveredSince(
 }
 
 /** Route name of the stand-in tool for an assigned server whose discovery failed. */
-const UNAVAILABLE_TOOL = "__rakazo_unavailable";
+const UNAVAILABLE_TOOL = "__atlas_unavailable";
 /** Skip rewriting an unchanged health observation more often than this. */
 const HEALTH_REWRITE_MS = 60_000;
 
@@ -1000,7 +1000,7 @@ export class McpConnector implements ConnectorProvider {
     credentialDir?: string;
     launchSecrets?: string[];
   }> {
-    const session = new McpSession({ name: `rakazo-${server.slug}` });
+    const session = new McpSession({ name: `atlas-${server.slug}` });
     let credentialDir: string | undefined;
     const launchSecrets: string[] = [];
     // Hoisted so a throw after the secret is decoded can still hand the material out.
@@ -1140,7 +1140,7 @@ export class McpConnector implements ConnectorProvider {
           // One private directory per launched process. A file path replaces an env value of
           // the same name; the API rejects such overlaps, so this is only a safe fallback.
           credentialDir = await mkdtemp(
-            join(this.options.credentialTempRoot ?? tmpdir(), "rakazo-mcp-"),
+            join(this.options.credentialTempRoot ?? tmpdir(), "atlas-mcp-"),
           );
           const dir = credentialDir;
           const previousOnClose = session.client.onclose;

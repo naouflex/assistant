@@ -3,8 +3,8 @@ import type { Dirent } from "node:fs";
 import { constants } from "node:fs";
 import { mkdir, open, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { getLogger } from "@atlas/logging";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { getLogger } from "@rakazo/logging";
 
 export const PI_SESSION_RETENTION_DAYS = 30;
 export const PI_SESSION_MAX_FILES_PER_BOT = 100;
@@ -152,7 +152,7 @@ export interface PiSessionRecorder {
 /**
  * Persists the low-level Agent transcript using Pi's format-4 JSONL records.
  * Pi 1.0 removed its session writer; keep the recording subset local.
- * This is deliberately a recorder only: Rakazo remains responsible for running
+ * This is deliberately a recorder only: Atlas remains responsible for running
  * the agent and for its product history in Postgres.
  */
 export class PiJsonlSessionRecorder implements PiSessionRecorder {
@@ -199,12 +199,12 @@ export class PiJsonlSessionRecorder implements PiSessionRecorder {
     }
     const handle = new BestEffortPiSession(file, input.runId);
 
-    await handle.appendCustomEntry("rakazo_context", {
-      rakazoUserId: input.userId,
-      rakazoBotId: input.botId,
-      rakazoRunId: input.runId,
-      rakazoThreadId: input.threadId,
-      ...(input.traceId ? { rakazoTraceId: input.traceId } : {}),
+    await handle.appendCustomEntry("atlas_context", {
+      atlasUserId: input.userId,
+      atlasBotId: input.botId,
+      atlasRunId: input.runId,
+      atlasThreadId: input.threadId,
+      ...(input.traceId ? { atlasTraceId: input.traceId } : {}),
       model: input.model,
       provider: input.provider,
       thinkingLevel: input.thinkingLevel,

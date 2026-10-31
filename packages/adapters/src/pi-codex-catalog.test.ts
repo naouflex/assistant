@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@rakazo/db";
+import type { PrismaClient } from "@atlas/db";
 import { describe, expect, it, vi } from "vitest";
 import { listAvailablePiCatalog } from "./pi-catalog-availability.js";
 import type { CodexCatalogModel, CodexCatalogSpaceAuth } from "./pi-codex-catalog.js";
@@ -79,7 +79,7 @@ describe("fetchCodexCatalog", () => {
     const headers = new Headers(init?.headers);
     expect(headers.get("authorization")).toBe(`Bearer ${ACCESS_TOKEN}`);
     expect(headers.get("chatgpt-account-id")).toBe(ACCOUNT_ID);
-    expect(headers.get("originator")).toBe("rakazo");
+    expect(headers.get("originator")).toBe("atlas");
     expect(headers.get("accept")).toBe("application/json");
   });
 

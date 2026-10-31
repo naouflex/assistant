@@ -3,13 +3,13 @@ import {
   isAbandonedRequest,
   isConnectionFailure,
   isServerUnreachable,
-} from "@rakazo/core/user-error";
-import type { ClientOperation, MonitoringConfig } from "@rakazo/logging/monitoring";
+} from "@atlas/core/user-error";
+import type { ClientOperation, MonitoringConfig } from "@atlas/logging/monitoring";
 import {
   createClientErrorReporter,
   isMonitoringUserId,
   sanitizeMonitoringEvent,
-} from "@rakazo/logging/monitoring";
+} from "@atlas/logging/monitoring";
 import type * as SentryReact from "@sentry/react";
 import type { ErrorInfo } from "react";
 import { desktopBridge } from "./desktop";

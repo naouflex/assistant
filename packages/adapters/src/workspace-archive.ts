@@ -1,12 +1,8 @@
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { createGunzip } from "node:zlib";
-import type {
-  PortableFile,
-  StreamedPortableFile,
-  WorkspaceExportLimits,
-} from "@rakazo/adapter-kit";
-import { WorkspaceTooLargeError } from "@rakazo/adapter-kit";
+import type { PortableFile, StreamedPortableFile, WorkspaceExportLimits } from "@atlas/adapter-kit";
+import { WorkspaceTooLargeError } from "@atlas/adapter-kit";
 import { normalizeWorkspacePath } from "./computer-support.js";
 
 const BLOCK = 512;

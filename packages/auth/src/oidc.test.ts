@@ -1,5 +1,5 @@
 import { createHash, createHmac, generateKeyPairSync, sign } from "node:crypto";
-import type * as Db from "@rakazo/db";
+import type * as Db from "@atlas/db";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Auth, AuthEnv } from "./index.js";
@@ -9,13 +9,13 @@ import { encryptStoredOAuthTokens, openIdToken, sealIdToken } from "./token-stor
 
 const state = vi.hoisted(() => ({ db: {} as Record<string, Record<string, unknown>[]> }));
 vi.mock("better-auth/adapters/prisma", () => ({ prismaAdapter: () => memoryAdapter(state.db) }));
-vi.mock("@rakazo/db", async (original) => ({
+vi.mock("@atlas/db", async (original) => ({
   ...(await original<typeof Db>()),
   bootstrapUserSpace: vi.fn(),
 }));
 
 const issuer = "https://identity.example.test";
-const origin = "https://rakazo.example.test";
+const origin = "https://atlas.example.test";
 const secret = "offline-test-secret-with-at-least-32-characters";
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const jwk = { ...publicKey.export({ format: "jwk" }), kid: "test-key", alg: "RS256", use: "sig" };
@@ -504,7 +504,7 @@ describe("OIDC callbacks", () => {
   });
   it("hands the native browser callback to Expo with a valid bearer session", async () => {
     setup();
-    const callback = await start(undefined, false, "rakazo://sign-in");
+    const callback = await start(undefined, false, "atlas://sign-in");
     const authorize = `${issuer}/authorize?state=${new URL(`${origin}${callback}`).searchParams.get("state")}`;
     const proxy = await request(
       `/expo-authorization-proxy?${new URLSearchParams({ authorizationURL: authorize })}`,
@@ -512,7 +512,7 @@ describe("OIDC callbacks", () => {
     expect(proxy.headers.get("location")).toBe(authorize);
     const returned = await request(callback);
     const destination = new URL(returned.headers.get("location")!);
-    expect(destination.protocol).toBe("rakazo:");
+    expect(destination.protocol).toBe("atlas:");
     const signed = destination.searchParams
       .get("cookie")!
       .match(/(?:__Secure-)?better-auth\.session_token=([^;]+)/)![1]!;
@@ -1053,7 +1053,7 @@ describe("SSO-only account deletion", () => {
       "/sign-in/social",
       {
         provider: "oidc",
-        callbackURL: "rakazo://sign-in",
+        callbackURL: "atlas://sign-in",
         additionalData: { reauthenticate: true },
       },
       token,
@@ -1080,7 +1080,7 @@ describe("SSO-only account deletion", () => {
       `/callback/oidc?state=${url.searchParams.get("state")}&code=native-reauth`,
     );
     const destination = new URL(returned.headers.get("location")!);
-    expect(destination.protocol).toBe("rakazo:");
+    expect(destination.protocol).toBe("atlas:");
     const signed = destination.searchParams
       .get("cookie")!
       .match(/(?:__Secure-)?better-auth\.session_token=([^;]+)/)![1]!;

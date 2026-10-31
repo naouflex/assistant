@@ -6,20 +6,21 @@ import https from "node:https";
 import net from "node:net";
 import path from "node:path";
 import tls from "node:tls";
-import { lingui } from "@lingui/vite-plugin";
-import type { DesktopStackProbeResponse } from "@rakazo/contracts";
-import { buildIdAt } from "@rakazo/contracts/client-build";
+import type { DesktopStackProbeResponse } from "@atlas/contracts";
+import { buildIdAt } from "@atlas/contracts/client-build";
 import {
   appContentSecurityPolicy,
   CSP_REPORTING_ENDPOINTS,
   contentSecurityPolicyFor,
   parseContentSecuritySources,
   parseCrispWebsiteId,
-} from "@rakazo/contracts/content-security-policy";
+} from "@atlas/contracts/content-security-policy";
+import { applyLegacyEnvAliases } from "@atlas/core/node/legacy-env";
 import {
   safeScreenProxyResponseHeaders,
   stripSensitiveHandshakeHeaders,
-} from "@rakazo/core/node/screen-proxy-response";
+} from "@atlas/core/node/screen-proxy-response";
+import { lingui } from "@lingui/vite-plugin";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -39,7 +40,7 @@ import {
   rewrittenNovncHeaders,
   shouldInjectNovncStorageShim,
 } from "./src/novnc-html.js";
-import { rakazoPwa } from "./src/pwa/plugin.js";
+import { atlasPwa } from "./src/pwa/plugin.js";
 import type { ScreenTargetFailure } from "./src/screen-proxy.js";
 import {
   checkScreenAuthorization,
@@ -55,10 +56,10 @@ import {
 } from "./src/screen-proxy.js";
 
 const webPort = Number(process.env.WEB_PORT ?? 5173);
-const DESKTOP_STACK_PROBE_PATH = "/.well-known/rakazo-desktop-stack";
-const DESKTOP_STACK_TOKEN_HEADER = "x-rakazo-desktop-stack-token";
+const DESKTOP_STACK_PROBE_PATH = "/.well-known/atlas-desktop-stack";
+const DESKTOP_STACK_TOKEN_HEADER = "x-atlas-desktop-stack-token";
 const SCREEN_UPSTREAM_TIMEOUT_MS = 20_000;
-const screenLog = createServiceLogger({ service: "rakazo-web" });
+const screenLog = createServiceLogger({ service: "atlas-web" });
 
 function screenPolicy(url: string | undefined) {
   return url?.startsWith("/novnc/session/control/") ? "control" : "view";
@@ -462,11 +463,13 @@ export default defineConfig(({ command, mode }) => {
   // Names this build in every API request; the dev server has none, so the handshake stays off.
   const buildId = command === "build" ? buildIdAt(new Date()) : "";
   const rootEnv = loadEnv(mode, path.resolve(import.meta.dirname, "../.."), "");
+  applyLegacyEnvAliases(rootEnv);
+  applyLegacyEnvAliases(process.env);
   const api = process.env.API_PROXY_TARGET ?? rootEnv.API_PROXY_TARGET ?? "http://127.0.0.1:3100";
-  const previewHost = process.env.RAKAZO_HOST ?? rootEnv.RAKAZO_HOST ?? "localhost";
+  const previewHost = process.env.ATLAS_HOST ?? rootEnv.ATLAS_HOST ?? "localhost";
   const allowedHosts = [
     previewHost,
-    ...(process.env.RAKAZO_ALLOWED_HOSTS ?? rootEnv.RAKAZO_ALLOWED_HOSTS ?? "")
+    ...(process.env.ATLAS_ALLOWED_HOSTS ?? rootEnv.ATLAS_ALLOWED_HOSTS ?? "")
       .split(",")
       .map((entry) => entry.trim())
       .filter(Boolean),
@@ -483,19 +486,19 @@ export default defineConfig(({ command, mode }) => {
         process.env.SANDBOX_SUPERVISOR_TOKEN ?? rootEnv.SANDBOX_SUPERVISOR_TOKEN,
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? rootEnv.BETTER_AUTH_SECRET,
     });
-  const performanceAssetDelayMs = Number(process.env.RAKAZO_PERFORMANCE_ASSET_DELAY_MS ?? 0);
+  const performanceAssetDelayMs = Number(process.env.ATLAS_PERFORMANCE_ASSET_DELAY_MS ?? 0);
   const desktopStackToken =
-    process.env.RAKAZO_DESKTOP_STACK_TOKEN ?? rootEnv.RAKAZO_DESKTOP_STACK_TOKEN ?? "";
-  const imageTag = process.env.RAKAZO_IMAGE_TAG ?? rootEnv.RAKAZO_IMAGE_TAG ?? "edge";
+    process.env.ATLAS_DESKTOP_STACK_TOKEN ?? rootEnv.ATLAS_DESKTOP_STACK_TOKEN ?? "";
+  const imageTag = process.env.ATLAS_IMAGE_TAG ?? rootEnv.ATLAS_IMAGE_TAG ?? "edge";
   // Invalid origins throw here, so the server refuses to start rather than serve a wider policy.
   const appPolicy = appContentSecurityPolicy({
     scriptSrc: parseContentSecuritySources(
-      "RAKAZO_CSP_SCRIPT_SRC",
-      process.env.RAKAZO_CSP_SCRIPT_SRC ?? rootEnv.RAKAZO_CSP_SCRIPT_SRC,
+      "ATLAS_CSP_SCRIPT_SRC",
+      process.env.ATLAS_CSP_SCRIPT_SRC ?? rootEnv.ATLAS_CSP_SCRIPT_SRC,
     ),
     connectSrc: parseContentSecuritySources(
-      "RAKAZO_CSP_CONNECT_SRC",
-      process.env.RAKAZO_CSP_CONNECT_SRC ?? rootEnv.RAKAZO_CSP_CONNECT_SRC,
+      "ATLAS_CSP_CONNECT_SRC",
+      process.env.ATLAS_CSP_CONNECT_SRC ?? rootEnv.ATLAS_CSP_CONNECT_SRC,
     ),
     crisp: parseCrispWebsiteId(process.env.CRISP_WEBSITE_ID ?? rootEnv.CRISP_WEBSITE_ID) !== null,
   });
@@ -514,12 +517,12 @@ export default defineConfig(({ command, mode }) => {
         },
       },
     },
-    define: { "import.meta.env.RAKAZO_BUILD": JSON.stringify(buildId) },
+    define: { "import.meta.env.ATLAS_BUILD": JSON.stringify(buildId) },
     plugins: [
       {
         // The API reads this to name the deployed build, and a tab fetches it to confirm the
         // server already serves a newer build before it reloads.
-        name: "rakazo-build-id",
+        name: "atlas-build-id",
         apply: "build",
         generateBundle() {
           this.emitFile({ type: "asset", fileName: "build-id", source: `${buildId}\n` });
@@ -529,10 +532,10 @@ export default defineConfig(({ command, mode }) => {
       babel({ plugins: ["@lingui/babel-plugin-lingui-macro"] }),
       lingui(),
       tailwindcss(),
-      rakazoPwa(buildId),
+      atlasPwa(buildId),
       {
         // Production only: the dev server injects inline scripts for React Refresh.
-        name: "rakazo-content-security-policy",
+        name: "atlas-content-security-policy",
         configurePreviewServer(server) {
           server.middlewares.use((req, res, next) => {
             const policy = contentSecurityPolicyFor(req.url?.split("?", 1)[0] ?? "/", appPolicy);
@@ -545,7 +548,7 @@ export default defineConfig(({ command, mode }) => {
         },
       },
       {
-        name: "rakazo-missing-asset-404",
+        name: "atlas-missing-asset-404",
         configurePreviewServer({ config, middlewares }) {
           const outDir = path.resolve(config.root, config.build.outDir);
           const assetsDir = path.join(outDir, config.build.assetsDir);
@@ -566,13 +569,13 @@ export default defineConfig(({ command, mode }) => {
         },
       },
       {
-        name: "rakazo-desktop-stack-probe",
+        name: "atlas-desktop-stack-probe",
         configureServer: (server) => attachDesktopStackProbe(server, desktopStackToken, imageTag),
         configurePreviewServer: (server) =>
           attachDesktopStackProbe(server, desktopStackToken, imageTag),
       },
       {
-        name: "rakazo-performance-asset-delay",
+        name: "atlas-performance-asset-delay",
         configurePreviewServer(server) {
           if (!Number.isFinite(performanceAssetDelayMs) || performanceAssetDelayMs <= 0) return;
           server.middlewares.use((req, _res, next) => {
@@ -587,7 +590,7 @@ export default defineConfig(({ command, mode }) => {
       },
       {
         // The hosts the running server allows, as Vite resolved them, for proxied upgrades.
-        name: "rakazo-api-proxy-hosts",
+        name: "atlas-api-proxy-hosts",
         configureServer: (server) => {
           proxyHosts = server.config.server.allowedHosts;
         },
@@ -596,13 +599,13 @@ export default defineConfig(({ command, mode }) => {
         },
       },
       {
-        name: "rakazo-novnc-proxy",
+        name: "atlas-novnc-proxy",
         configureServer: (server) => attachNovncProxy(server, screenProxySecret(), api),
         configurePreviewServer: (server) => attachNovncProxy(server, screenProxySecret(), api),
       },
     ],
     server: {
-      host: process.env.RAKAZO_DEV_HOST ?? rootEnv.RAKAZO_DEV_HOST ?? "127.0.0.1",
+      host: process.env.ATLAS_DEV_HOST ?? rootEnv.ATLAS_DEV_HOST ?? "127.0.0.1",
       port: webPort,
       strictPort: true,
       allowedHosts,

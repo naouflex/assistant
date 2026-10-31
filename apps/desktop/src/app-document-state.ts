@@ -2,14 +2,14 @@
  * Empty `#root` shells and session-pending skeletons count as loaded HTML but are
  * not a usable app. After session resolves, wait for a bootstrapped shell
  * (`data-ready` / shell-ready mark) or a route surface the web app marks with
- * `data-rakazo-surface` (welcome, onboarding) so a bare Suspense fallback or
+ * `data-atlas-surface` (welcome, onboarding) so a bare Suspense fallback or
  * pre-bootstrap ShellPage cannot pass. Only a usable page may carry that marker,
- * never a loading state. Plain e2e fixtures omit the Rakazo app-state marker.
+ * never a loading state. Plain e2e fixtures omit the Atlas app-state marker.
  * Runs in the renderer.
  */
 export const APP_DOCUMENT_STATE_SCRIPT = `(() => {
   const appState =
-    document.querySelector("[data-rakazo-app-state]")?.getAttribute("data-rakazo-app-state") ??
+    document.querySelector("[data-atlas-app-state]")?.getAttribute("data-atlas-app-state") ??
     null;
   if (appState === "session-pending") return "pending";
   // The web app's last-resort error screen: keep it so its Refresh can recover.
@@ -21,7 +21,7 @@ export const APP_DOCUMENT_STATE_SCRIPT = `(() => {
       performance.getEntriesByName("rk:renderer:shell-ready").length > 0,
   );
   const routeSurface = Boolean(
-    document.querySelector("[data-rakazo-surface]") ||
+    document.querySelector("[data-atlas-surface]") ||
       document.querySelector(
         'form input[type="email"], form input[name="email"], form input#email',
       ) ||
@@ -39,7 +39,7 @@ export const APP_DOCUMENT_STATE_SCRIPT = `(() => {
     performance.getEntriesByName("rk:renderer:session-committed").length > 0;
   if (sessionReady && surfaceReady) return "ready";
 
-  // Desktop e2e fixtures mount a plain page without Rakazo app-state markers.
+  // Desktop e2e fixtures mount a plain page without Atlas app-state markers.
   if (appState === null) {
     const bodyText = (document.body?.innerText || "").trim();
     if (bodyText.includes("Opening your Space")) return "pending";

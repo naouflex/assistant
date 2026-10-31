@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Rakazo",
-    "slug": "rakazo",
+    "name": "Atlas",
+    "slug": "atlas",
     "owner": "inbox-zero",
-    "scheme": "rakazo",
+    "scheme": "atlas",
     "version": "1.0.12",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
@@ -26,14 +26,14 @@
         "expo-audio",
         {
           "enableBackgroundPlayback": false,
-          "microphonePermission": "Rakazo uses the microphone for voice calls with your bots."
+          "microphonePermission": "Atlas uses the microphone for voice calls with your bots."
         }
       ],
       [
         "expo-speech-recognition",
         {
-          "speechRecognitionPermission": "Rakazo turns your speech into messages during voice calls.",
-          "microphonePermission": "Rakazo uses the microphone for voice calls with your bots."
+          "speechRecognitionPermission": "Atlas turns your speech into messages during voice calls.",
+          "microphonePermission": "Atlas uses the microphone for voice calls with your bots."
         }
       ],
       "expo-localization",
@@ -48,9 +48,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Rakazo uses your photo library so you can attach images to a bot message.",
-          "cameraPermission": "Rakazo uses the camera so you can attach photos to a bot message.",
-          "microphonePermission": "Rakazo uses the microphone for voice calls with your bots."
+          "photosPermission": "Atlas uses your photo library so you can attach images to a bot message.",
+          "cameraPermission": "Atlas uses the camera so you can attach photos to a bot message.",
+          "microphonePermission": "Atlas uses the microphone for voice calls with your bots."
         }
       ],
       [
@@ -83,24 +83,24 @@
       "./plugins/with-lan-cleartext"
     ],
     "ios": {
-      "bundleIdentifier": "com.rakazo.app",
+      "bundleIdentifier": "com.naouflex.atlas.app",
       "buildNumber": "1",
       "supportsTablet": true,
-      "icon": "../../packages/ui-tokens/assets/Rakazo.icon",
+      "icon": "../../packages/ui-tokens/assets/Atlas.icon",
       "config": {
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "NSCameraUsageDescription": "Rakazo uses the camera so you can attach photos to a bot message.",
-        "NSPhotoLibraryUsageDescription": "Rakazo uses your photo library so you can attach images to a bot message.",
-        "NSLocalNetworkUsageDescription": "Rakazo connects to a self-hosted Rakazo server on your local network.",
+        "NSCameraUsageDescription": "Atlas uses the camera so you can attach photos to a bot message.",
+        "NSPhotoLibraryUsageDescription": "Atlas uses your photo library so you can attach images to a bot message.",
+        "NSLocalNetworkUsageDescription": "Atlas connects to a self-hosted Atlas server on your local network.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }
       }
     },
     "android": {
-      "package": "com.rakazo.app",
+      "package": "com.naouflex.atlas.app",
       "versionCode": 10,
       "softwareKeyboardLayoutMode": "resize",
       "icon": "./assets/icon.png",

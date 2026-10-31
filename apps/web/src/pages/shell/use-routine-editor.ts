@@ -1,6 +1,6 @@
+import type { Bot, Routine, ThinkingLevel, ThreadSnapshot } from "@atlas/contracts";
+import { cronFromPreset } from "@atlas/core";
 import { useLingui } from "@lingui/react/macro";
-import type { Bot, Routine, ThinkingLevel, ThreadSnapshot } from "@rakazo/contracts";
-import { cronFromPreset } from "@rakazo/core";
 import type { ComponentProps, Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useRef, useState } from "react";
 import { localTimezone } from "../../lib/local-timezone";

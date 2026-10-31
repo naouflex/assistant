@@ -10,7 +10,7 @@ private final class FoldObserver: NSObject {
   @objc func pause() { displayLink?.isPaused = true }
 }
 
-public final class RakazoFoldRegionsModule: Module {
+public final class AtlasFoldRegionsModule: Module {
   private var displayLink: CADisplayLink?
   private var observer: FoldObserver?
   private var previous: [CGRect] = []
@@ -18,7 +18,7 @@ public final class RakazoFoldRegionsModule: Module {
   deinit { displayLink?.invalidate() }
 
   public func definition() -> ModuleDefinition {
-    Name("RakazoFoldRegions")
+    Name("AtlasFoldRegions")
     Events("onChange")
 
     AsyncFunction("getRegions") { () -> [[String: Double]] in

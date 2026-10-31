@@ -1,15 +1,14 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import { ChatMarkdown } from "@rakazo/chat-ui/web";
-import type { Bot, Ticket, TicketPriority, TicketStatus } from "@rakazo/contracts";
+import { ChatMarkdown } from "@atlas/chat-ui/web";
+import type { Bot, Ticket, TicketPriority, TicketStatus } from "@atlas/contracts";
 import {
   TICKET_COMMENT_MAX_LENGTH,
   TICKET_DESCRIPTION_MAX_LENGTH,
   TICKET_PRIORITIES,
   TICKET_STATUSES,
   TICKET_TITLE_MAX_LENGTH,
-} from "@rakazo/contracts";
-import { isRetryableError, retryDelayMs } from "@rakazo/core";
-import { fetchFresh, writeSaved } from "@rakazo/core/query";
+} from "@atlas/contracts";
+import { isRetryableError, retryDelayMs } from "@atlas/core";
+import { fetchFresh, writeSaved } from "@atlas/core/query";
 import {
   Button,
   buttonVariants,
@@ -21,7 +20,8 @@ import {
   NativeSelect,
   NativeSelectOption,
   Textarea,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useId, useState } from "react";

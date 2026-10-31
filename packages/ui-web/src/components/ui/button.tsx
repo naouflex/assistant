@@ -1,5 +1,5 @@
+import { cn } from "@atlas/ui-web/lib/utils";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import { cn } from "@rakazo/ui-web/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 

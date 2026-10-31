@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { LoginFieldInput } from "@rakazo/contracts";
+import type { LoginFieldInput } from "@atlas/contracts";
 import type { CSSProperties, ReactNode } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";

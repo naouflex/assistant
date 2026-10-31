@@ -1,5 +1,5 @@
-import type { TransactionalEmailProvider } from "@rakazo/adapter-kit";
-import { ResendEmailProvider, SmtpEmailProvider } from "@rakazo/adapters";
+import type { TransactionalEmailProvider } from "@atlas/adapter-kit";
+import { ResendEmailProvider, SmtpEmailProvider } from "@atlas/adapters";
 import type { AppEnv } from "./env.js";
 
 export function configuredEmailProvider(

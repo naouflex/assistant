@@ -1,10 +1,10 @@
-appId: com.rakazo.app
+appId: com.naouflex.atlas.app
 name: Search
 ---
 - runFlow:
     file: ../subflows/sign-in.yaml
     env:
-      RAKAZO_ACTIVE_EMAIL: ${RAKAZO_SCREENSHOT_EMAIL}
+      ATLAS_ACTIVE_EMAIL: ${ATLAS_SCREENSHOT_EMAIL}
 - tapOn:
     id: "home-search-button"
     optional: true

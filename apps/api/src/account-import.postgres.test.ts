@@ -7,11 +7,11 @@ import type {
   ArtifactStore,
   JobPublisher,
   SandboxProvider,
-} from "@rakazo/adapter-kit";
-import { LocalAgentHomeStore } from "@rakazo/adapters";
-import type { AccountExportRecord, Actor } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
-import { asSystem, createDb } from "@rakazo/db";
+} from "@atlas/adapter-kit";
+import { LocalAgentHomeStore } from "@atlas/adapters";
+import type { AccountExportRecord, Actor } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
+import { asSystem, createDb } from "@atlas/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AccountImportError, importAccount } from "./account-import.js";
 import { buildArchive, chunked, exportFiles, manifestFor } from "./account-import.test-support.js";
@@ -60,7 +60,7 @@ function sourceRecords(): AccountExportRecord[] {
       description: "",
       instructions: "",
       color: "#F5A03C",
-      avatarSet: "rakazo",
+      avatarSet: "atlas",
       notifyOnFinish: true,
       pinned: false,
       position: 0,
@@ -280,7 +280,7 @@ describePostgres("account import (PostgreSQL)", () => {
   const actor: Actor = {
     userId,
     spaceId: baseSpaceId,
-    email: `${userId}@rakazo.test`,
+    email: `${userId}@atlas.test`,
     isDeploymentOwner: false,
   };
   const stored = new Map<string, Uint8Array>();
@@ -349,7 +349,7 @@ describePostgres("account import (PostgreSQL)", () => {
     db = createDb(databaseUrl!, { encryptContent: true });
     prisma = db.prisma;
     system = asSystem(prisma);
-    root = await mkdtemp(path.join(tmpdir(), "rakazo-account-import-"));
+    root = await mkdtemp(path.join(tmpdir(), "atlas-account-import-"));
     home = new LocalAgentHomeStore(root);
     const now = new Date();
     await system.user.create({

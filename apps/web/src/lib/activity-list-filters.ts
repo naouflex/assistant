@@ -1,5 +1,5 @@
+import type { RunActivityRow, RunStatus } from "@atlas/contracts";
 import { t } from "@lingui/core/macro";
-import type { RunActivityRow, RunStatus } from "@rakazo/contracts";
 
 export type ActivityStatusFilter = RunStatus | "all";
 

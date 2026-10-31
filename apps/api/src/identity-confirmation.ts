@@ -1,7 +1,7 @@
+import type { Auth } from "@atlas/auth";
+import type { Actor } from "@atlas/contracts";
+import { IDENTITY_CONFIRMATION_REQUIRED } from "@atlas/contracts";
 import { ORPCError } from "@orpc/server";
-import type { Auth } from "@rakazo/auth";
-import type { Actor } from "@rakazo/contracts";
-import { IDENTITY_CONFIRMATION_REQUIRED } from "@rakazo/contracts";
 
 /**
  * Guards a procedure that reveals sensitive data: the calling session must have confirmed its

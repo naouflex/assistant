@@ -3,8 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import type { WaitTone, WaitUnit } from "./wait-pattern";
 import { nextWaitUnit, WAIT_PATTERNS } from "./wait-pattern";
 
-export const CALL_SOUNDS_KEY = "rakazo.call-sounds";
-export const WAIT_SOUND_KEY = "rakazo.wait-sound";
+export const CALL_SOUNDS_KEY = "atlas.call-sounds";
+export const WAIT_SOUND_KEY = "atlas.wait-sound";
 
 export type CallCue = "start" | "end";
 

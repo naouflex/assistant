@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { ComposioConnector, FakeComposioClient, FakeSandboxProvider } from "@rakazo/adapters";
+import { ComposioConnector, FakeComposioClient, FakeSandboxProvider } from "@atlas/adapters";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { discardBotIntroRun } from "./discard-bot-intro.js";
 import { sessionCookieHeader } from "./index.js";
@@ -18,7 +18,7 @@ describe.skipIf(!databaseAvailable)("offline Pi computer approval", () => {
   beforeAll(() => {
     // Use the existing compatible-endpoint capability declaration so the real
     // executor exposes computer tools without mocking its model vision gate.
-    vi.stubEnv("RAKAZO_OPENAI_COMPATIBLE_VISION_MODELS", "offline-fixture");
+    vi.stubEnv("ATLAS_OPENAI_COMPATIBLE_VISION_MODELS", "offline-fixture");
   });
   afterAll(() => vi.unstubAllEnvs());
 
@@ -72,10 +72,10 @@ describe.skipIf(!databaseAvailable)("offline Pi computer approval", () => {
           },
         ],
       });
-      const dataDir = await mkdtemp(path.join(tmpdir(), "rakazo-computer-approval-"));
+      const dataDir = await mkdtemp(path.join(tmpdir(), "atlas-computer-approval-"));
       let stop: (() => Promise<void>) | undefined;
       try {
-        const { createApp } = await import("@rakazo/api/app");
+        const { createApp } = await import("@atlas/api/app");
         const handles = await createApp({
           databaseUrl: process.env.DATABASE_URL!,
           realtimeDatabaseUrl: process.env.DATABASE_URL!,
@@ -100,7 +100,7 @@ describe.skipIf(!databaseAvailable)("offline Pi computer approval", () => {
           method: "POST",
           headers: { "content-type": "application/json", origin: fixtureOrigin },
           body: JSON.stringify({
-            email: `computer-approval-${randomUUID()}@rakazo.test`,
+            email: `computer-approval-${randomUUID()}@atlas.test`,
             password: "password12",
             name: "Computer approval fixture",
           }),

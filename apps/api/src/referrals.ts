@@ -1,15 +1,15 @@
 import { randomInt } from "node:crypto";
-import type { BillingProvider } from "@rakazo/adapter-kit";
-import type { BillingStatus } from "@rakazo/contracts";
-import { BYOK_MONTHLY_PRICE_CENTS } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
+import type { BillingProvider } from "@atlas/adapter-kit";
+import type { BillingStatus } from "@atlas/contracts";
+import { BYOK_MONTHLY_PRICE_CENTS } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
 import {
   billingAccountForOrganization,
   hasBillingAccess,
   Prisma,
   reconcileCreditPurchase,
-} from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/db";
+import { getLogger } from "@atlas/logging";
 
 const CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const CODE_LENGTH = 8;

@@ -1,13 +1,13 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   ActionApprovalRule,
   ActionAutoReviewSettings,
   ApprovalMode,
   SettingsScope,
-} from "@rakazo/contracts";
-import { humanizeToolName } from "@rakazo/core";
-import { writeSaved } from "@rakazo/core/query";
-import { Button, ToggleGroup, ToggleGroupItem } from "@rakazo/ui-web";
+} from "@atlas/contracts";
+import { humanizeToolName } from "@atlas/core";
+import { writeSaved } from "@atlas/core/query";
+import { Button, ToggleGroup, ToggleGroupItem } from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSpaceQueries } from "../lib/query";

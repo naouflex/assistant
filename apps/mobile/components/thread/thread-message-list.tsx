@@ -1,5 +1,5 @@
-import type { ThreadItem } from "@rakazo/core";
-import { threadWindowMessages } from "@rakazo/core";
+import type { ThreadItem } from "@atlas/core";
+import { threadWindowMessages } from "@atlas/core";
 import type { ReactElement, ReactNode } from "react";
 import { useMemo } from "react";
 import type { ListRenderItem } from "react-native";

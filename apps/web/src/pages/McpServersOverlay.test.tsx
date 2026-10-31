@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import type { McpServer } from "@rakazo/contracts";
-import { MCP_OAUTH_CLIENT_REQUIRED } from "@rakazo/contracts";
+import type { McpServer } from "@atlas/contracts";
+import { MCP_OAUTH_CLIENT_REQUIRED } from "@atlas/contracts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { act } from "react";
@@ -42,7 +42,7 @@ vi.mock("@lingui/react/macro", () => ({
       parts.reduce((text, part, i) => text + (i ? String(values[i - 1]) : "") + part, ""),
   }),
 }));
-vi.mock("@rakazo/ui-web", async () => {
+vi.mock("@atlas/ui-web", async () => {
   const { createElement } = await import("react");
   const container = ({ children }: { children: ReactNode }) => createElement("div", null, children);
   return Object.fromEntries([

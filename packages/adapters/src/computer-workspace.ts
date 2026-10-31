@@ -10,13 +10,13 @@ import type {
   StreamedPortableFile,
   WorkspaceDirectoryRequest,
   WorkspaceExportLimits,
-} from "@rakazo/adapter-kit";
-import { WorkspaceTooLargeError } from "@rakazo/adapter-kit";
-import type { ComputerMode } from "@rakazo/contracts";
-import { parseScreenLeaseId } from "@rakazo/core";
-import { browserProfilePathForScreen } from "@rakazo/core/node/desktop-runtime";
-import type { PrismaClient } from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/adapter-kit";
+import { WorkspaceTooLargeError } from "@atlas/adapter-kit";
+import type { ComputerMode } from "@atlas/contracts";
+import { parseScreenLeaseId } from "@atlas/core";
+import { browserProfilePathForScreen } from "@atlas/core/node/desktop-runtime";
+import type { PrismaClient } from "@atlas/db";
+import { getLogger } from "@atlas/logging";
 import { normalizeWorkspacePath, teamBotWorkspaceDirectory } from "./computer-support.js";
 import { createStagingDirectory, LocalAgentHomeStore } from "./home.js";
 import { isSandboxDamagedError } from "./sandbox-errors.js";

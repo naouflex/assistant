@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+
+import type { ModelCatalogEntry, ModelRoleView as Settings } from "@atlas/contracts";
 import { i18n } from "@lingui/core";
-import type { ModelCatalogEntry, ModelRoleView as Settings } from "@rakazo/contracts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ComponentProps, ReactNode } from "react";
 import { act } from "react";

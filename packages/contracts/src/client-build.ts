@@ -5,9 +5,9 @@
  */
 
 /** Request header: `web/20261022093015`. */
-export const CLIENT_BUILD_HEADER = "x-rakazo-client-build";
+export const CLIENT_BUILD_HEADER = "x-atlas-client-build";
 /** Response header: the web build deployed beside the API. */
-export const SERVER_BUILD_HEADER = "x-rakazo-build";
+export const SERVER_BUILD_HEADER = "x-atlas-build";
 /** Error code sent with HTTP 426 when the server no longer supports the client's build. */
 export const CLIENT_UPDATE_REQUIRED = "CLIENT_UPDATE_REQUIRED";
 export const CLIENT_UPDATE_REQUIRED_STATUS = 426;
@@ -18,7 +18,7 @@ export type MinimumClientBuilds = Partial<Record<ClientKind, string>>;
 
 export const IOS_APP_STORE_URL = "https://apps.apple.com/app/rakazo/id6801531099";
 export const ANDROID_APK_URL =
-  "https://github.com/elie222/rakazo/releases/download/android/rakazo.apk";
+  "https://github.com/naouflex/assistant/releases/download/android/atlas.apk";
 
 const BUILD_ID = /^\d{14}$/;
 
@@ -58,7 +58,7 @@ export function parseMinimumClientBuilds(value: string | undefined): MinimumClie
     const [kind, build, ...rest] = trimmed.split("=").map((part) => part.trim());
     if (rest.length || !CLIENT_KINDS.includes(kind as ClientKind) || !isBuildId(build)) {
       throw new Error(
-        `Invalid RAKAZO_MIN_CLIENT_BUILD entry "${trimmed}": use web=YYYYMMDDHHMMSS or mobile=YYYYMMDDHHMMSS`,
+        `Invalid ATLAS_MIN_CLIENT_BUILD entry "${trimmed}": use web=YYYYMMDDHHMMSS or mobile=YYYYMMDDHHMMSS`,
       );
     }
     minimums[kind as ClientKind] = build;

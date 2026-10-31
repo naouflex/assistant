@@ -1,6 +1,6 @@
+import type { AccountSecurity, UsageSummary } from "@atlas/contracts";
+import { accountDisplay, displayName } from "@atlas/core";
 import { MenuView } from "@expo/ui/community/menu";
-import type { AccountSecurity, UsageSummary } from "@rakazo/contracts";
-import { accountDisplay, displayName } from "@rakazo/core";
 import * as Notifications from "expo-notifications";
 import type { Href } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";

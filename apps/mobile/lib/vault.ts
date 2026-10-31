@@ -1,11 +1,11 @@
-import type { BotSecretMetadata, LoginFieldInput } from "@rakazo/contracts";
+import type { BotSecretMetadata, LoginFieldInput } from "@atlas/contracts";
 import {
   BotSecretName,
   commandVariableName,
   commandVariableProblem,
   encodeLoginSecret,
   LoginSecretValue,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import { secretDestinationLabel } from "./secret-destination";
 
 export type CredentialAuth = NonNullable<BotSecretMetadata["auth"]>;

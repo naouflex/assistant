@@ -1,5 +1,5 @@
+import { Button } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Button } from "@rakazo/ui-web";
 import { useEffect, useRef, useState } from "react";
 import { authClient } from "../lib/auth";
 import {

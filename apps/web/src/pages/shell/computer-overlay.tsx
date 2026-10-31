@@ -1,13 +1,13 @@
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import type {
   Bot,
   ComputerReleaseReason,
   ComputerStatus,
   Run,
   TaughtSkill,
-} from "@rakazo/contracts";
-import { BotAvatar, Button } from "@rakazo/ui-web";
+} from "@atlas/contracts";
+import { BotAvatar, Button } from "@atlas/ui-web";
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { ComputerMaintenanceActions } from "../../components/ComputerMaintenanceActions";

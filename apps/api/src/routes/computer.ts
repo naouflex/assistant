@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { ORPCError } from "@orpc/server";
-import type { AdapterContext, SandboxProvider } from "@rakazo/adapter-kit";
-import { computerControlExpireJobKey } from "@rakazo/adapter-kit";
-import type { ComputerExecutionLease } from "@rakazo/adapters";
+import type { AdapterContext, SandboxProvider } from "@atlas/adapter-kit";
+import { computerControlExpireJobKey } from "@atlas/adapter-kit";
+import type { ComputerExecutionLease } from "@atlas/adapters";
 import {
   acquireComputerExecutionLease,
   applyTeachingDesktopInput,
@@ -36,25 +35,26 @@ import {
   takeoverLeaseMs,
   toComputerRef,
   touchRunningComputer,
-} from "@rakazo/adapters";
-import type { Actor, ComputerReleaseReason, ComputerStatus } from "@rakazo/contracts";
+} from "@atlas/adapters";
+import type { Actor, ComputerReleaseReason, ComputerStatus } from "@atlas/contracts";
 import {
   attachmentMaxBytes,
   attachmentSizeLabel,
   ComputerCommandSchema,
   foldComputerCommands,
-} from "@rakazo/contracts";
-import { ACTIVE_RUN_STATUSES, scrollDirection } from "@rakazo/core";
-import { addScreenProxyCapability } from "@rakazo/core/node/screen-capability";
-import type { ComputerRunEnd, PrismaClient } from "@rakazo/db";
+} from "@atlas/contracts";
+import { ACTIVE_RUN_STATUSES, scrollDirection } from "@atlas/core";
+import { addScreenProxyCapability } from "@atlas/core/node/screen-capability";
+import type { ComputerRunEnd, PrismaClient } from "@atlas/db";
 import {
   createRepos,
   expireComputerExecutionLeases,
   IsolationError,
   parseComputerMode,
   recordComputerRunEnd,
-} from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/db";
+import { getLogger } from "@atlas/logging";
+import { ORPCError } from "@orpc/server";
 import { scrollPoint } from "../computer-input.js";
 import {
   executionBlocksUserTakeover,

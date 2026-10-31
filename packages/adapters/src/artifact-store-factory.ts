@@ -1,19 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { buffer } from "node:stream/consumers";
-import type {
-  AdapterContext,
-  ArtifactPut,
-  ArtifactStore,
-  ObjectStorage,
-} from "@rakazo/adapter-kit";
-import type { PrismaClient } from "@rakazo/db";
-import {
-  ContentDecryptionError,
-  contentEncryptionOf,
-  openArtifact,
-  sealArtifact,
-} from "@rakazo/db";
+import type { AdapterContext, ArtifactPut, ArtifactStore, ObjectStorage } from "@atlas/adapter-kit";
+import type { PrismaClient } from "@atlas/db";
+import { ContentDecryptionError, contentEncryptionOf, openArtifact, sealArtifact } from "@atlas/db";
 import type { ArtifactKeys } from "./artifacts.js";
 import { LocalArtifactStore } from "./artifacts.js";
 import { objectStorageConfigFromEnv, S3ObjectStorage } from "./s3-object-storage.js";

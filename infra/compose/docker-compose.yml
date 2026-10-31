@@ -6,7 +6,7 @@ x-app-environment: &app-environment
   # Runtime
   NODE_ENV: ${NODE_ENV:-production}
   # The app's own login, subject to row-level security (docs/self-host-configuration.md#database-roles).
-  DATABASE_URL: postgres://rakazo_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rakazo}
+  DATABASE_URL: postgres://rakazo_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-atlas}
   REALTIME_DATABASE_URL:
   DB_POOL_MAX:
   DATA_DIR: /data
@@ -31,16 +31,16 @@ x-app-environment: &app-environment
   API_URL:
   MAX_UPLOAD_SIZE_MB:
   MAX_ATTACHMENTS_PER_MESSAGE:
-  RAKAZO_UPDATE_RESTART_SUPERVISOR:
+  ATLAS_UPDATE_RESTART_SUPERVISOR:
   TICKET_BOARD_ENABLED:
   USER_DEVICES_ENABLED:
   BOT_MESSAGE_MAX_HOPS:
-  RAKAZO_MESSAGE_USER_MAX_CHARS:
+  ATLAS_MESSAGE_USER_MAX_CHARS:
   TEACH_RECORDING_TTL_MS:
   PHONE_CALLS_ENABLED:
   PHONE_CALL_RING_SECONDS:
   PHONE_CALL_COOLDOWN_MINUTES:
-  RAKAZO_SECRETS_ALLOW_PRIVATE_HTTP:
+  ATLAS_SECRETS_ALLOW_PRIVATE_HTTP:
   EXPO_ACCESS_TOKEN:
   # Secret storage
   SECRET_STORE: ${SECRET_STORE:-encrypted}
@@ -80,24 +80,24 @@ x-app-environment: &app-environment
   PI_DEFAULT_MODEL:
   PI_DEFAULT_CREDENTIALS:
   PI_SESSION_RECORDING:
-  RAKAZO_LIVE_MODEL_CATALOG:
+  ATLAS_LIVE_MODEL_CATALOG:
   OPENROUTER_API_KEY:
   ANTHROPIC_API_KEY:
   TYPESAFE_API_KEY:
   MAX_TOOL_CALLS_PER_TURN:
   MODEL_STREAM_MAX_RETRIES:
-  RAKAZO_LOCAL_MODELS:
-  RAKAZO_LOCAL_MODELS_URL:
-  RAKAZO_LOCAL_VISION_MODELS:
-  RAKAZO_LOCAL_CONTEXT_WINDOW:
-  RAKAZO_LOCAL_MAX_TOKENS:
-  RAKAZO_OPENAI_COMPATIBLE_VISION_MODELS:
-  RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC:
-  RAKAZO_OPENAI_COMPAT_PRIVATE_HOSTS:
-  RAKAZO_AUTO_REVIEW_PROVIDER:
-  RAKAZO_AUTO_REVIEW_MODEL:
-  RAKAZO_AUTO_REVIEW_MIN_CONFIDENCE:
-  RAKAZO_AUTO_REVIEW_TIMEOUT_MS:
+  ATLAS_LOCAL_MODELS:
+  ATLAS_LOCAL_MODELS_URL:
+  ATLAS_LOCAL_VISION_MODELS:
+  ATLAS_LOCAL_CONTEXT_WINDOW:
+  ATLAS_LOCAL_MAX_TOKENS:
+  ATLAS_OPENAI_COMPATIBLE_VISION_MODELS:
+  ATLAS_OPENAI_COMPAT_ALLOW_PUBLIC:
+  ATLAS_OPENAI_COMPAT_PRIVATE_HOSTS:
+  ATLAS_AUTO_REVIEW_PROVIDER:
+  ATLAS_AUTO_REVIEW_MODEL:
+  ATLAS_AUTO_REVIEW_MIN_CONFIDENCE:
+  ATLAS_AUTO_REVIEW_TIMEOUT_MS:
   RELEASE_WATCH_EVAL_MODEL:
   FISH_TTS_MODEL:
   FISH_ASR_MODEL:
@@ -270,9 +270,9 @@ services:
       # USER/PASSWORD/DB apply only on first volume init. Keep existing values in
       # .env, or ALTER ROLE / rename in place. Recreate the volume only after backup
       # (or when it is disposable); down -v deletes all DB state.
-      POSTGRES_USER: ${POSTGRES_USER:-rakazo}
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:-rakazo}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
     volumes:
       # Postgres 18 keeps each major version's cluster in /var/lib/postgresql/<major>/docker.
       - postgres:/var/lib/postgresql
@@ -281,7 +281,7 @@ services:
       # upgrade-postgres.sh (docs/self-host-upgrading.md#upgrading-to-postgres-18).
       - pgdata:/var/lib/postgresql/16/docker:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rakazo} -d ${POSTGRES_DB:-rakazo}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlas} -d ${POSTGRES_DB:-atlas}"]
       interval: 3s
       timeout: 5s
       retries: 20
@@ -296,10 +296,10 @@ services:
       SUPERVISOR_HOST: "0.0.0.0"
       SUPERVISOR_PORT: "7091"
       DOCKER_SOCKET: /var/run/docker.sock
-      RAKAZO_COMPUTER_IMAGE: rakazo/computer:local
-      RAKAZO_COMPUTER_MEMORY: ${RAKAZO_COMPUTER_MEMORY:-2g}
-      RAKAZO_COMPUTER_CPUS: ${RAKAZO_COMPUTER_CPUS:-2}
-      RAKAZO_COMPUTER_PIDS_LIMIT: ${RAKAZO_COMPUTER_PIDS_LIMIT:-2048}
+      ATLAS_COMPUTER_IMAGE: atlas/computer:local
+      ATLAS_COMPUTER_MEMORY: ${ATLAS_COMPUTER_MEMORY:-${RAKAZO_COMPUTER_MEMORY:-2g}}
+      ATLAS_COMPUTER_CPUS: ${ATLAS_COMPUTER_CPUS:-${RAKAZO_COMPUTER_CPUS:-2}}
+      ATLAS_COMPUTER_PIDS_LIMIT: ${ATLAS_COMPUTER_PIDS_LIMIT:-${RAKAZO_COMPUTER_PIDS_LIMIT:-2048}}
       SANDBOX_COMMAND_TIMEOUT_MS: ${SANDBOX_COMMAND_TIMEOUT_MS:-300000}
       SANDBOX_TEAM_SCREEN_LIMIT: ${SANDBOX_TEAM_SCREEN_LIMIT:-0}
       SANDBOX_SUPERVISOR_TOKEN: ${SANDBOX_SUPERVISOR_TOKEN:?Set SANDBOX_SUPERVISOR_TOKEN in .env}
@@ -324,7 +324,7 @@ services:
         condition: service_completed_successfully
 
   computer:
-    image: rakazo/computer:local
+    image: atlas/computer:local
     build:
       context: ../sandboxes/computer
     command: ["true"]
@@ -348,8 +348,8 @@ services:
     command: ["pnpm", "db:deploy"]
     restart: "no"
     environment:
-      DATABASE_URL: postgres://rakazo_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rakazo}
-      DATABASE_MIGRATION_URL: postgres://${POSTGRES_USER:-rakazo}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-rakazo}
+      DATABASE_URL: postgres://rakazo_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-atlas}
+      DATABASE_MIGRATION_URL: postgres://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-atlas}
     depends_on:
       postgres:
         condition: service_healthy
@@ -387,8 +387,8 @@ services:
       SIGNUPS_ENABLED:
       SIGNUP_ALLOWLIST:
       SCREEN_PROXY_SECRET: ${SCREEN_PROXY_SECRET:?Set SCREEN_PROXY_SECRET in .env}
-      RAKAZO_DESKTOP_STACK_TOKEN:
-      RAKAZO_GIT_SHA:
+      ATLAS_DESKTOP_STACK_TOKEN:
+      ATLAS_GIT_SHA:
       SENTRY_BROWSER_DSN: ${SENTRY_BROWSER_DSN:-}
       PRIVACY_POLICY_URL:
       EMAIL_PROVIDER:
@@ -403,13 +403,13 @@ services:
       CRISP_WEBSITE_ID:
       INTEGRATIONS_CATALOG_URL:
       TEAM_CHAT_BOT_ID:
-      SLACK_RAKAZO_BOT_ID:
+      SLACK_ATLAS_BOT_ID:
       TEAM_CHAT_JUDGE_PROVIDER:
       TEAM_CHAT_JUDGE_MODEL:
       SPACE_TEARDOWN_TIMEOUT_MS:
-      RAKAZO_MIN_CLIENT_BUILD:
-      RAKAZO_NAV_LINKS:
-      RAKAZO_ADMIN_EMAILS:
+      ATLAS_MIN_CLIENT_BUILD:
+      ATLAS_NAV_LINKS:
+      ATLAS_ADMIN_EMAILS:
       VOICE_SUMMARY_MIN_CHARS:
     healthcheck:
       test:
@@ -472,12 +472,12 @@ services:
     environment:
       API_PROXY_TARGET: http://api:3100
       SCREEN_PROXY_SECRET: ${SCREEN_PROXY_SECRET:?Set SCREEN_PROXY_SECRET in .env}
-      RAKAZO_HOST: ${RAKAZO_HOST:-localhost}
-      RAKAZO_CSP_SCRIPT_SRC: ${RAKAZO_CSP_SCRIPT_SRC:-}
-      RAKAZO_CSP_CONNECT_SRC: ${RAKAZO_CSP_CONNECT_SRC:-}
+      ATLAS_HOST: ${ATLAS_HOST:-${RAKAZO_HOST:-localhost}}
+      ATLAS_CSP_SCRIPT_SRC: ${ATLAS_CSP_SCRIPT_SRC:-${RAKAZO_CSP_SCRIPT_SRC:-}}
+      ATLAS_CSP_CONNECT_SRC: ${ATLAS_CSP_CONNECT_SRC:-${RAKAZO_CSP_CONNECT_SRC:-}}
       CRISP_WEBSITE_ID:
     ports:
-      - "${RAKAZO_WEB_BIND:-127.0.0.1}:5173:5173"
+      - "${ATLAS_WEB_BIND:-${RAKAZO_WEB_BIND:-127.0.0.1}}:5173:5173"
     depends_on:
       - api
 

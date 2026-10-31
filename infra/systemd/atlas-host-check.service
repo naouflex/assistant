@@ -3,11 +3,11 @@ Description=Check host storage, backup health and SSH access rules
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/etc/rakazo/backup.env
-ExecStart=/usr/local/sbin/rakazo-host-check
-StateDirectory=rakazo/alerts
+EnvironmentFile=-/etc/atlas/backup.env
+ExecStart=/usr/local/sbin/atlas-host-check
+StateDirectory=atlas/alerts
 StateDirectoryMode=0700
 ProtectSystem=strict
-ReadWritePaths=/var/lib/rakazo/alerts
+ReadWritePaths=/var/lib/atlas/alerts
 ProtectHome=true
 PrivateTmp=true

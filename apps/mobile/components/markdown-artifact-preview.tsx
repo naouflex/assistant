@@ -1,4 +1,4 @@
-import { ChatMarkdown } from "@rakazo/chat-ui/native";
+import { ChatMarkdown } from "@atlas/chat-ui/native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,

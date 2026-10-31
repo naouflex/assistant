@@ -33,7 +33,7 @@ describe("notification thread targeting", () => {
     expect(notificationTargetsThread({ botId: "bot-1" }, { botId: "bot-1" })).toBe(true);
     expect(
       notificationTargetsThread(
-        { "rakazo.threadId": "thread-1" },
+        { "atlas.threadId": "thread-1" },
         { botId: "bot-1", threadId: "thread-1" },
       ),
     ).toBe(true);
@@ -57,7 +57,7 @@ describe("notification thread targeting", () => {
     const groupPush = { botId: "bot-1", threadId: "group-thread", groupId: "group-1" };
     expect(notificationTargetsThread(groupPush, { botId: "bot-1" })).toBe(false);
     expect(notificationTargetsThread(groupPush, { groupId: "group-1" })).toBe(true);
-    expect(notificationTargetsThread({ "rakazo.groupId": "group-1" }, { groupId: "group-1" })).toBe(
+    expect(notificationTargetsThread({ "atlas.groupId": "group-1" }, { groupId: "group-1" })).toBe(
       true,
     );
     expect(notificationTargetsThread({ botId: "bot-1" }, { groupId: "group-1" })).toBe(false);
@@ -103,7 +103,7 @@ describe("notification thread targeting", () => {
         request: { identifier: "group", content: { data: { groupId: "group-1", botId: "bot-1" } } },
       },
       {
-        request: { identifier: "native-group", content: { data: { "rakazo.groupId": "group-1" } } },
+        request: { identifier: "native-group", content: { data: { "atlas.groupId": "group-1" } } },
       },
       { request: { identifier: "bot", content: { data: { botId: "bot-1" } } } },
       { request: { identifier: "other-group", content: { data: { groupId: "group-2" } } } },

@@ -1,5 +1,5 @@
-import { isPrivateNetworkHost } from "@rakazo/contracts";
-import { cancelResponseBody, readBoundedJsonResponse, withAbort } from "@rakazo/core";
+import { isPrivateNetworkHost } from "@atlas/contracts";
+import { cancelResponseBody, readBoundedJsonResponse, withAbort } from "@atlas/core";
 import { t } from "./i18n";
 import { DEFAULT_API, LOCAL_API } from "./server-config";
 
@@ -73,7 +73,7 @@ export async function probeApiBase(
       fetchImpl(`${parsed.url}/rpc/health`, {
         method: "POST",
         ...(Object.keys(headers).length ? { redirect: "error" as const } : {}),
-        headers: { ...headers, "content-type": "application/json", origin: "rakazo://" },
+        headers: { ...headers, "content-type": "application/json", origin: "atlas://" },
         body: JSON.stringify({ json: {} }),
         signal: controller.signal,
       }),
@@ -82,7 +82,7 @@ export async function probeApiBase(
     );
     if (!res.ok) {
       cancelResponseBody(res);
-      return { ok: false, error: t("That URL did not look like a Rakazo server") };
+      return { ok: false, error: t("That URL did not look like an Atlas server") };
     }
     let body: HealthResponse;
     try {
@@ -96,7 +96,7 @@ export async function probeApiBase(
       body = {};
     }
     if (body.error || body.json?.ok !== true) {
-      return { ok: false, error: t("That URL did not look like a Rakazo server") };
+      return { ok: false, error: t("That URL did not look like an Atlas server") };
     }
     return parsed;
   } catch {

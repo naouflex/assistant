@@ -1,5 +1,5 @@
-import type { AgentToolExecutionObserver } from "@rakazo/adapter-kit";
-import { toolResultTaintsRun } from "@rakazo/core";
+import type { AgentToolExecutionObserver } from "@atlas/adapter-kit";
+import { toolResultTaintsRun } from "@atlas/core";
 import { IMAGE_RETURNING_COMPUTER_TOOLS, MODEL_CANNOT_SEE_MESSAGE } from "./model-vision.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolHandler } from "./run-tool-gate.js";

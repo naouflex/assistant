@@ -76,7 +76,7 @@ describe.skipIf(findVersion.status !== 0 || !findVersion.stdout.includes("GNU"))
       ["Railway", "-print0", 1],
       ["Boxd", "-printf '%P\\0%m\\0%s\\0'", 3],
     ])("prints regular files and prunes excluded directories for %s", async (_, action, fields) => {
-      const root = await mkdtemp(path.join(tmpdir(), "rakazo-find-"));
+      const root = await mkdtemp(path.join(tmpdir(), "atlas-find-"));
       try {
         const home = path.join(root, "home with 'quotes'");
         const kept = [

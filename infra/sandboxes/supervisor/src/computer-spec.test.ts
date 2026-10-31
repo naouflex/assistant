@@ -17,7 +17,7 @@ import {
   DEFAULT_DESKTOP_ENV,
   ensureScreenCommand,
   TERMINAL_MENU_COMMAND,
-} from "@rakazo/core/node/desktop-runtime";
+} from "@atlas/core/node/desktop-runtime";
 import type Docker from "dockerode";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -74,24 +74,24 @@ describe("graphical computer spec", () => {
   });
 
   it("resolves the computer image tag outside Compose", () => {
-    // Explicit "" stands for unset, so exported RAKAZO_COMPUTER_IMAGE* values cannot leak in.
-    expect(resolveComputerImage("", "")).toBe("rakazo/computer:local");
-    expect(resolveComputerImage("", "edge")).toBe("rakazo/computer:local");
-    expect(resolveComputerImage("ghcr.io/elie222/rakazo/computer", "edge")).toBe(
-      "ghcr.io/elie222/rakazo/computer:edge",
+    // Explicit "" stands for unset, so exported ATLAS_COMPUTER_IMAGE* values cannot leak in.
+    expect(resolveComputerImage("", "")).toBe("atlas/computer:local");
+    expect(resolveComputerImage("", "edge")).toBe("atlas/computer:local");
+    expect(resolveComputerImage("ghcr.io/naouflex/assistant/computer", "edge")).toBe(
+      "ghcr.io/naouflex/assistant/computer:edge",
     );
-    expect(resolveComputerImage("ghcr.io/elie222/rakazo/computer", "")).toBe(
-      "ghcr.io/elie222/rakazo/computer",
+    expect(resolveComputerImage("ghcr.io/naouflex/assistant/computer", "")).toBe(
+      "ghcr.io/naouflex/assistant/computer",
     );
     // Compose already appends the tag, so a tagged or pinned image is never tagged twice.
-    expect(resolveComputerImage("ghcr.io/elie222/rakazo/computer:edge", "edge")).toBe(
-      "ghcr.io/elie222/rakazo/computer:edge",
+    expect(resolveComputerImage("ghcr.io/naouflex/assistant/computer:edge", "edge")).toBe(
+      "ghcr.io/naouflex/assistant/computer:edge",
     );
-    expect(resolveComputerImage("registry.example.com:5000/rakazo/computer", "v1.2.3")).toBe(
-      "registry.example.com:5000/rakazo/computer:v1.2.3",
+    expect(resolveComputerImage("registry.example.com:5000/atlas/computer", "v1.2.3")).toBe(
+      "registry.example.com:5000/atlas/computer:v1.2.3",
     );
-    expect(resolveComputerImage("rakazo/computer@sha256:abc", "edge")).toBe(
-      "rakazo/computer@sha256:abc",
+    expect(resolveComputerImage("atlas/computer@sha256:abc", "edge")).toBe(
+      "atlas/computer@sha256:abc",
     );
   });
 
@@ -109,22 +109,22 @@ describe("graphical computer spec", () => {
 
   it("creates a VNC desktop, not an alpine sleep fallback", () => {
     const options = containerCreateOptions({
-      name: "rakazo-bot-abc",
+      name: "atlas-bot-abc",
       image: COMPUTER_IMAGE,
       botId: "abc",
       spaceId: "ws",
-      homePath: "/var/rakazo/homes/abc",
-      networkMode: "rakazo_default",
+      homePath: "/var/atlas/homes/abc",
+      networkMode: "atlas_default",
     });
-    expect(options.Image).toBe("rakazo/computer:local");
+    expect(options.Image).toBe("atlas/computer:local");
     expect(options.Image).not.toMatch(/alpine/);
     expect(options).not.toHaveProperty("Entrypoint");
     expect(JSON.stringify(options)).not.toMatch(/sleep/);
-    expect(options.HostConfig.Binds).toEqual(["/var/rakazo/homes/abc:/home/rakazo"]);
+    expect(options.HostConfig.Binds).toEqual(["/var/atlas/homes/abc:/home/atlas"]);
     expect(options.Env).toContain(
-      "PATH=/home/rakazo/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "PATH=/home/atlas/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     );
-    expect(options.Env).toContain("NPM_CONFIG_PREFIX=/home/rakazo/.local");
+    expect(options.Env).toContain("NPM_CONFIG_PREFIX=/home/atlas/.local");
     expect(options.Env?.join("\n")).not.toMatch(/AXIOM_|LOG_LEVEL|LOG_FORMAT/);
     expect(options.ExposedPorts).toEqual({ "6080/tcp": {} });
     // Browser debugging stays inside the computer trust boundary.
@@ -146,7 +146,7 @@ describe("graphical computer spec", () => {
     expect(options.HostConfig.SecurityOpt).toEqual(["no-new-privileges:true"]);
     expect(options.HostConfig.PidsLimit).toBe(2048);
     expect(options.HostConfig.ReadonlyPaths).toContain("/usr/share/novnc");
-    expect(options.HostConfig.NetworkMode).toBe("rakazo_default");
+    expect(options.HostConfig.NetworkMode).toBe("atlas_default");
   });
 
   it("still publishes host ports when NetworkMode is a per-bot isolated network", () => {
@@ -156,10 +156,10 @@ describe("graphical computer spec", () => {
       image: COMPUTER_IMAGE,
       botId: "bot_isolation",
       spaceId: "ws",
-      homePath: "/var/rakazo/homes/bot_isolation",
+      homePath: "/var/atlas/homes/bot_isolation",
       networkMode,
     });
-    expect(networkMode).toMatch(/^rakazo-computer-bot_isolation-[0-9a-f]{32}$/);
+    expect(networkMode).toMatch(/^atlas-computer-bot_isolation-[0-9a-f]{32}$/);
     expect(options.HostConfig.NetworkMode).toBe(networkMode);
     expect(options.HostConfig.PortBindings["6080/tcp"]).toEqual([
       { HostIp: "127.0.0.1", HostPort: "0" },
@@ -195,7 +195,7 @@ describe("graphical computer spec", () => {
 
   it("sets DNS servers on computers only when configured", () => {
     const base = {
-      name: "rakazo-bot-x",
+      name: "atlas-bot-x",
       image: "img",
       botId: "x",
       spaceId: "s",
@@ -221,7 +221,7 @@ describe("graphical computer spec", () => {
       "srv/docs:/mnt/docs",
       "/srv/docs:mnt/docs",
       "/:/mnt/host",
-      "/srv/docs:/home/rakazo/docs",
+      "/srv/docs:/home/atlas/docs",
       "/srv/docs:/mnt",
       "/srv/docs:/usr/local/bin",
       "/srv/docs:/mnt/../etc/docs",
@@ -235,7 +235,7 @@ describe("graphical computer spec", () => {
 
   it("adds host mounts beside either kind of home", () => {
     const base = {
-      name: "rakazo-bot-x",
+      name: "atlas-bot-x",
       image: "img",
       botId: "x",
       spaceId: "s",
@@ -256,14 +256,14 @@ describe("graphical computer spec", () => {
     ];
     expect(containerCreateOptions(base).HostConfig.Mounts).toBeUndefined();
     const bound = containerCreateOptions({ ...base, mounts }).HostConfig;
-    expect(bound.Binds).toEqual(["/data/x:/home/rakazo"]);
+    expect(bound.Binds).toEqual(["/data/x:/home/atlas"]);
     expect(bound.Mounts).toEqual(expected);
     const volume = containerCreateOptions({
       ...base,
       homeVolume: { name: "appdata", subpath: "homes/x" },
       mounts,
     }).HostConfig;
-    expect(volume.Mounts?.[0]).toMatchObject({ Type: "volume", Target: "/home/rakazo" });
+    expect(volume.Mounts?.[0]).toMatchObject({ Type: "volume", Target: "/home/atlas" });
     expect(volume.Mounts?.slice(1)).toEqual(expected);
   });
 
@@ -271,7 +271,7 @@ describe("graphical computer spec", () => {
     const desired = resolveComputerMounts(
       "/srv/docs:/mnt/docs:ro,/srv/shares:/mnt/shares:rw:rslave",
     );
-    const home = { Type: "bind", Source: "/data/x", Target: "/home/rakazo" };
+    const home = { Type: "bind", Source: "/data/x", Target: "/home/atlas" };
     const docs = { Type: "bind", Source: "/srv/docs", Target: "/mnt/docs", ReadOnly: true };
     const shares = {
       Type: "bind",
@@ -283,7 +283,7 @@ describe("graphical computer spec", () => {
     // Labels as the computer was created with `created` mounts.
     const labels = (created: typeof desired) =>
       containerCreateOptions({
-        name: "rakazo-bot-x",
+        name: "atlas-bot-x",
         image: "img",
         botId: "x",
         spaceId: "s",
@@ -354,13 +354,8 @@ describe("graphical computer spec", () => {
     for (const value of ["/srv/../etc:/mnt/x", "/srv/docs/..:/mnt/x", "/srv/docs:/mnt/a/../x"])
       expect(() => resolveComputerMounts(value)).toThrow(/must not contain \.\./);
 
-    const protectedPaths = ["/opt/rakazo/data", "/home/op/.docker/run/docker.sock", undefined];
-    for (const source of [
-      "/opt/rakazo/data",
-      "/opt/rakazo/data/homes/bot",
-      "/opt/rakazo",
-      "/home/op",
-    ])
+    const protectedPaths = ["/opt/atlas/data", "/home/op/.docker/run/docker.sock", undefined];
+    for (const source of ["/opt/atlas/data", "/opt/atlas/data/homes/bot", "/opt/atlas", "/home/op"])
       expect(() => resolveComputerMounts(`${source}:/mnt/x`, protectedPaths)).toThrow(
         /protected host path/,
       );
@@ -381,7 +376,7 @@ describe("graphical computer spec", () => {
   it("derives deterministic host bridge names within the 15-byte interface limit", () => {
     for (const botId of ["bot", "a/b", "bot with spaces", "x".repeat(80)]) {
       const name = computerBridgeNameFor(botId);
-      expect(name).toMatch(/^rakazo-c[0-9a-f]{7}$/);
+      expect(name).toMatch(/^atlas-c[0-9a-f]{7}$/);
       expect(Buffer.byteLength(name)).toBeLessThanOrEqual(15);
       expect(computerBridgeNameFor(botId)).toBe(name);
     }
@@ -394,7 +389,7 @@ describe("graphical computer spec", () => {
       Name: computerNetworkNameFor("bot_1"),
       Driver: "bridge",
       CheckDuplicate: true,
-      Labels: { "rakazo.computerOwner": "owner", "rakazo.botId": "bot_1" },
+      Labels: { "atlas.computerOwner": "owner", "atlas.botId": "bot_1" },
     });
     expect(open).not.toHaveProperty("Options");
 
@@ -404,14 +399,14 @@ describe("graphical computer spec", () => {
     });
     expect(computerNetworkCreateOptions("bot_1", "owner")).toEqual(open);
     // The bridge name differs from the network name so `docker network` output
-    // still shows the readable rakazo-computer-* name while iptables matches the interface.
+    // still shows the readable atlas-computer-* name while iptables matches the interface.
     expect(restricted.Options?.["com.docker.network.bridge.name"]).not.toBe(restricted.Name);
   });
 
   it("lists prior network name variants for cleanup", () => {
     const names = computerNetworkNamesForCleanup("bot_1");
     expect(names[0]).toBe(computerNetworkNameFor("bot_1"));
-    expect(names).toContain("rakazo-computer-bot_1");
+    expect(names).toContain("atlas-computer-bot_1");
     expect(names.some((name) => /-[0-9a-f]{8}$/.test(name))).toBe(true);
     expect(names.some((name) => /-[0-9a-f]{32}$/.test(name))).toBe(true);
   });
@@ -451,15 +446,15 @@ describe("graphical computer spec", () => {
   });
 
   it("pulls a missing computer image only from a registry the name spells out", () => {
-    expect(isRegistryQualifiedImage("ghcr.io/elie222/rakazo/computer:edge")).toBe(true);
-    expect(isRegistryQualifiedImage("registry.test/rakazo/computer@sha256:0123")).toBe(true);
-    expect(isRegistryQualifiedImage("localhost:5000/rakazo/computer")).toBe(true);
-    expect(isRegistryQualifiedImage("localhost/rakazo/computer:local")).toBe(true);
-    expect(isRegistryQualifiedImage("docker.io/rakazo/computer:edge")).toBe(true);
-    expect(isRegistryQualifiedImage("Registry/rakazo/computer:edge")).toBe(true);
-    expect(isRegistryQualifiedImage("rakazO/computer:edge")).toBe(true);
-    expect(isRegistryQualifiedImage("rakazo/computer:local")).toBe(false);
-    expect(isRegistryQualifiedImage("rakazo/computer@sha256:0123")).toBe(false);
+    expect(isRegistryQualifiedImage("ghcr.io/naouflex/assistant/computer:edge")).toBe(true);
+    expect(isRegistryQualifiedImage("registry.test/atlas/computer@sha256:0123")).toBe(true);
+    expect(isRegistryQualifiedImage("localhost:5000/atlas/computer")).toBe(true);
+    expect(isRegistryQualifiedImage("localhost/atlas/computer:local")).toBe(true);
+    expect(isRegistryQualifiedImage("docker.io/atlas/computer:edge")).toBe(true);
+    expect(isRegistryQualifiedImage("Registry/atlas/computer:edge")).toBe(true);
+    expect(isRegistryQualifiedImage("atlas/computer:edge")).toBe(true);
+    expect(isRegistryQualifiedImage("atlas/computer:local")).toBe(false);
+    expect(isRegistryQualifiedImage("atlas/computer@sha256:0123")).toBe(false);
     expect(isRegistryQualifiedImage("computer:local")).toBe(false);
   });
 
@@ -467,44 +462,44 @@ describe("graphical computer spec", () => {
     const root = path.resolve(import.meta.dirname, "../../computer");
     const dockerfile = readFileSync(path.join(root, "Dockerfile"), "utf8");
     const start = readFileSync(path.join(root, "start.sh"), "utf8");
-    const browser = readFileSync(path.join(root, "rakazo-browser"), "utf8");
-    const desktop = readFileSync(path.join(root, "rakazo-browser.desktop"), "utf8");
+    const browser = readFileSync(path.join(root, "atlas-browser"), "utf8");
+    const desktop = readFileSync(path.join(root, "atlas-browser.desktop"), "utf8");
     expect(dockerfile).toMatch(/chromium/);
-    expect(dockerfile).toMatch(/rakazo-browser\.desktop/);
+    expect(dockerfile).toMatch(/atlas-browser\.desktop/);
     expect(dockerfile).toMatch(/control.py/);
     expect(dockerfile).toMatch(/USER 1000:1000/);
-    expect(start).toMatch(/rakazo-computer-control/);
-    expect(start).toMatch(/rakazo-browser/);
+    expect(start).toMatch(/atlas-computer-control/);
+    expect(start).toMatch(/atlas-browser/);
     expect(start).not.toMatch(/browser\.log/);
-    expect(start).toMatch(/xdg-mime default rakazo-browser\.desktop/);
+    expect(start).toMatch(/xdg-mime default atlas-browser\.desktop/);
     expect(start).toMatch(/register_browser_handler x-scheme-handler\/http/);
     expect(start).toMatch(/register_browser_handler x-scheme-handler\/https/);
     expect(start).toMatch(/register_browser_handler text\/html/);
     expect(start).toMatch(/xdg-mime query default/);
-    expect(start).toMatch(/failed to register rakazo-browser/);
+    expect(start).toMatch(/failed to register atlas-browser/);
     expect(start).toMatch(/failed to set default web browser/);
-    expect(start).toMatch(/xdg-settings set default-web-browser rakazo-browser\.desktop/);
-    expect(start).not.toMatch(/xdg-mime default rakazo-browser\.desktop .*\|\| true/);
+    expect(start).toMatch(/xdg-settings set default-web-browser atlas-browser\.desktop/);
+    expect(start).not.toMatch(/xdg-mime default atlas-browser\.desktop .*\|\| true/);
     expect(start).toMatch(/x11vnc .* -viewonly /);
     expect(browser).toMatch(/\.browser-profiles\/chromium/);
     expect(browser).toMatch(/chromium-screen-\$DISPLAY_NUM/);
     expect(browser).toMatch(/USER_DATA_DIR_SET/);
-    expect(browser).toMatch(/RAKAZO_BROWSER_PROFILE/);
-    expect(desktop).toMatch(/Exec=\/usr\/local\/bin\/rakazo-browser %U/);
-    expect(dockerfile).toMatch(/rakazo-page-browser/);
+    expect(browser).toMatch(/ATLAS_BROWSER_PROFILE/);
+    expect(desktop).toMatch(/Exec=\/usr\/local\/bin\/atlas-browser %U/);
+    expect(dockerfile).toMatch(/atlas-page-browser/);
     expect(browser).toMatch(/remote-debugging-port/);
     expect(desktop).toMatch(/x-scheme-handler\/http/);
     expect(desktop).toMatch(/x-scheme-handler\/https/);
     expect(start).not.toMatch(/windowsize 1280 800/);
     expect(dockerfile).toMatch(/wmctrl/);
-    expect(dockerfile).toMatch(/rakazo-focus-or-launch/);
+    expect(dockerfile).toMatch(/atlas-focus-or-launch/);
   });
 
   it.skipIf(process.platform === "win32")(
     "finds Google Chrome and passes over Ubuntu's snap chromium",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-find-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-find-"));
       const bin = path.join(temp, "bin");
       const tools = path.join(temp, "tools");
       const capture = path.join(temp, "launched");
@@ -512,7 +507,7 @@ describe("graphical computer spec", () => {
       const chrome = path.join(bin, "google-chrome");
       mkdirSync(bin);
       writeFileSync(snapChromium, '#!/bin/sh\nexec /snap/bin/chromium "$@"\n');
-      writeFileSync(chrome, '#!/bin/sh\nprintf "%s" "$0" > "$RAKAZO_TEST_LAUNCHED"\n');
+      writeFileSync(chrome, '#!/bin/sh\nprintf "%s" "$0" > "$ATLAS_TEST_LAUNCHED"\n');
       chmodSync(snapChromium, 0o755);
       chmodSync(chrome, 0o755);
 
@@ -539,13 +534,13 @@ describe("graphical computer spec", () => {
           expect(resolved.status, resolved.stderr).toBe(0);
           symlinkSync(resolved.stdout.trim(), path.join(tools, utility));
         }
-        const result = spawnSync("sh", [path.join(root, "rakazo-browser")], {
+        const result = spawnSync("sh", [path.join(root, "atlas-browser")], {
           env: {
             ...process.env,
             DISPLAY: ":1",
             HOME: path.join(temp, "home"),
             PATH: `${bin}${path.delimiter}${tools}`,
-            RAKAZO_TEST_LAUNCHED: capture,
+            ATLAS_TEST_LAUNCHED: capture,
           },
           encoding: "utf8",
         });
@@ -594,9 +589,9 @@ describe("graphical computer spec", () => {
       const bin = path.join(temp, "bin");
       mkdirSync(bin);
       try {
-        for (const name of ["xterm", "rakazo-browser"]) {
+        for (const name of ["xterm", "atlas-browser"]) {
           const stub = path.join(bin, name);
-          writeFileSync(stub, '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n');
+          writeFileSync(stub, '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n');
           chmodSync(stub, 0o755);
         }
         const argvFor = (label: string) => {
@@ -610,7 +605,7 @@ describe("graphical computer spec", () => {
             env: {
               ...process.env,
               PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-              RAKAZO_TEST_ARGS: capture,
+              ATLAS_TEST_ARGS: capture,
             },
             encoding: "utf8",
           });
@@ -657,7 +652,7 @@ describe("graphical computer spec", () => {
         mkdirSync(path.dirname(menuPath), { recursive: true });
         writeFileSync(
           menuPath,
-          "[begin] (Desktop)\n[exec] (Browser) {/tmp/rakazo/browser-launch-1}\n[end]\n",
+          "[begin] (Desktop)\n[exec] (Browser) {/tmp/atlas/browser-launch-1}\n[end]\n",
         );
         writeFileSync(initPath, init);
         const lines = generated.replaceAll("/tmp/fluxbox-home-1", fluxHome).split("\n");
@@ -682,7 +677,7 @@ describe("graphical computer spec", () => {
         expect(written).toBe(
           [
             "[begin] (Desktop)",
-            "[exec] (Browser) {/tmp/rakazo/browser-launch-1}",
+            "[exec] (Browser) {/tmp/atlas/browser-launch-1}",
             terminalLine,
             "[end]",
             "",
@@ -699,7 +694,7 @@ describe("graphical computer spec", () => {
     "removes only libnss_wrapper from the Chromium preload environment",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-preload-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-preload-"));
       try {
         const chromium = path.join(temp, "chromium");
         // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion
@@ -719,12 +714,12 @@ describe("graphical computer spec", () => {
         ]) {
           const result = spawnSync(
             "sh",
-            [path.join(root, "rakazo-browser"), "https://example.test"],
+            [path.join(root, "atlas-browser"), "https://example.test"],
             {
               env: {
                 ...process.env,
                 HOME: temp,
-                RAKAZO_BROWSER_PROFILE: path.join(temp, "profile"),
+                ATLAS_BROWSER_PROFILE: path.join(temp, "profile"),
                 PATH: `${temp}${path.delimiter}${process.env.PATH ?? ""}`,
                 LD_PRELOAD: preload,
               },
@@ -745,23 +740,23 @@ describe("graphical computer spec", () => {
     "selects a display-specific browser profile and preserves explicit profiles",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-wrapper-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-wrapper-"));
       const bin = path.join(temp, "bin");
       const capture = path.join(temp, "args");
       const home = path.join(temp, "home");
       const chromium = path.join(bin, "chromium");
       mkdirSync(bin);
-      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n');
+      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n');
       chmodSync(chromium, 0o755);
 
       const run = (display: string, args: string[] = []) => {
-        const result = spawnSync("sh", [path.join(root, "rakazo-browser"), ...args], {
+        const result = spawnSync("sh", [path.join(root, "atlas-browser"), ...args], {
           env: {
             ...process.env,
             DISPLAY: display,
             HOME: home,
             PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-            RAKAZO_TEST_ARGS: capture,
+            ATLAS_TEST_ARGS: capture,
           },
           encoding: "utf8",
         });
@@ -801,13 +796,13 @@ describe("graphical computer spec", () => {
     "spawns Chromium when the caller passes the profile and debug flags itself",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-self-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-self-"));
       const bin = path.join(temp, "bin");
       const capture = path.join(temp, "args");
       const home = path.join(temp, "home");
       const chromium = path.join(bin, "chromium");
       mkdirSync(bin);
-      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n');
+      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n');
       chmodSync(chromium, 0o755);
 
       // browser-launch-N execs this wrapper with --user-data-dir and
@@ -821,7 +816,7 @@ describe("graphical computer spec", () => {
         const result = spawnSync(
           "sh",
           [
-            path.join(root, "rakazo-browser"),
+            path.join(root, "atlas-browser"),
             `--user-data-dir=${profile}`,
             "--remote-debugging-port=9222",
           ],
@@ -831,7 +826,7 @@ describe("graphical computer spec", () => {
               DISPLAY: ":1",
               HOME: home,
               PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-              RAKAZO_TEST_ARGS: capture,
+              ATLAS_TEST_ARGS: capture,
             },
             encoding: "utf8",
           },
@@ -847,26 +842,26 @@ describe("graphical computer spec", () => {
   );
 
   it.skipIf(process.platform !== "linux")(
-    "spawns Chromium when the wrapper is invoked as ./rakazo-browser",
+    "spawns Chromium when the wrapper is invoked as ./atlas-browser",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-rel-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-rel-"));
       const bin = path.join(temp, "bin");
       const capture = path.join(temp, "args");
       const home = path.join(temp, "home");
       const chromium = path.join(bin, "chromium");
       mkdirSync(bin);
-      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n');
+      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n');
       chmodSync(chromium, 0o755);
       const profile = path.join(home, ".browser-profiles", "chromium-bot-screen");
       mkdirSync(profile, { recursive: true });
       // The kernel records the path passed to exec, so a relative invocation
-      // shows up as ./rakazo-browser rather than an absolute script path.
-      symlinkSync(path.join(root, "rakazo-browser"), path.join(temp, "rakazo-browser"));
+      // shows up as ./atlas-browser rather than an absolute script path.
+      symlinkSync(path.join(root, "atlas-browser"), path.join(temp, "atlas-browser"));
 
       try {
         const result = spawnSync(
-          "./rakazo-browser",
+          "./atlas-browser",
           [`--user-data-dir=${profile}`, "--remote-debugging-port=9222"],
           {
             cwd: temp,
@@ -875,7 +870,7 @@ describe("graphical computer spec", () => {
               DISPLAY: ":1",
               HOME: home,
               PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-              RAKAZO_TEST_ARGS: capture,
+              ATLAS_TEST_ARGS: capture,
             },
             encoding: "utf8",
           },
@@ -891,14 +886,14 @@ describe("graphical computer spec", () => {
   );
 
   it.skipIf(process.platform !== "linux")(
-    "keeps a live browser when its profile directory is named rakazo-browser",
+    "keeps a live browser when its profile directory is named atlas-browser",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-named-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-named-"));
       const bin = path.join(temp, "bin");
       const capture = path.join(temp, "args");
       const home = path.join(temp, "home");
-      const profile = path.join(temp, "rakazo-browser");
+      const profile = path.join(temp, "atlas-browser");
       const prefsPath = path.join(profile, "Default", "Preferences");
       const liveBin = path.join(temp, "live", "chromium");
       mkdirSync(bin);
@@ -906,7 +901,7 @@ describe("graphical computer spec", () => {
       mkdirSync(path.dirname(prefsPath), { recursive: true });
       writeFileSync(
         path.join(bin, "chromium"),
-        '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n',
+        '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n',
       );
       chmodSync(path.join(bin, "chromium"), 0o755);
       // /proc/pid/exe is this binary, so the basename is chromium without compiling.
@@ -932,7 +927,7 @@ describe("graphical computer spec", () => {
         const result = spawnSync(
           "sh",
           [
-            path.join(root, "rakazo-browser"),
+            path.join(root, "atlas-browser"),
             `--user-data-dir=${profile}`,
             "--remote-debugging-port=9222",
           ],
@@ -942,7 +937,7 @@ describe("graphical computer spec", () => {
               DISPLAY: ":1",
               HOME: home,
               PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-              RAKAZO_TEST_ARGS: capture,
+              ATLAS_TEST_ARGS: capture,
             },
             encoding: "utf8",
           },
@@ -965,20 +960,20 @@ describe("graphical computer spec", () => {
   );
 
   it.skipIf(process.platform !== "linux")(
-    "keeps a live shell browser when the profile flag ends in /rakazo-browser",
+    "keeps a live shell browser when the profile flag ends in /atlas-browser",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-flag-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-flag-"));
       const bin = path.join(temp, "bin");
       const capture = path.join(temp, "args");
       const home = path.join(temp, "home");
-      const profile = path.join(temp, "rakazo-browser");
+      const profile = path.join(temp, "atlas-browser");
       const prefsPath = path.join(profile, "Default", "Preferences");
       mkdirSync(bin);
       mkdirSync(path.dirname(prefsPath), { recursive: true });
       writeFileSync(
         path.join(bin, "chromium"),
-        '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n',
+        '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n',
       );
       chmodSync(path.join(bin, "chromium"), 0o755);
       const sleeper = path.join(bin, "sleeper");
@@ -995,7 +990,7 @@ describe("graphical computer spec", () => {
         const result = spawnSync(
           "sh",
           [
-            path.join(root, "rakazo-browser"),
+            path.join(root, "atlas-browser"),
             `--user-data-dir=${profile}`,
             "--remote-debugging-port=9222",
           ],
@@ -1005,7 +1000,7 @@ describe("graphical computer spec", () => {
               DISPLAY: ":1",
               HOME: home,
               PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-              RAKAZO_TEST_ARGS: capture,
+              ATLAS_TEST_ARGS: capture,
             },
             encoding: "utf8",
           },
@@ -1030,13 +1025,13 @@ describe("graphical computer spec", () => {
     "clears crashed state from Chromium preferences and Local State",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-crash-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-crash-"));
       const bin = path.join(temp, "bin");
       const home = path.join(temp, "home");
       const chromium = path.join(bin, "chromium");
       const capture = path.join(temp, "args");
       mkdirSync(bin);
-      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n');
+      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n');
       chmodSync(chromium, 0o755);
 
       const profile = path.join(home, ".browser-profiles/chromium");
@@ -1051,13 +1046,13 @@ describe("graphical computer spec", () => {
       writeFileSync(localStatePath, '{\n  "profile": {\n    "exited_cleanly": false\n  }\n}\n');
 
       try {
-        const result = spawnSync("bash", [path.join(root, "rakazo-browser")], {
+        const result = spawnSync("bash", [path.join(root, "atlas-browser")], {
           env: {
             ...process.env,
             DISPLAY: ":1",
             HOME: home,
             PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-            RAKAZO_TEST_ARGS: capture,
+            ATLAS_TEST_ARGS: capture,
           },
           encoding: "utf8",
         });
@@ -1087,13 +1082,13 @@ describe("graphical computer spec", () => {
         });
         const liveLock = path.join(profile, "SingletonLock");
         const launch = () =>
-          spawnSync("bash", [path.join(root, "rakazo-browser")], {
+          spawnSync("bash", [path.join(root, "atlas-browser")], {
             env: {
               ...process.env,
               DISPLAY: ":1",
               HOME: home,
               PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-              RAKAZO_TEST_ARGS: capture,
+              ATLAS_TEST_ARGS: capture,
             },
             encoding: "utf8",
           });
@@ -1181,13 +1176,13 @@ describe("graphical computer spec", () => {
                 }
                 const spacedLock = path.join(spacedProfile, "SingletonLock");
                 symlinkSync(`testhost-${joined.pid}`, spacedLock);
-                const kept = spawnSync("bash", [path.join(root, "rakazo-browser")], {
+                const kept = spawnSync("bash", [path.join(root, "atlas-browser")], {
                   env: {
                     ...process.env,
                     DISPLAY: ":1",
                     HOME: spacedHome,
                     PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-                    RAKAZO_TEST_ARGS: capture,
+                    ATLAS_TEST_ARGS: capture,
                   },
                   encoding: "utf8",
                 });
@@ -1242,7 +1237,7 @@ describe("graphical computer spec", () => {
     "forwards a URL to the live browser when SingletonLock misses that process",
     () => {
       const root = path.resolve(import.meta.dirname, "../../computer");
-      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-live-"));
+      const temp = mkdtempSync(path.join(tmpdir(), "atlas-browser-live-"));
       const bin = path.join(temp, "bin");
       const home = path.join(temp, "home");
       const capture = path.join(temp, "args");
@@ -1252,10 +1247,10 @@ describe("graphical computer spec", () => {
       mkdirSync(bin);
       writeFileSync(
         path.join(bin, "chromium"),
-        '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n',
+        '#!/bin/sh\nprintf "%s\\n" "$@" > "$ATLAS_TEST_ARGS"\n',
       );
       chmodSync(path.join(bin, "chromium"), 0o755);
-      symlinkSync(path.join(root, "rakazo-browser"), path.join(bin, "rakazo-browser"));
+      symlinkSync(path.join(root, "atlas-browser"), path.join(bin, "atlas-browser"));
       const sleeper = path.join(bin, "sleeper");
       writeFileSync(sleeper, "#!/bin/sh\nsleep 120\n");
       chmodSync(sleeper, 0o755);
@@ -1269,7 +1264,7 @@ describe("graphical computer spec", () => {
           "state = {'consumed': False, 'listed': False, 'mode': ''}",
           "def mode():",
           "    try:",
-          "        with open(os.environ['RAKAZO_TEST_DROP'], encoding='utf-8') as handle:",
+          "        with open(os.environ['ATLAS_TEST_DROP'], encoding='utf-8') as handle:",
           "            current = handle.read().strip()",
           "    except OSError:",
           "        current = ''",
@@ -1307,7 +1302,7 @@ describe("graphical computer spec", () => {
           "            return",
           "        query = self.path.split('?', 1)[1] if '?' in self.path else ''",
           "        opened = urllib.parse.unquote(query)",
-          "        with open(os.environ['RAKAZO_TEST_URLS'], 'a', encoding='utf-8') as handle:",
+          "        with open(os.environ['ATLAS_TEST_URLS'], 'a', encoding='utf-8') as handle:",
           "            handle.write(self.path + '\\n')",
           "        current = mode()",
           "        if current == 'before' and not state['listed']:",
@@ -1328,7 +1323,7 @@ describe("graphical computer spec", () => {
           "    def log_message(self, fmt, *args):",
           "        return",
           "server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)",
-          "with open(os.environ['RAKAZO_TEST_PORT'], 'w', encoding='utf-8') as handle:",
+          "with open(os.environ['ATLAS_TEST_PORT'], 'w', encoding='utf-8') as handle:",
           "    handle.write(str(server.server_address[1]))",
           "server.serve_forever()",
           "",
@@ -1344,11 +1339,11 @@ describe("graphical computer spec", () => {
           "sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)",
           "sock.bind(('127.0.0.1', 0))",
           "sock.listen(8)",
-          "with open(os.environ['RAKAZO_TEST_PORT'], 'w', encoding='utf-8') as handle:",
+          "with open(os.environ['ATLAS_TEST_PORT'], 'w', encoding='utf-8') as handle:",
           "    handle.write(str(sock.getsockname()[1]))",
           "while True:",
           "    connection, _addr = sock.accept()",
-          "    with open(os.environ['RAKAZO_TEST_ACCEPTED'], 'a', encoding='utf-8') as handle:",
+          "    with open(os.environ['ATLAS_TEST_ACCEPTED'], 'a', encoding='utf-8') as handle:",
           "        handle.write('accepted\\n')",
           "    time.sleep(30)",
           "    connection.close()",
@@ -1370,17 +1365,17 @@ describe("graphical computer spec", () => {
         DISPLAY: ":1",
         HOME: home,
         PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-        RAKAZO_BROWSER_PROFILE: profile,
-        RAKAZO_TEST_ARGS: capture,
+        ATLAS_BROWSER_PROFILE: profile,
+        ATLAS_TEST_ARGS: capture,
       };
       const endpointProcess = spawn("python3", [endpoint], {
         stdio: "ignore",
         detached: true,
         env: {
           ...process.env,
-          RAKAZO_TEST_PORT: portFile,
-          RAKAZO_TEST_URLS: urlsFile,
-          RAKAZO_TEST_DROP: dropFile,
+          ATLAS_TEST_PORT: portFile,
+          ATLAS_TEST_URLS: urlsFile,
+          ATLAS_TEST_DROP: dropFile,
         },
       });
       const children = [endpointProcess];
@@ -1410,7 +1405,7 @@ describe("graphical computer spec", () => {
         children.push(browser, renderer, wrapper);
         const liveLock = path.join(profile, "SingletonLock");
         const launch = (args: string[] = []) =>
-          spawnSync("bash", [path.join(root, "rakazo-browser"), ...args], {
+          spawnSync("bash", [path.join(root, "atlas-browser"), ...args], {
             env: launchEnv,
             encoding: "utf8",
           });
@@ -1531,8 +1526,8 @@ describe("graphical computer spec", () => {
           detached: true,
           env: {
             ...process.env,
-            RAKAZO_TEST_PORT: hungPortFile,
-            RAKAZO_TEST_ACCEPTED: acceptedFile,
+            ATLAS_TEST_PORT: hungPortFile,
+            ATLAS_TEST_ACCEPTED: acceptedFile,
           },
         });
         children.push(hung);
@@ -1553,7 +1548,7 @@ describe("graphical computer spec", () => {
               "spec = importlib.util.spec_from_file_location('control', sys.argv[1])",
               "module = importlib.util.module_from_spec(spec)",
               "spec.loader.exec_module(module)",
-              "argv = ['env', 'DISPLAY=:1', 'rakazo-browser', sys.argv[2]]",
+              "argv = ['env', 'DISPLAY=:1', 'atlas-browser', sys.argv[2]]",
               "try:",
               "    module.run_control_argv(argv, ':1')",
               "except RuntimeError as error:",
@@ -1586,7 +1581,7 @@ describe("graphical computer spec", () => {
   );
 
   it("keeps container names stable so a bot can resume", () => {
-    expect(containerNameFor("bot_1")).toBe("rakazo-bot-bot_1");
+    expect(containerNameFor("bot_1")).toBe("atlas-bot-bot_1");
     expect(containerNameFor("bot_1")).toBe(containerNameFor("bot_1"));
   });
 
@@ -1632,7 +1627,7 @@ describe("graphical computer spec", () => {
   });
 
   it("uses the container IP only for the internal screen network topology", () => {
-    const networkMode = "rakazo_default";
+    const networkMode = "atlas_default";
     expect(
       resolveScreenPublishTarget({
         screenNetwork: "internal",
@@ -1645,8 +1640,8 @@ describe("graphical computer spec", () => {
     expect(
       resolveScreenPublishTarget({
         screenNetwork: "isolated",
-        networkMode: "rakazo-computer-bot-1",
-        networks: { "rakazo-computer-bot-1": { IPAddress: "172.20.0.4" } },
+        networkMode: "atlas-computer-bot-1",
+        networks: { "atlas-computer-bot-1": { IPAddress: "172.20.0.4" } },
         hostPort: "49152",
         containerPort: "6080",
       }),
@@ -1655,11 +1650,11 @@ describe("graphical computer spec", () => {
 
   it("does not publish computer control port 7070 on the host", () => {
     const options = containerCreateOptions({
-      name: "rakazo-bot-ctrl",
+      name: "atlas-bot-ctrl",
       image: COMPUTER_IMAGE,
       botId: "ctrl",
       spaceId: "ws",
-      homePath: "/var/rakazo/homes/ctrl",
+      homePath: "/var/atlas/homes/ctrl",
     });
     expect(options.HostConfig.PortBindings["7070/tcp"]).toBeUndefined();
     expect(options.ExposedPorts["7070/tcp"]).toBeUndefined();
@@ -1668,11 +1663,11 @@ describe("graphical computer spec", () => {
 
   it("publishes the control port to loopback only when explicitly opted in", () => {
     const options = containerCreateOptions({
-      name: "rakazo-bot-ctrl",
+      name: "atlas-bot-ctrl",
       image: COMPUTER_IMAGE,
       botId: "ctrl",
       spaceId: "ws",
-      homePath: "/var/rakazo/homes/ctrl",
+      homePath: "/var/atlas/homes/ctrl",
       publishControlPort: true,
     });
     expect(options.ExposedPorts["7070/tcp"]).toEqual({});
@@ -1682,7 +1677,7 @@ describe("graphical computer spec", () => {
   });
 
   it("resolves computer control through the container network IP, never a host mapping", () => {
-    const networkMode = "rakazo_default";
+    const networkMode = "atlas_default";
     expect(
       resolveComputerControlEndpoint({
         token: "secret",
@@ -1714,7 +1709,7 @@ describe("graphical computer spec", () => {
   });
 
   it("resolves computer control through a published loopback port when provided", () => {
-    const networkMode = "rakazo_default";
+    const networkMode = "atlas_default";
     expect(
       resolveComputerControlEndpoint({
         token: "secret",
@@ -1788,7 +1783,7 @@ describe("graphical computer spec", () => {
   );
 
   it("does not fall back to the container IP when a published control port is required", () => {
-    const networkMode = "rakazo_default";
+    const networkMode = "atlas_default";
     expect(
       resolveComputerControlEndpoint({
         token: "secret",
@@ -1830,11 +1825,11 @@ describe("graphical computer spec", () => {
           "assert allow(['env', 'DISPLAY=:1', 'xdotool', 'click', '--repeat', '3', '4'], ':1')",
           "assert allow(['env', 'DISPLAY=:1', 'xdotool', 'type', '--clearmodifiers', '--', 'hi'], ':1')",
           "assert allow(['env', 'DISPLAY=:2', 'xdg-open', 'https://example.com'], ':2')",
-          "assert allow(['env', 'DISPLAY=:1', 'rakazo-browser'], ':1')",
-          "assert allow(['env', 'DISPLAY=:2', 'rakazo-browser', 'https://example.com'], ':2')",
+          "assert allow(['env', 'DISPLAY=:1', 'atlas-browser'], ':1')",
+          "assert allow(['env', 'DISPLAY=:2', 'atlas-browser', 'https://example.com'], ':2')",
           "assert allow(['env', 'DISPLAY=:1', 'xterm'], ':1')",
-          "assert long_lived(['env', 'DISPLAY=:1', 'rakazo-browser'])",
-          "assert long_lived(['env', 'DISPLAY=:1', 'rakazo-browser', 'https://example.com'])",
+          "assert long_lived(['env', 'DISPLAY=:1', 'atlas-browser'])",
+          "assert long_lived(['env', 'DISPLAY=:1', 'atlas-browser', 'https://example.com'])",
           "assert long_lived(['env', 'DISPLAY=:1', 'xterm'])",
           "assert long_lived(['env', 'DISPLAY=:1', 'xdg-open', 'https://example.com'])",
           "assert not long_lived(['env', 'DISPLAY=:1', 'xdotool', 'key', '--clearmodifiers', 'a'])",
@@ -1881,12 +1876,12 @@ describe("graphical computer spec", () => {
           "finally:",
           "  module.CONTROL_TIMEOUT_SEC = timeout",
           "slow = tempfile.mkdtemp()",
-          "launcher = os.path.join(slow, 'rakazo-browser')",
+          "launcher = os.path.join(slow, 'atlas-browser')",
           "open(launcher, 'w').write('#!/bin/sh\\nsleep 0.25\\nexit 1\\n')",
           "os.chmod(launcher, 0o755)",
           "os.environ['PATH'] = slow + os.pathsep + os.environ.get('PATH', '')",
           "try:",
-          "  module.run_control_argv(['env', 'DISPLAY=:1', 'rakazo-browser'], ':1')",
+          "  module.run_control_argv(['env', 'DISPLAY=:1', 'atlas-browser'], ':1')",
           "  raise SystemExit('slow failure looked successful')",
           "except RuntimeError as error:",
           "  assert str(error) == 'computer action failed', str(error)",
@@ -1920,9 +1915,9 @@ describe("graphical computer spec", () => {
 
 describe("computer resource limits", () => {
   const KEYS = [
-    "RAKAZO_COMPUTER_MEMORY",
-    "RAKAZO_COMPUTER_CPUS",
-    "RAKAZO_COMPUTER_PIDS_LIMIT",
+    "ATLAS_COMPUTER_MEMORY",
+    "ATLAS_COMPUTER_CPUS",
+    "ATLAS_COMPUTER_PIDS_LIMIT",
   ] as const;
   const saved = new Map<string, string | undefined>();
 
@@ -1941,11 +1936,11 @@ describe("computer resource limits", () => {
   });
 
   const createInput = {
-    name: "rakazo-bot-x",
-    image: "rakazo/computer:local",
+    name: "atlas-bot-x",
+    image: "atlas/computer:local",
     botId: "bot-x",
     spaceId: "ws",
-    homePath: "/var/rakazo/homes/bot-x",
+    homePath: "/var/atlas/homes/bot-x",
   };
 
   it("caps memory and cpu by default and keeps #343's pids ceiling", () => {
@@ -1958,9 +1953,9 @@ describe("computer resource limits", () => {
 
   it("falls back to the defaults when a variable is blank", () => {
     // .env.example ships these keys blank; a blank value must read as "unset".
-    process.env.RAKAZO_COMPUTER_MEMORY = "";
-    process.env.RAKAZO_COMPUTER_CPUS = "  ";
-    process.env.RAKAZO_COMPUTER_PIDS_LIMIT = "";
+    process.env.ATLAS_COMPUTER_MEMORY = "";
+    process.env.ATLAS_COMPUTER_CPUS = "  ";
+    process.env.ATLAS_COMPUTER_PIDS_LIMIT = "";
     const { HostConfig } = containerCreateOptions(createInput);
     expect(HostConfig.Memory).toBe(2 * 1024 ** 3);
     expect(HostConfig.NanoCpus).toBe(2e9);
@@ -1968,21 +1963,21 @@ describe("computer resource limits", () => {
   });
 
   it("pins MemorySwap to Memory so the ceiling cannot be swapped past", () => {
-    process.env.RAKAZO_COMPUTER_MEMORY = "1536m";
+    process.env.ATLAS_COMPUTER_MEMORY = "1536m";
     const { HostConfig } = containerCreateOptions(createInput);
     expect(HostConfig.Memory).toBe(1536 * 1024 ** 2);
     expect(HostConfig.MemorySwap).toBe(1536 * 1024 ** 2);
   });
 
   it("accepts fractional CPUs", () => {
-    process.env.RAKAZO_COMPUTER_CPUS = "1.5";
+    process.env.ATLAS_COMPUTER_CPUS = "1.5";
     expect(containerCreateOptions(createInput).HostConfig.NanoCpus).toBe(1_500_000_000);
   });
 
   it("lets an operator opt out explicitly", () => {
-    process.env.RAKAZO_COMPUTER_MEMORY = "unlimited";
-    process.env.RAKAZO_COMPUTER_CPUS = "0";
-    process.env.RAKAZO_COMPUTER_PIDS_LIMIT = "none";
+    process.env.ATLAS_COMPUTER_MEMORY = "unlimited";
+    process.env.ATLAS_COMPUTER_CPUS = "0";
+    process.env.ATLAS_COMPUTER_PIDS_LIMIT = "none";
     const { HostConfig } = containerCreateOptions(createInput);
     expect(HostConfig.Memory).toBe(0);
     expect(HostConfig.NanoCpus).toBe(0);
@@ -1990,44 +1985,44 @@ describe("computer resource limits", () => {
   });
 
   it("rejects a malformed size instead of silently falling back", () => {
-    process.env.RAKAZO_COMPUTER_MEMORY = "2 gigs";
-    expect(() => containerCreateOptions(createInput)).toThrow(/RAKAZO_COMPUTER_MEMORY/);
+    process.env.ATLAS_COMPUTER_MEMORY = "2 gigs";
+    expect(() => containerCreateOptions(createInput)).toThrow(/ATLAS_COMPUTER_MEMORY/);
   });
 
   it("rejects a negative cpu count", () => {
-    process.env.RAKAZO_COMPUTER_CPUS = "-1";
-    expect(() => containerCreateOptions(createInput)).toThrow(/RAKAZO_COMPUTER_CPUS/);
+    process.env.ATLAS_COMPUTER_CPUS = "-1";
+    expect(() => containerCreateOptions(createInput)).toThrow(/ATLAS_COMPUTER_CPUS/);
   });
 
   it("rejects a pids limit that is not a positive integer", () => {
-    process.env.RAKAZO_COMPUTER_PIDS_LIMIT = "12.5";
-    expect(() => containerCreateOptions(createInput)).toThrow(/RAKAZO_COMPUTER_PIDS_LIMIT/);
+    process.env.ATLAS_COMPUTER_PIDS_LIMIT = "12.5";
+    expect(() => containerCreateOptions(createInput)).toThrow(/ATLAS_COMPUTER_PIDS_LIMIT/);
   });
 
   it("rejects a memory limit below Docker's 6 MiB minimum", () => {
     // The daemon refuses these at container creation, so accepting them here would turn a typo
     // into a 500 on the first bot rather than a startup failure naming the variable.
     for (const value of ["1", "1m", "5m", "5242880"]) {
-      process.env.RAKAZO_COMPUTER_MEMORY = value;
-      expect(() => containerCreateOptions(createInput)).toThrow(/RAKAZO_COMPUTER_MEMORY/);
+      process.env.ATLAS_COMPUTER_MEMORY = value;
+      expect(() => containerCreateOptions(createInput)).toThrow(/ATLAS_COMPUTER_MEMORY/);
     }
-    process.env.RAKAZO_COMPUTER_MEMORY = "6m";
+    process.env.ATLAS_COMPUTER_MEMORY = "6m";
     expect(containerCreateOptions(createInput).HostConfig.Memory).toBe(6 * 1024 ** 2);
   });
 
   it("rejects a CPU count that would floor to Docker's unlimited", () => {
     // Math.floor(1e-10 * 1e9) is 0, and 0 NanoCpus means uncapped. An accepted value must never
     // turn a ceiling into no ceiling.
-    process.env.RAKAZO_COMPUTER_CPUS = "0.0000000001";
-    expect(() => containerCreateOptions(createInput)).toThrow(/RAKAZO_COMPUTER_CPUS/);
+    process.env.ATLAS_COMPUTER_CPUS = "0.0000000001";
+    expect(() => containerCreateOptions(createInput)).toThrow(/ATLAS_COMPUTER_CPUS/);
   });
 
   it("rejects a CPU count that leaves the safe-integer NanoCpus range", () => {
     // 1e300 is finite, but Math.floor(1e300 * 1e9) is Infinity. 1e7 CPUs yields a non-safe
     // integer. Both must fail closed rather than reach HostConfig.NanoCpus.
     for (const value of ["1e300", "10000000"]) {
-      process.env.RAKAZO_COMPUTER_CPUS = value;
-      expect(() => containerCreateOptions(createInput)).toThrow(/RAKAZO_COMPUTER_CPUS/);
+      process.env.ATLAS_COMPUTER_CPUS = value;
+      expect(() => containerCreateOptions(createInput)).toThrow(/ATLAS_COMPUTER_CPUS/);
     }
   });
 
@@ -2061,7 +2056,7 @@ describe("computer home storage", () => {
       {
         Type: "volume",
         Source: "example_appdata",
-        Target: "/home/rakazo",
+        Target: "/home/atlas",
         VolumeOptions: { NoCopy: true, Subpath: "homes/bot" },
       },
     ]);
@@ -2143,7 +2138,7 @@ describe("computer home storage", () => {
       "utf8",
     );
     expect(start).toMatch(
-      /while true; do\s+\/usr\/local\/bin\/rakazo-computer-control\s+sleep 1\s+done >\/tmp\/rakazo\/control\.log 2>&1 &/,
+      /while true; do\s+\/usr\/local\/bin\/atlas-computer-control\s+sleep 1\s+done >\/tmp\/atlas\/control\.log 2>&1 &/,
     );
     // PID 1 terminates both the background loop and its current child on stop.
     expect(start).toContain("kill -TERM -- -1");
@@ -2157,7 +2152,7 @@ describe("computer home storage", () => {
         "utf8",
       );
       const loop = start.match(
-        /while true; do[\s\S]*?done >\/tmp\/rakazo\/control\.log 2>&1 &/,
+        /while true; do[\s\S]*?done >\/tmp\/atlas\/control\.log 2>&1 &/,
       )?.[0];
       expect(loop).toBeDefined();
       const result = spawnSync(
@@ -2169,8 +2164,8 @@ describe("computer home storage", () => {
             "control() { echo control; return 137; }",
             'sleep() { echo "delay $1"; attempts=$((attempts + 1)); if [ "$attempts" -eq 2 ]; then exit 0; fi; }',
             loop
-              ?.replace("/usr/local/bin/rakazo-computer-control", "control")
-              .replace(" >/tmp/rakazo/control.log 2>&1 &", ""),
+              ?.replace("/usr/local/bin/atlas-computer-control", "control")
+              .replace(" >/tmp/atlas/control.log 2>&1 &", ""),
           ].join("\n"),
         ],
         { encoding: "utf8", timeout: 5_000 },

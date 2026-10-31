@@ -1,10 +1,10 @@
-import type { ProductAnalytics, RealtimeFanout } from "@rakazo/adapter-kit";
+import type { ProductAnalytics, RealtimeFanout } from "@atlas/adapter-kit";
 import type {
   BotSecretDestination,
   LoginFieldInput,
   MessageBlock,
   ProductEvent,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   AnalyticsTrigger,
   BOT_INSTRUCTIONS_MAX_LENGTH,
@@ -14,7 +14,7 @@ import {
   loginAnswerValue,
   MessageBlock as MessageBlockSchema,
   ThreadActivityPayloadSchema,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   ACTIVE_RUN_STATUSES,
   blocksToAgentHistoryText,
@@ -32,10 +32,10 @@ import {
   resolveAskChoice,
   STEERING_CONTINUATION_PROMPT,
   sanitizeJsonValue,
-} from "@rakazo/core";
-import { urlSite } from "@rakazo/core/egress";
-import { approvalEffectKey } from "@rakazo/core/node/approval-effect-key";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/core";
+import { urlSite } from "@atlas/core/egress";
+import { approvalEffectKey } from "@atlas/core/node/approval-effect-key";
+import { getLogger } from "@atlas/logging";
 import { saveApprovalRule, storedBatchActions } from "./approval-settings.js";
 import { cancelRunsInTransaction } from "./cancel-runs.js";
 import type { Prisma, PrismaClient } from "./client.js";

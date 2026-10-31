@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
-import type { TransactionalEmail } from "@rakazo/adapter-kit";
-import { ANDROID_APK_URL, IOS_APP_STORE_URL } from "@rakazo/contracts";
-import { displayName } from "@rakazo/core";
+import type { TransactionalEmail } from "@atlas/adapter-kit";
+import { ANDROID_APK_URL, IOS_APP_STORE_URL } from "@atlas/contracts";
+import { displayName } from "@atlas/core";
 import { Link, Text } from "react-email";
 import { linkStyle, message } from "./email.js";
 
@@ -19,12 +19,12 @@ export function welcomeEmail(
 ): Promise<TransactionalEmail> {
   return message(
     user.email,
-    "Welcome to Rakazo",
+    "Welcome to Atlas",
     <>
       <Text>Hi {displayName(user.name, "there")},</Text>
-      <Text>Thanks for signing up for Rakazo.</Text>
+      <Text>Thanks for signing up for Atlas.</Text>
       <Text>
-        Rakazo also has apps for{" "}
+        Atlas also has apps for{" "}
         {APPS.map(([name, href], index) => (
           <span key={name}>
             {index === APPS.length - 1 ? "and " : ""}
@@ -43,8 +43,8 @@ export function welcomeEmail(
         .
       </Text>
       <Text>
-        Rakazo is open source. If you like it,{" "}
-        <Link href="https://github.com/elie222/rakazo" style={linkStyle}>
+        Atlas is open source. If you like it,{" "}
+        <Link href="https://github.com/naouflex/assistant" style={linkStyle}>
           a star on GitHub
         </Link>{" "}
         helps others find it.
@@ -52,10 +52,10 @@ export function welcomeEmail(
       <Text>
         Want to run it on your own servers?{" "}
         <Link
-          href="https://github.com/elie222/rakazo/blob/main/docs/self-host.md"
+          href="https://github.com/naouflex/assistant/blob/main/docs/self-host.md"
           style={linkStyle}
         >
-          Self-host Rakazo
+          Self-host Atlas
         </Link>
         .
       </Text>

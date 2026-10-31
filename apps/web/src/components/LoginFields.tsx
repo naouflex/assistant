@@ -1,7 +1,7 @@
+import type { LoginFieldInput } from "@atlas/contracts";
+import { LOGIN_FIELD_LIMIT } from "@atlas/contracts";
+import { Button, Input, Label, Switch } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { LoginFieldInput } from "@rakazo/contracts";
-import { LOGIN_FIELD_LIMIT } from "@rakazo/contracts";
-import { Button, Input, Label, Switch } from "@rakazo/ui-web";
 import { X } from "lucide-react";
 import { useId } from "react";
 

@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
+import type { SecretStore } from "@atlas/adapter-kit";
+import { canonicalPiProviderId } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
-import type { SecretStore } from "@rakazo/adapter-kit";
-import { canonicalPiProviderId } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
 import type { ModelCredentialAuthKind } from "./pi-catalog-availability.js";
 import { LiveCatalogCache, liveModelCatalogEnabled } from "./pi-live-cache.js";
 import { isChatModelId, liveModelSibling } from "./pi-live-model.js";

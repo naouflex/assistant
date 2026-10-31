@@ -1,13 +1,13 @@
+import type { McpServer } from "@atlas/contracts";
+import { MCP_OAUTH_CLIENT_REQUIRED } from "@atlas/contracts";
 import type { Route } from "@playwright/test";
 import { expect, test } from "@playwright/test";
-import type { McpServer } from "@rakazo/contracts";
-import { MCP_OAUTH_CLIENT_REQUIRED } from "@rakazo/contracts";
 import { MCP_OAUTH_CHANNEL } from "../src/lib/mcp-oauth-channel";
 import { captureScreenshot, completeOnboarding, openIntegrationsAdd, signup } from "./helpers";
 
 test("connects an MCP server through the OAuth popup callback", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `mcp-oauth-${stamp}@rakazo.test`, "password12", "MCP OAuth");
+  await signup(page, `mcp-oauth-${stamp}@atlas.test`, "password12", "MCP OAuth");
   await completeOnboarding(page);
 
   let oauthStatus: McpServer["oauthStatus"] = "none";
@@ -125,7 +125,7 @@ test("connects an MCP server through the OAuth popup callback", async ({ page },
 
 test("adds an MCP server with a pre-registered OAuth client", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `mcp-oauth-client-${stamp}@rakazo.test`, "password12", "MCP OAuth");
+  await signup(page, `mcp-oauth-client-${stamp}@atlas.test`, "password12", "MCP OAuth");
   await completeOnboarding(page);
 
   const browserOrigin = new URL(page.url()).origin;
@@ -199,7 +199,7 @@ test("adds an MCP server with a pre-registered OAuth client", async ({ page }, t
 
 test("asks for a client ID when the MCP server cannot register one", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `mcp-oauth-dcr-${stamp}@rakazo.test`, "password12", "MCP OAuth");
+  await signup(page, `mcp-oauth-dcr-${stamp}@atlas.test`, "password12", "MCP OAuth");
   await completeOnboarding(page);
 
   const message = "Incompatible auth server: does not support dynamic client registration";

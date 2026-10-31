@@ -5,11 +5,11 @@ import type {
   BackgroundJobName,
   JobPublisher,
   JobWorkerHost,
-} from "@rakazo/adapter-kit";
-import { dispatchBackgroundJob } from "@rakazo/adapter-kit";
-import type { PrismaClient } from "@rakazo/db";
-import { isTooManyDatabaseConnections, runAsSystem } from "@rakazo/db";
-import { getLogger, runCorrelatedJob, unwrapJobPayload, wrapJobPayload } from "@rakazo/logging";
+} from "@atlas/adapter-kit";
+import { dispatchBackgroundJob } from "@atlas/adapter-kit";
+import type { PrismaClient } from "@atlas/db";
+import { isTooManyDatabaseConnections, runAsSystem } from "@atlas/db";
+import { getLogger, runCorrelatedJob, unwrapJobPayload, wrapJobPayload } from "@atlas/logging";
 import type { Runner, WorkerUtils } from "graphile-worker";
 import { makeWorkerUtils, run } from "graphile-worker";
 import type { Pool } from "pg";

@@ -1,8 +1,8 @@
-import type { AdapterContext, ComputerRef, SandboxProvider } from "@rakazo/adapter-kit";
-import type { ComputerMode } from "@rakazo/contracts";
-import { ATTACHMENT_MAX_BYTES } from "@rakazo/contracts";
-import { redactSecrets } from "@rakazo/core";
-import { getLogger } from "@rakazo/logging";
+import type { AdapterContext, ComputerRef, SandboxProvider } from "@atlas/adapter-kit";
+import type { ComputerMode } from "@atlas/contracts";
+import { ATTACHMENT_MAX_BYTES } from "@atlas/contracts";
+import { redactSecrets } from "@atlas/core";
+import { getLogger } from "@atlas/logging";
 import { JSDOM } from "jsdom";
 import { displayBotWorkspacePath, resolveBotWorkspacePath } from "./computer-support.js";
 import type { ExecutorDeps } from "./executor-deps.js";

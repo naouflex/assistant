@@ -1,7 +1,7 @@
-import { BillingEmulator } from "@rakazo/adapters";
-import type { Actor } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
-import { billingAccountForOrganization, createBillingAccount, createDb } from "@rakazo/db";
+import { BillingEmulator } from "@atlas/adapters";
+import type { Actor } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
+import { billingAccountForOrganization, createBillingAccount, createDb } from "@atlas/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { BILLING_RETURN_PATH, createBillingService, TRIAL_DAYS } from "./billing.js";
 
@@ -19,10 +19,10 @@ describePostgres("billing service (PostgreSQL)", () => {
   const owner: Actor = {
     userId: ownerId,
     spaceId,
-    email: `${ownerId}@rakazo.test`,
+    email: `${ownerId}@atlas.test`,
     isDeploymentOwner: false,
   };
-  const member: Actor = { ...owner, userId: memberId, email: `${memberId}@rakazo.test` };
+  const member: Actor = { ...owner, userId: memberId, email: `${memberId}@atlas.test` };
   const emulator = new BillingEmulator();
   let prisma: PrismaClient;
   let close: () => Promise<void>;
@@ -39,7 +39,7 @@ describePostgres("billing service (PostgreSQL)", () => {
     const createdAt = new Date();
     for (const id of [ownerId, memberId]) {
       await prisma.user.create({
-        data: { id, name: id, email: `${id}@rakazo.test`, emailVerified: false },
+        data: { id, name: id, email: `${id}@atlas.test`, emailVerified: false },
       });
     }
     await prisma.organization.create({

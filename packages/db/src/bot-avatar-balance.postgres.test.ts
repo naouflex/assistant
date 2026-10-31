@@ -1,11 +1,11 @@
-import { BOT_COLORS } from "@rakazo/contracts";
+import { BOT_COLORS } from "@atlas/contracts";
 import {
   newClientId,
   ORGANIC_AVATAR_HEART_FAMILY,
   organicAvatarFamily,
   organicAvatarLook,
   seededLogoAvatarColor,
-} from "@rakazo/core";
+} from "@atlas/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PrismaClient } from "./client.js";
 import { createDb } from "./client.js";
@@ -126,11 +126,11 @@ describePostgres("new bot avatars (PostgreSQL)", () => {
       expect(original).toMatchObject({ avatarSet: "organic", color });
       await asSystem(prisma).bot.update({
         where: { id: original.id },
-        data: { avatarSet: "rakazo" },
+        data: { avatarSet: "atlas" },
       });
       const reloaded = await runAsTenant(owner, () => repos.listBots(actor()));
       expect(reloaded.find((bot) => bot.id === original.id)).toMatchObject({
-        avatarSet: "rakazo",
+        avatarSet: "atlas",
         color,
       });
     }
@@ -140,7 +140,7 @@ describePostgres("new bot avatars (PostgreSQL)", () => {
     const repos = createRepos(prisma);
     for (const explicit of [undefined, "#123456"]) {
       const id = `c${newClientId().replaceAll("-", "").slice(0, 24)}`;
-      const input = { ...botInput("Preview"), id, avatarSet: "rakazo" as const, color: explicit };
+      const input = { ...botInput("Preview"), id, avatarSet: "atlas" as const, color: explicit };
       const [first, retry] = await runAsTenant(owner, () =>
         Promise.all([repos.createBot(actor(), input), repos.createBot(actor(), input)]),
       );

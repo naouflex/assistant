@@ -1,5 +1,5 @@
+import { Button, cn } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
-import { Button, cn } from "@rakazo/ui-web";
 import { ArrowUp, ChevronUp, Lock, Mic, Trash2 } from "lucide-react";
 import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";

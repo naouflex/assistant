@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_MAX_TOKENS } from "@atlas/contracts";
 import type {
   Api,
   Context,
@@ -5,7 +6,6 @@ import type {
   ModelsSimpleStreamOptions,
   ProviderHeaders,
 } from "@earendil-works/pi-ai";
-import { DEFAULT_MODEL_MAX_TOKENS } from "@rakazo/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_MODEL_STREAM_MAX_RETRIES, MODEL_STREAM_TIMEOUT_MS } from "./pi-runtime-limits.js";
 import { resolveRuntimeModel } from "./pi-runtime-models.js";
@@ -109,7 +109,7 @@ describe("Pi runtime transport", () => {
         transport: "auto",
         headers: {
           "x-opencode-session": "thread-1:bot-1",
-          "x-opencode-client": "rakazo",
+          "x-opencode-client": "atlas",
           "X-Custom": "1",
         },
       });
@@ -124,7 +124,7 @@ describe("Pi runtime transport", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
     expect(result.headers?.["x-opencode-session"]).toBe(result.sessionId);
-    expect(result.headers?.["x-opencode-client"]).toBe("rakazo");
+    expect(result.headers?.["x-opencode-client"]).toBe("atlas");
     expect(result.timeoutMs).toBe(MODEL_STREAM_TIMEOUT_MS);
   });
 

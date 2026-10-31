@@ -1,8 +1,8 @@
-import type { BillingCreditCheckoutRequest } from "@rakazo/adapter-kit";
-import { BillingEmulator } from "@rakazo/adapters";
-import type { Actor } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
-import { asSystem, createDb } from "@rakazo/db";
+import type { BillingCreditCheckoutRequest } from "@atlas/adapter-kit";
+import { BillingEmulator } from "@atlas/adapters";
+import type { Actor } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
+import { asSystem, createDb } from "@atlas/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createBillingService } from "./billing.js";
 
@@ -40,7 +40,7 @@ dbTests("billing checkout coordination", () => {
   const actor: Actor = {
     userId,
     spaceId,
-    email: `checkout-${stamp}@rakazo.test`,
+    email: `checkout-${stamp}@atlas.test`,
     isDeploymentOwner: false,
   };
   let prisma: PrismaClient, db: ReturnType<typeof createDb>;

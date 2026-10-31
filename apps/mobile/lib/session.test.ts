@@ -98,15 +98,15 @@ describe("mobile session storage", () => {
     registerSessionDiskCache(after);
     await expect(clearSessionToken()).resolves.toBe(true);
     expect(after).toHaveBeenCalledOnce();
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("rakazo.integrations-scope");
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("atlas.integrations-scope");
   });
 
   it("stores and clears only the session token key", async () => {
     await saveSessionToken("secret-token");
     await clearSessionToken();
 
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith("rakazo.session_token", "secret-token");
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("rakazo.session_token");
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith("atlas.session_token", "secret-token");
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("atlas.session_token");
   });
 
   it("rotates the artifact namespace on session save, clear and restore", async () => {
@@ -144,10 +144,10 @@ describe("mobile session storage", () => {
 
   it("overwrites the token when SecureStore delete fails", async () => {
     vi.mocked(SecureStore.deleteItemAsync).mockImplementation(async (key) => {
-      if (key === "rakazo.session_token") throw new Error("device locked");
+      if (key === "atlas.session_token") throw new Error("device locked");
     });
     await expect(clearSessionToken()).resolves.toBe(true);
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith("rakazo.session_token", "");
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith("atlas.session_token", "");
   });
 
   it("invalidates the in-memory session when SecureStore cannot clear the token", async () => {
@@ -167,8 +167,8 @@ describe("mobile session storage", () => {
     await expect(loadSessionToken()).resolves.toBe("");
 
     expect(SecureStore.getItemAsync).toHaveBeenCalledTimes(2);
-    expect(SecureStore.getItemAsync).toHaveBeenNthCalledWith(1, "rakazo.session_token");
-    expect(SecureStore.getItemAsync).toHaveBeenNthCalledWith(2, "rakazo.session_token");
+    expect(SecureStore.getItemAsync).toHaveBeenNthCalledWith(1, "atlas.session_token");
+    expect(SecureStore.getItemAsync).toHaveBeenNthCalledWith(2, "atlas.session_token");
   });
 
   it("restores the active session in memory when persistence is unavailable", async () => {
@@ -279,7 +279,7 @@ describe("verified integration session scope", () => {
   it("loads the scope only for the exact stored session", async () => {
     await saveVerifiedIntegrationsScope(currentSessionGeneration(), scope);
     expect(await loadVerifiedIntegrationsScope()).toEqual(scope);
-    disk.set("rakazo.session_token", "fake-session-b");
+    disk.set("atlas.session_token", "fake-session-b");
     expect(await loadVerifiedIntegrationsScope()).toBeNull();
   });
   it.each(["sign-out", "replacement", "restore"])("invalidates the scope on %s", async (change) => {
@@ -288,13 +288,13 @@ describe("verified integration session scope", () => {
     if (change === "replacement") await saveSessionToken("fake-session-a");
     if (change === "restore") await restoreSessionToken("fake-session-a");
     expect(await loadVerifiedIntegrationsScope()).toBeNull();
-    expect(disk.has("rakazo.integrations-scope")).toBe(false);
+    expect(disk.has("atlas.integrations-scope")).toBe(false);
   });
   it("rejects a late verification after session replacement", async () => {
     const generation = currentSessionGeneration();
     await saveSessionToken("fake-session-b");
     await saveVerifiedIntegrationsScope(generation, scope);
-    expect(disk.has("rakazo.integrations-scope")).toBe(false);
+    expect(disk.has("atlas.integrations-scope")).toBe(false);
   });
   it("serializes an in-flight scope write before sign-out deletes it", async () => {
     let release!: () => void;
@@ -302,7 +302,7 @@ describe("verified integration session scope", () => {
       release = resolve;
     });
     vi.mocked(SecureStore.setItemAsync).mockImplementation(async (key, value) => {
-      if (key === "rakazo.integrations-scope") await pending;
+      if (key === "atlas.integrations-scope") await pending;
       disk.set(key, value);
     });
     const saving = saveVerifiedIntegrationsScope(currentSessionGeneration(), scope);
@@ -311,12 +311,12 @@ describe("verified integration session scope", () => {
     const clearing = clearSessionToken();
     release();
     await Promise.all([saving, clearing]);
-    expect(disk.has("rakazo.integrations-scope")).toBe(false);
+    expect(disk.has("atlas.integrations-scope")).toBe(false);
     expect(await loadVerifiedIntegrationsScope()).toBeNull();
   });
   it("treats malformed stored scopes as misses", async () => {
     await saveVerifiedIntegrationsScope(currentSessionGeneration(), scope);
-    disk.set("rakazo.integrations-scope", "{");
+    disk.set("atlas.integrations-scope", "{");
     expect(await loadVerifiedIntegrationsScope()).toBeNull();
   });
 });

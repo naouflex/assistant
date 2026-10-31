@@ -1,6 +1,5 @@
-import { useLingui } from "@lingui/react/macro";
-import type { SpaceSetting } from "@rakazo/contracts";
-import { writeSaved } from "@rakazo/core/query";
+import type { SpaceSetting } from "@atlas/contracts";
+import { writeSaved } from "@atlas/core/query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { useLingui } from "@lingui/react/macro";
 import type { QueryKey } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";

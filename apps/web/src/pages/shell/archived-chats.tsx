@@ -1,5 +1,4 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import type { Bot, Group } from "@rakazo/contracts";
+import type { Bot, Group } from "@atlas/contracts";
 import {
   BotAvatar,
   Button,
@@ -7,7 +6,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   GroupAvatar,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { createSpaceRpc } from "../../lib/rpc";
 

@@ -1,7 +1,5 @@
-import { t } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import type { RunActivityRow, RunStatus } from "@rakazo/contracts";
-import { isAgedStuckWork, isRetryableError } from "@rakazo/core";
+import type { RunActivityRow, RunStatus } from "@atlas/contracts";
+import { isAgedStuckWork, isRetryableError } from "@atlas/core";
 import {
   Button,
   Collapsible,
@@ -11,7 +9,9 @@ import {
   NativeSelect,
   NativeSelectOption,
   Spinner,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { t } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
 import type { ActivityListFilters } from "../lib/activity-list-filters";

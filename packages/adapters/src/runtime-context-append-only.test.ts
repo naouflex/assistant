@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
+import type { AgentRunRequest } from "@atlas/adapter-kit";
 import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
-import type { AgentRunRequest } from "@rakazo/adapter-kit";
 import { describe, expect, it } from "vitest";
 import {
   ContextCacheTracker,
@@ -51,8 +51,8 @@ function initialMessages(input: AgentRunRequest): Message[] {
           role: "user",
           content: item.role === "assistant" ? `Assistant: ${item.content}` : item.content,
           timestamp: 0,
-          rakazoHistory: true,
-          rakazoMessageId: item.id,
+          atlasHistory: true,
+          atlasMessageId: item.id,
         }) as Message,
     ),
     { role: "user", content: input.prompt, timestamp: 1 },

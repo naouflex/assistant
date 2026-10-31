@@ -23,7 +23,7 @@ function installPageHelper(
   random?: number,
 ) {
   const source = readFileSync(
-    new URL("../../../infra/sandboxes/computer/rakazo-page-browser", import.meta.url),
+    new URL("../../../infra/sandboxes/computer/atlas-page-browser", import.meta.url),
     "utf8",
   );
   const match = source.match(/EVAL_HELPERS = r"""\n([\s\S]*?)\n"""/);
@@ -76,7 +76,7 @@ function installPageHelper(
   vm.runInContext(match[1], dom.getInternalVMContext());
   const browser = (
     win as unknown as {
-      __rakazoPageBrowser: {
+      __atlasPageBrowser: {
         snapshot: () => Snapshot;
         resolve: (ref: string) => unknown;
         aim: (ref: string) => { x: number | null; y: number | null };
@@ -85,7 +85,7 @@ function installPageHelper(
         quietFor: () => number;
       };
     }
-  ).__rakazoPageBrowser;
+  ).__atlasPageBrowser;
   return { win, dom, browser };
 }
 

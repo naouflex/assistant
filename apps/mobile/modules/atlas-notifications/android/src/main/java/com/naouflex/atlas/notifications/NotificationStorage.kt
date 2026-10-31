@@ -1,4 +1,4 @@
-package com.rakazo.notifications
+package com.naouflex.atlas.notifications
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
@@ -117,7 +117,7 @@ internal class NotificationStorage(context: Context) {
   }
 
   private companion object {
-    const val PREFERENCES = "com.rakazo.notifications"
+    const val PREFERENCES = "com.naouflex.atlas.notifications"
     const val LIVE = "live_connection"
     const val MESSAGES = "messages"
     const val SCHEDULED = "scheduled_tasks"
@@ -127,7 +127,7 @@ internal class NotificationStorage(context: Context) {
     const val LOCALE = "locale"
     const val TOKEN = "token"
     const val HEADERS = "server_headers"
-    const val KEY_ALIAS = "rakazo.notifications.session"
+    const val KEY_ALIAS = "atlas.notifications.session"
     const val TRANSFORMATION = "AES/GCM/NoPadding"
     const val IV_SIZE = 12
   }

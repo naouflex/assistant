@@ -1,17 +1,17 @@
 import type {
+  AgentModelOAuthCredential,
+  ModelCredentialFailedState,
+  ModelCredentialRetireReason,
+} from "@atlas/adapter-kit";
+import { canonicalPiProviderId } from "@atlas/contracts";
+import { getLogger } from "@atlas/logging";
+import type {
   AuthOperationOptions,
   Credential,
   CredentialInfo,
   CredentialStore,
   OAuthCredential,
 } from "@earendil-works/pi-ai";
-import type {
-  AgentModelOAuthCredential,
-  ModelCredentialFailedState,
-  ModelCredentialRetireReason,
-} from "@rakazo/adapter-kit";
-import { canonicalPiProviderId } from "@rakazo/contracts";
-import { getLogger } from "@rakazo/logging";
 import {
   OAUTH_ACCOUNT_CHANGED_ERROR,
   OAUTH_RECONNECT_REQUIRED_ERROR,
@@ -26,7 +26,7 @@ export function toOAuthCredential(value: AgentModelOAuthCredential): OAuthCreden
 
 /**
  * Request-scoped Pi store for one already-authorized provider. Pi's default
- * in-memory store cannot see Rakazo's encrypted database; refreshes are
+ * in-memory store cannot see Atlas's encrypted database; refreshes are
  * serialized here and published back for encryption.
  */
 export class PiRuntimeCredentialStore implements CredentialStore {

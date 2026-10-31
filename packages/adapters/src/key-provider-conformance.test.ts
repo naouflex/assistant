@@ -1,9 +1,9 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import type { KeyProvider } from "@atlas/adapter-kit";
+import { LocalKeyProvider, withLocalMasterKeys } from "@atlas/db";
 import { KMSClient } from "@aws-sdk/client-kms";
-import type { KeyProvider } from "@rakazo/adapter-kit";
-import { LocalKeyProvider, withLocalMasterKeys } from "@rakazo/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AwsKmsKeyProvider, awsKmsConfigFromEnv } from "./aws-kms-key-provider.js";
 import { contentKeyProviderFromEnv } from "./key-provider-factory.js";
@@ -150,7 +150,7 @@ describe("AWS KMS key provider", () => {
     kms.state.contexts.length = 0;
     await aws().wrap(randomBytes(32), { spaceId: "space-a", version: 3 });
     expect(kms.state.contexts).toEqual([
-      { "rakazo:purpose": "space-key/v1", "rakazo:space": "space-a", "rakazo:version": "3" },
+      { "atlas:purpose": "space-key/v1", "atlas:space": "space-a", "atlas:version": "3" },
     ]);
   });
 
@@ -174,7 +174,7 @@ describe("AWS KMS key provider", () => {
     expect(() => awsKmsConfigFromEnv({ ...kmsEnv, AWS_KMS_SECRET_ACCESS_KEY: "" })).toThrow(
       "AWS_KMS_SECRET_ACCESS_KEY",
     );
-    const alias = "arn:aws:kms:eu-central-1:111122223333:alias/rakazo";
+    const alias = "arn:aws:kms:eu-central-1:111122223333:alias/atlas";
     expect(() => new AwsKmsKeyProvider({ ...config, keyArn: alias })).toThrow("AWS_KMS_KEY_ARN");
   });
 });

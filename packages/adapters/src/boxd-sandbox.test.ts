@@ -1,7 +1,7 @@
+import type { AdapterContext, ComputerRef, ProcessEvent } from "@atlas/adapter-kit";
+import { SandboxRateLimitError, WorkspaceTooLargeError } from "@atlas/adapter-kit";
+import { screenDisplayArgv, shellQuote } from "@atlas/core/node/desktop-runtime";
 import { RateLimitError } from "@boxd-sh/sdk";
-import type { AdapterContext, ComputerRef, ProcessEvent } from "@rakazo/adapter-kit";
-import { SandboxRateLimitError, WorkspaceTooLargeError } from "@rakazo/adapter-kit";
-import { screenDisplayArgv, shellQuote } from "@rakazo/core/node/desktop-runtime";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { BOXD_COMPUTER_SNAPSHOT, BoxdSandboxProvider } from "./boxd-sandbox.js";
 import { BOXD_WORKSPACE, FakeBoxd, fakeBoxdProvider } from "./boxd-sandbox.test-support.js";
@@ -58,7 +58,7 @@ describe("boxd computers", () => {
     // One build machine, deleted once the snapshot was saved, and later computers use it.
     expect(boxd.calls.filter((call) => call === "snapshots.create")).toHaveLength(1);
     expect([...boxd.machines.values()].map((machine) => machine.name)).not.toContainEqual(
-      expect.stringMatching(/^rakazo-snapshot-/),
+      expect.stringMatching(/^atlas-snapshot-/),
     );
     const next = await provider.provision({ botId: "third", homePath: "/unused" }, ctx);
     expect(boxd.machine(next.providerRef).params).toMatchObject({
@@ -119,7 +119,7 @@ describe("boxd computers", () => {
     expect(sent.cwd).toBe(`${BOXD_WORKSPACE}/notes`);
     // The command removed its environment file as it started.
     expect([...boxd.machine(computer.providerRef).files.keys()]).not.toContainEqual(
-      expect.stringContaining(".rakazo-command-env/"),
+      expect.stringContaining(".atlas-command-env/"),
     );
   });
 
@@ -193,7 +193,7 @@ describe("boxd computers", () => {
     );
     const url = new URL(screen.url!);
 
-    expect(url.origin).toMatch(/^https:\/\/screen\.rakazo-[0-9a-f]{20}\.boxd\.test$/);
+    expect(url.origin).toMatch(/^https:\/\/screen\.atlas-[0-9a-f]{20}\.boxd\.test$/);
     expect(url.pathname).toBe("/vnc.html");
     expect(url.searchParams.get("path")).toMatch(/token=view-/);
     expect(probe).toHaveBeenCalledTimes(2);

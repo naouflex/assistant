@@ -1,5 +1,5 @@
+import { Button, cn } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
-import { Button, cn } from "@rakazo/ui-web";
 import { TextQuote } from "lucide-react";
 import { memo, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

@@ -307,7 +307,7 @@ export function reliableStreamOptions(
       sessionId,
       headers: {
         "x-opencode-session": sessionId,
-        "x-opencode-client": "rakazo",
+        "x-opencode-client": "atlas",
         ...next.headers,
       },
     };

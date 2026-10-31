@@ -1,5 +1,5 @@
-import type { Connection, ConnectionCatalogItem } from "@rakazo/contracts";
-import { matchFeaturedConnectorId } from "@rakazo/core";
+import type { Connection, ConnectionCatalogItem } from "@atlas/contracts";
+import { matchFeaturedConnectorId } from "@atlas/core";
 
 function isFamiliarApp(item: ConnectionCatalogItem) {
   return (

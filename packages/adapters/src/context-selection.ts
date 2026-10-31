@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
-import type { AgentContextStrategy, CacheCapabilities } from "@rakazo/adapter-kit";
+import type { AgentContextStrategy, CacheCapabilities } from "@atlas/adapter-kit";
 import {
   MODEL_CONTEXT_TOO_SMALL_ERROR,
   shortenedTextLength,
   textBoundary,
   truncatePlainText,
-} from "@rakazo/core";
+} from "@atlas/core";
 
 export type ContextStrategy = AgentContextStrategy;
 export interface ContextMessage {

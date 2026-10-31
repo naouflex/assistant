@@ -21,8 +21,8 @@ vi.mock("pg", async (importActual) => ({
   },
 }));
 
-const owner = "postgres://rakazo:owner-password@postgres:5432/rakazo";
-const runtime = "postgres://rakazo_app:app-password@postgres:5432/rakazo";
+const owner = "postgres://atlas:owner-password@postgres:5432/atlas";
+const runtime = "postgres://rakazo_app:app-password@postgres:5432/atlas";
 
 describe("databaseUrls", () => {
   it("migrates as the owner and runs the app as the runtime login", () => {
@@ -43,7 +43,7 @@ describe("databaseUrls", () => {
   });
 
   it("treats two URLs for the same login as shared", () => {
-    const sameLogin = "postgres://rakazo:owner-password@127.0.0.1:5433/rakazo";
+    const sameLogin = "postgres://atlas:owner-password@127.0.0.1:5433/atlas";
     expect(databaseUrls({ DATABASE_URL: sameLogin, DATABASE_MIGRATION_URL: owner }).separate).toBe(
       false,
     );
@@ -61,8 +61,8 @@ describe("rowSecurityWarning", () => {
 
   it("names the login and why it bypasses the policies", () => {
     expect(
-      rowSecurityWarning({ enforced: false, role: "rakazo", reason: "is a superuser" }),
-    ).toContain("connects as rakazo, which is a superuser");
+      rowSecurityWarning({ enforced: false, role: "atlas", reason: "is a superuser" }),
+    ).toContain("connects as atlas, which is a superuser");
   });
 });
 

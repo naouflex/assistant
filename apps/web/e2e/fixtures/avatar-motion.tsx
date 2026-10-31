@@ -1,5 +1,5 @@
 import "../../src/styles.css";
-import { BotAvatar } from "@rakazo/ui-web";
+import { BotAvatar } from "@atlas/ui-web";
 import { createRoot } from "react-dom/client";
 
 const portrait = `data:image/svg+xml,${encodeURIComponent(

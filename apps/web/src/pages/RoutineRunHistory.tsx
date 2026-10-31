@@ -1,5 +1,4 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import type { RoutineRun, RoutineRunCursor } from "@rakazo/contracts";
+import type { RoutineRun, RoutineRunCursor } from "@atlas/contracts";
 import {
   formatRoutineRunAt,
   isRetryableError,
@@ -7,8 +6,9 @@ import {
   normalizeRunError,
   routineHistoryPage,
   routineRunAt,
-} from "@rakazo/core";
-import { Button, Spinner } from "@rakazo/ui-web";
+} from "@atlas/core";
+import { Button, Spinner } from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useSpaceQueries } from "../lib/query";

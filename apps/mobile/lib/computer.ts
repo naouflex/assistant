@@ -1,7 +1,7 @@
-import type { ComputerMode, ComputerStatus as ContractComputerStatus } from "@rakazo/contracts";
-import { isLocalhostOrLoopbackIp, isPrivateNetworkHost } from "@rakazo/contracts";
-import type { ScreenPageState } from "@rakazo/core";
-import { isRetryableError, SCREEN_PAGE_STATES } from "@rakazo/core";
+import type { ComputerMode, ComputerStatus as ContractComputerStatus } from "@atlas/contracts";
+import { isLocalhostOrLoopbackIp, isPrivateNetworkHost } from "@atlas/contracts";
+import type { ScreenPageState } from "@atlas/core";
+import { isRetryableError, SCREEN_PAGE_STATES } from "@atlas/core";
 import { t } from "./i18n";
 
 export const COMPUTER_HEARTBEAT_MS = 60_000;
@@ -179,7 +179,7 @@ export function computerLabel(mode: ComputerMode | undefined, name: string) {
 
 /**
  * The connection state a screen page posted to the WebView, or null. Only the exact
- * `{"rakazoScreen": <state>}` shape counts; anything else is the keyboard bridge's or no one's.
+ * `{"atlasScreen": <state>}` shape counts; anything else is the keyboard bridge's or no one's.
  */
 export function screenPageState(data: string): ScreenPageState | null {
   let message: unknown;
@@ -190,8 +190,8 @@ export function screenPageState(data: string): ScreenPageState | null {
   }
   if (!message || typeof message !== "object" || Array.isArray(message)) return null;
   const keys = Object.keys(message);
-  const state = (message as { rakazoScreen?: unknown }).rakazoScreen;
-  if (keys.length !== 1 || keys[0] !== "rakazoScreen") return null;
+  const state = (message as { atlasScreen?: unknown }).atlasScreen;
+  if (keys.length !== 1 || keys[0] !== "atlasScreen") return null;
   return (SCREEN_PAGE_STATES as readonly unknown[]).includes(state)
     ? (state as ScreenPageState)
     : null;

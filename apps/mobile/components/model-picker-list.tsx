@@ -1,6 +1,6 @@
-import { withConnectionName } from "@rakazo/contracts";
-import type { ChatModelChoice } from "@rakazo/core";
-import { groupModelChoices } from "@rakazo/core";
+import { withConnectionName } from "@atlas/contracts";
+import type { ChatModelChoice } from "@atlas/core";
+import { groupModelChoices } from "@atlas/core";
 import { useNavigation } from "expo-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ViewToken } from "react-native";

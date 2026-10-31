@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
-import type { Actor } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
+import type { Actor } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
 import {
   asSystem,
   createDb,
   provisionMessagingIdentity,
   runAsSystem,
   runAsTenant,
-} from "@rakazo/db";
+} from "@atlas/db";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { MessagingInstallations } from "./messaging-installations.js";
 import { EncryptedSecretStore } from "./secrets.js";

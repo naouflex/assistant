@@ -1,5 +1,5 @@
-import type { CronLabels, CronUnit } from "@rakazo/core";
-import { ENGLISH_CRON_LABELS, localizedClock, russianInterval } from "@rakazo/core";
+import type { CronLabels, CronUnit } from "@atlas/core";
+import { ENGLISH_CRON_LABELS, localizedClock, russianInterval } from "@atlas/core";
 import { getActiveUiLocale, t } from "./i18n";
 import type { UiLocale } from "./ui-locale";
 

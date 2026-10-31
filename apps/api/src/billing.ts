@@ -1,20 +1,19 @@
 import { setTimeout as sleep } from "node:timers/promises";
-import { ORPCError } from "@orpc/server";
 import type {
   BillingPrice,
   BillingProvider,
   BillingSubscriptionSnapshot,
   SandboxProvider,
-} from "@rakazo/adapter-kit";
+} from "@atlas/adapter-kit";
 import {
   BillingCheckoutCompletedError,
   BillingCustomerNotFoundError,
   BillingNoMonthlyCreditsError,
-} from "@rakazo/adapter-kit";
-import { sandboxAllowance, sandboxHoursLeft } from "@rakazo/adapters";
-import type { Actor, BillingStatus } from "@rakazo/contracts";
-import { BYOK_MONTHLY_PRICE_CENTS } from "@rakazo/contracts";
-import type { BillingAccount, PrismaClient } from "@rakazo/db";
+} from "@atlas/adapter-kit";
+import { sandboxAllowance, sandboxHoursLeft } from "@atlas/adapters";
+import type { Actor, BillingStatus } from "@atlas/contracts";
+import { BYOK_MONTHLY_PRICE_CENTS } from "@atlas/contracts";
+import type { BillingAccount, PrismaClient } from "@atlas/db";
 import {
   billingAccountForOrganization,
   byokFreeUntil,
@@ -33,8 +32,9 @@ import {
   releaseCheckoutLease,
   replaceBillingCustomer,
   syncBillingSnapshot,
-} from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/db";
+import { getLogger } from "@atlas/logging";
+import { ORPCError } from "@orpc/server";
 import { createReferrals } from "./referrals.js";
 
 export const TRIAL_DAYS = 7;

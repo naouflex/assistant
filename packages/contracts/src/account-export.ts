@@ -2,7 +2,7 @@ import * as z from "zod";
 import { Id, IsoDate } from "./ids.js";
 
 /**
- * A whole account as one zip, to move between Rakazo installs (Cloud to self-hosted and back).
+ * A whole account as one zip, to move between Atlas installs (Cloud to self-hosted and back).
  *
  * - `manifest.json` comes first: the format, version and the exported spaces.
  * - `spaces/<spaceId>/records.jsonl`: one `AccountExportRecord` per line. A record only refers to
@@ -16,7 +16,13 @@ import { Id, IsoDate } from "./ids.js";
  * rewrites references, including ids inside message blocks. Credentials, integrations, runs,
  * billing and computers are not exported: they belong to the source install.
  */
-export const ACCOUNT_EXPORT_FORMAT = "rakazo-account-export";
+export const ACCOUNT_EXPORT_FORMAT = "atlas-account-export";
+/** Exports written before the Atlas rename. They are otherwise identical, so imports accept them. */
+export const LEGACY_ACCOUNT_EXPORT_FORMAT = "rakazo-account-export";
+export const ACCOUNT_EXPORT_FORMATS = [
+  ACCOUNT_EXPORT_FORMAT,
+  LEGACY_ACCOUNT_EXPORT_FORMAT,
+] as const;
 export const ACCOUNT_EXPORT_VERSION = 1;
 export const ACCOUNT_EXPORT_MANIFEST_PATH = "manifest.json";
 /** Larger workspace files stay behind, matching the workspace export limit elsewhere. */
@@ -34,7 +40,7 @@ export const AccountExportExecutablesSchema = z.array(z.object({ botId: Id, path
 export type AccountExportExecutables = z.infer<typeof AccountExportExecutablesSchema>;
 
 export const AccountExportManifestSchema = z.object({
-  format: z.literal(ACCOUNT_EXPORT_FORMAT),
+  format: z.enum(ACCOUNT_EXPORT_FORMATS),
   version: z.literal(ACCOUNT_EXPORT_VERSION),
   exportedAt: IsoDate,
   user: z.object({ name: z.string(), email: z.string(), timezone: z.string().nullable() }),

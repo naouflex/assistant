@@ -7,22 +7,22 @@ import { UI_LOCALES } from "./ui-locale";
 const resources = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "..",
-  "modules/rakazo-notifications/android/src/main/res",
+  "modules/atlas-notifications/android/src/main/res",
 );
 const keys = [
-  "rakazo_channel_live",
-  "rakazo_channel_messages",
-  "rakazo_channel_scheduled",
-  "rakazo_channel_attention",
-  "rakazo_live_one",
-  "rakazo_live_many",
-  "rakazo_live_working",
-  "rakazo_scheduled_title",
-  "rakazo_replied_group",
-  "rakazo_replied",
-  "rakazo_attention_failed",
-  "rakazo_attention_takeover",
-  "rakazo_attention_input",
+  "atlas_channel_live",
+  "atlas_channel_messages",
+  "atlas_channel_scheduled",
+  "atlas_channel_attention",
+  "atlas_live_one",
+  "atlas_live_many",
+  "atlas_live_working",
+  "atlas_scheduled_title",
+  "atlas_replied_group",
+  "atlas_replied",
+  "atlas_attention_failed",
+  "atlas_attention_takeover",
+  "atlas_attention_input",
 ];
 
 const resourceDirectories = {

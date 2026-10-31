@@ -6,13 +6,13 @@ import {
   mcpStdioAvailable,
   resolveMemberMainModel,
   selectConfiguredModel,
-} from "@rakazo/adapters";
-import type { Actor, Me } from "@rakazo/contracts";
-import { attachmentMaxBytes, attachmentMaxCount, canonicalPiProviderId } from "@rakazo/contracts";
+} from "@atlas/adapters";
+import type { Actor, Me } from "@atlas/contracts";
+import { attachmentMaxBytes, attachmentMaxCount, canonicalPiProviderId } from "@atlas/contracts";
 import { isAdmin } from "../admins.js";
 import type { RouterDeps } from "../router.js";
 
-export { createAdapterContext as computerContext } from "@rakazo/adapter-kit";
+export { createAdapterContext as computerContext } from "@atlas/adapter-kit";
 
 function hostCredentials(active: boolean, provider: string) {
   return active

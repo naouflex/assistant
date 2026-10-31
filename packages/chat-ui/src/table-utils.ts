@@ -1,4 +1,4 @@
-import { droppedTableHtmlText } from "@rakazo/contracts";
+import { droppedTableHtmlText } from "@atlas/contracts";
 import type { MarkdownCopy } from "./markdown-copy";
 import { defaultMarkdownCopy } from "./markdown-copy";
 

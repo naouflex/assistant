@@ -1,6 +1,6 @@
-import { attachmentMaxBytes, attachmentMaxCount } from "@rakazo/contracts";
-import * as core from "@rakazo/core";
-import { inferAttachmentMimeType } from "@rakazo/core";
+import { attachmentMaxBytes, attachmentMaxCount } from "@atlas/contracts";
+import * as core from "@atlas/core";
+import { inferAttachmentMimeType } from "@atlas/core";
 import { describe, expect, it, vi } from "vitest";
 import { filterPickedAttachments } from "./pick-attachments-filter.js";
 

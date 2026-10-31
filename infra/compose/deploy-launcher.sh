@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
-# Install as /usr/local/sbin/rakazo-deploy-main (the CI forced command). It runs the deploy script
+# Install as /usr/local/sbin/atlas-deploy-main (the CI forced command). It runs the deploy script
 # from the commit CI tested (or origin/main), so deploy changes take effect without reinstalling anything on the host; only
 # this launcher is installed, and it rarely changes.
 set -Eeuo pipefail
+# Installs from before the Atlas rename may still export RAKAZO_* settings.
+for __legacy in $(compgen -e | grep -E '(^|_)RAKAZO(_|$)' || true); do
+  __atlas="${__legacy/RAKAZO/ATLAS}"
+  [[ -n "${!__atlas+x}" ]] || export "$__atlas=${!__legacy}"
+done
+unset __legacy __atlas
 
-if [[ -z "${RAKAZO_DEPLOY_DIR:-}" && -r /etc/rakazo/deploy.env ]]; then
+if [[ -z "${ATLAS_DEPLOY_DIR:-}" && -r /etc/atlas/deploy.env ]]; then
   # shellcheck disable=SC1091
-  source /etc/rakazo/deploy.env
+  source /etc/atlas/deploy.env
 fi
-APP_DIR="${RAKAZO_DEPLOY_DIR:-/srv/rakazo}"
-[[ "${APP_DIR}" == /* ]] || { echo "RAKAZO_DEPLOY_DIR must be an absolute path" >&2; exit 1; }
+APP_DIR="${ATLAS_DEPLOY_DIR:-/srv/atlas}"
+[[ "${APP_DIR}" == /* ]] || { echo "ATLAS_DEPLOY_DIR must be an absolute path" >&2; exit 1; }
 
 cd "${APP_DIR}"
 git fetch --quiet --prune origin main
@@ -38,4 +44,4 @@ else
   revision="$(git rev-parse origin/main)"
 fi
 script="$(git show "${revision}:infra/compose/deploy-main.sh")"
-RAKAZO_DEPLOY_REVISION="${revision}" exec bash -c "${script}" rakazo-deploy-main "$@"
+ATLAS_DEPLOY_REVISION="${revision}" exec bash -c "${script}" atlas-deploy-main "$@"

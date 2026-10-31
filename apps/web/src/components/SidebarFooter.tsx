@@ -1,6 +1,5 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import type { NavLink } from "@rakazo/contracts";
-import { ANDROID_APK_URL, IOS_APP_STORE_URL } from "@rakazo/contracts";
+import type { NavLink } from "@atlas/contracts";
+import { ANDROID_APK_URL, IOS_APP_STORE_URL } from "@atlas/contracts";
 import {
   AppMarkStack,
   Button,
@@ -8,7 +7,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   BookOpen,
   Download,
@@ -230,7 +230,7 @@ export function SidebarFooter({
             ) : null}
             <a
               className={`${buttonVariants({ variant: "ghost" })} h-9 w-full justify-start gap-2.5 font-normal`}
-              href="https://github.com/elie222/rakazo/blob/main/docs/self-host.md"
+              href="https://github.com/naouflex/assistant/blob/main/docs/self-host.md"
               target="_blank"
               rel="noreferrer"
             >

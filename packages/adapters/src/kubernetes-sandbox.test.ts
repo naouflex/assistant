@@ -2,9 +2,9 @@ import { execFileSync } from "node:child_process";
 import { link, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import type { AdapterContext, ComputerRef, ProcessEvent } from "@atlas/adapter-kit";
+import { shellQuote } from "@atlas/core/node/desktop-runtime";
 import type { Exec, V1Pod } from "@kubernetes/client-node";
-import type { AdapterContext, ComputerRef, ProcessEvent } from "@rakazo/adapter-kit";
-import { shellQuote } from "@rakazo/core/node/desktop-runtime";
 import { describe, expect, it, vi } from "vitest";
 import type { KubernetesSandboxSdk } from "./kubernetes-sandbox.js";
 import { encodeTarEntry, KubernetesSandboxProvider, TarReader } from "./kubernetes-sandbox.js";
@@ -21,7 +21,7 @@ const context: AdapterContext = {
 };
 
 const readyPod: V1Pod = {
-  metadata: { name: "pod", labels: { "rakazo-bot-id": "bot-a" } },
+  metadata: { name: "pod", labels: { "atlas-bot-id": "bot-a" } },
   status: {
     phase: "Running",
     podIP: "10.0.0.8",
@@ -86,14 +86,14 @@ describe("KubernetesSandboxProvider", () => {
         stdin.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
         stdin.on("end", () => {
           const content = Buffer.concat(chunks);
-          const write = command.indexOf("rakazo-write");
+          const write = command.indexOf("atlas-write");
           if (write >= 0) {
             files.set(command[write + 1]!, {
               content,
               executable: command[write + 2] === "700",
             });
           } else {
-            expect(command).toContain("rakazo-export-list");
+            expect(command).toContain("atlas-export-list");
             exportedNames = content.toString().split("\0").filter(Boolean);
           }
           finish();
@@ -110,7 +110,7 @@ describe("KubernetesSandboxProvider", () => {
           ) {
             const directory = command.includes("find")
               ? command[command.indexOf("find") + 1]!
-              : "/home/rakazo";
+              : "/home/atlas";
             for (const [name, file] of files) {
               const relative = name.slice(directory.length + 1);
               if (!name.startsWith(`${directory}/`)) continue;
@@ -123,13 +123,13 @@ describe("KubernetesSandboxProvider", () => {
             }
           } else if (command.includes("tar")) {
             for (const name of exportedNames) {
-              const file = files.get(`/home/rakazo/${name}`)!;
+              const file = files.get(`/home/atlas/${name}`)!;
               for (const chunk of encodeTarEntry(name, file.content, file.executable))
                 stdout?.write(chunk);
             }
             stdout?.write(TAR_END);
-          } else if (command.some((arg) => arg.includes("RAKAZO_DESKTOP=")))
-            stdout?.write("RAKAZO_DESKTOP=0:offline-view-token\n");
+          } else if (command.some((arg) => arg.includes("ATLAS_DESKTOP=")))
+            stdout?.write("ATLAS_DESKTOP=0:offline-view-token\n");
           else if (command.some((arg) => arg.includes("getmouselocation")))
             stdout?.write("cG5n\nCURSOR X=1 Y=2\n");
           finish();
@@ -206,9 +206,9 @@ describe("KubernetesSandboxProvider", () => {
       metadata: {
         annotations: { "example.test/policy": "sandbox" },
         labels: {
-          "app.kubernetes.io/name": "rakazo-computer",
+          "app.kubernetes.io/name": "atlas-computer",
           "example.test/tier": "computer",
-          "rakazo-bot-id": "bot-a",
+          "atlas-bot-id": "bot-a",
         },
       },
       spec: {
@@ -277,7 +277,7 @@ describe("KubernetesSandboxProvider", () => {
       { type: "exit", code: 7 },
     ]);
     expect(exec).toHaveBeenCalledWith(
-      "rakazo-sandboxes",
+      "atlas-sandboxes",
       "pod",
       "computer",
       expect.arrayContaining(["TEST_VALUE=value", "OLD_VALUE", "printf", "done"]),
@@ -290,7 +290,7 @@ describe("KubernetesSandboxProvider", () => {
   });
 
   it("attaches the controlled terminal without replacing the bot run screen fence", async () => {
-    const exec = successfulExec("RAKAZO_DESKTOP=0:view-token\n");
+    const exec = successfulExec("ATLAS_DESKTOP=0:view-token\n");
     const provider = providerFor({}, exec);
 
     await provider.connectTerminal(
@@ -314,7 +314,7 @@ describe("KubernetesSandboxProvider", () => {
     });
     const result = await provider.provision({ botId: "bot-a", homePath: "/unused" }, context);
     expect(result.fresh).toBe(false);
-    expect(result.providerRef).toMatch(/^rakazo-bot-a-/);
+    expect(result.providerRef).toMatch(/^atlas-bot-a-/);
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -334,7 +334,7 @@ describe("KubernetesSandboxProvider", () => {
     const read = vi
       .fn()
       .mockRejectedValueOnce(Object.assign(new Error("missing"), { code: 404 }))
-      .mockResolvedValue({ ...readyPod, metadata: { labels: { "rakazo-bot-id": "bot-b" } } });
+      .mockResolvedValue({ ...readyPod, metadata: { labels: { "atlas-bot-id": "bot-b" } } });
     const create = vi.fn().mockRejectedValue(Object.assign(new Error("conflict"), { code: 409 }));
     const provider = providerFor({ readNamespacedPod: read, createNamespacedPod: create });
     await expect(
@@ -345,8 +345,8 @@ describe("KubernetesSandboxProvider", () => {
   describe("mounted home", () => {
     const home = {
       homeClaim: "data-claim",
-      homeColocateNamespace: "rakazo",
-      homeColocateLabels: { app: "rakazo-api" },
+      homeColocateNamespace: "atlas",
+      homeColocateLabels: { app: "atlas-api" },
     };
 
     it("mounts only the bot's home directory and pins the pod beside the volume", async () => {
@@ -370,8 +370,8 @@ describe("KubernetesSandboxProvider", () => {
           podAffinity: {
             requiredDuringSchedulingIgnoredDuringExecution: [
               {
-                namespaces: ["rakazo"],
-                labelSelector: { matchLabels: { app: "rakazo-api" } },
+                namespaces: ["atlas"],
+                labelSelector: { matchLabels: { app: "atlas-api" } },
                 topologyKey: "kubernetes.io/hostname",
               },
             ],
@@ -379,7 +379,7 @@ describe("KubernetesSandboxProvider", () => {
         },
         containers: [
           {
-            volumeMounts: [{ name: "home", mountPath: "/home/rakazo", subPath: "homes/team-ab12" }],
+            volumeMounts: [{ name: "home", mountPath: "/home/atlas", subPath: "homes/team-ab12" }],
           },
         ],
       });
@@ -442,7 +442,7 @@ describe("KubernetesSandboxProvider", () => {
                     : [
                         {
                           name: "home",
-                          mountPath: kind === "wrong-path" ? "/other" : "/home/rakazo",
+                          mountPath: kind === "wrong-path" ? "/other" : "/home/atlas",
                           subPath: kind === "wrong-home" ? "homes/other" : "homes/bot-a",
                         },
                       ],
@@ -468,7 +468,7 @@ describe("KubernetesSandboxProvider", () => {
           containers: [
             {
               name: "computer",
-              volumeMounts: [{ name: "home", mountPath: "/home/rakazo", subPath: "homes/bot-a" }],
+              volumeMounts: [{ name: "home", mountPath: "/home/atlas", subPath: "homes/bot-a" }],
             },
           ],
         },
@@ -490,7 +490,7 @@ describe("KubernetesSandboxProvider", () => {
           containers: [
             {
               name: "computer",
-              volumeMounts: [{ name: "home", mountPath: "/home/rakazo", subPath: "homes/bot-a" }],
+              volumeMounts: [{ name: "home", mountPath: "/home/atlas", subPath: "homes/bot-a" }],
             },
           ],
         },
@@ -538,7 +538,7 @@ describe("KubernetesSandboxProvider", () => {
     const provider = providerFor({
       readNamespacedPod: vi
         .fn()
-        .mockResolvedValue({ ...readyPod, metadata: { labels: { "rakazo-bot-id": "bot-b" } } }),
+        .mockResolvedValue({ ...readyPod, metadata: { labels: { "atlas-bot-id": "bot-b" } } }),
     });
     await expect(
       provider.provision(
@@ -716,7 +716,7 @@ describe("KubernetesSandboxProvider", () => {
       /* consume */
     }
     const command = exec.mock.calls[0]?.[3];
-    expect(command).toContain("/home/rakazo/nested/dir");
+    expect(command).toContain("/home/atlas/nested/dir");
     expect(command).toContain("OK_1=yes");
     expect(command).toContain("2s");
     const invalid = provider
@@ -916,7 +916,7 @@ describe("KubernetesSandboxProvider", () => {
       ["10.0.0.8", "10.0.0.8"],
       ["2001:db8::1", "[2001:db8::1]"],
     ] as const) {
-      const exec = successfulExec("RAKAZO_DESKTOP=0:token");
+      const exec = successfulExec("ATLAS_DESKTOP=0:token");
       const provider = providerFor(
         { readNamespacedPod: vi.fn().mockResolvedValue(screenPod(ip)) },
         exec,
@@ -936,7 +936,7 @@ describe("KubernetesSandboxProvider", () => {
     await expect(
       providerFor(
         { readNamespacedPod: vi.fn().mockResolvedValue(screenPod(undefined)) },
-        successfulExec("RAKAZO_DESKTOP=0:token"),
+        successfulExec("ATLAS_DESKTOP=0:token"),
       ).connectScreen(computer, { view: "stream", interactive: false }, context),
     ).rejects.toThrow("no pod IP");
   });
@@ -1094,7 +1094,7 @@ describe("KubernetesSandboxProvider", () => {
   it.skipIf(process.platform !== "linux")(
     "exports real GNU tar long paths and hardlinks intact",
     async () => {
-      const root = await mkdtemp(path.join(tmpdir(), "rakazo-tar-"));
+      const root = await mkdtemp(path.join(tmpdir(), "atlas-tar-"));
       try {
         const long = `nested/${"a".repeat(110)}.txt`;
         await mkdir(path.join(root, "nested"));
@@ -1108,7 +1108,7 @@ describe("KubernetesSandboxProvider", () => {
               args[4]?.write(
                 execFileSync("bash", [
                   "-c",
-                  script.replace(`cd ${shellQuote("/home/rakazo")}`, `cd ${shellQuote(root)}`),
+                  script.replace(`cd ${shellQuote("/home/atlas")}`, `cd ${shellQuote(root)}`),
                 ]),
               );
             } else if (args[6]) {

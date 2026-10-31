@@ -1,16 +1,16 @@
+import { getLogContext } from "@atlas/logging";
 import type { SpanAttributes, TelemetryContext, TelemetrySpan } from "@earendil-works/pi-telemetry";
 import type { Attributes, Context, Span, Tracer } from "@opentelemetry/api";
 import { ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { getLogContext } from "@rakazo/logging";
 
 // Allowlist metadata: unknown attributes (including future Pi payload fields) stay private.
 const safeAttributes = new Set([
-  "rakazo.bot.id",
-  "rakazo.run.id",
-  "rakazo.routine.id",
+  "atlas.bot.id",
+  "atlas.run.id",
+  "atlas.routine.id",
   "pi.ai.operation",
   "pi.ai.provider",
   "pi.ai.model",
@@ -58,7 +58,7 @@ export function otelPiContext(
       const correlation = {
         ...ids,
         ...Object.fromEntries(
-          Object.entries(options.attributes ?? {}).filter(([key]) => key.startsWith("rakazo.")),
+          Object.entries(options.attributes ?? {}).filter(([key]) => key.startsWith("atlas.")),
         ),
       };
       const parentContext = parent ?? correlatedLogContext();
@@ -103,7 +103,7 @@ export function otelPiContext(
 export function createPiTelemetryExporter() {
   const provider = new NodeTracerProvider({
     resource: resourceFromAttributes({
-      "service.name": process.env.OTEL_SERVICE_NAME?.trim() || "rakazo-worker",
+      "service.name": process.env.OTEL_SERVICE_NAME?.trim() || "atlas-worker",
     }),
     // The exporter honors standard OTLP endpoint and header env vars, including /v1/traces.
     spanProcessors: [
@@ -112,7 +112,7 @@ export function createPiTelemetryExporter() {
   });
   return {
     context: otelPiContext(
-      provider.getTracer("rakazo.pi", "0.87.1"),
+      provider.getTracer("atlas.pi", "0.87.1"),
       process.env.OTEL_CAPTURE_CONTENT === "true",
     ),
     shutdown: () => provider.shutdown(),

@@ -1,6 +1,6 @@
+import type { Bot } from "@atlas/contracts";
+import { NativeSelect, NativeSelectOption, Spinner } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
-import type { Bot } from "@rakazo/contracts";
-import { NativeSelect, NativeSelectOption, Spinner } from "@rakazo/ui-web";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IntegrationSetup } from "../components/integrations/IntegrationSetup";

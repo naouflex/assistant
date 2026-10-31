@@ -2,8 +2,8 @@ import {
   addScreenProxyCapability,
   resetRemoteScreenCapabilityReuse,
   SCREEN_TARGET_ENDPOINT,
-} from "@rakazo/core/node/screen-capability";
-import type { PrismaClient } from "@rakazo/db";
+} from "@atlas/core/node/screen-capability";
+import type { PrismaClient } from "@atlas/db";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { mountScreenTarget } from "./screen-proxy.js";

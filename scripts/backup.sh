@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Installs from before the Atlas rename may still export RAKAZO_* settings.
+for __legacy in $(compgen -e | grep -E '(^|_)RAKAZO(_|$)' || true); do
+  __atlas="${__legacy/RAKAZO/ATLAS}"
+  [[ -n "${!__atlas+x}" ]] || export "$__atlas=${!__legacy}"
+done
+unset __legacy __atlas
 umask 077
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAMP="${1-$(date +%Y%m%d-%H%M%S)}"
@@ -15,15 +21,15 @@ if [[ -f "$ROOT/.env" ]]; then compose=(docker compose --env-file "$ROOT/.env" -
 [[ ! -L "$ROOT/backups" && ! -L "$OUT" ]] || { echo "backup directory must not be a symlink" >&2; exit 1; }
 mkdir -p "$OUT"
 chmod 700 "$ROOT/backups" "$OUT"
-for artifact in "$OUT/rakazo.sql" "$OUT/homes.tgz"; do
+for artifact in "$OUT/atlas.sql" "$OUT/homes.tgz"; do
   [[ ! -L "$artifact" ]] || { echo "backup artifact must not be a symlink" >&2; exit 1; }
   if [[ -e "$artifact" ]]; then
     [[ -f "$artifact" ]] || { echo "backup artifact is not a file" >&2; exit 1; }
     chmod 600 "$artifact"
   fi
 done
-"${compose[@]}" exec -T postgres pg_dump -U rakazo rakazo > "$OUT/rakazo.sql"
-if [[ "${RAKAZO_BACKUP_SKIP_HOMES:-0}" == "1" ]] || [[ ! -e "$ROOT/data" && ! -L "$ROOT/data" ]]; then
+"${compose[@]}" exec -T postgres pg_dump -U atlas atlas > "$OUT/atlas.sql"
+if [[ "${ATLAS_BACKUP_SKIP_HOMES:-0}" == "1" ]] || [[ ! -e "$ROOT/data" && ! -L "$ROOT/data" ]]; then
   tar -czf "$OUT/homes.tgz" --files-from /dev/null
 else
   [[ ! -L "$ROOT/data" && -d "$ROOT/data" ]] || { echo "data must be a directory, not a symlink" >&2; exit 1; }

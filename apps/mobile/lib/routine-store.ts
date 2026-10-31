@@ -1,5 +1,5 @@
-import type { Routine } from "@rakazo/contracts";
-import { fetchFresh, writeSaved } from "@rakazo/core/query";
+import type { Routine } from "@atlas/contracts";
+import { fetchFresh, writeSaved } from "@atlas/core/query";
 import type { QueryFunction } from "@tanstack/react-query";
 import { hashKey, useQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";

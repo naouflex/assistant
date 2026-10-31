@@ -1,5 +1,5 @@
+import { cn } from "@atlas/ui-web/lib/utils";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import { cn } from "@rakazo/ui-web/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 

@@ -1,9 +1,8 @@
 "use client";
 
+import { Button } from "@atlas/ui-web/components/ui/button";
+import { cn } from "@atlas/ui-web/lib/utils";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { Button } from "@rakazo/ui-web/components/ui/button";
-
-import { cn } from "@rakazo/ui-web/lib/utils";
 import { XIcon } from "lucide-react";
 import type * as React from "react";
 

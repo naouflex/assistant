@@ -1,4 +1,4 @@
-import { type SpeechLocale, speechLocaleTag } from "@rakazo/core";
+import { type SpeechLocale, speechLocaleTag } from "@atlas/core";
 import { File, Paths } from "expo-file-system";
 import { getLocales } from "expo-localization";
 import type * as ExpoSpeech from "expo-speech";
@@ -9,7 +9,7 @@ import { pickUnusedVoice } from "./voice-assignment";
 
 // Assignments stay on this device.
 function assignmentsFile(): File {
-  return new File(Paths.document, "rakazo-bot-voices.json");
+  return new File(Paths.document, "atlas-bot-voices.json");
 }
 
 async function loadAssignments(): Promise<Record<string, string>> {

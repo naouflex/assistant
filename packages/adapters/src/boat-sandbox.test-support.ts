@@ -64,7 +64,7 @@ interface FakeSandbox {
   damaged?: "resume_heals" | "persists";
 }
 
-const BOAT_WORKSPACE = "/home/user/rakazo-home";
+const BOAT_WORKSPACE = "/home/user/atlas-home";
 
 /** Every fake's download URLs, so a test can serve them without holding the fake API. */
 const downloadServers = new Map<string, FakeBoatApi>();

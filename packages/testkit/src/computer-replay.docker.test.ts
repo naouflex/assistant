@@ -4,13 +4,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
-import { serve } from "@hono/node-server";
-import type { ComputerRef } from "@rakazo/adapter-kit";
+import type { ComputerRef } from "@atlas/adapter-kit";
 import {
   ComputerBrowserProvider,
   DockerSandboxProvider,
   FakeSandboxProvider,
-} from "@rakazo/adapters";
+} from "@atlas/adapters";
+import { serve } from "@hono/node-server";
 import { describe, expect, it } from "vitest";
 import {
   assertContactsExport,
@@ -36,7 +36,7 @@ describe.skipIf(process.env.RUN_COMPUTER_REPLAY_DOCKER !== "1")(
           "Run through the computer-replay CLI to create an isolated supervisor environment",
         );
       }
-      const { supervisorApp } = await import("@rakazo/sandbox-supervisor");
+      const { supervisorApp } = await import("@atlas/sandbox-supervisor");
       const server = serve({
         fetch: supervisorApp.fetch,
         hostname: "127.0.0.1",
@@ -70,7 +70,7 @@ describe.skipIf(process.env.RUN_COMPUTER_REPLAY_DOCKER !== "1")(
           // Docker rejects overlapping subnets; only this test's unique network is touched.
           if (process.env.COMPUTER_REPLAY_SUBNET) {
             const { computerNetworkNameFor } = await import(
-              "@rakazo/sandbox-supervisor/computer-spec"
+              "@atlas/sandbox-supervisor/computer-spec"
             );
             const name = computerNetworkNameFor(context.botId);
             execFileSync(
@@ -155,7 +155,7 @@ describe.skipIf(process.env.RUN_COMPUTER_REPLAY_DOCKER !== "1")(
                   computer!.id,
                   "bash",
                   "-c",
-                  "/usr/local/bin/rakazo-page-browser snapshot; tail -40 /tmp/rakazo/screen-1-browser.log",
+                  "/usr/local/bin/atlas-page-browser snapshot; tail -40 /tmp/atlas/screen-1-browser.log",
                 ],
                 { encoding: "utf8", timeout: 40_000 },
               );

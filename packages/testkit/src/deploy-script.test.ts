@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const COMPOSE = "docker compose --env-file .env -f infra/compose/docker-compose.prod.yml";
-const APP_IMAGE = "ghcr.example.test/rakazo/app:local";
+const APP_IMAGE = "ghcr.example.test/atlas/app:local";
 // Each rolled service gains a new container, which must pass its health check before the old
 // one stops; the rest of the stack is reconciled afterwards.
 const rolloutSteps = (revision: string) => [
@@ -75,7 +75,7 @@ function rollout(commands: string[]) {
 }
 
 function fixture() {
-  const root = mkdtempSync(path.join(os.tmpdir(), "rakazo-deploy-"));
+  const root = mkdtempSync(path.join(os.tmpdir(), "atlas-deploy-"));
   temporaryDirectories.push(root);
   const upstream = path.join(root, "upstream");
   const checkout = path.join(root, "checkout with spaces");
@@ -84,7 +84,7 @@ function fixture() {
   git(upstream, "init", "-q", "-b", "main");
   const first = commit(upstream, "first");
   git(root, "clone", "-q", upstream, checkout);
-  write(path.join(checkout, ".env"), "RAKAZO_HOST=app.example.test\n");
+  write(path.join(checkout, ".env"), "ATLAS_HOST=app.example.test\n");
   const log = path.join(root, "commands.log");
   // Record every privileged or network command instead of running it.
   write(path.join(bin, "sudo"), '#!/bin/bash\nexec "$@"\n', 0o755);
@@ -126,7 +126,7 @@ fi
 if [[ "$*" == *" --scale "* ]]; then touch "$COMMAND_LOG.$service"; fi
 if [[ "$1" == rm && "$2" == *-old ]]; then rm -f "$COMMAND_LOG.\${2%-old}"; fi
 if [[ "$1" == inspect ]]; then echo "\${CONTAINER_HEALTH:-running healthy}"; fi
-if [[ "$*" == "image ls "* ]]; then echo rakazo-rollback:old; fi
+if [[ "$*" == "image ls "* ]]; then echo atlas-rollback:old; fi
 exit 0
 `,
     0o755,
@@ -150,8 +150,8 @@ echo "/dev/fake 104857600 0 \${FREE_KB:-52428800} 0% /"
     PATH: [bin, "/usr/bin", "/bin"].join(path.delimiter),
     HOME: root,
     COMMAND_LOG: log,
-    RAKAZO_DEPLOY_DIR: checkout,
-    RAKAZO_DEPLOY_HEALTH_INTERVAL: "0",
+    ATLAS_DEPLOY_DIR: checkout,
+    ATLAS_DEPLOY_HEALTH_INTERVAL: "0",
   };
   return {
     upstream,
@@ -214,7 +214,7 @@ describe("production deploy script", () => {
     const deploy = fixture();
     const pinned = commit(deploy.upstream, "pinned");
     commit(deploy.upstream, "later");
-    const result = deploy.run({ RAKAZO_DEPLOY_REVISION: pinned });
+    const result = deploy.run({ ATLAS_DEPLOY_REVISION: pinned });
     expect(result.status).toBe(0);
     expect(deploy.head()).toBe(pinned);
     expect(deploy.deployed()).toBe(pinned);
@@ -250,9 +250,9 @@ describe("production deploy script", () => {
       commands.slice(commands.findIndex((line) => line.endsWith(" up -d --remove-orphans")) + 1),
     ).toEqual([
       "curl https://app.example.test/health",
-      "docker image ls --format {{.Repository}}:{{.Tag}} rakazo-rollback",
-      "docker rmi rakazo-rollback:old",
-      "docker tag sha256:running rakazo-rollback:running",
+      "docker image ls --format {{.Repository}}:{{.Tag}} atlas-rollback",
+      "docker rmi atlas-rollback:old",
+      "docker tag sha256:running atlas-rollback:running",
       "docker image prune --force",
       "docker builder prune --force --keep-storage 8GB",
     ]);
@@ -261,7 +261,7 @@ describe("production deploy script", () => {
   it("trims the build cache to the configured size", () => {
     const deploy = fixture();
     commit(deploy.upstream, "next");
-    expect(deploy.run({ RAKAZO_DEPLOY_BUILD_CACHE_GB: "3" }).status).toBe(0);
+    expect(deploy.run({ ATLAS_DEPLOY_BUILD_CACHE_GB: "3" }).status).toBe(0);
     expect(deploy.commands()).toContainEqual(
       expect.stringContaining("docker builder prune --force --keep-storage 3GB"),
     );
@@ -270,9 +270,9 @@ describe("production deploy script", () => {
   it("refuses a build cache size that is not a whole number before deploying", () => {
     const deploy = fixture();
     commit(deploy.upstream, "next");
-    const result = deploy.run({ RAKAZO_DEPLOY_BUILD_CACHE_GB: "8GB" });
+    const result = deploy.run({ ATLAS_DEPLOY_BUILD_CACHE_GB: "8GB" });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("RAKAZO_DEPLOY_BUILD_CACHE_GB must be a whole number");
+    expect(result.stderr).toContain("ATLAS_DEPLOY_BUILD_CACHE_GB must be a whole number");
     expect(deploy.commands()).toEqual([]);
     expect(deploy.head()).toBe(deploy.first);
   });
@@ -288,7 +288,7 @@ describe("production deploy script", () => {
 
   it("rejects a threshold with a leading zero", () => {
     const deploy = fixture();
-    const result = deploy.run({ RAKAZO_DEPLOY_MIN_FREE_GB: "08" });
+    const result = deploy.run({ ATLAS_DEPLOY_MIN_FREE_GB: "08" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("whole number");
   });
@@ -296,7 +296,7 @@ describe("production deploy script", () => {
   it("refuses to build with too little free disk", () => {
     const deploy = fixture();
     commit(deploy.upstream, "next");
-    const result = deploy.run({ FREE_KB: String(2 * 1024 * 1024), RAKAZO_DEPLOY_MIN_FREE_GB: "5" });
+    const result = deploy.run({ FREE_KB: String(2 * 1024 * 1024), ATLAS_DEPLOY_MIN_FREE_GB: "5" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Only 2GB free");
     expect(deploy.head()).toBe(deploy.first);
@@ -346,7 +346,7 @@ describe("production deploy script", () => {
   });
 
   describe("with published images", () => {
-    const REGISTRY = "registry.example.test/rakazo/app";
+    const REGISTRY = "registry.example.test/atlas/app";
     const published = (revision: string) => `${REGISTRY}:sha-${revision}`;
     const commandsOf = (deploy: ReturnType<typeof fixture>) =>
       deploy.commands().map((line) => line.split(" @ ")[0]!);
@@ -354,7 +354,7 @@ describe("production deploy script", () => {
     it("pulls the image published for the commit instead of building", () => {
       const deploy = fixture();
       const next = commit(deploy.upstream, "next");
-      const result = deploy.run({ RAKAZO_DEPLOY_IMAGE: REGISTRY });
+      const result = deploy.run({ ATLAS_DEPLOY_IMAGE: REGISTRY });
       expect(result.status).toBe(0);
       expect(deploy.deployed()).toBe(next);
       const commands = commandsOf(deploy);
@@ -372,7 +372,7 @@ describe("production deploy script", () => {
     it("uses the GHCR image of the GitHub repository the checkout tracks by default", () => {
       const deploy = fixture();
       const next = commit(deploy.upstream, "next");
-      const github = "https://github.com/Example/Rakazo.git";
+      const github = "https://github.com/Example/Atlas.git";
       git(deploy.checkout, "remote", "set-url", "origin", github);
       // The deploy runs with HOME set to the fixture root, so fetches still reach the local upstream.
       write(
@@ -381,14 +381,14 @@ describe("production deploy script", () => {
       );
       expect(deploy.run().status).toBe(0);
       expect(commandsOf(deploy)).toContain(
-        `docker pull --quiet ghcr.io/example/rakazo/app:sha-${next}`,
+        `docker pull --quiet ghcr.io/example/atlas/app:sha-${next}`,
       );
     });
 
     it("builds on the host, loudly, when the image cannot be pulled", () => {
       const deploy = fixture();
       const next = commit(deploy.upstream, "next");
-      const result = deploy.run({ RAKAZO_DEPLOY_IMAGE: REGISTRY, FAIL_PULL: "1" });
+      const result = deploy.run({ ATLAS_DEPLOY_IMAGE: REGISTRY, FAIL_PULL: "1" });
       expect(result.status).toBe(0);
       expect(result.stderr).toContain(`::warning::Could not pull ${published(next)}`);
       expect(deploy.deployed()).toBe(next);
@@ -400,7 +400,7 @@ describe("production deploy script", () => {
     it("rolls back by retagging the previous image without the registry", () => {
       const deploy = fixture();
       commit(deploy.upstream, "unhealthy");
-      const result = deploy.run({ RAKAZO_DEPLOY_IMAGE: REGISTRY, FAIL_HEALTH: "1" });
+      const result = deploy.run({ ATLAS_DEPLOY_IMAGE: REGISTRY, FAIL_HEALTH: "1" });
       expect(result.status).toBe(1);
       expect(deploy.head()).toBe(deploy.first);
       const commands = commandsOf(deploy);
@@ -412,7 +412,7 @@ describe("production deploy script", () => {
       const deploy = fixture();
       const next = commit(deploy.upstream, "unhealthy");
       const result = deploy.run({
-        RAKAZO_DEPLOY_IMAGE: REGISTRY,
+        ATLAS_DEPLOY_IMAGE: REGISTRY,
         FAIL_HEALTH: "1",
         PREVIOUS_IMAGE: "",
       });
@@ -428,16 +428,16 @@ describe("production deploy script", () => {
     it("keeps only the current and previous app images", () => {
       const deploy = fixture();
       const next = commit(deploy.upstream, "next");
-      expect(deploy.run({ RAKAZO_DEPLOY_IMAGE: REGISTRY }).status).toBe(0);
+      expect(deploy.run({ ATLAS_DEPLOY_IMAGE: REGISTRY }).status).toBe(0);
       const commands = commandsOf(deploy);
       expect(commands).toContain(`docker rmi ${published(next)}`);
       expect(
         commands.slice(commands.findIndex((line) => line.endsWith(" up -d --remove-orphans")) + 1),
       ).toEqual([
         "curl https://app.example.test/health",
-        "docker image ls --format {{.Repository}}:{{.Tag}} rakazo-rollback",
-        "docker rmi rakazo-rollback:old",
-        "docker tag sha256:running rakazo-rollback:running",
+        "docker image ls --format {{.Repository}}:{{.Tag}} atlas-rollback",
+        "docker rmi atlas-rollback:old",
+        "docker tag sha256:running atlas-rollback:running",
         "docker image prune --force",
         "docker builder prune --force --keep-storage 8GB",
       ]);
@@ -531,7 +531,7 @@ describe("production deploy script", () => {
 
 describe("production deploy launcher", () => {
   it("runs the deploy script from origin/main, not the checkout", () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), "rakazo-launcher-"));
+    const root = mkdtempSync(path.join(os.tmpdir(), "atlas-launcher-"));
     temporaryDirectories.push(root);
     const upstream = path.join(root, "upstream");
     const checkout = path.join(root, "checkout with spaces");
@@ -542,7 +542,7 @@ describe("production deploy launcher", () => {
     git(upstream, "add", script);
     commit(upstream, "first");
     git(root, "clone", "-q", upstream, checkout);
-    write(path.join(upstream, script), 'echo "current $0 $* $RAKAZO_DEPLOY_REVISION"\n');
+    write(path.join(upstream, script), 'echo "current $0 $* $ATLAS_DEPLOY_REVISION"\n');
     git(upstream, "add", script);
     const next = commit(upstream, "next");
 
@@ -551,25 +551,25 @@ describe("production deploy launcher", () => {
       [path.join(repoRoot, "infra/compose/deploy-launcher.sh"), "--flag"],
       {
         cwd: root,
-        env: { PATH: process.env.PATH, HOME: root, RAKAZO_DEPLOY_DIR: checkout },
+        env: { PATH: process.env.PATH, HOME: root, ATLAS_DEPLOY_DIR: checkout },
         encoding: "utf8",
         timeout: 20_000,
       },
     );
     expect(result.stderr).toBe("");
     expect(result.status).toBe(0);
-    expect(result.stdout.trim()).toBe(`current rakazo-deploy-main --flag ${next}`);
+    expect(result.stdout.trim()).toBe(`current atlas-deploy-main --flag ${next}`);
   });
 
   function launcherRepo() {
-    const root = mkdtempSync(path.join(os.tmpdir(), "rakazo-launcher-"));
+    const root = mkdtempSync(path.join(os.tmpdir(), "atlas-launcher-"));
     temporaryDirectories.push(root);
     const upstream = path.join(root, "upstream");
     const checkout = path.join(root, "checkout");
     const script = path.join("infra", "compose", "deploy-main.sh");
     mkdirSync(upstream);
     git(upstream, "init", "-q", "-b", "main");
-    write(path.join(upstream, script), 'echo "deploy $RAKAZO_DEPLOY_REVISION"\n');
+    write(path.join(upstream, script), 'echo "deploy $ATLAS_DEPLOY_REVISION"\n');
     git(upstream, "add", script);
     const tested = commit(upstream, "tested");
     const later = commit(upstream, "merged after the green run");
@@ -580,7 +580,7 @@ describe("production deploy launcher", () => {
         env: {
           PATH: process.env.PATH,
           HOME: root,
-          RAKAZO_DEPLOY_DIR: checkout,
+          ATLAS_DEPLOY_DIR: checkout,
           SSH_ORIGINAL_COMMAND: command,
         },
         encoding: "utf8",
@@ -621,7 +621,7 @@ describe("production deploy launcher", () => {
       "/bin/bash",
       [path.join(repoRoot, "infra/compose/deploy-launcher.sh")],
       {
-        env: { PATH: process.env.PATH, RAKAZO_DEPLOY_DIR: "relative" },
+        env: { PATH: process.env.PATH, ATLAS_DEPLOY_DIR: "relative" },
         encoding: "utf8",
       },
     );

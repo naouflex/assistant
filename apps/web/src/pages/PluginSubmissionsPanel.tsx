@@ -1,9 +1,8 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   PluginSubmission,
   PluginSubmissionReview,
   PluginSubmissionStatus,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   Button,
   Dialog,
@@ -18,7 +17,8 @@ import {
   TabsTrigger,
   Textarea,
   toast,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpRight } from "lucide-react";
 import type { FormEvent } from "react";

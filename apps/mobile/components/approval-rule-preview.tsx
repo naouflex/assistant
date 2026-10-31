@@ -1,4 +1,4 @@
-import type { ActionApprovalRule, ApprovalRulePreview, SettingsScope } from "@rakazo/contracts";
+import type { ActionApprovalRule, ApprovalRulePreview, SettingsScope } from "@atlas/contracts";
 import { useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useI18n } from "../lib/i18n";

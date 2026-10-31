@@ -8,13 +8,13 @@ import type {
   BillingProvider,
   BillingSubscriptionSnapshot,
   BillingSubscriptionStatus,
-} from "@rakazo/adapter-kit";
+} from "@atlas/adapter-kit";
 import {
   BillingCheckoutCompletedError,
   BillingCustomerNotFoundError,
   BillingNoMonthlyCreditsError,
-} from "@rakazo/adapter-kit";
-import { ModelCreditAmountSchema } from "@rakazo/contracts";
+} from "@atlas/adapter-kit";
+import { ModelCreditAmountSchema } from "@atlas/contracts";
 import { z } from "zod";
 
 export const STRIPE_API_VERSION = "2026-09-30.endive";
@@ -197,9 +197,9 @@ export class StripeBillingProvider implements BillingProvider {
             ? {
                 quantity: 1,
                 price: await this.monthlyPrice(
-                  `rakazo_monthly_credits_${input.amountCents}`,
+                  `atlas_monthly_credits_${input.amountCents}`,
                   input.amountCents,
-                  "Rakazo monthly model credits",
+                  "Atlas monthly model credits",
                 ),
               }
             : {
@@ -207,7 +207,7 @@ export class StripeBillingProvider implements BillingProvider {
                 price_data: {
                   currency: "usd",
                   unit_amount: input.amountCents,
-                  product_data: { name: "Rakazo model credits" },
+                  product_data: { name: "Atlas model credits" },
                 },
               },
         ],
@@ -239,9 +239,9 @@ export class StripeBillingProvider implements BillingProvider {
         {
           id: item.id,
           price: await this.monthlyPrice(
-            `rakazo_monthly_credits_${amountCents}`,
+            `atlas_monthly_credits_${amountCents}`,
             amountCents,
-            "Rakazo monthly model credits",
+            "Atlas monthly model credits",
           ),
           quantity: 1,
         },
@@ -272,9 +272,9 @@ export class StripeBillingProvider implements BillingProvider {
           {
             quantity: 1,
             price: await this.monthlyPrice(
-              `rakazo_byok_monthly_${input.amountCents}`,
+              `atlas_byok_monthly_${input.amountCents}`,
               input.amountCents,
-              "Rakazo own-key plan",
+              "Atlas own-key plan",
             ),
           },
         ],
@@ -606,7 +606,7 @@ export class StripeBillingProvider implements BillingProvider {
         description: "Referral reward",
         metadata: { [BALANCE_REFERENCE_METADATA]: referenceId },
       },
-      `rakazo-balance-${referenceId}`,
+      `atlas-balance-${referenceId}`,
     );
   }
 
@@ -912,8 +912,8 @@ export function stripeBillingConfigFromEnv(env: {
   };
 }
 
-const BYOK_PLAN_METADATA = "rakazo_plan";
-const BALANCE_REFERENCE_METADATA = "rakazo_reference";
+const BYOK_PLAN_METADATA = "atlas_plan";
+const BALANCE_REFERENCE_METADATA = "atlas_reference";
 
 function isByokPlan(subscription: StripeSubscription) {
   return subscription.metadata?.[BYOK_PLAN_METADATA] === "byok";

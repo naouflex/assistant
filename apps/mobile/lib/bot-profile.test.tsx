@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { Routine } from "@rakazo/contracts";
+import type { Routine } from "@atlas/contracts";
 import { notifyManager } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { act, createElement, useEffect } from "react";
@@ -194,7 +194,7 @@ beforeEach(() => {
   session.generation += 1;
   requestContext.mockImplementation(async () => ({
     apiBase: "https://api.example",
-    headers: { "x-rakazo-space-id": "space-a" },
+    headers: { "x-atlas-space-id": "space-a" },
     sessionGeneration: session.generation,
   }));
 });
@@ -742,7 +742,7 @@ describe("routines screen", () => {
       {
         requestContext: {
           apiBase: "https://api.example",
-          headers: { "x-rakazo-space-id": "space-a" },
+          headers: { "x-atlas-space-id": "space-a" },
           sessionGeneration: session.generation,
         },
       },
@@ -907,7 +907,7 @@ describe("routines screen", () => {
       {
         requestContext: {
           apiBase: "https://api.example",
-          headers: { "x-rakazo-space-id": "space-a" },
+          headers: { "x-atlas-space-id": "space-a" },
           sessionGeneration: session.generation,
         },
       },

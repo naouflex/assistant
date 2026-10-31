@@ -1,20 +1,20 @@
-appId: com.rakazo.app
+appId: com.naouflex.atlas.app
 name: Onboarding
 ---
 - runFlow:
     file: ../subflows/sign-in.yaml
     env:
-      RAKAZO_ACTIVE_EMAIL: ${RAKAZO_SCREENSHOT_EMPTY_EMAIL}
+      ATLAS_ACTIVE_EMAIL: ${ATLAS_SCREENSHOT_EMPTY_EMAIL}
 - extendedWaitUntil:
     visible: "Personal|Tap \\+ to create a bot"
     timeout: 20000
 - takeScreenshot: 01-empty-inbox
-- openLink: "rakazo:///artifacts"
+- openLink: "atlas:///artifacts"
 - extendedWaitUntil:
     visible: "No artifacts yet|Artifacts"
     timeout: 15000
 - takeScreenshot: 02-empty-artifacts
-- openLink: "rakazo:///"
+- openLink: "atlas:///"
 - extendedWaitUntil:
     visible: "Create"
     timeout: 15000

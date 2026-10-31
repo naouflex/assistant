@@ -5,7 +5,7 @@ import { endCallBeforeSignOut, forgetSignedInUser, sessionChangedUnderPage } fro
 import { clearSpaceSelection } from "./rpc";
 
 /** Kept across the reload after a failed sign-out, so the fresh page can say it failed. */
-export const LOG_OUT_FAILED_KEY = "rakazo.logOutFailed";
+export const LOG_OUT_FAILED_KEY = "atlas.logOutFailed";
 /** The reload after a failed sign-out found the user still signed in. */
 let logOutFailed = false;
 

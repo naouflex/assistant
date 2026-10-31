@@ -1,6 +1,6 @@
+import { isOllamaCloudBaseUrl } from "@atlas/contracts";
+import { Button, Disclosure, Input } from "@atlas/ui-web";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { isOllamaCloudBaseUrl } from "@rakazo/contracts";
-import { Button, Disclosure, Input } from "@rakazo/ui-web";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -355,7 +355,7 @@ export function ConnectionControls({
       {selected?.auth === "oauth" && !subscriptionSignIn ? (
         <p className="mt-5 text-[13px] leading-[1.5] text-muted-foreground first:mt-0">
           <Trans>
-            This subscription sign-in is not available in Rakazo yet. Use a deployment credential or
+            This subscription sign-in is not available in Atlas yet. Use a deployment credential or
             choose another provider.
           </Trans>
         </p>

@@ -1,6 +1,5 @@
+import { cn } from "@atlas/ui-web/lib/utils";
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
-
-import { cn } from "@rakazo/ui-web/lib/utils";
 
 function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props) {
   return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;

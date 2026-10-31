@@ -1,14 +1,14 @@
+import { Button, Field, FieldError, FieldLabel, Input } from "@atlas/ui-web";
 import { Trans } from "@lingui/react/macro";
-import { Button, Field, FieldError, FieldLabel, Input } from "@rakazo/ui-web";
 import { useId, useState } from "react";
 import type { ConnectionMode } from "./ConnectionModeFields";
 import { ConnectionModeFields } from "./ConnectionModeFields";
 import type { MemoryProviderConnectionDraft, MemoryProviderSettingsFormProps } from "./registry";
 
 const RESOURCE_ID_PATTERN = /^[A-Za-z0-9_-]{0,512}$/;
-// Rakazo writes to these peers, so they cannot be read as the user's own peer.
+// Atlas writes to these peers, so they cannot be read as the user's own peer.
 function isReservedPeerId(value: string): boolean {
-  return value === "rakazo-shared" || value.startsWith("bot-");
+  return value === "atlas-shared" || value.startsWith("bot-");
 }
 
 export function HonchoSettingsForm({ busy, onConnect }: MemoryProviderSettingsFormProps) {
@@ -84,7 +84,7 @@ export function HonchoSettingsForm({ busy, onConnect }: MemoryProviderSettingsFo
           aria-invalid={workspaceValid ? undefined : true}
           aria-describedby={workspaceValid ? undefined : workspaceErrorId}
           onChange={(event) => setWorkspace(event.target.value)}
-          placeholder="rakazo-<space>"
+          placeholder="atlas-<space>"
           maxLength={512}
           autoComplete="off"
         />
@@ -113,12 +113,12 @@ export function HonchoSettingsForm({ busy, onConnect }: MemoryProviderSettingsFo
             autoComplete="off"
           />
           <p id={userPeerDescriptionId} className="mt-2 text-[13px] text-muted-foreground">
-            <Trans>An existing Honcho peer to read from. Rakazo never writes to it.</Trans>
+            <Trans>An existing Honcho peer to read from. Atlas never writes to it.</Trans>
           </p>
           {!userPeerValid ? (
             <FieldError id={userPeerErrorId}>
               {userPeerFormatValid ? (
-                <Trans>rakazo-shared and IDs starting with bot- are reserved for Rakazo.</Trans>
+                <Trans>atlas-shared and IDs starting with bot- are reserved for Atlas.</Trans>
               ) : (
                 <Trans>Use up to 512 letters, digits, _ or -.</Trans>
               )}

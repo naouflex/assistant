@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
-import type { KeyProvider, KeyWrapContext, WrappedDataKey } from "@rakazo/adapter-kit";
-import { resolveEncryptionKey } from "@rakazo/core";
+import type { KeyProvider, KeyWrapContext, WrappedDataKey } from "@atlas/adapter-kit";
+import { resolveEncryptionKey } from "@atlas/core";
 import type { DataKey } from "./content-crypto.js";
 import { createRowId } from "./row-id.js";
 import { runAsSystem } from "./row-security.js";
@@ -36,8 +36,8 @@ export function masterKeysFromEnv(env: NodeJS.ProcessEnv = process.env): MasterK
       hkdfSync(
         "sha256",
         Buffer.from(resolveEncryptionKey(env), "utf8"),
-        Buffer.from("rakazo"),
-        "rakazo/content-master-key/v1",
+        Buffer.from("atlas"),
+        "atlas/content-master-key/v1",
         32,
       ),
     ),
@@ -59,7 +59,7 @@ export function masterKeysFromEnv(env: NodeJS.ProcessEnv = process.env): MasterK
 }
 
 function wrapAad(context: KeyWrapContext): Buffer {
-  return Buffer.from(`rakazo/space-key/v1\0${context.spaceId}\0${context.version}`);
+  return Buffer.from(`atlas/space-key/v1\0${context.spaceId}\0${context.version}`);
 }
 
 /** Default provider: AES-256-GCM key wrapping under master keys held in process memory. */

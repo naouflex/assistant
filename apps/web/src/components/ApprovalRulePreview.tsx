@@ -1,10 +1,10 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   ActionApprovalRule,
   ApprovalRulePreview as Preview,
   SettingsScope,
-} from "@rakazo/contracts";
-import { Button, Input, ToggleGroup, ToggleGroupItem } from "@rakazo/ui-web";
+} from "@atlas/contracts";
+import { Button, Input, ToggleGroup, ToggleGroupItem } from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useSpaceRpc } from "../lib/space-rpc";
 import { errorText } from "../lib/user-error";

@@ -161,7 +161,7 @@ export function scramSha256Verifier(password: string, salt = randomBytes(16), it
 }
 
 /** Policy on each graphile-worker table that lets the runtime role use the job queue. */
-export const JOB_QUEUE_POLICY = "rakazo_app_queue";
+export const JOB_QUEUE_POLICY = "atlas_app_queue";
 
 /**
  * graphile-worker's schema is installed by the job queue migration that runs

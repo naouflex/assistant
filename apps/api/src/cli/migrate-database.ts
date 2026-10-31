@@ -2,21 +2,21 @@
 // login. Everything here runs as the migration (owner) role; the API and worker
 // then connect with DATABASE_URL and only get the runtime grants.
 import { execFileSync } from "node:child_process";
-import { migrateJobQueue } from "@rakazo/adapters";
-import { loadRootEnv } from "@rakazo/core/node/load-root-env";
+import { migrateJobQueue } from "@atlas/adapters";
+import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import {
   databaseUrls,
   deployMigrations,
   provisionRuntimeRole,
   RUNTIME_ROLE,
   SINGLE_DATABASE_URL_WARNING,
-} from "@rakazo/db";
+} from "@atlas/db";
 
 loadRootEnv();
 const urls = databaseUrls(process.env);
 await deployMigrations({
   migrationUrl: urls.migrationUrl,
-  dbPackageDir: execFileSync("pnpm", ["--filter", "@rakazo/db", "exec", "pwd"], {
+  dbPackageDir: execFileSync("pnpm", ["--filter", "@atlas/db", "exec", "pwd"], {
     encoding: "utf8",
   }).trim(),
 });

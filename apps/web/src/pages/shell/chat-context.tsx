@@ -1,7 +1,7 @@
+import type { ReplyPreview, ThreadMessage } from "@atlas/contracts";
+import { formatTimeSeparator, isPeerReceiptBlocks, replyLabel } from "@atlas/core";
+import { cn } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
-import type { ReplyPreview, ThreadMessage } from "@rakazo/contracts";
-import { formatTimeSeparator, isPeerReceiptBlocks, replyLabel } from "@rakazo/core";
-import { cn } from "@rakazo/ui-web";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ArtifactTarget } from "../../lib/artifact-open";

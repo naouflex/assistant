@@ -1,7 +1,7 @@
-import { BillingEmulator } from "@rakazo/adapters";
-import type { Actor } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
-import { asSystem, billingAccountForOrganization, createDb, spaceHasModelAccess } from "@rakazo/db";
+import { BillingEmulator } from "@atlas/adapters";
+import type { Actor } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
+import { asSystem, billingAccountForOrganization, createDb, spaceHasModelAccess } from "@atlas/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createBillingService, TRIAL_DAYS } from "./billing.js";
 
@@ -15,7 +15,7 @@ dbTests("own-key trial", () => {
   const actor: Actor = {
     userId,
     spaceId,
-    email: `trial-${stamp}@rakazo.test`,
+    email: `trial-${stamp}@atlas.test`,
     isDeploymentOwner: false,
   };
   const provider = new BillingEmulator({ modelCredits: true, namespace: `trial-${stamp}` });

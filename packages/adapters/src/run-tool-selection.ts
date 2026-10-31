@@ -1,9 +1,5 @@
-import {
-  disabledBuiltinToolSet,
-  FLEET_TOOL_NAMES,
-  FLEET_WRITE_TOOL_NAMES,
-} from "@rakazo/contracts";
-import { isBackgroundRunTrigger, isOwnerStartedRun } from "@rakazo/core";
+import { disabledBuiltinToolSet, FLEET_TOOL_NAMES, FLEET_WRITE_TOOL_NAMES } from "@atlas/contracts";
+import { isBackgroundRunTrigger, isOwnerStartedRun } from "@atlas/core";
 import { builtinAgentTools } from "./builtin-tools.js";
 import { selectCloudAgentTools } from "./cloud-agent-tools-select.js";
 import { selectMemoryTools } from "./memory-tools.js";

@@ -1,5 +1,5 @@
-appId: com.rakazo.app
-name: Rakazo mobile screenshots
+appId: com.naouflex.atlas.app
+name: Atlas mobile screenshots
 tags:
   - screenshots
 ---
@@ -10,7 +10,7 @@ tags:
 
 # A cold API 34 emulator can show a launcher ANR over the healthy app.
 - extendedWaitUntil:
-    visible: "Sign up for Rakazo|Pixel Launcher isn't responding"
+    visible: "Sign up for Atlas|Pixel Launcher isn't responding"
     timeout: 30000
 - runFlow:
     when:
@@ -18,7 +18,7 @@ tags:
     commands:
       - tapOn: "Close app"
 - extendedWaitUntil:
-    visible: "Sign up for Rakazo"
+    visible: "Sign up for Atlas"
     timeout: 30000
 - takeScreenshot: "02-sign-up"
 - tapOn: "Sign in"
@@ -27,7 +27,7 @@ tags:
       notVisible:
         id: "server-address"
     commands:
-      - assertVisible: "Sign in to Rakazo"
+      - assertVisible: "Sign in to Atlas"
       - takeScreenshot: "01-sign-in"
       - tapOn: "Use a custom server"
 - assertVisible: "Server"
@@ -35,9 +35,9 @@ tags:
 - runFlow: helpers/server.yaml
 
 - tapOn: "Email"
-- inputText: ${RAKAZO_SCREENSHOT_EMAIL}
+- inputText: ${ATLAS_SCREENSHOT_EMAIL}
 - tapOn: "Password"
-- inputText: ${RAKAZO_SCREENSHOT_PASSWORD}
+- inputText: ${ATLAS_SCREENSHOT_PASSWORD}
 - hideKeyboard
 - tapOn: "Sign in"
 - tapOn:
@@ -75,15 +75,15 @@ tags:
 - tapOn:
     id: "search-sheet-close"
 
-- openLink: "rakazo:///new-group"
+- openLink: "atlas:///new-group"
 - assertVisible: "Search bots"
 - takeScreenshot: "08-new-group"
 
-- openLink: "rakazo:///new-space"
+- openLink: "atlas:///new-space"
 - assertVisible: "Customer support"
 - takeScreenshot: "09-new-space"
 
-- openLink: "rakazo:///account"
+- openLink: "atlas:///account"
 - extendedWaitUntil:
     visible: "Change password"
     timeout: 10000
@@ -97,20 +97,20 @@ tags:
     direction: DOWN
 - takeScreenshot: "10c-account-notifications"
 
-- openLink: "rakazo:///models"
+- openLink: "atlas:///models"
 - extendedWaitUntil:
     visible: "Main model"
     timeout: 10000
 - assertVisible: "Approval model"
 - takeScreenshot: "11-models"
 
-- openLink: "rakazo:///voice"
+- openLink: "atlas:///voice"
 - extendedWaitUntil:
     visible: "Scripted"
     timeout: 10000
 - takeScreenshot: "12-voice"
 
-- openLink: "rakazo:///integrations"
+- openLink: "atlas:///integrations"
 - extendedWaitUntil:
     visible: "Search apps"
     timeout: 10000
@@ -122,7 +122,7 @@ tags:
     timeout: 10000
 - takeScreenshot: "14-integrations-advanced"
 
-- openLink: "rakazo:///thread?botId=${RAKAZO_SCREENSHOT_BOT_ID}&name=Researcher"
+- openLink: "atlas:///thread?botId=${ATLAS_SCREENSHOT_BOT_ID}&name=Researcher"
 - extendedWaitUntil:
     visible: "The fixture workspace is ready."
     timeout: 10000
@@ -183,7 +183,7 @@ tags:
 - takeScreenshot: "16-bot-actions"
 - back
 
-- openLink: "rakazo:///bot-settings?botId=${RAKAZO_SCREENSHOT_BOT_ID}"
+- openLink: "atlas:///bot-settings?botId=${ATLAS_SCREENSHOT_BOT_ID}"
 - extendedWaitUntil:
     visible: "Researcher"
     timeout: 10000
@@ -194,13 +194,13 @@ tags:
 - assertVisible: "Space default.*"
 - takeScreenshot: "17-bot-settings"
 
-- openLink: "rakazo:///computer?botId=${RAKAZO_SCREENSHOT_BOT_ID}&name=Researcher"
+- openLink: "atlas:///computer?botId=${ATLAS_SCREENSHOT_BOT_ID}&name=Researcher"
 - extendedWaitUntil:
     visible: "Take control"
     timeout: 10000
 - takeScreenshot: "18-computer"
 
-- openLink: "rakazo:///group-thread?groupId=${RAKAZO_SCREENSHOT_GROUP_ID}&name=Launch%20team"
+- openLink: "atlas:///group-thread?groupId=${ATLAS_SCREENSHOT_GROUP_ID}&name=Launch%20team"
 - extendedWaitUntil:
     visible: "The fixture launch plan is ready."
     timeout: 10000
@@ -221,20 +221,20 @@ tags:
 - assertVisible: "Speak message"
 - back
 
-- openLink: "rakazo:///group-settings?groupId=${RAKAZO_SCREENSHOT_GROUP_ID}"
+- openLink: "atlas:///group-settings?groupId=${ATLAS_SCREENSHOT_GROUP_ID}"
 - extendedWaitUntil:
     visible: "Delete group"
     timeout: 10000
 - takeScreenshot: "20-group-settings"
 
-- openLink: "rakazo:///routine?botId=${RAKAZO_SCREENSHOT_BOT_ID}&botName=Researcher&routineId=${RAKAZO_SCREENSHOT_ROUTINE_ID}"
+- openLink: "atlas:///routine?botId=${ATLAS_SCREENSHOT_BOT_ID}&botName=Researcher&routineId=${ATLAS_SCREENSHOT_ROUTINE_ID}"
 - extendedWaitUntil:
     visible: "Weekly fixture review"
     timeout: 10000
 - takeScreenshot: "21-routine"
 
 # Verify saved appearance changes on already-mounted screens and modal routes.
-- openLink: "rakazo:///account"
+- openLink: "atlas:///account"
 - extendedWaitUntil:
     visible: "Dark"
     timeout: 10000
@@ -245,33 +245,33 @@ tags:
     direction: DOWN
 - takeScreenshot: "22b-account-notifications-dark"
 
-- openLink: "rakazo:///new-group"
+- openLink: "atlas:///new-group"
 - assertVisible: "Search bots"
 - takeScreenshot: "24-new-group-dark"
 
-- openLink: "rakazo:///new-space"
+- openLink: "atlas:///new-space"
 - assertVisible: "Customer support"
 - takeScreenshot: "25-new-space-dark"
 
-- openLink: "rakazo:///thread?botId=${RAKAZO_SCREENSHOT_BOT_ID}&name=Researcher"
+- openLink: "atlas:///thread?botId=${ATLAS_SCREENSHOT_BOT_ID}&name=Researcher"
 - extendedWaitUntil:
     visible: "The fixture workspace is ready."
     timeout: 10000
 - takeScreenshot: "26-thread-dark"
 
-- openLink: "rakazo:///group-thread?groupId=${RAKAZO_SCREENSHOT_GROUP_ID}&name=Launch%20team"
+- openLink: "atlas:///group-thread?groupId=${ATLAS_SCREENSHOT_GROUP_ID}&name=Launch%20team"
 - extendedWaitUntil:
     visible: "The fixture launch plan is ready."
     timeout: 10000
 - takeScreenshot: "27-group-thread-dark"
 
-- openLink: "rakazo:///group-settings?groupId=${RAKAZO_SCREENSHOT_GROUP_ID}"
+- openLink: "atlas:///group-settings?groupId=${ATLAS_SCREENSHOT_GROUP_ID}"
 - assertVisible: "Delete group"
 - takeScreenshot: "28-group-settings-dark"
 
-- openLink: "rakazo:///account"
+- openLink: "atlas:///account"
 - tapOn: "Light"
-- openLink: "rakazo:///thread?botId=${RAKAZO_SCREENSHOT_BOT_ID}&name=Researcher"
+- openLink: "atlas:///thread?botId=${ATLAS_SCREENSHOT_BOT_ID}&name=Researcher"
 - assertVisible: "The fixture workspace is ready."
 - takeScreenshot: "29-thread-light-restored"
 

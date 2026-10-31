@@ -1,4 +1,4 @@
-package com.rakazo.notifications
+package com.naouflex.atlas.notifications
 
 import android.Manifest
 import android.app.Notification
@@ -19,7 +19,7 @@ import android.os.PowerManager
  * UI uses this instead of holding the display on, so the screen can sleep while
  * the microphone, recognition, and reply feed continue.
  */
-class RakazoCallService : Service() {
+class AtlasCallService : Service() {
   private var wakeLock: PowerManager.WakeLock? = null
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -29,7 +29,7 @@ class RakazoCallService : Service() {
       return START_NOT_STICKY
     }
     val title = intent?.getStringExtra(EXTRA_TITLE)?.takeIf(String::isNotBlank) ?: getString(
-      R.string.rakazo_call_title,
+      R.string.atlas_call_title,
     )
     createChannel()
     try {
@@ -57,9 +57,9 @@ class RakazoCallService : Service() {
 
   private fun startForegroundCompat(title: String) {
     val notification = builder()
-      .setSmallIcon(R.drawable.ic_rakazo_notification)
+      .setSmallIcon(R.drawable.ic_atlas_notification)
       .setContentTitle(title)
-      .setContentText(getString(R.string.rakazo_call_text))
+      .setContentText(getString(R.string.atlas_call_text))
       .setContentIntent(openApp())
       .setOngoing(true)
       .setOnlyAlertOnce(true)
@@ -100,7 +100,7 @@ class RakazoCallService : Service() {
 
   private fun openApp(): PendingIntent {
     val intent = packageManager.getLaunchIntentForPackage(packageName)
-      ?: Intent(Intent.ACTION_VIEW, android.net.Uri.parse("rakazo://"))
+      ?: Intent(Intent.ACTION_VIEW, android.net.Uri.parse("atlas://"))
     intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
     return PendingIntent.getActivity(
       this,
@@ -114,15 +114,15 @@ class RakazoCallService : Service() {
     if (Build.VERSION.SDK_INT < 26) return
     val manager = getSystemService(NotificationManager::class.java)
     manager.createNotificationChannel(
-      NotificationChannel(CHANNEL_ID, getString(R.string.rakazo_call_channel), NotificationManager.IMPORTANCE_LOW),
+      NotificationChannel(CHANNEL_ID, getString(R.string.atlas_call_channel), NotificationManager.IMPORTANCE_LOW),
     )
   }
 
   companion object {
-    private const val CHANNEL_ID = "rakazo_call"
+    private const val CHANNEL_ID = "atlas_call"
     private const val NOTIFICATION_ID = 1102
-    private const val EXTRA_TITLE = "com.rakazo.notifications.CALL_TITLE"
-    private const val WAKE_LOCK_TAG = "rakazo:call"
+    private const val EXTRA_TITLE = "com.naouflex.atlas.notifications.CALL_TITLE"
+    private const val WAKE_LOCK_TAG = "atlas:call"
 
     /** Answers the start request that is still waiting for [onStartCommand]. */
     private var pendingStart: ((Boolean) -> Unit)? = null
@@ -133,7 +133,7 @@ class RakazoCallService : Service() {
         return
       }
       pendingStart = onResult
-      val intent = Intent(context, RakazoCallService::class.java)
+      val intent = Intent(context, AtlasCallService::class.java)
         .putExtra(EXTRA_TITLE, title)
       val queued = runCatching {
         if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent)
@@ -148,7 +148,7 @@ class RakazoCallService : Service() {
 
     fun stop(context: Context) {
       pendingStart = null
-      context.stopService(Intent(context, RakazoCallService::class.java))
+      context.stopService(Intent(context, AtlasCallService::class.java))
     }
   }
 }

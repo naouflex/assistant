@@ -199,11 +199,11 @@ describe("secrets-guard", () => {
   it("requires the updater to use a dedicated token", () => {
     expect(() =>
       resolveUpdaterToken({ NODE_ENV: "test", BETTER_AUTH_SECRET: "custom-auth" }),
-    ).toThrow(/RAKAZO_UPDATER_TOKEN/);
+    ).toThrow(/ATLAS_UPDATER_TOKEN/);
     expect(
       resolveUpdaterToken({
         NODE_ENV: "test",
-        RAKAZO_UPDATER_TOKEN: "updater-only",
+        ATLAS_UPDATER_TOKEN: "updater-only",
         SANDBOX_SUPERVISOR_TOKEN: "supervisor-only",
         BETTER_AUTH_SECRET: "custom-auth",
       }),
@@ -211,28 +211,28 @@ describe("secrets-guard", () => {
     expect(() =>
       resolveUpdaterToken({
         NODE_ENV: "test",
-        RAKAZO_UPDATER_TOKEN: "custom-auth",
+        ATLAS_UPDATER_TOKEN: "custom-auth",
         BETTER_AUTH_SECRET: "custom-auth",
       }),
     ).toThrow(/must differ/);
     expect(() =>
       resolveUpdaterToken({
         NODE_ENV: "test",
-        RAKAZO_UPDATER_TOKEN: "supervisor-only",
+        ATLAS_UPDATER_TOKEN: "supervisor-only",
         SANDBOX_SUPERVISOR_TOKEN: "supervisor-only",
       }),
     ).toThrow(/must differ/);
     expect(() =>
       resolveUpdaterToken({
         NODE_ENV: "test",
-        RAKAZO_UPDATER_TOKEN: "screen-only",
+        ATLAS_UPDATER_TOKEN: "screen-only",
         SCREEN_PROXY_SECRET: "screen-only",
       }),
     ).toThrow(/must differ/);
     expect(() =>
       resolveUpdaterToken({
         NODE_ENV: "production",
-        RAKAZO_UPDATER_TOKEN: "too-short",
+        ATLAS_UPDATER_TOKEN: "too-short",
       }),
     ).toThrow(/at least 32 characters/);
   });
@@ -269,9 +269,9 @@ describe("resolveContentEncryption", () => {
     expect(resolveContentEncryption({})).toBe(true);
     expect(resolveContentEncryption({ NODE_ENV: "test" })).toBe(true);
     expect(resolveContentEncryption({ NODE_ENV: "development" })).toBe(false);
-    expect(
-      resolveContentEncryption({ NODE_ENV: "production", RAKAZO_ALLOW_DEV_SECRETS: "1" }),
-    ).toBe(false);
+    expect(resolveContentEncryption({ NODE_ENV: "production", ATLAS_ALLOW_DEV_SECRETS: "1" })).toBe(
+      false,
+    );
   });
 
   it("follows an explicit setting in every mode", () => {

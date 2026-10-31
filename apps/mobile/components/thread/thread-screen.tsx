@@ -1,4 +1,4 @@
-import type { AgentSkillCatalogEntry } from "@rakazo/contracts";
+import type { AgentSkillCatalogEntry } from "@atlas/contracts";
 import {
   buildComposerMentionOptions,
   channelMessageSender,
@@ -10,7 +10,7 @@ import {
   memberName,
   newClientId,
   displayName as safeDisplayName,
-} from "@rakazo/core";
+} from "@atlas/core";
 import { useFocusEffect, useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

@@ -1,7 +1,7 @@
+import type { SecretStore } from "@atlas/adapter-kit";
+import { BUILTIN_AGENT_SKILLS, previewPluginInstall } from "@atlas/adapters";
+import type { Actor } from "@atlas/contracts";
 import { createRouterClient } from "@orpc/server";
-import type { SecretStore } from "@rakazo/adapter-kit";
-import { BUILTIN_AGENT_SKILLS, previewPluginInstall } from "@rakazo/adapters";
-import type { Actor } from "@rakazo/contracts";
 import { describe, expect, it, vi } from "vitest";
 import { installPlugin, setPluginParts } from "./plugin-installs.js";
 import type { RouterDeps } from "./router.js";

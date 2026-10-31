@@ -1,7 +1,7 @@
-import { parseBotAvatarValue } from "@rakazo/contracts";
-import type { LogoAvatarActivity } from "@rakazo/core";
-import { contrastRatio, logoAvatarTraits } from "@rakazo/core";
-import { botEyeColor, tokens } from "@rakazo/ui-tokens";
+import { parseBotAvatarValue } from "@atlas/contracts";
+import type { LogoAvatarActivity } from "@atlas/core";
+import { contrastRatio, logoAvatarTraits } from "@atlas/core";
+import { botEyeColor, tokens } from "@atlas/ui-tokens";
 import type { CSSProperties } from "react";
 import { memo, useId, useMemo } from "react";
 import { useAvatarMotionVisibility } from "./hooks/use-avatar-motion-visibility.js";
@@ -56,7 +56,7 @@ export const LogoAvatar = memo(function LogoAvatar({
       viewBox="0 0 100 100"
       width={size}
       height={size}
-      className={cn("rakazo-logo-avatar shrink-0", className)}
+      className={cn("atlas-logo-avatar shrink-0", className)}
       data-activity={activity}
       data-working={activity !== "idle" && activity !== "error"}
       data-vector-body="true"

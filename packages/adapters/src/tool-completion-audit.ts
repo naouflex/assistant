@@ -1,8 +1,8 @@
-import type { AgentToolCompletion } from "@rakazo/adapter-kit";
-import { redactSecrets } from "@rakazo/core";
-import type { ThreadEvents } from "@rakazo/db";
-import { RunHistoryWriteError } from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+import type { AgentToolCompletion } from "@atlas/adapter-kit";
+import { redactSecrets } from "@atlas/core";
+import type { ThreadEvents } from "@atlas/db";
+import { RunHistoryWriteError } from "@atlas/db";
+import { getLogger } from "@atlas/logging";
 import { isToolPauseResult } from "./approval-effect.js";
 import { sanitizeConnectorError } from "./connector-safety.js";
 

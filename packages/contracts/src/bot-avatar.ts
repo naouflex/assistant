@@ -1,15 +1,18 @@
 import * as z from "zod";
 
 /** Per-bot set. Missing values belong to the original renderer. */
-export const BotAvatarSetSchema = z.enum(["organic", "rakazo"]);
+export const BotAvatarSetSchema = z.enum(["organic", "atlas"]);
 export type BotAvatarSet = z.infer<typeof BotAvatarSetSchema>;
 export const DEFAULT_NEW_BOT_AVATAR_SET: BotAvatarSet = "organic";
 
+/** What Rakazo-era rows and account exports call the "atlas" set. */
+export const LEGACY_BOT_AVATAR_SET = "rakazo";
+
 export function resolveBotAvatarSet(value?: string | null): BotAvatarSet {
-  return value === "rakazo" ? "rakazo" : "organic";
+  return value === "atlas" || value === LEGACY_BOT_AVATAR_SET ? "atlas" : "organic";
 }
 
-/** Matches the eight shipped mascot shapes in `@rakazo/core`. */
+/** Matches the eight shipped mascot shapes in `@atlas/core`. */
 export const BOT_AVATAR_SHAPE_COUNT = 8;
 
 /**

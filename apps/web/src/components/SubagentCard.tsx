@@ -1,11 +1,11 @@
-import { Trans } from "@lingui/react/macro";
-import { ChatMarkdown } from "@rakazo/chat-ui/web";
-import type { ThreadMessage } from "@rakazo/contracts";
+import { ChatMarkdown } from "@atlas/chat-ui/web";
+import type { ThreadMessage } from "@atlas/contracts";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@rakazo/ui-web/components/ui/collapsible";
+} from "@atlas/ui-web/components/ui/collapsible";
+import { Trans } from "@lingui/react/macro";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 

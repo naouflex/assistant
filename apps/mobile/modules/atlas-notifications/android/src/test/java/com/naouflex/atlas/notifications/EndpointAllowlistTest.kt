@@ -1,4 +1,4 @@
-package com.rakazo.notifications
+package com.naouflex.atlas.notifications
 
 import org.json.JSONArray
 import org.junit.Assert.assertEquals

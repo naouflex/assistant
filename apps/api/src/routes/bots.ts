@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { ORPCError } from "@orpc/server";
-import { runContinueJob } from "@rakazo/adapter-kit";
-import type { getBotSecretMetadata } from "@rakazo/adapters";
+import { runContinueJob } from "@atlas/adapter-kit";
+import type { getBotSecretMetadata } from "@atlas/adapters";
 import {
   archiveBot,
   checkpointAndStopComputer,
@@ -16,17 +15,11 @@ import {
   storeBotSecret,
   toComputerRef,
   validateBotModelChange,
-} from "@rakazo/adapters";
-import type {
-  Actor,
-  Bot,
-  BotSecretMetadata,
-  SettingsScope,
-  VaultPutInput,
-} from "@rakazo/contracts";
-import { BotSecretAuth, resolveBotAvatarSet } from "@rakazo/contracts";
-import { ACTIVE_RUN_STATUSES, displayName } from "@rakazo/core";
-import type { Prisma } from "@rakazo/db";
+} from "@atlas/adapters";
+import type { Actor, Bot, BotSecretMetadata, SettingsScope, VaultPutInput } from "@atlas/contracts";
+import { BotSecretAuth, resolveBotAvatarSet } from "@atlas/contracts";
+import { ACTIVE_RUN_STATUSES, displayName } from "@atlas/core";
+import type { Prisma } from "@atlas/db";
 import {
   BotSectionNameConflictError,
   botProfileLabelsChanged,
@@ -40,8 +33,9 @@ import {
   restoreBotUnderComputerQuota,
   SpaceDeletionInProgressError,
   settingsTarget,
-} from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/db";
+import { getLogger } from "@atlas/logging";
+import { ORPCError } from "@orpc/server";
 import type { AgentImportServices } from "../agent-import.js";
 import { agentImportSetupState, createImportedBot, previewAgentImport } from "../agent-import.js";
 import { deleteAgentSecret, listAgentSecrets, putAgentSecret } from "../agent-secrets.js";

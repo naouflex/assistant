@@ -1,8 +1,8 @@
+import type { MessageBlock } from "@atlas/contracts";
+import { cloudAgentHttpsUrl } from "@atlas/core";
+import { Badge } from "@atlas/ui-web/components/ui/badge";
+import { Card, CardContent } from "@atlas/ui-web/components/ui/card";
 import { Trans } from "@lingui/react/macro";
-import type { MessageBlock } from "@rakazo/contracts";
-import { cloudAgentHttpsUrl } from "@rakazo/core";
-import { Badge } from "@rakazo/ui-web/components/ui/badge";
-import { Card, CardContent } from "@rakazo/ui-web/components/ui/card";
 
 export function CloudAgentCard({
   block,

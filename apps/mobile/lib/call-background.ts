@@ -1,14 +1,14 @@
 import { requireOptionalNativeModule } from "expo-modules-core";
 import { Platform } from "react-native";
 
-type RakazoCallNative = {
+type AtlasCallNative = {
   startCall(title: string): Promise<boolean>;
   stopCall(): Promise<void>;
 };
 
 const nativeCall =
   Platform.OS === "android"
-    ? requireOptionalNativeModule<RakazoCallNative>("RakazoNotifications")
+    ? requireOptionalNativeModule<AtlasCallNative>("AtlasNotifications")
     : null;
 
 /** The native start answers from the service itself, which can take a moment. */

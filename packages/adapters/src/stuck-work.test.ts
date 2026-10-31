@@ -1,6 +1,6 @@
-import type { JobPublisher, NotificationProvider } from "@rakazo/adapter-kit";
-import { STUCK_WORK_NOTICE, stuckWorkStatusMessage } from "@rakazo/core";
-import type { PrismaClient, ThreadEvents } from "@rakazo/db";
+import type { JobPublisher, NotificationProvider } from "@atlas/adapter-kit";
+import { STUCK_WORK_NOTICE, stuckWorkStatusMessage } from "@atlas/core";
+import type { PrismaClient, ThreadEvents } from "@atlas/db";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ExpoPushProvider } from "./expo-push.js";
 import { createJobReconciler } from "./job-reconciler.js";

@@ -8,9 +8,9 @@ import {
   organicAvatarPath,
   seededLogoAvatarColor,
   shippedBotAvatarShapePath,
-} from "@rakazo/core";
-import type { ColorTokens } from "@rakazo/ui-tokens";
-import { botEyeColor, tokensForAppearance } from "@rakazo/ui-tokens";
+} from "@atlas/core";
+import type { ColorTokens } from "@atlas/ui-tokens";
+import { botEyeColor, tokensForAppearance } from "@atlas/ui-tokens";
 import type { ReactNode } from "react";
 import { act, createElement, useRef } from "react";
 import type { Root } from "react-dom/client";
@@ -154,7 +154,7 @@ describe("BotAvatar", () => {
       botId: "bot-1",
       run: { id: "native-run", botId: "bot-1", status: "running", trigger: "user" },
     });
-    render("#10B981", "rakazo");
+    render("#10B981", "atlas");
     const latestEye = () =>
       nativeProps
         .map((sample) => sample())
@@ -179,7 +179,7 @@ describe("BotAvatar", () => {
   });
 
   it("uses the same shared seed colour as SSR for a bot without a saved colour", () => {
-    const node = render("", "rakazo");
+    const node = render("", "atlas");
     expect(
       node.querySelector(`stop[data-stop-color="${seededLogoAvatarColor("bot-1").toLowerCase()}"]`),
     ).not.toBeNull();
@@ -203,7 +203,7 @@ describe("BotAvatar", () => {
 
   function render(
     color: string,
-    avatarSet?: "organic" | "rakazo",
+    avatarSet?: "organic" | "atlas",
     props: Partial<BotAvatarProps> = {},
     focused = true,
   ) {
@@ -231,9 +231,9 @@ describe("BotAvatar", () => {
   const bodies = (view: HTMLElement) =>
     Array.from(view.querySelectorAll("path"), (path) => path.dataset.d);
 
-  it("preserves the shared native tap reactions on the Rakazo set", () => {
+  it("preserves the shared native tap reactions on the Atlas set", () => {
     nativeMotion.reduced = false;
-    const view = render("#3EC5A8", "rakazo", { pokeable: true, motion: "running" });
+    const view = render("#3EC5A8", "atlas", { pokeable: true, motion: "running" });
     const button = view.querySelector("button");
     expect(button).not.toBeNull();
     expect(button!.dataset.accessible).toBe("false");
@@ -251,14 +251,14 @@ describe("BotAvatar", () => {
 
   it("settles an active tap when reduced motion becomes enabled", () => {
     nativeMotion.reduced = false;
-    const view = render("#3EC5A8", "rakazo", { pokeable: true, motion: "running" });
+    const view = render("#3EC5A8", "atlas", { pokeable: true, motion: "running" });
     act(() => view.querySelector("button")!.click());
     nativeMotion.reduced = true;
     act(() =>
       root?.render(
         <BotAvatar
           color="#3EC5A8"
-          avatarSet="rakazo"
+          avatarSet="atlas"
           identity="bot-1"
           size={42}
           status="running"
@@ -278,7 +278,7 @@ describe("BotAvatar", () => {
     nativeMotion.reduced = condition === "reduced";
     const view = render(
       "#3EC5A8",
-      "rakazo",
+      "atlas",
       { pokeable: true, motion: condition === "static" ? "static" : "running" },
       condition !== "offscreen",
     );
@@ -311,8 +311,8 @@ describe("BotAvatar", () => {
     expect(bodies(view)).toEqual([shippedBotAvatarShapePath(3)]);
     expect(view.querySelectorAll("ellipse")).toHaveLength(2);
   });
-  it("draws the explicitly selected Rakazo set as paths and gradients without a raster image", () => {
-    const view = render("#3EC5A8", "rakazo");
+  it("draws the explicitly selected Atlas set as paths and gradients without a raster image", () => {
+    const view = render("#3EC5A8", "atlas");
     expect(bodies(view)).toContain(LOGO_BODY_PATH);
     expect(bodies(view)).not.toContain(organicAvatarPath(avatarIdentitySeed("bot-1")));
     expect(view.querySelector("img, image")).toBeNull();
@@ -320,18 +320,18 @@ describe("BotAvatar", () => {
     expect(view.querySelector("radialGradient")).not.toBeNull();
   });
 
-  it("keeps a custom picture when the stored set is Rakazo", () => {
-    const view = render("data:image/png;base64,abc", "rakazo");
+  it("keeps a custom picture when the stored set is Atlas", () => {
+    const view = render("data:image/png;base64,abc", "atlas");
     expect(view.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,abc");
     expect(bodies(view)).toEqual([]);
   });
 
-  it("keeps an explicitly selected original shape when the stored set is Rakazo", () => {
-    const view = render("#8B5CF6::shape_3", "rakazo");
+  it("keeps an explicitly selected original shape when the stored set is Atlas", () => {
+    const view = render("#8B5CF6::shape_3", "atlas");
     expect(bodies(view)).toEqual([shippedBotAvatarShapePath(3)]);
   });
   it("updates native SVG hosts with finite six-value matrices and numeric eye props", () => {
-    render("#3EC5A8", "rakazo");
+    render("#3EC5A8", "atlas");
     const updates = nativeProps.map((sample) => sample());
     const matrices = updates.flatMap((update) =>
       Array.isArray(update.matrix) ? [update.matrix] : [],
@@ -346,7 +346,7 @@ describe("BotAvatar", () => {
   });
 
   it("keeps eyes legible on a saved dark body in the light theme", () => {
-    const view = render("#101014", "rakazo");
+    const view = render("#101014", "atlas");
     expect(
       Array.from(view.querySelectorAll("ellipse"), (eye) => eye.getAttribute("data-fill")),
     ).toEqual(["#FFF", "#FFF"]);

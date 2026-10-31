@@ -15,14 +15,14 @@ afterEach(() => {
 });
 
 function fixture() {
-  const root = mkdtempSync(path.join(tmpdir(), "rakazo-profile-test-"));
+  const root = mkdtempSync(path.join(tmpdir(), "atlas-profile-test-"));
   fixtures.push(root);
   const home = path.join(root, "home");
   const runtime = path.join(root, "runtime");
   const shared = path.join(home, ".browser-profiles/chromium");
   mkdirSync(shared, { recursive: true });
   mkdirSync(runtime);
-  const profile = (bot: string) => browserProfilePathForScreen(bot).replace("/home/rakazo", home);
+  const profile = (bot: string) => browserProfilePathForScreen(bot).replace("/home/atlas", home);
   const run = (script: string) => {
     // GNU cp's reflink optimization has no macOS equivalent; all copy semantics remain intact.
     const portable =
@@ -35,8 +35,8 @@ function fixture() {
         "-eu",
         "-c",
         portable
-          .replaceAll("/tmp/rakazo", runtime)
-          .replaceAll("/home/rakazo", home)
+          .replaceAll("/tmp/atlas", runtime)
+          .replaceAll("/home/atlas", home)
           .replaceAll("/proc", path.join(root, "no-proc")),
       ],
       {

@@ -1,5 +1,5 @@
+import { canonicalPiProviderId } from "@atlas/contracts";
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
-import { canonicalPiProviderId } from "@rakazo/contracts";
 
 /** Apply provider protocol capabilities before catalog and runtime selection. */
 export function applyPiModelCompatibility(models: MutableModels): MutableModels {

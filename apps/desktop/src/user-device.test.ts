@@ -12,7 +12,7 @@ import {
   savePairedDevice,
 } from "./user-device.js";
 
-const origin = "https://rakazo.example.com";
+const origin = "https://atlas.example.com";
 const other = "https://other.example.com";
 
 // Reversible stand-in for OS encryption that still keeps the plaintext off disk.
@@ -24,7 +24,7 @@ const cipher: DeviceTokenCipher = {
 
 let userData: string;
 beforeEach(async () => {
-  userData = await mkdtemp(path.join(tmpdir(), "rakazo-device-"));
+  userData = await mkdtemp(path.join(tmpdir(), "atlas-device-"));
 });
 afterEach(async () => {
   await rm(userData, { recursive: true, force: true });
@@ -160,7 +160,7 @@ describe("remote computer access", () => {
     const first = clients[0]!.authorize();
     const second = clients[0]!.authorize();
     await vi.waitFor(() => expect(confirm).toHaveBeenCalledTimes(1));
-    expect(confirm).toHaveBeenCalledWith("rakazo.example.com");
+    expect(confirm).toHaveBeenCalledWith("atlas.example.com");
     answer(true);
     expect(await Promise.all([first, second])).toEqual([true, true]);
     expect(await clients[0]!.authorize()).toBe(true);

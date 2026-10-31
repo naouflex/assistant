@@ -1,15 +1,15 @@
-import { normalizeContext } from "@earendil-works/pi-ai";
-import type { MessageBlock } from "@rakazo/contracts";
+import type { MessageBlock } from "@atlas/contracts";
 import {
   CLOUDFLARE_AI_GATEWAY_CONFIG_MESSAGE,
   CLOUDFLARE_WORKERS_AI_PROVIDER_ID,
   cloudflareModelConfigMessage,
   FLEET_TOOL_NAMES,
-} from "@rakazo/contracts";
-import { ONCE_ROUTINE_CRON } from "@rakazo/core";
-import type { PrismaClient } from "@rakazo/db";
-import { RunHistoryWriteError } from "@rakazo/db";
-import { createLogger, createTestSink, installLogger } from "@rakazo/logging";
+} from "@atlas/contracts";
+import { ONCE_ROUTINE_CRON } from "@atlas/core";
+import type { PrismaClient } from "@atlas/db";
+import { RunHistoryWriteError } from "@atlas/db";
+import { createLogger, createTestSink, installLogger } from "@atlas/logging";
+import { normalizeContext } from "@earendil-works/pi-ai";
 import { describe, expect, it, vi } from "vitest";
 import { builtinAgentTools } from "./builtin-tools.js";
 import { createRunExecutor as createExecutor } from "./executor.js";
@@ -1367,7 +1367,7 @@ describe("userTurnInstructions", () => {
       archiveBot,
       "Connected plugins: none",
       "Agent skills",
-      expect.stringContaining("read the Rakazo skill"),
+      expect.stringContaining("read the Atlas skill"),
       "Taught skills",
       ...stableTail,
       "Group context",

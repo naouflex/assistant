@@ -1,4 +1,4 @@
-import { ACTIVE_RUN_STATUSES } from "@rakazo/core";
+import { ACTIVE_RUN_STATUSES } from "@atlas/core";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -90,13 +90,13 @@ describe("BotAvatar", () => {
     const html = renderToString(
       <BotAvatar color="data:image/png;base64,abc" identity="maya" size={32} status="running" />,
     );
-    expect(html).toContain('class="rakazo-bot-avatar relative shrink-0 select-none"');
-    expect(html).toContain("rakazo-bot-avatar-picture");
-    expect(html).toContain("rakazo-bot-avatar-ring-working");
+    expect(html).toContain('class="atlas-bot-avatar relative shrink-0 select-none"');
+    expect(html).toContain("atlas-bot-avatar-picture");
+    expect(html).toContain("atlas-bot-avatar-ring-working");
     expect(html).toContain("stroke-status-working");
     expect(html).toContain('data-working="true"');
-    expect(html.indexOf("rakazo-bot-avatar-picture")).toBeLessThan(
-      html.indexOf("rakazo-bot-avatar-ring"),
+    expect(html.indexOf("atlas-bot-avatar-picture")).toBeLessThan(
+      html.indexOf("atlas-bot-avatar-ring"),
     );
   });
 
@@ -104,9 +104,9 @@ describe("BotAvatar", () => {
     const html = renderToString(
       <BotAvatar color="data:image/png;base64,abc" identity="maya" size={32} status="idle" />,
     );
-    expect(html).toContain("rakazo-bot-avatar-picture");
+    expect(html).toContain("atlas-bot-avatar-picture");
     expect(html).toContain('data-working="false"');
-    expect(html).not.toContain("rakazo-bot-avatar-ring");
+    expect(html).not.toContain("atlas-bot-avatar-ring");
   });
 
   it("does not treat arbitrary http(s) color values as remote images", () => {
@@ -148,10 +148,10 @@ describe("BotAvatar", () => {
     const shaped = renderToString(
       <BotAvatar color={`${DEFAULT_BOT_AVATAR_COLOR}::shape_4`} identity="maya" />,
     );
-    expect(restored).toContain("rakazo-organic-avatar");
+    expect(restored).toContain("atlas-organic-avatar");
     expect(restored).not.toContain("bot-character-eyes");
     expect(shaped).toContain("bot-character-eyes");
-    expect(shaped).not.toContain("rakazo-organic-avatar");
+    expect(shaped).not.toContain("atlas-organic-avatar");
   });
 
   it("exposes shape picker name and pressed state", () => {
@@ -168,19 +168,19 @@ describe("BotAvatar", () => {
       <BotShapePreview identity="maya" label="Shape 1" color="#8B5CF6" selected={false} />,
     );
     expect(html).toContain('aria-label="Shape 1"');
-    expect(html).toContain("rakazo-organic-avatar");
+    expect(html).toContain("atlas-organic-avatar");
   });
 
   it("draws every plain-colour bot with the organic body", () => {
     const html = renderToString(<BotAvatar color={DEFAULT_BOT_AVATAR_COLOR} identity="maya" />);
-    expect(html).toContain("rakazo-organic-avatar");
-    expect(html).not.toContain("rakazo-bot-avatar-visor");
+    expect(html).toContain("atlas-organic-avatar");
+    expect(html).not.toContain("atlas-bot-avatar-visor");
   });
 
   it("keeps uploaded images", () => {
     const html = renderToString(<BotAvatar color="data:image/png;base64,abc" identity="maya" />);
     expect(html).toContain("<img");
-    expect(html).not.toContain("rakazo-organic-avatar");
+    expect(html).not.toContain("atlas-organic-avatar");
   });
 
   it("keeps an encoded studio shape", () => {
@@ -188,13 +188,13 @@ describe("BotAvatar", () => {
       <BotAvatar color={`${DEFAULT_BOT_AVATAR_COLOR}::shape_3`} identity="maya" />,
     );
     expect(html).toContain("bot-character-eyes");
-    expect(html).not.toContain("rakazo-organic-avatar");
+    expect(html).not.toContain("atlas-organic-avatar");
   });
 
   it("fills the organic body with the resolved palette hex when the custom color is invalid", () => {
     const fallback = resolvePersonaColorDef("maya", "#zzzzzz");
     const html = renderToString(<BotAvatar color="#zzzzzz" identity="maya" />);
-    expect(html).toContain("rakazo-organic-avatar");
+    expect(html).toContain("atlas-organic-avatar");
     expect(html).toContain(`fill="${fallback.hex}"`);
     expect(html).not.toContain("#zzzzzz");
   });

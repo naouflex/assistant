@@ -1,7 +1,7 @@
+import type { IntegrationCatalogResult } from "@atlas/contracts";
+import { newClientId } from "@atlas/core";
+import { Button, Disclosure, Input } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { IntegrationCatalogResult } from "@rakazo/contracts";
-import { newClientId } from "@rakazo/core";
-import { Button, Disclosure, Input } from "@rakazo/ui-web";
 import { useState } from "react";
 import { connectMcpOauth } from "../../lib/mcp-connect";
 import { rpc } from "../../lib/rpc";

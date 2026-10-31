@@ -1,8 +1,8 @@
-import type { BackgroundJobHandlers, JobPublisher } from "@rakazo/adapter-kit";
-import { runContinueJob } from "@rakazo/adapter-kit";
-import type { PrismaClient } from "@rakazo/db";
-import { currentDbContext } from "@rakazo/db";
-import { createLogger, createTestSink, installLogger } from "@rakazo/logging";
+import type { BackgroundJobHandlers, JobPublisher } from "@atlas/adapter-kit";
+import { runContinueJob } from "@atlas/adapter-kit";
+import type { PrismaClient } from "@atlas/db";
+import { currentDbContext } from "@atlas/db";
+import { createLogger, createTestSink, installLogger } from "@atlas/logging";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InMemoryRealtimeFanout } from "./realtime.js";
 import { RunExecutionHost } from "./run-execution.js";

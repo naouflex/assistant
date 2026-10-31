@@ -1,5 +1,5 @@
-import type { MessageBlock } from "@rakazo/contracts";
-import { isToolActivityBlock } from "@rakazo/core";
+import type { MessageBlock } from "@atlas/contracts";
+import { isToolActivityBlock } from "@atlas/core";
 
 /**
  * Keep mid-turn progress beats short; prefer a few high-signal updates. Mid-turn
@@ -66,11 +66,11 @@ export function midTurnProgressBudgetAllows(publishedCount: number, turnAgeMs: n
 }
 
 /**
- * The message_user cap: `RAKAZO_MESSAGE_USER_MAX_CHARS` when it is a positive integer,
+ * The message_user cap: `ATLAS_MESSAGE_USER_MAX_CHARS` when it is a positive integer,
  * else USER_PROGRESS_MESSAGE_MAX_LENGTH.
  */
 export function messageUserMaxLength(): number {
-  const value = process.env.RAKAZO_MESSAGE_USER_MAX_CHARS?.trim();
+  const value = process.env.ATLAS_MESSAGE_USER_MAX_CHARS?.trim();
   if (!value || !/^\d+$/.test(value)) return USER_PROGRESS_MESSAGE_MAX_LENGTH;
   const raw = Number(value);
   return Number.isSafeInteger(raw) && raw >= 1 ? raw : USER_PROGRESS_MESSAGE_MAX_LENGTH;

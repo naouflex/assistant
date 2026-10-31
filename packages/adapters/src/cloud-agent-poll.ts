@@ -1,19 +1,15 @@
 import { randomUUID } from "node:crypto";
-import type {
-  AdapterContext,
-  BackgroundJobPayloads,
-  CloudAgentSnapshot,
-} from "@rakazo/adapter-kit";
+import type { AdapterContext, BackgroundJobPayloads, CloudAgentSnapshot } from "@atlas/adapter-kit";
 import {
   CloudAgentRequestRejected,
   CloudAgentRetryLater,
   runContinueJob,
-} from "@rakazo/adapter-kit";
-import type { MessageBlock } from "@rakazo/contracts";
-import { cloudAgentHttpsUrl } from "@rakazo/core";
-import type { CloudAgent } from "@rakazo/db";
-import { appendEventInTransaction, Prisma } from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/adapter-kit";
+import type { MessageBlock } from "@atlas/contracts";
+import { cloudAgentHttpsUrl } from "@atlas/core";
+import type { CloudAgent } from "@atlas/db";
+import { appendEventInTransaction, Prisma } from "@atlas/db";
+import { getLogger } from "@atlas/logging";
 import { cloudAgentsEnabled } from "./cloud-agent-factory.js";
 import type { CloudAgentDeps } from "./cloud-agent-service.js";
 import { cloudAgentBlock, enqueueCloudAgent } from "./cloud-agent-service.js";

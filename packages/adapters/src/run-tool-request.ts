@@ -1,6 +1,6 @@
-import type { ConnectorCall, ConnectorTool } from "@rakazo/adapter-kit";
-import { BOT_INSTRUCTIONS_MAX_LENGTH } from "@rakazo/contracts";
-import { redactSecrets } from "@rakazo/core";
+import type { ConnectorCall, ConnectorTool } from "@atlas/adapter-kit";
+import { BOT_INSTRUCTIONS_MAX_LENGTH } from "@atlas/contracts";
+import { redactSecrets } from "@atlas/core";
 import { prepareAgentConnectionResponse } from "./agent-connections.js";
 import type { FleetCardSummary } from "./approval-ask.js";
 import {

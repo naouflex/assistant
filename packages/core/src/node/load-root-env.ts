@@ -1,8 +1,17 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { config } from "dotenv";
+import { applyLegacyEnvAliases } from "./legacy-env.js";
 
 export function loadRootEnv(options: { allowInTests?: boolean } = {}) {
+  try {
+    loadEnvFile(options);
+  } finally {
+    applyLegacyEnvAliases(process.env);
+  }
+}
+
+function loadEnvFile(options: { allowInTests?: boolean }) {
   // Test runners and verification CLIs supply their own isolated environment.
   // Loading a developer's credentials here also changes otherwise offline tests.
   if (process.env.NODE_ENV === "test" && !options.allowInTests) return;

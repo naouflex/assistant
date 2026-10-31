@@ -1,11 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Security vulnerabilities
-    url: https://github.com/elie222/rakazo/blob/main/SECURITY.md
-    about: Report security issues to security@rakazo.com — do not open a public issue.
-  - name: User support
-    url: mailto:support@rakazo.com
-    about: Questions about using Rakazo or self-hosting help.
-  - name: Maintainer
-    url: mailto:elie@rakazo.com
-    about: Reach the maintainer directly.
+    url: https://github.com/naouflex/assistant/security/advisories/new
+    about: Report security issues privately through GitHub security advisories — do not open a public issue.
+  - name: Upstream project
+    url: https://github.com/elie222/rakazo
+    about: Atlas is derived from Rakazo by elie222.

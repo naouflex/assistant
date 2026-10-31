@@ -1,10 +1,9 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   BotSecretMetadata,
   LoginFieldInput,
   SettingsScope,
   VaultRevealed,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   BotSecretName,
   commandVariableName,
@@ -12,10 +11,11 @@ import {
   encodeLoginSecret,
   isIdentityConfirmationRequired,
   LoginSecretValue,
-} from "@rakazo/contracts";
-import { fetchFresh, writeSaved } from "@rakazo/core/query";
-import { Button, Input, NativeSelect, NativeSelectOption } from "@rakazo/ui-web";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@rakazo/ui-web/components/ui/tooltip";
+} from "@atlas/contracts";
+import { fetchFresh, writeSaved } from "@atlas/core/query";
+import { Button, Input, NativeSelect, NativeSelectOption } from "@atlas/ui-web";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@atlas/ui-web/components/ui/tooltip";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Eye, EyeOff, Plus, RotateCcw, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";

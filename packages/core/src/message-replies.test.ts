@@ -1,5 +1,5 @@
-import type { MessageBlock } from "@rakazo/contracts";
-import { ReplyPreviewSchema } from "@rakazo/contracts";
+import type { MessageBlock } from "@atlas/contracts";
+import { ReplyPreviewSchema } from "@atlas/contracts";
 import { describe, expect, it } from "vitest";
 import {
   channelMessageSender,

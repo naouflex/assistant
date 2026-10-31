@@ -1,4 +1,4 @@
-import { createComputerUpdates, isUnauthorizedError } from "@rakazo/core";
+import { createComputerUpdates, isUnauthorizedError } from "@atlas/core";
 import { rpc, spaceSelectionSeq } from "./api";
 export const computerUpdates = createComputerUpdates({
   list: async () => {

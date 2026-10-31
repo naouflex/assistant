@@ -10,13 +10,19 @@
 # enable and disable run on the server, from the checkout. restore and drill run on any machine with
 # Docker; the age identity comes on stdin and is only held in memory inside the restore container.
 set -Eeuo pipefail
+# Installs from before the Atlas rename may still export RAKAZO_* settings.
+for __legacy in $(compgen -e | grep -E '(^|_)RAKAZO(_|$)' || true); do
+  __atlas="${__legacy/RAKAZO/ATLAS}"
+  [[ -n "${!__atlas+x}" ]] || export "$__atlas=${!__legacy}"
+done
+unset __legacy __atlas
 umask 077
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="${RAKAZO_DEPLOY_DIR:-$(cd "${HERE}/../.." && pwd)}"
+PROJECT_DIR="${ATLAS_DEPLOY_DIR:-$(cd "${HERE}/../.." && pwd)}"
 ENV_FILE="${PITR_ENV_FILE:-${PROJECT_DIR}/.env}"
 COMPOSE_FILE="${PROJECT_DIR}/infra/compose/docker-compose.prod.yml"
-ROLE=rakazo_pitr
+ROLE=atlas_pitr
 HBA_LINE="host replication ${ROLE} all scram-sha-256"
 
 die() { echo "$*" >&2; exit 1; }
@@ -83,7 +89,7 @@ SELECT pg_reload_conf();
 SQL
   compose up -d --wait pitr
   echo "Point-in-time recovery is on. The first base backup is uploading; check it with:"
-  echo "  docker compose --env-file .env -f infra/compose/docker-compose.prod.yml exec pitr rakazo-pitr health"
+  echo "  docker compose --env-file .env -f infra/compose/docker-compose.prod.yml exec pitr atlas-pitr health"
 }
 
 disable() {
@@ -131,7 +137,7 @@ restore() {
 }
 
 drill() {
-  DRILL_VOLUME="rakazo-pitr-drill-$$"
+  DRILL_VOLUME="atlas-pitr-drill-$$"
   docker volume create "${DRILL_VOLUME}" >/dev/null
   trap 'docker volume rm -f "${DRILL_VOLUME}" >/dev/null' EXIT
   restore_into latest "${DRILL_VOLUME}"

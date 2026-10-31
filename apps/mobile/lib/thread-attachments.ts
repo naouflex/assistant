@@ -1,6 +1,6 @@
+import { attachmentMaxBytes, attachmentMaxCount } from "@atlas/contracts";
+import { attachmentsForThread } from "@atlas/core";
 import type { MenuAction } from "@expo/ui/community/menu";
-import { attachmentMaxBytes, attachmentMaxCount } from "@rakazo/contracts";
-import { attachmentsForThread } from "@rakazo/core";
 import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { ThreadComposerHandle } from "../components/thread-composer";

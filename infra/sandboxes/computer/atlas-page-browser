@@ -32,10 +32,10 @@ def display_num() -> int:
 
 
 def cdp_port() -> int:
-    override = os.environ.get("RAKAZO_CDP_PORT")
+    override = os.environ.get("ATLAS_CDP_PORT")
     if override:
         return int(override)
-    # rakazo-browser uses 9221 + display number (:1 -> 9222).
+    # atlas-browser uses 9221 + display number (:1 -> 9222).
     return 9221 + display_num()
 
 
@@ -71,7 +71,7 @@ def discover_ws_url(port: int) -> str:
     return ws
 
 
-WORLD_NAME = "rakazo-page-browser"
+WORLD_NAME = "atlas-page-browser"
 
 
 # A frame asked for, began or committed a load of another document. Same-document changes, such as
@@ -529,7 +529,7 @@ def world_in(client: CdpClient, session_id: str, frame_id: str) -> int:
 
 EVAL_HELPERS = r"""
 (() => {
-  if (window.__rakazoPageBrowser) return true;
+  if (window.__atlasPageBrowser) return true;
   const refMap = new Map();
   // A refused fill changed nothing the bot cannot see; act() reports it as settled, not uncertain.
   const refused = (message) => new Error(`Refused: ${message}`);
@@ -898,7 +898,7 @@ EVAL_HELPERS = r"""
   let lastChange = performance.now();
   new MutationObserver(() => { lastChange = performance.now(); })
     .observe(document, { childList: true, subtree: true, characterData: true });
-  window.__rakazoPageBrowser = {
+  window.__atlasPageBrowser = {
     snapshot() {
       refMap.clear();
       const elements = [];
@@ -1290,7 +1290,7 @@ def resolve_upload_paths(
     """Resolve regular files within trusted roots before handing them to Chromium."""
     if not isinstance(paths, list) or not 1 <= len(paths) <= MAX_UPLOAD_FILES:
         raise RuntimeError(f"upload needs 1 to {MAX_UPLOAD_FILES} file paths")
-    home = os.path.realpath(home or os.environ.get("HOME") or "/home/rakazo")
+    home = os.path.realpath(home or os.environ.get("HOME") or "/home/atlas")
     location = "your folder or shared/" if roots is not None else "this computer's home folder"
     allowed = [home]
     if roots is not None:
@@ -1305,7 +1305,7 @@ def resolve_upload_paths(
             if os.path.isdir(full):
                 allowed.append(full)
     max_bytes = MAX_UPLOAD_BYTES
-    override = os.environ.get("RAKAZO_BROWSER_UPLOAD_MAX_BYTES", "")
+    override = os.environ.get("ATLAS_BROWSER_UPLOAD_MAX_BYTES", "")
     try:
         if int(override) > 0:
             max_bytes = int(override)
@@ -1338,7 +1338,7 @@ def upload(client: CdpClient, session_id: str, ref: str, files: list[str]) -> No
     result = client.call(
         "Runtime.evaluate",
         {
-            "expression": f"window.__rakazoPageBrowser.fileInput({json.dumps(ref)}, {len(files)})",
+            "expression": f"window.__atlasPageBrowser.fileInput({json.dumps(ref)}, {len(files)})",
             "contextId": client.context_id,
             "returnByValue": False,
         },
@@ -1418,7 +1418,7 @@ def wait_for_action(client: CdpClient, session_id: str, ended: float, seconds: f
     while True:
         now = time.monotonic()
         try:
-            changed = now - float(eval_json(client, session_id, "window.__rakazoPageBrowser.quietFor()")) / 1000
+            changed = now - float(eval_json(client, session_id, "window.__atlasPageBrowser.quietFor()")) / 1000
         except Exception:  # noqa: BLE001
             # A page that moved to another document has no helper yet; its own load is awaited next.
             changed = ended
@@ -1470,7 +1470,7 @@ class TypingStopped(RuntimeError):
 def focus_holds(client: CdpClient, session_id: str) -> bool | None:
     """Whether keys still reach the field or its code boxes; None once its document is gone."""
     try:
-        return eval_json(client, session_id, "window.__rakazoPageBrowser.focusHolds()") is True
+        return eval_json(client, session_id, "window.__atlasPageBrowser.focusHolds()") is True
     except Exception:  # noqa: BLE001
         return None
 
@@ -1536,7 +1536,7 @@ def typed_in_full(client: CdpClient, session_id: str, ref: str, text: str) -> bo
     """A widget may refuse keys. A page that submitted or navigated on the last key counts as done."""
     try:
         return eval_json(client, session_id,
-                         f"window.__rakazoPageBrowser.typed({json.dumps(ref)}, {json.dumps(text)})") is not False
+                         f"window.__atlasPageBrowser.typed({json.dumps(ref)}, {json.dumps(text)})") is not False
     except Exception:  # noqa: BLE001
         return True
 
@@ -1606,20 +1606,20 @@ def pay_token_frames(client: CdpClient, frames: list[tuple[str, str, int]]) -> l
 def snapshot(client: CdpClient, session_id: str, settle: float | None = None) -> dict[str, Any]:
     settled = wait_for_settle(client, session_id, settle)
     ensure_helpers(client, session_id)
-    data = eval_json(client, session_id, "window.__rakazoPageBrowser.snapshot()")
+    data = eval_json(client, session_id, "window.__atlasPageBrowser.snapshot()")
     if not isinstance(data, dict):
         raise RuntimeError("snapshot returned non-object")
     tree = str(data.get("tree") or "")
-    account = eval_json(client, session_id, "window.__rakazoPageBrowser.payTokenAccount()")
+    account = eval_json(client, session_id, "window.__atlasPageBrowser.payTokenAccount()")
     if data.pop("frames", False):
         try:
             frames = payment_frames(client, session_id)
         except Exception:  # noqa: BLE001
             frames = []
-        card_shown = any(frame_eval(client, frames, "window.__rakazoPageBrowser.hasCardField()"))
+        card_shown = any(frame_eval(client, frames, "window.__atlasPageBrowser.hasCardField()"))
         tree += "\n" + (PAYMENT_FRAME_HINT if card_shown else "Embedded frames require desktop tools.")
         accounts = [found for found in frame_eval(client, pay_token_frames(client, frames),
-                                                  "window.__rakazoPageBrowser.payTokenAccount()") if found]
+                                                  "window.__atlasPageBrowser.payTokenAccount()") if found]
         account = account or (accounts[0] if len(accounts) == 1 else None)
     if isinstance(account, str):
         tree += "\n" + pay_token_hint(account)
@@ -1629,7 +1629,7 @@ def snapshot(client: CdpClient, session_id: str, settle: float | None = None) ->
 
 def find_card_field(client: CdpClient, session_id: str, main_frame_id: str, token: str) -> tuple[str, str, int]:
     """The one field the page shows for this card detail, in the page itself or else in a payment frame."""
-    find = f"window.__rakazoPageBrowser.findCard({json.dumps(token)})"
+    find = f"window.__atlasPageBrowser.findCard({json.dumps(token)})"
     found = eval_json(client, session_id, find)
     if found == 1:
         return session_id, main_frame_id, client.context_id
@@ -1670,7 +1670,7 @@ def fill_pay_token(client: CdpClient, session_id: str, step: dict[str, Any]) -> 
     """
     on_merchant = merchant_check(client, session_id, step["origin"])
     account = step["merchantAccountId"]
-    lookup = "window.__rakazoPageBrowser.payTokenAccount()"
+    lookup = "window.__atlasPageBrowser.payTokenAccount()"
     targets = []
     if eval_json(client, session_id, lookup) == account:
         targets.append((session_id, on_merchant.main_frame_id, client.context_id))
@@ -1685,7 +1685,7 @@ def fill_pay_token(client: CdpClient, session_id: str, step: dict[str, Any]) -> 
         raise Refused(NOT_ON_MERCHANT)
     try:
         result = client.call("Runtime.callFunctionOn", {
-            "functionDeclaration": "function (token) { return window.__rakazoPageBrowser.setPayToken(token); }",
+            "functionDeclaration": "function (token) { return window.__atlasPageBrowser.setPayToken(token); }",
             "executionContextId": world,
             "arguments": [{"value": step["text"]}],
             "returnByValue": True,
@@ -1722,10 +1722,10 @@ def fill_card(client: CdpClient, session_id: str, step: dict[str, Any]) -> None:
             return "The payment frame changed, so the card was not typed. Take a fresh snapshot before trying again."
         return None
 
-    if run("window.__rakazoPageBrowser.focusCard()") is not True:
+    if run("window.__atlasPageBrowser.focusCard()") is not True:
         raise Refused("The card field did not take focus, so nothing was typed.")
     for index, char in enumerate(text):
-        reason = stopped() or (None if run("window.__rakazoPageBrowser.cardHolds()") is True else
+        reason = stopped() or (None if run("window.__atlasPageBrowser.cardHolds()") is True else
                                "Focus left the card field, so the card was not typed. Fill it again.")
         if reason:
             if index:
@@ -1737,7 +1737,7 @@ def fill_card(client: CdpClient, session_id: str, step: dict[str, Any]) -> None:
         clear_or_uncertain(client, field_session, run, reason)
         raise Refused(reason)
     # Fields often move on to the next one by themselves once complete, so focus is not checked here.
-    if run(f"window.__rakazoPageBrowser.cardTyped({sum(char.isalnum() for char in text)})") is not True:
+    if run(f"window.__atlasPageBrowser.cardTyped({sum(char.isalnum() for char in text)})") is not True:
         reason = "This field didn't accept the card, so it was cleared."
         clear_or_uncertain(client, field_session, run, reason)
         raise Refused(reason)
@@ -1751,10 +1751,10 @@ def clear_or_uncertain(client: CdpClient, session_id: str, run: Any, reason: str
 def clear_card(client: CdpClient, session_id: str, run: Any) -> bool:
     """Keys erase what the field's own script kept, then its value is emptied directly; True once it is empty."""
     try:
-        if run("window.__rakazoPageBrowser.focusCard()") is True:
+        if run("window.__atlasPageBrowser.focusCard()") is True:
             press_key(client, session_id, {"key": "Backspace", "code": "Backspace", "windowsVirtualKeyCode": 8})
-        run("window.__rakazoPageBrowser.emptyCard()")
-        return run("window.__rakazoPageBrowser.cardTyped(0)") is True
+        run("window.__atlasPageBrowser.emptyCard()")
+        return run("window.__atlasPageBrowser.cardTyped(0)") is True
     except Exception:  # noqa: BLE001
         return False
 
@@ -1762,7 +1762,7 @@ def clear_card(client: CdpClient, session_id: str, run: Any) -> bool:
 def draw_frames(client: CdpClient, session_id: str) -> None:
     """Let the page draw, so the browser's own hit-test knows where a scroll left things."""
     try:
-        eval_json(client, session_id, "window.__rakazoPageBrowser.nextFrames()")
+        eval_json(client, session_id, "window.__atlasPageBrowser.nextFrames()")
     except Exception:  # noqa: BLE001
         pass
 
@@ -1804,7 +1804,7 @@ def click_at(client: CdpClient, session_id: str, ref: str, x: float, y: float) -
     base = {"x": x, "y": y, "pointerType": "mouse"}
     draw_frames(client, session_id)
     client.call("Input.dispatchMouseEvent", {**base, "type": "mouseMoved"}, session_id=session_id)
-    scrolled = eval_json(client, session_id, f"window.__rakazoPageBrowser.stillAimed({json.dumps(ref)}, {x}, {y})")
+    scrolled = eval_json(client, session_id, f"window.__atlasPageBrowser.stillAimed({json.dumps(ref)}, {x}, {y})")
     scrolled = scrolled if isinstance(scrolled, dict) else {}
     check_frame(client, session_id, x + scrolled.get("x", 0), y + scrolled.get("y", 0))
     client.call("Input.dispatchMouseEvent", {**base, "type": "mousePressed", "button": "left", "buttons": 1,
@@ -1885,7 +1885,7 @@ def act(client: CdpClient, session_id: str, actions: list[dict[str, Any]]) -> di
                 uncertain = False
                 continue
             # Preflight catches stale, hidden and disabled elements before a mutation is dispatched.
-            eval_json(client, session_id, f"Boolean(window.__rakazoPageBrowser.resolve({json.dumps(ref)}))")
+            eval_json(client, session_id, f"Boolean(window.__atlasPageBrowser.resolve({json.dumps(ref)}))")
             if kind == "upload":
                 uncertain = True
                 upload(client, session_id, ref, step["files"])
@@ -1898,7 +1898,7 @@ def act(client: CdpClient, session_id: str, actions: list[dict[str, Any]]) -> di
                 # One character goes into the ref'd box alone; longer text replaces the whole code.
                 whole = json.dumps(len(step["text"]) > 1)
                 focus = eval_json(client, session_id,
-                                  f"window.__rakazoPageBrowser.focusForKeys({json.dumps(ref)}, {whole})")
+                                  f"window.__atlasPageBrowser.focusForKeys({json.dumps(ref)}, {whole})")
                 if isinstance(focus, dict) and focus.get("select"):
                     kind = "fill"
                 else:
@@ -1923,7 +1923,7 @@ def act(client: CdpClient, session_id: str, actions: list[dict[str, Any]]) -> di
                     continue
             if kind == "click":
                 uncertain = True
-                aim = eval_json(client, session_id, f"window.__rakazoPageBrowser.aim({json.dumps(ref)})")
+                aim = eval_json(client, session_id, f"window.__atlasPageBrowser.aim({json.dumps(ref)})")
                 if isinstance(aim, dict) and aim.get("x") is not None:
                     click_at(client, session_id, ref, aim["x"], aim["y"])
                 completed += 1
@@ -1933,7 +1933,7 @@ def act(client: CdpClient, session_id: str, actions: list[dict[str, Any]]) -> di
             if step.get("origin"):
                 arguments += ", " + json.dumps(step["origin"]) + ", " + json.dumps(step.get("field"))
             uncertain = True
-            data = eval_json(client, session_id, f"window.__rakazoPageBrowser.fill({arguments})")
+            data = eval_json(client, session_id, f"window.__atlasPageBrowser.fill({arguments})")
             if not isinstance(data, dict):
                 raise RuntimeError("Action response unavailable")
             if data.get("insertText"):
@@ -1987,16 +1987,16 @@ def read_stdin_line() -> str:
 
 def run(argv: list[str]) -> int:
     stdin_args = (
-        read_stdin_line() if os.environ.get("RAKAZO_BROWSER_ARGS_STDIN") == "1" else None
+        read_stdin_line() if os.environ.get("ATLAS_BROWSER_ARGS_STDIN") == "1" else None
     )
-    if os.environ.get("RAKAZO_BROWSER_WATCH_STDIN") == "1":
+    if os.environ.get("ATLAS_BROWSER_WATCH_STDIN") == "1":
         threading.Thread(target=exit_when_stdin_closes, daemon=True).start()
     if len(argv) < 2:
         print(
             json.dumps(
                 {
                     "ok": False,
-                    "error": "usage: rakazo-page-browser <command> [json-args]",
+                    "error": "usage: atlas-page-browser <command> [json-args]",
                     "fallback": "computer_act",
                 }
             )

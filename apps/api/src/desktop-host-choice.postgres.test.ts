@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { FakeSandboxProvider } from "@rakazo/adapters";
+import { FakeSandboxProvider } from "@atlas/adapters";
 import { expect, it } from "vitest";
 import { sessionCookieHeader } from "../../../packages/testkit/src/index.js";
 import { createApp } from "./app.js";
@@ -13,7 +13,7 @@ it.skipIf(!databaseUrl).each([
   { sandboxProvider: "docker", nativeToken: false, expected: false },
   { sandboxProvider: "fake", nativeToken: true, expected: false },
 ])("exposes native host choice only on a managed Docker instance (%j)", async (fixture) => {
-  const dataDir = await mkdtemp(join(tmpdir(), "rakazo-host-choice-"));
+  const dataDir = await mkdtemp(join(tmpdir(), "atlas-host-choice-"));
   const handles = await createApp({
     databaseUrl: databaseUrl!,
     dataDir,

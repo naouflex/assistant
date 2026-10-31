@@ -1,7 +1,7 @@
+import type { SearchHit } from "@atlas/contracts";
+import { searchHitListKey } from "@atlas/core";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import type { SearchHit } from "@rakazo/contracts";
-import { searchHitListKey } from "@rakazo/core";
 
 export function SpaceSearchResults({
   hits,

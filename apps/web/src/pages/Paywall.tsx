@@ -1,6 +1,6 @@
+import type { BillingStatus } from "@atlas/contracts";
+import { Button } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { BillingStatus } from "@rakazo/contracts";
-import { Button } from "@rakazo/ui-web";
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { CreditChoice } from "../components/ModelCredits";

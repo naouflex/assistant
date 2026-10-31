@@ -1,6 +1,3 @@
-import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
-import type { Api, Model, Models } from "@earendil-works/pi-ai";
-import { validateToolArguments } from "@earendil-works/pi-ai";
 import type {
   AdapterContext,
   AgentRunRequest,
@@ -9,9 +6,12 @@ import type {
   AgentToolExecutionResult,
   ConnectorTool,
   ModelCallObserver,
-} from "@rakazo/adapter-kit";
-import { DEFAULT_CONTEXT_STRATEGY } from "@rakazo/adapter-kit";
-import { FLEET_TOOL_NAMES } from "@rakazo/contracts";
+} from "@atlas/adapter-kit";
+import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
+import { FLEET_TOOL_NAMES } from "@atlas/contracts";
+import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
+import type { Api, Model, Models } from "@earendil-works/pi-ai";
+import { validateToolArguments } from "@earendil-works/pi-ai";
 import { isToolPauseResult } from "./approval-effect.js";
 import {
   connectionIdArgument,

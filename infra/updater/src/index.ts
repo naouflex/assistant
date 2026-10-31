@@ -4,9 +4,8 @@ import { randomUUID } from "node:crypto";
 import { access, lstat, open, readFile, rename, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { serve } from "@hono/node-server";
-import type { ServerUpdateRun } from "@rakazo/contracts";
-import type { ComposeUpdateStep } from "@rakazo/core";
+import type { ServerUpdateRun } from "@atlas/contracts";
+import type { ComposeUpdateStep } from "@atlas/core";
 import {
   chooseUpdateStrategy,
   commitImageTag,
@@ -33,11 +32,13 @@ import {
   selectLatestRelease,
   upsertEnvAssignments,
   validateUpdateRequest,
-} from "@rakazo/core";
-import type { Logger } from "@rakazo/logging";
-import { SERVICE_NAMES } from "@rakazo/logging";
-import { createRootLogger } from "@rakazo/logging/axiom";
-import { requestLogging } from "@rakazo/logging/hono";
+} from "@atlas/core";
+import { applyLegacyEnvAliases } from "@atlas/core/node/legacy-env";
+import type { Logger } from "@atlas/logging";
+import { SERVICE_NAMES } from "@atlas/logging";
+import { createRootLogger } from "@atlas/logging/axiom";
+import { requestLogging } from "@atlas/logging/hono";
+import { serve } from "@hono/node-server";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import type { UpdaterConfig } from "./updater-logic.js";
@@ -107,7 +108,7 @@ export function commandEnvironment(
   // Root against a checkout the deploy user owns makes git exit 128 with "detected dubious
   // ownership". It is declared here, not in Compose, because this allowlist drops the service
   // environment; it is applied after `overrides` so a caller cannot widen it.
-  const deployDir = source.RAKAZO_DEPLOY_DIR?.trim();
+  const deployDir = source.ATLAS_DEPLOY_DIR?.trim();
   const gitOwnership =
     deployDir === undefined || deployDir === ""
       ? {}
@@ -342,7 +343,7 @@ export function createUpdaterApp(
       throw new UpdateRefused("The deployment environment must be a regular, non-symlink file.");
     }
     const contents = upsertEnvAssignments(current, assignments);
-    const temporary = `${config.envFile}.rakazo-update-${randomUUID()}`;
+    const temporary = `${config.envFile}.atlas-update-${randomUUID()}`;
     let temporaryFile: Awaited<ReturnType<typeof open>> | null = null;
     try {
       temporaryFile = await open(temporary, "wx", 0o600);
@@ -487,7 +488,7 @@ export function createUpdaterApp(
     if (decision.strategy === "build") {
       if (!checkout.present) {
         throw new UpdateRefused(
-          "Building a fork needs the deployment's git checkout, and RAKAZO_DEPLOY_DIR has no .git directory. Clone the fork to the deployment directory, or switch back to the official repository to use published images.",
+          "Building a fork needs the deployment's git checkout, and ATLAS_DEPLOY_DIR has no .git directory. Clone the fork to the deployment directory, or switch back to the official repository to use published images.",
         );
       }
       if (checkout.remoteUrl === null) {
@@ -804,6 +805,7 @@ export function createUpdaterApp(
 
 function startUpdater() {
   const logger = createRootLogger(SERVICE_NAMES.updater);
+  applyLegacyEnvAliases(process.env);
   const config = resolveUpdaterConfig(process.env);
   const app = createUpdaterApp(config, { logger });
   const server = serve({ fetch: app.fetch, hostname: config.host, port: config.port }, () => {

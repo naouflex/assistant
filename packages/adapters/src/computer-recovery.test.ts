@@ -2,9 +2,9 @@ import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { AdapterContext, JobPublisher, SandboxProvider } from "@rakazo/adapter-kit";
-import { SandboxDamagedError } from "@rakazo/adapter-kit";
-import type { PrismaClient, ThreadEvents } from "@rakazo/db";
+import type { AdapterContext, JobPublisher, SandboxProvider } from "@atlas/adapter-kit";
+import { SandboxDamagedError } from "@atlas/adapter-kit";
+import type { PrismaClient, ThreadEvents } from "@atlas/db";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ComputerBusyError, provisionComputer, replaceComputer } from "./computer-lifecycle.js";
 import { DesktopSandboxProvider } from "./desktop-sandbox.js";
@@ -28,7 +28,7 @@ afterEach(async () => {
 });
 
 async function fixture(provider: "fake" | "desktop" = "fake") {
-  const root = await mkdtemp(path.join(tmpdir(), "rakazo-recovery-"));
+  const root = await mkdtemp(path.join(tmpdir(), "atlas-recovery-"));
   roots.push(root);
   const sandbox: SandboxProvider =
     provider === "desktop" ? new DesktopSandboxProvider({ root }) : new FakeSandboxProvider();

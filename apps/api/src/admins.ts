@@ -1,6 +1,6 @@
 import type { RouterDeps } from "./router.js";
 
-/** Accounts listed in RAKAZO_ADMIN_EMAILS, once their email is verified. */
+/** Accounts listed in ATLAS_ADMIN_EMAILS, once their email is verified. */
 export async function isAdmin(
   deps: Pick<RouterDeps, "prisma" | "env">,
   userId: string,

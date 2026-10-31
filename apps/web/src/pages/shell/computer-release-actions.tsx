@@ -1,6 +1,6 @@
+import type { ComputerReleaseReason } from "@atlas/contracts";
+import { Button } from "@atlas/ui-web";
 import { Trans } from "@lingui/react/macro";
-import type { ComputerReleaseReason } from "@rakazo/contracts";
-import { Button } from "@rakazo/ui-web";
 
 export function ComputerReleaseActions({
   takeoverRequested,

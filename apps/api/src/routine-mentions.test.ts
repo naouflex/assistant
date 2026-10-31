@@ -1,6 +1,6 @@
+import type { Actor } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
 import { RPCHandler } from "@orpc/server/fetch";
-import type { Actor } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
 import { describe, expect, it, vi } from "vitest";
 import type { RouterDeps } from "./router.js";
 import { createRouter } from "./router.js";
@@ -54,7 +54,7 @@ function harness() {
       screenProxySecret: "fake-test-secret",
       sandboxProvider: "fake",
     },
-    dataDir: "/tmp/rakazo-routine-mentions-test",
+    dataDir: "/tmp/atlas-routine-mentions-test",
   } as unknown as RouterDeps;
   const handler = new RPCHandler(createRouter(deps));
   async function request(botIds: string[], requestActor: Actor | null = actor) {

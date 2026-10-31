@@ -5,11 +5,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/rakazo/audit-ship.env
-ExecStart=/usr/local/sbin/rakazo-audit-ship
+EnvironmentFile=/etc/atlas/audit-ship.env
+ExecStart=/usr/local/sbin/atlas-audit-ship
 Restart=always
 RestartSec=10
-StateDirectory=rakazo/audit-ship
+StateDirectory=atlas/audit-ship
 StateDirectoryMode=0700
 NoNewPrivileges=true
 ProtectSystem=strict

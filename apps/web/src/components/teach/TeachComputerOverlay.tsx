@@ -1,6 +1,6 @@
+import type { ComputerStatus } from "@atlas/contracts";
+import { Button, Label, Popover, PopoverContent, PopoverTrigger, Textarea } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ComputerStatus } from "@rakazo/contracts";
-import { Button, Label, Popover, PopoverContent, PopoverTrigger, Textarea } from "@rakazo/ui-web";
 import { useEffect, useRef, useState } from "react";
 import { rpc } from "../../lib/rpc";
 import { errorText } from "../../lib/user-error";

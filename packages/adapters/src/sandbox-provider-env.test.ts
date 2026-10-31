@@ -142,23 +142,23 @@ describe("sandboxProviderOptionsFromEnv", () => {
   it("loads Kubernetes settings and parses labels, annotations and the ready timeout", () => {
     expect(
       sandboxProviderOptionsFromEnv({
-        KUBERNETES_SANDBOX_NAMESPACE: " rakazo-computers ",
+        KUBERNETES_SANDBOX_NAMESPACE: " atlas-computers ",
         KUBERNETES_SANDBOX_RUNTIME_CLASS_NAME: "kata",
-        KUBERNETES_SANDBOX_COMPUTER_IMAGE: "ghcr.io/elie222/rakazo/computer@sha256:abc",
+        KUBERNETES_SANDBOX_COMPUTER_IMAGE: "ghcr.io/naouflex/assistant/computer@sha256:abc",
         KUBERNETES_SANDBOX_CPU_LIMIT: "2",
         KUBERNETES_SANDBOX_MEMORY_LIMIT: "4Gi",
         KUBERNETES_SANDBOX_POD_LABELS: '{"team":"bots"}',
-        KUBERNETES_SANDBOX_POD_ANNOTATIONS: '{"example.test/owner":"rakazo"}',
+        KUBERNETES_SANDBOX_POD_ANNOTATIONS: '{"example.test/owner":"atlas"}',
         KUBERNETES_SANDBOX_READY_TIMEOUT_MS: "90000",
       }),
     ).toMatchObject({
-      kubernetesNamespace: "rakazo-computers",
+      kubernetesNamespace: "atlas-computers",
       kubernetesRuntimeClassName: "kata",
-      kubernetesComputerImage: "ghcr.io/elie222/rakazo/computer@sha256:abc",
+      kubernetesComputerImage: "ghcr.io/naouflex/assistant/computer@sha256:abc",
       kubernetesCpuLimit: "2",
       kubernetesMemoryLimit: "4Gi",
       kubernetesPodLabels: { team: "bots" },
-      kubernetesPodAnnotations: { "example.test/owner": "rakazo" },
+      kubernetesPodAnnotations: { "example.test/owner": "atlas" },
       kubernetesReadyTimeoutMs: 90_000,
     });
     expect(sandboxProviderOptionsFromEnv({}).kubernetesNamespace).toBeUndefined();
@@ -167,17 +167,17 @@ describe("sandboxProviderOptionsFromEnv", () => {
   it("loads the Kubernetes home claim and its pod-affinity target", () => {
     expect(
       sandboxProviderOptionsFromEnv({
-        KUBERNETES_SANDBOX_HOME_CLAIM: "rakazo-data",
-        KUBERNETES_SANDBOX_HOME_COLOCATE_NAMESPACE: "rakazo",
-        KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS: '{"app":"rakazo-api"}',
+        KUBERNETES_SANDBOX_HOME_CLAIM: "atlas-data",
+        KUBERNETES_SANDBOX_HOME_COLOCATE_NAMESPACE: "atlas",
+        KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS: '{"app":"atlas-api"}',
       }),
     ).toMatchObject({
-      kubernetesHomeClaim: "rakazo-data",
-      kubernetesHomeColocateNamespace: "rakazo",
-      kubernetesHomeColocateLabels: { app: "rakazo-api" },
+      kubernetesHomeClaim: "atlas-data",
+      kubernetesHomeColocateNamespace: "atlas",
+      kubernetesHomeColocateLabels: { app: "atlas-api" },
     });
     expect(() =>
-      sandboxProviderOptionsFromEnv({ KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS: "rakazo-api" }),
+      sandboxProviderOptionsFromEnv({ KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS: "atlas-api" }),
     ).toThrow("KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS must be a JSON object of string values");
   });
 

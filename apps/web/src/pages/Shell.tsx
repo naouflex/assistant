@@ -1,11 +1,10 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   AgentSkillCatalogEntry,
   Bot,
   SpaceMemoryConfig,
   ThreadMessage,
   VoiceStatus,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   answerableAskMessageIds,
   channelMessageSender,
@@ -16,11 +15,12 @@ import {
   isActive,
   isRunWorking,
   memberName,
-} from "@rakazo/core";
-import { fetchFresh, writeSaved } from "@rakazo/core/query";
-import type { GroupAvatarMember } from "@rakazo/ui-web";
-import { Button } from "@rakazo/ui-web";
-import { useIsMobile } from "@rakazo/ui-web/hooks/use-mobile";
+} from "@atlas/core";
+import { fetchFresh, writeSaved } from "@atlas/core/query";
+import type { GroupAvatarMember } from "@atlas/ui-web";
+import { Button } from "@atlas/ui-web";
+import { useIsMobile } from "@atlas/ui-web/hooks/use-mobile";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Lock, Monitor, Moon, Plug, Plus, ScrollText, Sun, Users } from "lucide-react";
 import {

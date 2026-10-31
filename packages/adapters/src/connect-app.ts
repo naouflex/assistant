@@ -1,8 +1,8 @@
-import type { AdapterContext, ManagedConnectorProvider } from "@rakazo/adapter-kit";
-import type { MessageBlock } from "@rakazo/contracts";
-import { appConnectCard, matchAppCatalog, matchesAppConnection } from "@rakazo/core";
-import type { PrismaClient, ThreadEvents } from "@rakazo/db";
-import { appendEventInTransaction, createThreadMessageInTransaction } from "@rakazo/db";
+import type { AdapterContext, ManagedConnectorProvider } from "@atlas/adapter-kit";
+import type { MessageBlock } from "@atlas/contracts";
+import { appConnectCard, matchAppCatalog, matchesAppConnection } from "@atlas/core";
+import type { PrismaClient, ThreadEvents } from "@atlas/db";
+import { appendEventInTransaction, createThreadMessageInTransaction } from "@atlas/db";
 
 const RECENT_MESSAGES = 50;
 

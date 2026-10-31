@@ -1,4 +1,4 @@
-import { ATTACHMENT_MAX_BYTES, attachmentSizeLabel } from "@rakazo/contracts";
+import { ATTACHMENT_MAX_BYTES, attachmentSizeLabel } from "@atlas/contracts";
 import type { Hono, MiddlewareHandler } from "hono";
 import { cancelBody } from "./http-body.js";
 

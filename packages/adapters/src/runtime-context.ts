@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
+import type { AdapterContext, AgentRunRequest, AgentUsage } from "@atlas/adapter-kit";
+import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
+import { getLogger } from "@atlas/logging";
 import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
-import type { AdapterContext, AgentRunRequest, AgentUsage } from "@rakazo/adapter-kit";
-import { DEFAULT_CONTEXT_STRATEGY } from "@rakazo/adapter-kit";
-import { getLogger } from "@rakazo/logging";
 import { imagePartCount, normalizedImageLimit, pruneForRebuild } from "./context-pruning.js";
 import type { CacheRequest, ContextBudget } from "./context-selection.js";
 import {
@@ -87,9 +87,9 @@ interface SentTranscript {
   appends: number;
 }
 interface OriginalMetadata {
-  rakazoHistory?: boolean;
-  rakazoMessageId?: string;
-  rakazoCreatedAt?: string;
+  atlasHistory?: boolean;
+  atlasMessageId?: string;
+  atlasCreatedAt?: string;
 }
 function text(message: Message): string {
   if (typeof message.content === "string") return message.content;
@@ -190,8 +190,8 @@ export function createRuntimeContextPolicy(
   );
   function original(message: Message) {
     const metadata = message as Message & OriginalMetadata;
-    if (metadata.rakazoMessageId) return historyById.get(metadata.rakazoMessageId);
-    if (metadataPresent && !metadata.rakazoHistory) return undefined;
+    if (metadata.atlasMessageId) return historyById.get(metadata.atlasMessageId);
+    if (metadataPresent && !metadata.atlasHistory) return undefined;
     const content = text(message);
     return request.history.find(
       (stored) =>
@@ -273,7 +273,7 @@ export function createRuntimeContextPolicy(
         ? "cache-aware"
         : DEFAULT_CONTEXT_STRATEGY);
     metadataPresent = ctx.messages.some((message) =>
-      Boolean((message as Message & OriginalMetadata).rakazoHistory),
+      Boolean((message as Message & OriginalMetadata).atlasHistory),
     );
     const fullPrefix = providerContextPrefix(ctx.systemPrompt ?? "", ctx.tools ?? [], ctx.messages);
     const cacheRequest: CacheRequest = cache.stamp({
@@ -427,9 +427,9 @@ export function createRuntimeContextPolicy(
     }
     const summaries = ctx.messages.filter(
       (message) =>
-        (message as Message & OriginalMetadata).rakazoHistory &&
-        !(message as Message & OriginalMetadata).rakazoMessageId &&
-        (text(message).startsWith("Rakazo-owned compacted context through message sequence ") ||
+        (message as Message & OriginalMetadata).atlasHistory &&
+        !(message as Message & OriginalMetadata).atlasMessageId &&
+        (text(message).startsWith("Atlas-owned compacted context through message sequence ") ||
           text(message).startsWith(
             "Memory recalled from earlier conversations that fell outside the visible history.",
           )),

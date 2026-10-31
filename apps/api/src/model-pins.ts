@@ -1,9 +1,9 @@
+import type { CodexLiveCatalog, parseModelSecret } from "@atlas/adapters";
+import { findConnectedModelCredential, validateConnectedModelChoice } from "@atlas/adapters";
+import type { Actor } from "@atlas/contracts";
+import { OPENAI_COMPATIBLE_PROVIDER_ID, usableModelId } from "@atlas/contracts";
+import { modelRoleTarget, runAsSystem } from "@atlas/db";
 import { ORPCError } from "@orpc/server";
-import type { CodexLiveCatalog, parseModelSecret } from "@rakazo/adapters";
-import { findConnectedModelCredential, validateConnectedModelChoice } from "@rakazo/adapters";
-import type { Actor } from "@rakazo/contracts";
-import { OPENAI_COMPATIBLE_PROVIDER_ID, usableModelId } from "@rakazo/contracts";
-import { modelRoleTarget, runAsSystem } from "@rakazo/db";
 import type { RouterDeps } from "./router.js";
 
 /**

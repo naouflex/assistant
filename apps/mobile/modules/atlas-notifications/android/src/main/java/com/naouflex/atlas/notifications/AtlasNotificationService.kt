@@ -1,4 +1,4 @@
-package com.rakazo.notifications
+package com.naouflex.atlas.notifications
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -59,7 +59,7 @@ private data class RunRecord(
 
 private class ApiException(val status: Int) : IOException()
 
-class RakazoNotificationService : Service() {
+class AtlasNotificationService : Service() {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private lateinit var manager: NotificationManager
   private var pollJob: Job? = null
@@ -195,10 +195,10 @@ class RakazoNotificationService : Service() {
                 run,
                 NotificationCopy(
                   title = when {
-                    scheduled -> copyContext.getString(R.string.rakazo_scheduled_title, run.botName)
+                    scheduled -> copyContext.getString(R.string.atlas_scheduled_title, run.botName)
                     run.groupName != null ->
-                      copyContext.getString(R.string.rakazo_replied_group, run.botName, run.groupName)
-                    else -> copyContext.getString(R.string.rakazo_replied, run.botName)
+                      copyContext.getString(R.string.atlas_replied_group, run.botName, run.groupName)
+                    else -> copyContext.getString(R.string.atlas_replied, run.botName)
                   },
                   body = reply.ifBlank { run.prompt },
                   channel = if (scheduled) Channels.SCHEDULED else Channels.MESSAGES,
@@ -269,15 +269,15 @@ class RakazoNotificationService : Service() {
   private fun post(run: RunRecord, copy: NotificationCopy) {
     if (!run.notificationsEnabled || isOpenThread(run)) return
     val notification = builder(copy.channel)
-      .setSmallIcon(R.drawable.ic_rakazo_notification)
+      .setSmallIcon(R.drawable.ic_atlas_notification)
       .setContentTitle(copy.title)
       .setContentText(copy.body)
       .setStyle(Notification.BigTextStyle().bigText(copy.body))
       .setContentIntent(openApp(run))
       .addExtras(Bundle().apply {
-        putString("rakazo.spaceId", run.spaceId)
-        putString("rakazo.botId", run.botId)
-        putString("rakazo.threadId", run.threadId)
+        putString("atlas.spaceId", run.spaceId)
+        putString("atlas.botId", run.botId)
+        putString("atlas.threadId", run.threadId)
       })
       .setAutoCancel(true)
       .setCategory(Notification.CATEGORY_MESSAGE)
@@ -288,8 +288,8 @@ class RakazoNotificationService : Service() {
   private fun showLive(active: List<RunRecord>, avatarStyle: String, context: Context) {
     val primary = active.first()
     val title = when (active.size) {
-      1 -> context.getString(R.string.rakazo_live_one, primary.botName)
-      else -> context.getString(R.string.rakazo_live_many, primary.botName, active.size - 1)
+      1 -> context.getString(R.string.atlas_live_one, primary.botName)
+      else -> context.getString(R.string.atlas_live_many, primary.botName, active.size - 1)
     }
     val body = when {
       active.size == 1 -> primary.prompt
@@ -308,7 +308,7 @@ class RakazoNotificationService : Service() {
       .setCategory(Notification.CATEGORY_SERVICE)
     if (Build.VERSION.SDK_INT >= 36) {
       liveBuilder.extras.putBoolean(PROMOTED_ONGOING_EXTRA, true)
-      liveBuilder.setShortCriticalText(context.getString(R.string.rakazo_live_working))
+      liveBuilder.setShortCriticalText(context.getString(R.string.atlas_live_working))
     }
     val notification = liveBuilder.build()
     if (Build.VERSION.SDK_INT >= 34) {
@@ -324,7 +324,7 @@ class RakazoNotificationService : Service() {
 
   private fun liveStatusIcon(run: RunRecord, avatarStyle: String): Icon {
     if (avatarStyle != "organic") {
-      return Icon.createWithResource(this, R.drawable.ic_rakazo_notification)
+      return Icon.createWithResource(this, R.drawable.ic_atlas_notification)
     }
     val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
@@ -364,12 +364,12 @@ class RakazoNotificationService : Service() {
 
   private fun openApp(run: RunRecord? = null): PendingIntent {
     val intent = if (run == null) {
-      packageManager.getLaunchIntentForPackage(packageName) ?: Intent(Intent.ACTION_VIEW, Uri.parse("rakazo://"))
+      packageManager.getLaunchIntentForPackage(packageName) ?: Intent(Intent.ACTION_VIEW, Uri.parse("atlas://"))
     } else {
       val destination = if (run.groupId != null) {
-        "rakazo://group-thread?groupId=${Uri.encode(run.groupId)}&name=${Uri.encode(run.groupName.orEmpty())}&spaceId=${Uri.encode(run.spaceId)}&threadId=${Uri.encode(run.threadId)}"
+        "atlas://group-thread?groupId=${Uri.encode(run.groupId)}&name=${Uri.encode(run.groupName.orEmpty())}&spaceId=${Uri.encode(run.spaceId)}&threadId=${Uri.encode(run.threadId)}"
       } else {
-        "rakazo://thread?botId=${Uri.encode(run.botId)}&name=${Uri.encode(run.botName)}&spaceId=${Uri.encode(run.spaceId)}&threadId=${Uri.encode(run.threadId)}"
+        "atlas://thread?botId=${Uri.encode(run.botId)}&name=${Uri.encode(run.botName)}&spaceId=${Uri.encode(run.spaceId)}&threadId=${Uri.encode(run.threadId)}"
       }
       Intent(
         Intent.ACTION_VIEW,
@@ -396,22 +396,22 @@ class RakazoNotificationService : Service() {
     listOf(
       NotificationChannel(
         Channels.LIVE,
-        context.getString(R.string.rakazo_channel_live),
+        context.getString(R.string.atlas_channel_live),
         NotificationManager.IMPORTANCE_LOW,
       ),
       NotificationChannel(
         Channels.MESSAGES,
-        context.getString(R.string.rakazo_channel_messages),
+        context.getString(R.string.atlas_channel_messages),
         NotificationManager.IMPORTANCE_DEFAULT,
       ),
       NotificationChannel(
         Channels.SCHEDULED,
-        context.getString(R.string.rakazo_channel_scheduled),
+        context.getString(R.string.atlas_channel_scheduled),
         NotificationManager.IMPORTANCE_DEFAULT,
       ),
       NotificationChannel(
         Channels.ATTENTION,
-        context.getString(R.string.rakazo_channel_attention),
+        context.getString(R.string.atlas_channel_attention),
         NotificationManager.IMPORTANCE_HIGH,
       ),
     ).forEach(manager::createNotificationChannel)
@@ -427,13 +427,13 @@ class RakazoNotificationService : Service() {
   }
 
   companion object {
-    private const val TAG = "RakazoNotifications"
+    private const val TAG = "AtlasNotifications"
     private const val LIVE_NOTIFICATION_ID = 1101
-    private const val ACTION_THREAD_CHANGED = "com.rakazo.notifications.THREAD_CHANGED"
+    private const val ACTION_THREAD_CHANGED = "com.naouflex.atlas.notifications.THREAD_CHANGED"
     private const val PROMOTED_ONGOING_EXTRA = "android.requestPromotedOngoing"
     private const val RECENT_LIMIT = 20 // Keep in sync with apps/api/src/runs.ts.
-    private const val EXTRA_RESET_TOKEN = "com.rakazo.notifications.RESET_TOKEN"
-    private const val STATE_PREFERENCES = "com.rakazo.notification_state"
+    private const val EXTRA_RESET_TOKEN = "com.naouflex.atlas.notifications.RESET_TOKEN"
+    private const val STATE_PREFERENCES = "com.naouflex.atlas.notification_state"
     private const val SEEN_RUNS = "seen_runs"
     private const val SEEN_RUNS_SEEDED = "seen_runs_seeded"
     private const val SEEN_RUNS_SPACE_ID = "seen_runs_space_id"
@@ -444,7 +444,7 @@ class RakazoNotificationService : Service() {
     private var openThreadId: String? = null
 
     fun start(context: Context, resetToken: Boolean = true, action: String? = null) {
-      val intent = Intent(context, RakazoNotificationService::class.java)
+      val intent = Intent(context, AtlasNotificationService::class.java)
         .putExtra(EXTRA_RESET_TOKEN, resetToken)
       if (action != null) intent.action = action
       runCatching { context.startService(intent) }
@@ -452,7 +452,7 @@ class RakazoNotificationService : Service() {
     }
 
     fun stop(context: Context) {
-      context.stopService(Intent(context, RakazoNotificationService::class.java))
+      context.stopService(Intent(context, AtlasNotificationService::class.java))
     }
 
     fun setOpenThread(context: Context, botId: String?, threadId: String?) {
@@ -483,27 +483,27 @@ private data class NotificationCopy(val title: String, val body: String, val cha
 
 private fun attentionCopy(context: Context, run: RunRecord): NotificationCopy = when (run.status) {
   "failed" -> NotificationCopy(
-    context.getString(R.string.rakazo_attention_failed, run.botName),
+    context.getString(R.string.atlas_attention_failed, run.botName),
     run.prompt,
     Channels.ATTENTION,
   )
   "waiting_takeover" -> NotificationCopy(
-    context.getString(R.string.rakazo_attention_takeover, run.botName),
+    context.getString(R.string.atlas_attention_takeover, run.botName),
     run.prompt,
     Channels.ATTENTION,
   )
   else -> NotificationCopy(
-    context.getString(R.string.rakazo_attention_input, run.botName),
+    context.getString(R.string.atlas_attention_input, run.botName),
     run.prompt,
     Channels.ATTENTION,
   )
 }
 
 private object Channels {
-  const val LIVE = "rakazo_live"
-  const val MESSAGES = "rakazo_messages"
-  const val SCHEDULED = "rakazo_scheduled"
-  const val ATTENTION = "rakazo_attention"
+  const val LIVE = "atlas_live"
+  const val MESSAGES = "atlas_messages"
+  const val SCHEDULED = "atlas_scheduled"
+  const val ATTENTION = "atlas_attention"
 }
 
 private fun runs(
@@ -1033,10 +1033,10 @@ private fun rpc(
     connection.instanceFollowRedirects = false
     serverHeaders(headers).forEach { (name, value) -> connection.setRequestProperty(name, value) }
     connection.setRequestProperty("Content-Type", "application/json")
-    connection.setRequestProperty("Origin", "rakazo://")
+    connection.setRequestProperty("Origin", "atlas://")
     connection.setRequestProperty("Authorization", "Bearer $token")
     if (spaceId.isNotBlank()) {
-      connection.setRequestProperty("x-rakazo-space-id", spaceId)
+      connection.setRequestProperty("x-atlas-space-id", spaceId)
     }
     connection.outputStream.use {
       it.write(JSONObject().put("json", input).toString().toByteArray(Charsets.UTF_8))

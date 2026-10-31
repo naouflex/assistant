@@ -1,17 +1,17 @@
-import { t } from "@lingui/core/macro";
 import {
   CONNECTOR_AUTH_UNAVAILABLE,
   isVoiceAccountErrorCode,
   MCP_OAUTH_CLIENT_REQUIRED,
-} from "@rakazo/contracts";
-import type { CredentialField } from "@rakazo/core";
+} from "@atlas/contracts";
+import type { CredentialField } from "@atlas/core";
 import {
   authErrorMessage,
   MAX_PASSWORD_LENGTH,
   MODEL_IMAGE_INPUT_ERROR,
   MODEL_IMAGE_INPUT_UNKNOWN,
   userErrorMessage,
-} from "@rakazo/core";
+} from "@atlas/core";
+import { t } from "@lingui/core/macro";
 
 /** Text for a failure: human messages pass through; network and implementation detail become copy. */
 export function errorText(error: unknown, fallback = t`Something went wrong. Try again.`): string {

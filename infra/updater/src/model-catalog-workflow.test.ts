@@ -29,7 +29,7 @@ describe("model catalog artifact boundary", () => {
     });
   }
   beforeEach(() => {
-    root = mkdtempSync(path.join(tmpdir(), "rakazo-catalog-artifact-"));
+    root = mkdtempSync(path.join(tmpdir(), "atlas-catalog-artifact-"));
     artifact = path.join(root, "artifact");
     mkdirSync(path.join(root, "packages/adapters"), { recursive: true });
     writeFileSync(path.join(root, manifest), '{"version":"1"}\n');

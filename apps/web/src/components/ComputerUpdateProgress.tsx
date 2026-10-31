@@ -1,8 +1,8 @@
+import type { ComputerUpdate } from "@atlas/contracts";
+import { COMPUTER_UPDATE_STAGES } from "@atlas/contracts";
+import { computerUpdateNeedsAttention, computerUpdateStages } from "@atlas/core";
+import { Button, cn, Dialog, DialogContent, DialogTitle, Spinner } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ComputerUpdate } from "@rakazo/contracts";
-import { COMPUTER_UPDATE_STAGES } from "@rakazo/contracts";
-import { computerUpdateNeedsAttention, computerUpdateStages } from "@rakazo/core";
-import { Button, cn, Dialog, DialogContent, DialogTitle, Spinner } from "@rakazo/ui-web";
 import { CheckCircle2, Circle, CircleAlert } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { computerUpdates } from "../lib/computer-updates";

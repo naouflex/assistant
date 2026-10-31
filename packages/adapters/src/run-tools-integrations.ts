@@ -1,4 +1,4 @@
-import { normalizedHttpUrl } from "@rakazo/core/egress";
+import { normalizedHttpUrl } from "@atlas/core/egress";
 import { executeCloudAgentTool } from "./cloud-agent-service.js";
 import { collectLogIds } from "./composio-connector.js";
 import { connectApp } from "./connect-app.js";

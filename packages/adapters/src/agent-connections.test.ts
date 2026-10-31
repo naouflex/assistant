@@ -1,5 +1,5 @@
-import type { PrismaClient, ThreadEvents } from "@rakazo/db";
-import { RunHistoryWriteError } from "@rakazo/db";
+import type { PrismaClient, ThreadEvents } from "@atlas/db";
+import { RunHistoryWriteError } from "@atlas/db";
 import { describe, expect, it, vi } from "vitest";
 import {
   connectAgent,

@@ -1,6 +1,6 @@
+import { passkeyOfferDismissedKey, shouldOfferPasskey } from "@atlas/core";
+import { Button } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { passkeyOfferDismissedKey, shouldOfferPasskey } from "@rakazo/core";
-import { Button } from "@rakazo/ui-web";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authClient } from "../lib/auth";

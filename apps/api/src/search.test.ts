@@ -1,7 +1,7 @@
-import type { Actor } from "@rakazo/contracts";
-import { GROUP_MEMBER_MIN } from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
-import { Prisma } from "@rakazo/db";
+import type { Actor } from "@atlas/contracts";
+import { GROUP_MEMBER_MIN } from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
+import { Prisma } from "@atlas/db";
 import { describe, expect, it, vi } from "vitest";
 import { querySpaceSearch } from "./search.js";
 

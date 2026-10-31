@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AgentRunModel, AgentRuntime, SecretStore } from "@rakazo/adapter-kit";
+import type { AgentRunModel, AgentRuntime, SecretStore } from "@atlas/adapter-kit";
 import {
   deploymentModelRole,
   formatCurrentTimeInstruction,
@@ -12,11 +12,11 @@ import {
   secretValuesToRedact,
   serializeModelSecret,
   toOAuthCredential,
-} from "@rakazo/adapters";
-import { redactSecrets } from "@rakazo/core";
-import type { PrismaClient } from "@rakazo/db";
-import { findModelCredential, recordUsage } from "@rakazo/db";
-import { getLogger } from "@rakazo/logging";
+} from "@atlas/adapters";
+import { redactSecrets } from "@atlas/core";
+import type { PrismaClient } from "@atlas/db";
+import { findModelCredential, recordUsage } from "@atlas/db";
+import { getLogger } from "@atlas/logging";
 
 const MAX_RULES_CHARS = 4_000;
 const MAX_MESSAGES = 20;

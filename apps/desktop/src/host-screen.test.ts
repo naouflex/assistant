@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { HostScreenError } from "@rakazo/adapters/host-screen";
+import { HostScreenError } from "@atlas/adapters/host-screen";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ScreenPermissionApi } from "./host-screen.js";
 import {
@@ -112,7 +112,7 @@ describe("screen driver download", () => {
   let archive: Buffer;
   let release: typeof SCREEN_DRIVER_RELEASE;
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), "rakazo-screen-driver-"));
+    dir = await mkdtemp(path.join(tmpdir(), "atlas-screen-driver-"));
     const source = path.join(dir, "source");
     await mkdir(source);
     await writeFile(path.join(source, "cua-driver"), "#!/bin/sh\n", { mode: 0o755 });

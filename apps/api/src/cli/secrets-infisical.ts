@@ -6,10 +6,10 @@ import {
   migrateSecrets,
   PostgresRealtimeFanout,
   secretStoreOptionsFromEnv,
-} from "@rakazo/adapters";
-import { resolveEncryptionKey } from "@rakazo/core";
-import { loadRootEnv } from "@rakazo/core/node/load-root-env";
-import { createDb, runAsSystem } from "@rakazo/db";
+} from "@atlas/adapters";
+import { resolveEncryptionKey } from "@atlas/core";
+import { loadRootEnv } from "@atlas/core/node/load-root-env";
+import { createDb, runAsSystem } from "@atlas/db";
 import { createSecretMigrationRepository } from "../secret-migration.js";
 
 loadRootEnv();

@@ -1,13 +1,13 @@
-import { ORPCError } from "@orpc/server";
-import type { AccountItem, Actor, AvailabilityKind, SpaceAvailability } from "@rakazo/contracts";
-import type { Prisma, PrismaClient } from "@rakazo/db";
+import type { AccountItem, Actor, AvailabilityKind, SpaceAvailability } from "@atlas/contracts";
+import type { Prisma, PrismaClient } from "@atlas/db";
 import {
   AVAILABILITY_SELECT,
   availableInSpace,
   runAsSystem,
   runAsSystemInTransaction,
   spaceAvailability,
-} from "@rakazo/db";
+} from "@atlas/db";
+import { ORPCError } from "@orpc/server";
 
 /** Serializes one owner's writes of a kind across all their spaces, until the transaction ends. */
 export function lockOwner(tx: Prisma.TransactionClient, userId: string, scope: string) {

@@ -1,4 +1,4 @@
-import { sanitizedError } from "@rakazo/logging/monitoring";
+import { sanitizedError } from "@atlas/logging/monitoring";
 import type * as Application from "expo-application";
 import { API_BASE_STORAGE_KEY, DEFAULT_API } from "./server-config";
 
@@ -12,9 +12,9 @@ export type NativeApplication = Pick<
   "applicationId" | "nativeApplicationVersion" | "nativeBuildVersion"
 >;
 
-const KEY = "rakazo.startup-error";
+const KEY = "atlas.startup-error";
 const MAX_LENGTH = 8_192;
-const EXPO_LOG_KEY = "rakazo.expo-error-window";
+const EXPO_LOG_KEY = "atlas.expo-error-window";
 
 type ExpoErrorWindow = { server: string; since: number; reportedThrough: number };
 

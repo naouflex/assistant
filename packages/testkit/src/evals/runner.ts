@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import type { AgentRuntime, JobPublisher, NotificationProvider } from "@rakazo/adapter-kit";
-import { runJobKey } from "@rakazo/adapter-kit";
-import { CapturingNotificationProvider, MessagingTeamChatEmulator } from "@rakazo/adapters";
-import type { ModelConnectInput, RunStatus } from "@rakazo/contracts";
-import { ACTIVE_RUN_STATUSES, isTerminal } from "@rakazo/core";
-import type { createDb } from "@rakazo/db";
+import type { AgentRuntime, JobPublisher, NotificationProvider } from "@atlas/adapter-kit";
+import { runJobKey } from "@atlas/adapter-kit";
+import { CapturingNotificationProvider, MessagingTeamChatEmulator } from "@atlas/adapters";
+import type { ModelConnectInput, RunStatus } from "@atlas/contracts";
+import { ACTIVE_RUN_STATUSES, isTerminal } from "@atlas/core";
+import type { createDb } from "@atlas/db";
 import { discardBotIntroRun } from "../discard-bot-intro.js";
 import { sessionCookieHeader } from "../index.js";
 import { asSystem } from "../system-db.js";

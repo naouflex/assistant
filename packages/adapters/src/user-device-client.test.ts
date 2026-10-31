@@ -5,7 +5,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { USER_DEVICE_CONNECT_PATH } from "@rakazo/contracts";
+import { USER_DEVICE_CONNECT_PATH } from "@atlas/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WebSocket } from "ws";
 import { WebSocketServer } from "ws";
@@ -35,7 +35,7 @@ describe("user device client", () => {
   const sockets: WebSocket[] = [];
 
   beforeEach(async () => {
-    root = await realpath(await mkdtemp(path.join(tmpdir(), "rakazo-device-test-")));
+    root = await realpath(await mkdtemp(path.join(tmpdir(), "atlas-device-test-")));
     upgrades = [];
     reject401 = false;
     revoked = vi.fn<() => void>();

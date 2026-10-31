@@ -18,15 +18,15 @@ import type {
   SpaceNavigation,
   ThreadMessage,
   ThreadSnapshot,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   accountSecuritySchema,
   authCapabilitiesSchema,
   CLIENT_UPDATE_REQUIRED_STATUS,
   legacyAccountSecurity,
   legacyAuthCapabilitiesSchema,
-} from "@rakazo/contracts";
-import type { ThreadHistory } from "@rakazo/core";
+} from "@atlas/contracts";
+import type { ThreadHistory } from "@atlas/core";
 import {
   aiConsentTarget,
   aiDataUsesForProcedure,
@@ -56,8 +56,8 @@ import {
   updateCloudAgentMessages,
   upsertMessageById,
   withAbort,
-} from "@rakazo/core";
-import { clientCorrelationHeaders, responseCorrelation } from "@rakazo/logging/monitoring";
+} from "@atlas/core";
+import { clientCorrelationHeaders, responseCorrelation } from "@atlas/logging/monitoring";
 import * as SecureStore from "expo-secure-store";
 import { promptAiConsent } from "./ai-consent";
 import type { EndpointResult } from "./endpoint";
@@ -89,8 +89,8 @@ import {
 import { clearUnsentSends } from "./thread-feedback";
 import { authResponseErrorText, errorText, sessionSaveErrorText } from "./user-error";
 
-const SPACE_KEY = "rakazo.space_id";
-const SPACE_ROLLBACK_KEY = "rakazo.space_rollback";
+const SPACE_KEY = "atlas.space_id";
+const SPACE_ROLLBACK_KEY = "atlas.space_rollback";
 const RPC_TIMEOUT_MS = 8_000;
 export const MAX_MOBILE_AUTH_RESPONSE_BYTES = 256 * 1024;
 export const MAX_MOBILE_RPC_RESPONSE_BYTES = 16 * 1024 * 1024;
@@ -513,7 +513,7 @@ export async function authHeaders(
   return {
     ...clientBuild.headers(),
     ...(token ? { authorization: `Bearer ${token}` } : {}),
-    ...(spaceId ? { "x-rakazo-space-id": spaceId } : {}),
+    ...(spaceId ? { "x-atlas-space-id": spaceId } : {}),
   };
 }
 
@@ -525,7 +525,7 @@ export type ApiRequestContext = {
 
 /** Keeps consent prompts separate across servers and the selected Space. */
 export function aiConsentCoalesceKey(requestContext: ApiRequestContext): string {
-  return [requestContext.apiBase, requestContext.headers["x-rakazo-space-id"] ?? ""].join("\u0000");
+  return [requestContext.apiBase, requestContext.headers["x-atlas-space-id"] ?? ""].join("\u0000");
 }
 
 /** Pins a request to the current server and session, and to a Space (the selected one by default). */
@@ -548,7 +548,7 @@ async function postAuth(path: string, input: Record<string, string>) {
     `${currentApiBase()}/api/auth/${path}`,
     {
       method: "POST",
-      headers: { "content-type": "application/json", origin: "rakazo://" },
+      headers: { "content-type": "application/json", origin: "atlas://" },
       body: JSON.stringify(input),
     },
     {},
@@ -613,7 +613,7 @@ export type PasswordResetCapabilities = AuthCapabilities;
 export async function passwordResetCapabilities(): Promise<PasswordResetCapabilities> {
   const { response, body } = await fetchMobileJson<unknown>(
     `${currentApiBase()}/api/auth/capabilities`,
-    { headers: { origin: "rakazo://" } },
+    { headers: { origin: "atlas://" } },
   );
   if (!response.ok) throw new Error(t("Could not load sign-in options"));
   return authCapabilitiesSchema.or(legacyAuthCapabilitiesSchema).parse(body);
@@ -624,7 +624,7 @@ export async function requestPasswordReset(email: string, redirectTo: string): P
     `${currentApiBase()}/api/auth/request-password-reset`,
     {
       method: "POST",
-      headers: { "content-type": "application/json", origin: "rakazo://" },
+      headers: { "content-type": "application/json", origin: "atlas://" },
       body: JSON.stringify({ email, redirectTo }),
     },
     {},
@@ -646,7 +646,7 @@ export async function updateAccountName(name: string): Promise<void> {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        origin: "rakazo://",
+        origin: "atlas://",
         ...(await authHeaders()),
       },
       body: JSON.stringify({ name: nextName }),
@@ -681,7 +681,7 @@ async function replaceSessionAfterPasswordChange(currentPassword: string, newPas
       method: "POST",
       headers: {
         "content-type": "application/json",
-        origin: "rakazo://",
+        origin: "atlas://",
         ...headers,
       },
       body: JSON.stringify({ currentPassword, newPassword, revokeOtherSessions: true }),
@@ -765,7 +765,7 @@ export async function signOut() {
         `${currentApiBase()}/api/auth/sign-out`,
         {
           method: "POST",
-          headers: { "content-type": "application/json", origin: "rakazo://", ...headers },
+          headers: { "content-type": "application/json", origin: "atlas://", ...headers },
           body: "{}",
           signal: controller.signal,
         },
@@ -790,7 +790,7 @@ export async function deleteAccount(password?: string, token?: string) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        origin: "rakazo://",
+        origin: "atlas://",
         ...(await authHeaders()),
       },
       body: JSON.stringify({ password, token }),
@@ -893,7 +893,7 @@ async function request(
   // a 401 arriving after the user switched Spaces — including A → B → A —
   // belongs to a stale request and must not touch the current selection.
   const requestHeaders = consentContext?.headers ?? (await authHeaders());
-  const requestSpaceId = requestHeaders["x-rakazo-space-id"];
+  const requestSpaceId = requestHeaders["x-atlas-space-id"];
   try {
     if (
       consentContext?.sessionGeneration !== undefined &&
@@ -909,7 +909,7 @@ async function request(
           method: "POST",
           headers: {
             "content-type": "application/json",
-            origin: "rakazo://",
+            origin: "atlas://",
             ...requestHeaders,
             ...correlation,
           },
@@ -1330,7 +1330,7 @@ export async function subscribeThread(
       headers: {
         "content-type": "application/json",
         accept: "text/event-stream",
-        origin: "rakazo://",
+        origin: "atlas://",
         ...context.headers,
       },
       body: JSON.stringify({ json: { ...target, cursor } }),
@@ -1805,7 +1805,7 @@ export { loadSessionToken };
 export async function fetchAccountSecurity(): Promise<AccountSecurity> {
   const { response, body } = await fetchMobileJson<unknown>(
     `${currentApiBase()}/api/auth/account-security`,
-    { headers: { origin: "rakazo://", ...(await authHeaders()) } },
+    { headers: { origin: "atlas://", ...(await authHeaders()) } },
     null,
   );
   // Older servers support password accounts and the original change/delete endpoints.
@@ -1825,7 +1825,7 @@ async function postSignedInAuth(path: string, payload: Record<string, string> = 
       method: "POST",
       headers: {
         "content-type": "application/json",
-        origin: "rakazo://",
+        origin: "atlas://",
         ...(await authHeaders()),
       },
       body: JSON.stringify(payload),

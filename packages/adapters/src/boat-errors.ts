@@ -1,7 +1,7 @@
 import { setTimeout as delay } from "node:timers/promises";
+import { SandboxRateLimitError, SandboxUnresponsiveError } from "@atlas/adapter-kit";
+import { redactSecrets } from "@atlas/core";
 import { FetchError, ResponseError } from "@boatdev/sdk";
-import { SandboxRateLimitError, SandboxUnresponsiveError } from "@rakazo/adapter-kit";
-import { redactSecrets } from "@rakazo/core";
 import { readBodyCapped } from "./web-ssrf.js";
 
 const MAX_BOAT_ERROR_RESPONSE_BYTES = 16 * 1024;

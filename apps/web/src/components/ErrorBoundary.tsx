@@ -1,4 +1,3 @@
-import { Trans } from "@lingui/react/macro";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -7,7 +6,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { Trans } from "@lingui/react/macro";
 import type { ComponentType, ReactNode } from "react";
 import { Component } from "react";
 import { lazyComponent } from "../lib/preload-recovery";

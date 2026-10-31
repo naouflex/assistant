@@ -1,4 +1,4 @@
-import type { UserDeviceHub, UserDevices } from "@rakazo/adapters";
+import type { UserDeviceHub, UserDevices } from "@atlas/adapters";
 import {
   createUserDeviceToken,
   hashUserDeviceToken,
@@ -7,16 +7,16 @@ import {
   USER_DEVICE_LIMIT,
   userDeviceForwardBody,
   validUserDeviceForwardSecret,
-} from "@rakazo/adapters";
-import type { UserDeviceList, UserDevicePairResponse } from "@rakazo/contracts";
+} from "@atlas/adapters";
+import type { UserDeviceList, UserDevicePairResponse } from "@atlas/contracts";
 import {
   USER_DEVICE_CONNECT_PATH,
   USER_DEVICE_PAIR_PATH,
   USER_DEVICE_PATH,
   userDevicePairRequest,
-} from "@rakazo/contracts";
-import type { PrismaClient } from "@rakazo/db";
-import { recordSecurityEvent, runAsSystem } from "@rakazo/db";
+} from "@atlas/contracts";
+import type { PrismaClient } from "@atlas/db";
+import { recordSecurityEvent, runAsSystem } from "@atlas/db";
 import type { Hono } from "hono";
 import { readBoundedBody } from "./http-body.js";
 

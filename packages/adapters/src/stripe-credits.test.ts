@@ -1,4 +1,4 @@
-import { BillingNoMonthlyCreditsError } from "@rakazo/adapter-kit";
+import { BillingNoMonthlyCreditsError } from "@atlas/adapter-kit";
 import { describe, expect, it, vi } from "vitest";
 import { StripeBillingProvider } from "./stripe-billing.js";
 
@@ -288,7 +288,7 @@ describe("Stripe prepaid model credits", () => {
     expect(body.get("payment_behavior")).toBe("error_if_incomplete");
     expect(body.get("metadata[rakazo_credit_cents]")).toBe("2000");
     expect(requests.find((r) => r.params.has("product_data[name]"))?.params.get("lookup_key")).toBe(
-      "rakazo_monthly_credits_2000",
+      "atlas_monthly_credits_2000",
     );
   });
   it("names a change to an ended monthly plan as having no plan to change", async () => {

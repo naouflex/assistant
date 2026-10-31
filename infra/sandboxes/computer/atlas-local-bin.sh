@@ -4,11 +4,11 @@
 # shows up there. Restore the sandbox home bin for every login shell, including
 # the agent shell (`bash -lc`).
 if [ -n "${HOME:-}" ]; then
-  rakazo_local_bin="${HOME}/.local/bin"
+  atlas_local_bin="${HOME}/.local/bin"
   case ":${PATH:-}:" in
-    *":${rakazo_local_bin}:"*) ;;
-    *) PATH="${rakazo_local_bin}${PATH:+:$PATH}" ;;
+    *":${atlas_local_bin}:"*) ;;
+    *) PATH="${atlas_local_bin}${PATH:+:$PATH}" ;;
   esac
   export PATH
-  unset rakazo_local_bin
+  unset atlas_local_bin
 fi

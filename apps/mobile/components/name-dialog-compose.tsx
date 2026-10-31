@@ -1,3 +1,4 @@
+import { tokensForAppearance } from "@atlas/ui-tokens";
 import {
   AlertDialog,
   Host,
@@ -6,7 +7,6 @@ import {
   TextButton,
   useNativeState,
 } from "@expo/ui/jetpack-compose";
-import { tokensForAppearance } from "@rakazo/ui-tokens";
 import { useI18n } from "../lib/i18n";
 import { useResolvedAppearance } from "../lib/native";
 import type { NameDialogProps } from "./name-dialog";

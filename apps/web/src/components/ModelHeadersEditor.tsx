@@ -1,6 +1,6 @@
+import type { ModelHeaderRow } from "@atlas/contracts";
+import { Button, Input } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ModelHeaderRow } from "@rakazo/contracts";
-import { Button, Input } from "@rakazo/ui-web";
 import { X } from "lucide-react";
 
 export function ModelHeadersEditor({

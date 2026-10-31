@@ -1,4 +1,4 @@
-import type { ModelHeaderRow, ModelOAuthBegin, ThinkingLevel } from "@rakazo/contracts";
+import type { ModelHeaderRow, ModelOAuthBegin, ThinkingLevel } from "@atlas/contracts";
 import {
   CLOUDFLARE_AI_GATEWAY_PROVIDER_ID,
   cloudflareModelRouting,
@@ -14,7 +14,7 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_HINT,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   savedCompatibleEndpointMatches,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   COMPATIBLE_THINKING_LEVELS,
   clampCatalogThinkingLevel,
@@ -28,7 +28,7 @@ import {
   modelConnectRequest,
   savedCompatibleModelIds,
   toggleEnabledModelId,
-} from "@rakazo/core";
+} from "@atlas/core";
 import * as Clipboard from "expo-clipboard";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -1056,7 +1056,7 @@ export default function ModelConnection() {
         {selected.auth === "oauth" && !subscriptionSignIn ? (
           <Text style={styles.secondary}>
             {t(
-              "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider.",
+              "This subscription sign-in is not available in Atlas yet. Use a deployment credential or choose another provider.",
             )}
           </Text>
         ) : null}

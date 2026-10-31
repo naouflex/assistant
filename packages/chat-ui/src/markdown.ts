@@ -1,7 +1,7 @@
 /// <reference path="./linkify-it.d.ts" />
 
-import type { MessageBlock } from "@rakazo/contracts";
-import { urlSite } from "@rakazo/core/egress";
+import type { MessageBlock } from "@atlas/contracts";
+import { urlSite } from "@atlas/core/egress";
 import LinkifyIt from "linkify-it";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useSyncExternalStore } from "react";
@@ -13,7 +13,7 @@ export type ChatMarkdownProps = {
   renderMention?: (id: string, name: string) => ReactNode;
 };
 
-const MENTION_URL_PREFIX = "rakazo-mention:";
+const MENTION_URL_PREFIX = "atlas-mention:";
 
 /** The id of a mention link, if this href is one. */
 export function markdownMentionId(href: string | undefined): string | undefined {
@@ -34,7 +34,7 @@ const CODE_MARKDOWN =
   "```[\\s\\S]*?(?:```|$)|~~~[\\s\\S]*?(?:~~~|$)|(?:^|\\n)(?: {4}|\\t)[^\\n]*|`[^`\\n]*`";
 const CODE = new RegExp(`(${CODE_MARKDOWN})`);
 const PROTECTED_MARKDOWN = new RegExp(`(${CODE_MARKDOWN}|!?\\[[^\\]\\n]*\\]\\([^)\\n]*\\))`);
-const MODEL_MENTION_LINK = /\[([^\]\n]*)\]\(\s*<?rakazo-mention:[^)\n]*\)/gi;
+const MODEL_MENTION_LINK = /\[([^\]\n]*)\]\(\s*<?atlas-mention:[^)\n]*\)/gi;
 const OPENS_WITH_BLOCK = /^\s*(#|>|\||```|~~~|[-*+]\s|\d+[.)]\s)/;
 
 function linkFirstName(text: string, name: string, link: string): string | undefined {
@@ -406,7 +406,7 @@ export function linkFaviconOrigin(href: string): string | undefined {
 }
 
 /**
- * Where link icons come from. Apps load them through the Rakazo API, which fetches and caches
+ * Where link icons come from. Apps load them through the Atlas API, which fetches and caches
  * them, so a device never contacts the linked site or an icon service. `globe` is the native
  * fallback glyph; web draws its own.
  */

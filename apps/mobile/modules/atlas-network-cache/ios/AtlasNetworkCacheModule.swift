@@ -1,15 +1,15 @@
 import ExpoModulesCore
 
-public class RakazoNetworkCacheModule: Module {
+public class AtlasNetworkCacheModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("RakazoNetworkCache")
+    Name("AtlasNetworkCache")
 
     OnCreate {
       // Cookie deletions can be lost if the app is killed before they reach disk, so repeat
       // them on every launch; the app never uses cookies.
       clearCookies()
       // Builds before no-store replies left account and chat responses in the system cache.
-      let key = "rakazo.networkCacheCleared"
+      let key = "atlas.networkCacheCleared"
       if !UserDefaults.standard.bool(forKey: key) {
         URLCache.shared.removeAllCachedResponses()
         UserDefaults.standard.set(true, forKey: key)

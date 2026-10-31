@@ -1,14 +1,12 @@
-import { t } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   ModelCatalogEntry,
   ModelCredential,
   Routine,
   RoutineWatch,
   RoutineWatchInput,
-} from "@rakazo/contracts";
-import { ROUTINE_WATCH_DEFAULT_MINUTES, ROUTINE_WATCH_MIN_MINUTES } from "@rakazo/contracts";
-import type { CronFreq, CronLabels, CronPreset } from "@rakazo/core";
+} from "@atlas/contracts";
+import { ROUTINE_WATCH_DEFAULT_MINUTES, ROUTINE_WATCH_MIN_MINUTES } from "@atlas/contracts";
+import type { CronFreq, CronLabels, CronPreset } from "@atlas/core";
 import {
   credentialForModel,
   cronFromPreset,
@@ -17,7 +15,7 @@ import {
   formatCron,
   isOneShotRoutineCrons,
   presetFromCron,
-} from "@rakazo/core";
+} from "@atlas/core";
 import {
   Button,
   DropdownMenu,
@@ -35,7 +33,9 @@ import {
   PopoverTrigger,
   Switch,
   Textarea,
-} from "@rakazo/ui-web";
+} from "@atlas/ui-web";
+import { t } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   ChevronLeft,
   Clock,

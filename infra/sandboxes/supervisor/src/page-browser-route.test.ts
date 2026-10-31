@@ -1,5 +1,5 @@
 import { Duplex, PassThrough, Readable, Writable } from "node:stream";
-import { resolveSupervisorToken } from "@rakazo/core";
+import { resolveSupervisorToken } from "@atlas/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mock = vi.hoisted(() => ({ exec: vi.fn(), inspect: vi.fn(), stdin: [] as string[] }));
@@ -20,7 +20,7 @@ beforeEach(() => {
   mock.stdin.length = 0;
   mock.inspect.mockResolvedValue({
     Config: {
-      Labels: { "rakazo.managed": "true", "rakazo.botId": "home", "rakazo.spaceId": "space" },
+      Labels: { "atlas.managed": "true", "atlas.botId": "home", "atlas.spaceId": "space" },
     },
   });
   mock.exec.mockImplementation(async (options: { Cmd: string[] }) => ({
@@ -29,7 +29,7 @@ beforeEach(() => {
       Duplex.from({
         readable: Readable.from([
           Buffer.from(
-            options.Cmd.includes("/usr/local/bin/rakazo-page-browser")
+            options.Cmd.includes("/usr/local/bin/atlas-page-browser")
               ? JSON.stringify({
                   ok: true,
                   url: "https://example.test",
@@ -57,10 +57,10 @@ async function snapshot(id: string, screen: string, lease: string, home = "home"
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": home,
-      "x-rakazo-space-id": "space",
-      "x-rakazo-screen-id": screen,
-      "x-rakazo-screen-lease-id": lease,
+      "x-atlas-bot-id": home,
+      "x-atlas-space-id": "space",
+      "x-atlas-screen-id": screen,
+      "x-atlas-screen-lease-id": lease,
     },
     body: JSON.stringify({ command: "snapshot" }),
   });
@@ -76,11 +76,11 @@ it("resolves the owned display and refuses an older fence before running the hel
   expect(mock.exec.mock.calls.at(-1)?.[0]).toMatchObject({
     Env: [
       "DISPLAY=:2",
-      "RAKAZO_CDP_PORT=9223",
-      "HOME=/home/rakazo",
+      "ATLAS_CDP_PORT=9223",
+      "HOME=/home/atlas",
       "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-      "RAKAZO_BROWSER_WATCH_STDIN=1",
-      "RAKAZO_BROWSER_ARGS_STDIN=1",
+      "ATLAS_BROWSER_WATCH_STDIN=1",
+      "ATLAS_BROWSER_ARGS_STDIN=1",
     ],
   });
   mock.exec.mockClear();
@@ -194,7 +194,7 @@ it("closes helper stdin when the request is cancelled", async () => {
   });
   const defaultExec = mock.exec.getMockImplementation()!;
   mock.exec.mockImplementation(async (options: { Cmd: string[]; AttachStdin?: boolean }) => {
-    if (!options.Cmd.includes("/usr/local/bin/rakazo-page-browser")) return defaultExec(options);
+    if (!options.Cmd.includes("/usr/local/bin/atlas-page-browser")) return defaultExec(options);
     expect(options.AttachStdin).toBe(true);
     return {
       start: async (options: { stdin: boolean }) => {
@@ -211,8 +211,8 @@ it("closes helper stdin when the request is cancelled", async () => {
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": "home",
-      "x-rakazo-space-id": "space",
+      "x-atlas-bot-id": "home",
+      "x-atlas-space-id": "space",
     },
     body: JSON.stringify({ command: "act", actions: [{ kind: "click", ref: "test-ref" }] }),
   });
@@ -255,19 +255,19 @@ it.each([
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": "home",
-      "x-rakazo-space-id": "space",
-      "x-rakazo-screen-id": "first",
-      "x-rakazo-screen-lease-id": "run:9",
+      "x-atlas-bot-id": "home",
+      "x-atlas-space-id": "space",
+      "x-atlas-screen-id": "first",
+      "x-atlas-screen-lease-id": "run:9",
     },
     body: JSON.stringify({ command: "act", actions }),
   });
   expect(await response.json()).toMatchObject({ ok: true });
   const helperCall = mock.exec.mock.calls.find(([options]) =>
-    options.Cmd.includes("/usr/local/bin/rakazo-page-browser"),
+    options.Cmd.includes("/usr/local/bin/atlas-page-browser"),
   )!;
   expect(JSON.stringify(helperCall[0].Cmd)).not.toContain(fill.text);
-  expect(helperCall[0].Env).toContain("RAKAZO_BROWSER_ARGS_STDIN=1");
+  expect(helperCall[0].Env).toContain("ATLAS_BROWSER_ARGS_STDIN=1");
   expect(mock.stdin.join("")).toBe(`${JSON.stringify({ command: "act", actions })}\n`);
 });
 
@@ -277,7 +277,7 @@ it.each([
 ])("reports a helper that exceeds its deadline as a timeout: %j", async (body, advice) => {
   const defaultExec = mock.exec.getMockImplementation()!;
   mock.exec.mockImplementation(async (options: { Cmd: string[] }) => {
-    if (options.Cmd.includes("/usr/local/bin/rakazo-page-browser")) {
+    if (options.Cmd.includes("/usr/local/bin/atlas-page-browser")) {
       return {
         start: async () =>
           Duplex.from({ readable: Readable.from([]), writable: new PassThrough() }),
@@ -297,10 +297,10 @@ it.each([
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": "home",
-      "x-rakazo-space-id": "space",
-      "x-rakazo-screen-id": "first",
-      "x-rakazo-screen-lease-id": "run:1",
+      "x-atlas-bot-id": "home",
+      "x-atlas-space-id": "space",
+      "x-atlas-screen-id": "first",
+      "x-atlas-screen-lease-id": "run:1",
     },
     body: JSON.stringify(body),
   });
@@ -329,7 +329,7 @@ it("passes a settled step error through with the page, without a desktop fallbac
   };
   const defaultExec = mock.exec.getMockImplementation()!;
   mock.exec.mockImplementation(async (options: { Cmd: string[] }) =>
-    options.Cmd.includes("/usr/local/bin/rakazo-page-browser")
+    options.Cmd.includes("/usr/local/bin/atlas-page-browser")
       ? {
           start: async () =>
             Duplex.from({
@@ -345,10 +345,10 @@ it("passes a settled step error through with the page, without a desktop fallbac
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": "home",
-      "x-rakazo-space-id": "space",
-      "x-rakazo-screen-id": "first",
-      "x-rakazo-screen-lease-id": "run:1",
+      "x-atlas-bot-id": "home",
+      "x-atlas-space-id": "space",
+      "x-atlas-screen-id": "first",
+      "x-atlas-screen-lease-id": "run:1",
     },
     body: JSON.stringify({ command: "act", actions: [{ kind: "fill", ref: "e5", text: "2019" }] }),
   });
@@ -363,8 +363,8 @@ async function uploadRequest(roots?: unknown) {
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": "home",
-      "x-rakazo-space-id": "space",
+      "x-atlas-bot-id": "home",
+      "x-atlas-space-id": "space",
     },
     body: JSON.stringify({
       command: "act",
@@ -393,37 +393,37 @@ it.each([["a", "b", "c"], [""], ["x".repeat(1025)]])(
 );
 
 it.each([undefined, "5"])("forwards the upload size override only when set: %j", async (limit) => {
-  const original = process.env.RAKAZO_BROWSER_UPLOAD_MAX_BYTES;
+  const original = process.env.ATLAS_BROWSER_UPLOAD_MAX_BYTES;
   try {
-    if (limit === undefined) delete process.env.RAKAZO_BROWSER_UPLOAD_MAX_BYTES;
-    else process.env.RAKAZO_BROWSER_UPLOAD_MAX_BYTES = limit;
+    if (limit === undefined) delete process.env.ATLAS_BROWSER_UPLOAD_MAX_BYTES;
+    else process.env.ATLAS_BROWSER_UPLOAD_MAX_BYTES = limit;
     expect(await (await uploadRequest()).json()).toMatchObject({ ok: true });
     const helper = mock.exec.mock.calls.find(([options]) =>
-      options.Cmd.includes("/usr/local/bin/rakazo-page-browser"),
+      options.Cmd.includes("/usr/local/bin/atlas-page-browser"),
     )!;
     const overrides = helper[0].Env.filter((value: string) =>
-      value.startsWith("RAKAZO_BROWSER_UPLOAD_MAX_BYTES="),
+      value.startsWith("ATLAS_BROWSER_UPLOAD_MAX_BYTES="),
     );
     expect(overrides).toEqual(
-      limit === undefined ? [] : [`RAKAZO_BROWSER_UPLOAD_MAX_BYTES=${limit}`],
+      limit === undefined ? [] : [`ATLAS_BROWSER_UPLOAD_MAX_BYTES=${limit}`],
     );
   } finally {
-    if (original === undefined) delete process.env.RAKAZO_BROWSER_UPLOAD_MAX_BYTES;
-    else process.env.RAKAZO_BROWSER_UPLOAD_MAX_BYTES = original;
+    if (original === undefined) delete process.env.ATLAS_BROWSER_UPLOAD_MAX_BYTES;
+    else process.env.ATLAS_BROWSER_UPLOAD_MAX_BYTES = original;
   }
 });
 
 describe("screen setup reuse", () => {
   const bootedAt = "2026-10-27T00:00:00.000Z";
   const helper = (options: { Cmd: string[] }) =>
-    options.Cmd.includes("/usr/local/bin/rakazo-page-browser");
+    options.Cmd.includes("/usr/local/bin/atlas-page-browser");
   const commands = () =>
     mock.exec.mock.calls.map(([options]) => (helper(options) ? "helper" : "setup"));
 
   beforeEach(() => {
     mock.inspect.mockResolvedValue({
       Config: {
-        Labels: { "rakazo.managed": "true", "rakazo.botId": "home", "rakazo.spaceId": "space" },
+        Labels: { "atlas.managed": "true", "atlas.botId": "home", "atlas.spaceId": "space" },
       },
       State: { StartedAt: bootedAt },
     });

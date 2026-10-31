@@ -1,9 +1,9 @@
-# Optional drop-in: /etc/systemd/system/rakazo-backup.service.d/alerts.conf
+# Optional drop-in: /etc/systemd/system/atlas-backup.service.d/alerts.conf
 [Unit]
-OnFailure=rakazo-backup-alert.service
+OnFailure=atlas-backup-alert.service
 
 [Service]
-ExecStartPost=-/usr/local/sbin/rakazo-host-alert backup-failure ""
-ReadWritePaths=/var/lib/rakazo/alerts
-StateDirectory=rakazo/alerts
+ExecStartPost=-/usr/local/sbin/atlas-host-alert backup-failure ""
+ReadWritePaths=/var/lib/atlas/alerts
+StateDirectory=atlas/alerts
 StateDirectoryMode=0700

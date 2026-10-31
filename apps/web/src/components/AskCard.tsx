@@ -1,20 +1,20 @@
-import { t } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { ChatMarkdown } from "@rakazo/chat-ui/web";
-import type { LoginFieldInput, ThreadMessage } from "@rakazo/contracts";
+import { ChatMarkdown } from "@atlas/chat-ui/web";
+import type { LoginFieldInput, ThreadMessage } from "@atlas/contracts";
 import {
   BOT_INSTRUCTIONS_MAX_LENGTH,
   commandVariableName,
   LoginSecretValue,
   loginCardFields,
-} from "@rakazo/contracts";
+} from "@atlas/contracts";
 import {
   isApprovalAskBlock,
   isSecretAskBlock,
   resolveAskChoice,
   selectedAskActionLabel,
-} from "@rakazo/core";
-import { Button, Input, Label, Switch, Textarea } from "@rakazo/ui-web";
+} from "@atlas/core";
+import { Button, Input, Label, Switch, Textarea } from "@atlas/ui-web";
+import { t } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Check } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { rpc } from "../lib/rpc";

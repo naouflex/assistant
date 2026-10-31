@@ -1,12 +1,10 @@
-import { i18n } from "@lingui/core";
-import { useLingui } from "@lingui/react/macro";
 import type {
   BotAvatarSet,
   LoginFieldInput,
   MessageReaction,
   ThreadMessage,
-} from "@rakazo/contracts";
-import type { FoldedTranscript } from "@rakazo/core";
+} from "@atlas/contracts";
+import type { FoldedTranscript } from "@atlas/core";
 import {
   expandPeerReplies,
   groupVoiceChats,
@@ -19,9 +17,11 @@ import {
   timeSeparatorIds,
   unreadDividerMessageId,
   voiceChatHoldsMessage,
-} from "@rakazo/core";
-import type { GroupAvatarMember } from "@rakazo/ui-web";
-import { Button, cn, Spinner } from "@rakazo/ui-web";
+} from "@atlas/core";
+import type { GroupAvatarMember } from "@atlas/ui-web";
+import { Button, cn, Spinner } from "@atlas/ui-web";
+import { i18n } from "@lingui/core";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowDown } from "lucide-react";
 import type { CSSProperties, RefObject } from "react";
 import {

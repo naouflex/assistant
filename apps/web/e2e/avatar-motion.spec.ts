@@ -10,8 +10,8 @@ test("photo working avatars show a visible ring while idle avatars stay plain", 
   const working = page.locator(".avatar-working");
   await expect(working).toBeVisible();
   await expect(working).toHaveAttribute("data-working", "true");
-  const picture = working.locator(".rakazo-bot-avatar-picture");
-  const ring = working.locator(".rakazo-bot-avatar-ring");
+  const picture = working.locator(".atlas-bot-avatar-picture");
+  const ring = working.locator(".atlas-bot-avatar-ring");
   await expect(picture).toBeVisible();
   await expect(ring).toBeVisible();
 
@@ -30,9 +30,9 @@ test("photo working avatars show a visible ring while idle avatars stay plain", 
   });
   expect(overflow).not.toBe("hidden");
   expect(pictureOverflow).toBe("hidden");
-  expect(ringAnimation).toBe("rakazo-avatar-spin");
+  expect(ringAnimation).toBe("atlas-avatar-spin");
   expect(ringColor).toBe(workingColor);
-  expect(pictureAnimation).toBe("rakazo-avatar-breathe");
+  expect(pictureAnimation).toBe("atlas-avatar-breathe");
   const firstPictureTransform = await picture.evaluate((el) => getComputedStyle(el).transform);
   await page.waitForTimeout(300);
   const secondPictureTransform = await picture.evaluate((el) => getComputedStyle(el).transform);
@@ -40,8 +40,8 @@ test("photo working avatars show a visible ring while idle avatars stay plain", 
 
   const idle = page.locator(".avatar-idle");
   await expect(idle).toHaveAttribute("data-working", "false");
-  await expect(idle.locator(".rakazo-bot-avatar-ring")).toHaveCount(0);
-  await expect(idle.locator(".rakazo-bot-avatar-picture")).toHaveCSS("animation-name", "none");
+  await expect(idle.locator(".atlas-bot-avatar-ring")).toHaveCount(0);
+  await expect(idle.locator(".atlas-bot-avatar-picture")).toHaveCSS("animation-name", "none");
   await captureScreenshot(page, testInfo, "avatar-photo-working-and-idle");
 });
 
@@ -53,8 +53,8 @@ test("photo avatar animations stay still when reduced motion is enabled", async 
   await expect(avatar).toBeVisible();
   await expect(avatar).toHaveAttribute("data-working", "true");
 
-  const ring = avatar.locator(".rakazo-bot-avatar-ring");
-  const picture = avatar.locator(".rakazo-bot-avatar-picture");
+  const ring = avatar.locator(".atlas-bot-avatar-ring");
+  const picture = avatar.locator(".atlas-bot-avatar-picture");
   await expect(ring).toBeVisible();
   const snapshot = () =>
     Promise.all([

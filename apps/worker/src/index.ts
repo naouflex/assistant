@@ -1,10 +1,10 @@
 import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
-import type { JobPublisher, JobWorkerHost } from "@rakazo/adapter-kit";
-import { ComposioConnector, IntegrationProviderSettings } from "@rakazo/adapters";
-import { phoneCallSettings } from "@rakazo/core";
-import { loadRootEnv } from "@rakazo/core/node/load-root-env";
-import { stopOnShutdownSignals } from "@rakazo/core/node/shutdown-signals";
+import type { JobPublisher, JobWorkerHost } from "@atlas/adapter-kit";
+import { ComposioConnector, IntegrationProviderSettings } from "@atlas/adapters";
+import { phoneCallSettings } from "@atlas/core";
+import { loadRootEnv } from "@atlas/core/node/load-root-env";
+import { stopOnShutdownSignals } from "@atlas/core/node/shutdown-signals";
 import { startWorkerHealth, watchEventLoopStalls } from "./health.js";
 import { createWorkerSecretStore } from "./secret-store.js";
 
@@ -74,8 +74,8 @@ import {
   userDeviceForwardSecret,
   withRunWorker,
   withSecretPersistence,
-} from "@rakazo/adapters";
-import { resolveEncryptionKey, resolveSupervisorToken, uploadSizeFromEnv } from "@rakazo/core";
+} from "@atlas/adapters";
+import { resolveEncryptionKey, resolveSupervisorToken, uploadSizeFromEnv } from "@atlas/core";
 import {
   createBoardEvents,
   createDb,
@@ -92,10 +92,10 @@ import {
   runAsSystem,
   securityEventRetentionDays,
   verifyContentKeys,
-} from "@rakazo/db";
-import { SERVICE_NAMES } from "@rakazo/logging";
-import { createRootLogger } from "@rakazo/logging/axiom";
-import { MarkdownMemoryStore } from "@rakazo/memory";
+} from "@atlas/db";
+import { SERVICE_NAMES } from "@atlas/logging";
+import { createRootLogger } from "@atlas/logging/axiom";
+import { MarkdownMemoryStore } from "@atlas/memory";
 
 const logger = createRootLogger(SERVICE_NAMES.worker);
 
@@ -113,7 +113,7 @@ async function main() {
   // A larger max competes for Postgres max_connections (53300).
   const created = createDb(databaseUrl, {
     poolMax,
-    applicationName: "rakazo-worker",
+    applicationName: "atlas-worker",
     keyProvider: contentKeyProviderFromEnv(),
   });
   const { pool } = created;

@@ -1,5 +1,5 @@
-import { accountDisplay } from "@rakazo/core";
-import { typeScale } from "@rakazo/ui-tokens";
+import { accountDisplay } from "@atlas/core";
+import { typeScale } from "@atlas/ui-tokens";
 import { AudioModule } from "expo-audio";
 import { useKeepAwake } from "expo-keep-awake";
 import { useRouter } from "expo-router";
@@ -29,7 +29,7 @@ let cachedInitial: string | null = null;
 
 /** Fallback until the native call service owns the call. */
 function KeepCallAwake() {
-  useKeepAwake("rakazo-call");
+  useKeepAwake("atlas-call");
   return null;
 }
 
