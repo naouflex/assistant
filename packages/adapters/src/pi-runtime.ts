@@ -1,3 +1,5 @@
+import { appendFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
 import type {
   AdapterContext,
   AgentRunRequest,
@@ -28,6 +30,7 @@ import type {
 import { validateToolArguments } from "@earendil-works/pi-ai";
 import { uncertainEffectResult } from "./approval-effect.js";
 import { automated, withAutomatedLabels } from "./automated-messages.js";
+import { LOCAL_PAYLOAD_DUMP_ENV } from "./chat-completions-compat.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
 import { estimatePiImageTokens } from "./pi-image-context.js";
 import {
@@ -356,6 +359,7 @@ export class PiAgentRuntime implements AgentRuntime {
           onUsage: (usage: AgentUsage) => {
             contextPolicy.onUsage(usage);
             const decision = contextPolicy.getDecision();
+            recordLocalContextDecision(request, decision, usage);
             if (decision)
               this.onContextDecision?.({
                 ...decision,
@@ -1172,4 +1176,35 @@ function createQueue(): EventQueue {
       }
     },
   };
+}
+
+/** Appends context decisions next to the local payload dumps, for prefix-cache diagnostics. */
+function recordLocalContextDecision(
+  request: AgentRunRequest,
+  decision: unknown,
+  usage: AgentUsage,
+): void {
+  const directory = process.env[LOCAL_PAYLOAD_DUMP_ENV]?.trim();
+  if (!directory || !decision) return;
+  try {
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    appendFileSync(
+      path.join(directory, "context-decisions.jsonl"),
+      `${JSON.stringify({
+        at: new Date().toISOString(),
+        runId: request.runId,
+        provider: request.model.provider,
+        cacheWindow: request.model.cacheCapabilities?.retentionMs ?? null,
+        contextStrategy: request.contextStrategy ?? null,
+        historyTools: ["read_history", "search_history"].filter((name) =>
+          request.tools.some((tool) => tool.name === name),
+        ),
+        decision,
+        usage,
+      })}\n`,
+      { mode: 0o600 },
+    );
+  } catch {
+    // Diagnostics must never break a run.
+  }
 }
