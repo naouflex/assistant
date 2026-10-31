@@ -36,7 +36,7 @@ function notify() {
   for (const listener of listeners) listener();
 }
 
-/** Saved choice wins. Nothing saved leaves streaming off. */
+/** Saved choice wins. Nothing saved streams replies. */
 export function resolveResponseStreamingPreference(
   options: ResolveResponseStreamingOptions = {},
 ): ResponseStreamingPreference {

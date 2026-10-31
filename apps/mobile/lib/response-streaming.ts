@@ -16,7 +16,7 @@ function notify() {
 }
 
 export function getCachedResponseStreamingPreference(): ResponseStreamingPreference {
-  return memoryPreference ?? "off";
+  return memoryPreference ?? "on";
 }
 
 export function getCachedResponseStreamingEnabled(): boolean {
@@ -28,7 +28,7 @@ export async function loadResponseStreamingPreference(): Promise<ResponseStreami
     const stored = await SecureStore.getItemAsync(RESPONSE_STREAMING_STORAGE_KEY);
     memoryPreference = normalizeResponseStreamingPreference(stored);
   } catch {
-    memoryPreference = memoryPreference ?? "off";
+    memoryPreference = memoryPreference ?? "on";
   }
   notify();
   return memoryPreference;

@@ -48,15 +48,15 @@ describe("isRunTerminalEvent", () => {
 });
 
 describe("response streaming preference", () => {
-  it("enables streaming only for an explicit on value", () => {
+  it("streams unless the saved value is off", () => {
     expect(normalizeResponseStreamingPreference("on")).toBe("on");
     expect(normalizeResponseStreamingPreference(" ON ")).toBe("on");
     expect(normalizeResponseStreamingPreference("off")).toBe("off");
     expect(normalizeResponseStreamingPreference(" OFF ")).toBe("off");
-    expect(normalizeResponseStreamingPreference("")).toBe("off");
-    expect(normalizeResponseStreamingPreference(null)).toBe("off");
-    expect(normalizeResponseStreamingPreference("maybe")).toBe("off");
-    expect(responseStreamingEnabled()).toBe(false);
+    expect(normalizeResponseStreamingPreference("")).toBe("on");
+    expect(normalizeResponseStreamingPreference(null)).toBe("on");
+    expect(normalizeResponseStreamingPreference("maybe")).toBe("on");
+    expect(responseStreamingEnabled()).toBe(true);
     expect(responseStreamingEnabled("off")).toBe(false);
     expect(responseStreamingEnabled("on")).toBe(true);
   });

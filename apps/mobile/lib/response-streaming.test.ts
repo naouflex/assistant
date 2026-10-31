@@ -17,13 +17,13 @@ describe("mobile response streaming preference", () => {
     vi.unstubAllEnvs();
   });
 
-  it("defaults to streaming off", async () => {
+  it("defaults to streaming on", async () => {
     const { getCachedResponseStreamingEnabled, setResponseStreamingPreference } = await import(
       "./response-streaming"
     );
-    expect(getCachedResponseStreamingEnabled()).toBe(false);
-    await setResponseStreamingPreference("on");
     expect(getCachedResponseStreamingEnabled()).toBe(true);
+    await setResponseStreamingPreference("off");
+    expect(getCachedResponseStreamingEnabled()).toBe(false);
   });
 
   it("loads a saved on preference and notifies subscribers", async () => {
@@ -62,9 +62,9 @@ describe("mobile response streaming preference", () => {
     await pending;
   });
 
-  it("normalizes an empty stored value to off", async () => {
+  it("normalizes an empty stored value to on", async () => {
     store.set(RESPONSE_STREAMING_STORAGE_KEY, "");
     const { loadResponseStreamingPreference } = await import("./response-streaming");
-    await expect(loadResponseStreamingPreference()).resolves.toBe("off");
+    await expect(loadResponseStreamingPreference()).resolves.toBe("on");
   });
 });
