@@ -1,0 +1,8 @@
+Atlas
+Copyright 2026 Naoufel and Atlas contributors
+
+Atlas is derived from Rakazo by elie222 (https://github.com/elie222/rakazo),
+licensed under the Apache License, Version 2.0. The original copyright notice
+in LICENSE is retained. Files in this repository were modified to rename the
+product from Rakazo to Atlas and to add the Atlas logo; see git history and
+MIGRATING-TO-ATLAS.md for details.

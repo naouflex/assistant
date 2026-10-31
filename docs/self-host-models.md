@@ -29,7 +29,7 @@ The Compose files also pass the standard provider key variables the agent runtim
 (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `GROQ_API_KEY`, `XAI_API_KEY` and others) to
 the API and worker, for models that have no stored credential.
 
-`RAKAZO_LIVE_MODEL_CATALOG=off` disables provider and Codex live catalog probing; the default is on.
+`ATLAS_LIVE_MODEL_CATALOG=off` disables provider and Codex live catalog probing; the default is on.
 
 ## Approvals
 
@@ -41,19 +41,19 @@ approvals apart from the account.
 
 In **Settings → Models → Approval model**, each user can select a model
 from an existing connection and add ordered backups, independently of their main model. Personal
-connections use their own credentials; hosted calls follow the same Rakazo credit rules as chat.
+connections use their own credentials; hosted calls follow the same Atlas credit rules as chat.
 Backups are tried only when a checker fails. An explicit ask, including an uncertain decision,
 still requires a person.
 
 The deployment checker remains the default when no approval model is selected. For OpenRouter
-Jev, set `RAKAZO_AUTO_REVIEW_PROVIDER=openrouter` and
-`RAKAZO_AUTO_REVIEW_MODEL=typesafe/jev-1.14`; it uses `OPENROUTER_API_KEY` and the Decisions API.
-TypeSafe direct remains available through `RAKAZO_AUTO_REVIEW_PROVIDER=jev` and
+Jev, set `ATLAS_AUTO_REVIEW_PROVIDER=openrouter` and
+`ATLAS_AUTO_REVIEW_MODEL=typesafe/jev-1.14`; it uses `OPENROUTER_API_KEY` and the Decisions API.
+TypeSafe direct remains available through `ATLAS_AUTO_REVIEW_PROVIDER=jev` and
 `TYPESAFE_API_KEY`. Core runs without either hosted service.
 
-With TypeSafe, `RAKAZO_AUTO_REVIEW_MODEL` defaults to `jev-latest`, and
-`RAKAZO_AUTO_REVIEW_MIN_CONFIDENCE` (0 to 1, default `0.5`) is the confidence below which Auto asks
-the person instead. `RAKAZO_AUTO_REVIEW_TIMEOUT_MS` (200 to 30000, default `10000`) bounds each
+With TypeSafe, `ATLAS_AUTO_REVIEW_MODEL` defaults to `jev-latest`, and
+`ATLAS_AUTO_REVIEW_MIN_CONFIDENCE` (0 to 1, default `0.5`) is the confidence below which Auto asks
+the person instead. `ATLAS_AUTO_REVIEW_TIMEOUT_MS` (200 to 30000, default `10000`) bounds each
 check.
 
 ## Local models
@@ -62,15 +62,15 @@ To use an operator-controlled OpenAI-compatible server such as Ollama, LM Studio
 MLX, list its model IDs and an endpoint that both the API and worker processes can reach:
 
 ```env
-RAKAZO_LOCAL_MODELS=qwen3:4b,llama3.1:8b,qwen3-vl
-RAKAZO_LOCAL_MODELS_URL=http://127.0.0.1:11434/v1
-RAKAZO_LOCAL_CONTEXT_WINDOW=32768
-RAKAZO_LOCAL_MAX_TOKENS=4096
+ATLAS_LOCAL_MODELS=qwen3:4b,llama3.1:8b,qwen3-vl
+ATLAS_LOCAL_MODELS_URL=http://127.0.0.1:11434/v1
+ATLAS_LOCAL_CONTEXT_WINDOW=32768
+ATLAS_LOCAL_MAX_TOKENS=4096
 # Optional: model ids on this endpoint that accept images (screenshot computer tools).
-RAKAZO_LOCAL_VISION_MODELS=qwen3-vl
+ATLAS_LOCAL_VISION_MODELS=qwen3-vl
 ```
 
-The loopback default is suitable when running Rakazo from a source checkout. From containers,
+The loopback default is suitable when running Atlas from a source checkout. From containers,
 prefer a stable LAN RFC1918 address (not Compose service DNS alone). On Docker Desktop,
 `host.docker.internal` also works.
 On Docker Desktop, a bot computer shell can often reach services bound to host `127.0.0.1`
@@ -78,11 +78,11 @@ through that same hostname. Do not run sensitive unauthenticated services on loo
 bots run, or firewall / block that path. Linux does not get `host.docker.internal` the same
 way by default.
 Only configure an endpoint you control: prompts, attachments, and tool results sent to that model
-leave Rakazo through this URL. Leave `RAKAZO_LOCAL_MODELS` blank to disable the provider.
+leave Atlas through this URL. Leave `ATLAS_LOCAL_MODELS` blank to disable the provider.
 
 ## Ollama Cloud
 
-In **Settings → Models**, choose **Ollama Cloud**, paste an API key from ollama.com, then **Find models**. This uses an OpenAI-compatible connection with no environment configuration, and stays available when `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=0`.
+In **Settings → Models**, choose **Ollama Cloud**, paste an API key from ollama.com, then **Find models**. This uses an OpenAI-compatible connection with no environment configuration, and stays available when `ATLAS_OPENAI_COMPAT_ALLOW_PUBLIC=0`.
 
 ## OpenAI-compatible connections
 
@@ -92,16 +92,16 @@ Each user can also connect their own OpenAI-compatible endpoint from **Connect a
 Add optional request headers under **Advanced**; values are stored encrypted, and only their names
 are shown afterwards.
 Public hosts and ordinary hostnames need HTTPS when they receive an API key or custom headers,
-and must resolve only to public addresses. Set `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=0` on the API
+and must resolve only to public addresses. Set `ATLAS_OPENAI_COMPAT_ALLOW_PUBLIC=0` on the API
 and worker to block them.
 Literal private IP, loopback, and `host.docker.internal` targets do not, but only the deployment
 owner can use them, checked on save, on model discovery, and on every run. Set
 `MCP_ALLOW_PRIVATE_ENDPOINT=true` on the API and worker to allow them for every user.
 For a self-hosted endpoint whose hostname resolves to private IPs, set
-`RAKAZO_OPENAI_COMPAT_PRIVATE_HOSTS=models.example.test,other.example.test` in the deployment
+`ATLAS_OPENAI_COMPAT_PRIVATE_HOSTS=models.example.test,other.example.test` in the deployment
 environment for both API and worker, then recreate those containers. Entries are exact hostnames
 (case-insensitive, optional trailing dot), not URLs, suffixes, or wildcards. These hosts ignore
-`RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC`; every DNS answer must be private, and metadata and
+`ATLAS_OPENAI_COMPAT_ALLOW_PUBLIC`; every DNS answer must be private, and metadata and
 link-local destinations remain blocked. This applies to discovery and model requests.
 HTTPS still validates the hostname's certificate. Like private IP endpoints, trusted hostnames
 also permit HTTP with API keys; use HTTPS unless the network is trusted. Only allow hosts you
@@ -110,7 +110,7 @@ If that endpoint's model
 accepts images, enable **Supports images** under **Advanced** when connecting so attachments and
 screenshot computer tools stay available. Existing connections default to disabled. For centrally
 managed endpoints, the deployment-wide fallback remains
-`RAKAZO_OPENAI_COMPATIBLE_VISION_MODELS=gpt4o-vision,llava`.
+`ATLAS_OPENAI_COMPATIBLE_VISION_MODELS=gpt4o-vision,llava`.
 
 ## Thinking
 
@@ -120,7 +120,7 @@ Existing connections default to disabled. Reconnect former Qwen-list or deployme
 via **Settings → Models** and turn it on; the old environment list is no longer read.
 
 Enabled connections default to medium thinking. Web and desktop expose **Thinking** in a bot's
-advanced settings; mobile inherits the same backend policy. Rakazo sends standard
+advanced settings; mobile inherits the same backend policy. Atlas sends standard
 `reasoning_effort` (`minimal`, `low`, `medium`, `high`, or `none` when off); the server owns
 model-specific translation. Leave **Supports thinking** off when the server lacks standard effort
 support. Existing token limits still apply; effort is not a separate reasoning-token budget.

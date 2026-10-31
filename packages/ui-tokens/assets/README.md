@@ -1,46 +1,52 @@
-# App icon source
+# Brand assets
 
-`Rakazo.icon` is the shared editable source for macOS and iOS. Open it in Apple's
-Icon Composer with Xcode 26 or newer. The orange foreground keeps its original
-lighting, sits 90 points below center, and uses the system dark background.
+## Logo sources
 
-macOS packaging compiles the source into a Tahoe asset catalog and generates the
-legacy ICNS fallback. Expo copies the same source into the iOS project.
+The Atlas logo is a line-art globe (outer circle, one straight and two curved
+meridians) resting on a short bar. The stroke runs from warm white (`#FFF8EE`) at
+the top left to amber (`#F0B35A`) at the bottom right. The app icon puts it on a
+near-black (`#0E0D0C`) rounded square.
 
-The platform exports are:
+The hand-authored SVGs in [`brand/`](./brand) are the only sources:
 
-- `apps/desktop/assets/icon-macos.png`: Icon Composer's default appearance,
-  1024-pixel macOS pre-Tahoe export, including Dock margins for development launches.
-- `apps/mobile/assets/icon.png`: opaque 1024-pixel square for the generic/legacy icon,
-  with no rounded mask or Dock margins.
-- `apps/mobile/assets/adaptive-icon.png`: transparent 1024-pixel Android foreground;
-  the bot is 820 pixels wide, centered horizontally and offset 179 pixels from the top.
-  Its face stays inside the launcher's safe area and the body extends below the mask.
-- `apps/mobile/assets/icon-background.png`: opaque Android background using the
-  shared dark background token.
-- `apps/mobile/assets/monochrome-icon.png`: matching Android alpha silhouette with
-  transparent eyes for themed launchers.
+- `atlas-mark.svg`: the globe on a transparent background.
+- `atlas-mark-monochrome.svg`: the white silhouette used for Android themed and
+  notification icons.
+- `atlas-app-icon.svg`: the globe on the near-black rounded square.
+- `atlas-wordmark-dark.svg`: globe and "Atlas" for dark backgrounds.
+- `atlas-wordmark-light.svg`: globe and "Atlas" for light backgrounds.
 
-Refresh platform exports after changing the source. Android supplies its own mask;
-never bake Mac corners, a rim, or an outer shadow into adaptive layers.
+The wordmark letters are drawn as monoline paths, so the SVGs render the same
+without any font installed.
 
-Run `pnpm --filter @rakazo/ui-tokens export:brand` to refresh the web and marketing
-favicons, install icons, marketing mark, Windows/Linux icons, mobile splash, and
-mobile web favicon. These use the same orange foreground with the shared dark
-background, a rounded mask for small browser marks, and transparent splash padding.
-The notification export uses the Android monochrome silhouette so its eyes remain
-transparent. Apple Icon Composer and Android launcher exports remain separate
-because their system masks and safe areas differ.
+## Exports
+
+Run `pnpm --filter @atlas/ui-tokens export:brand` after changing a source. It
+rewrites every raster at its existing path:
+
+- web and marketing favicons (`favicon.ico`, 16, 32 and 128 px PNGs), apple-touch,
+  PWA icons (192 and 512 px) and `apps/www/public/brand/atlas-mark.png`, plus PNG
+  wordmarks next to it;
+- `apps/www/public/og-image.png`, the default social card;
+- `apps/desktop/assets/icon.png`, `icon.ico` and `icon-macos.png` (the pre-Tahoe
+  development export with Dock margins);
+- `apps/mobile/assets/icon.png` (opaque, unmasked), `adaptive-icon.png`,
+  `icon-background.png`, `monochrome-icon.png`, `notification-icon.png`,
+  `splash-icon.png` and `favicon.png`;
+- `Atlas.icon/Assets/atlas-globe.png`, the single layer of the Icon Composer
+  source used for macOS and iOS. `icon.json` supplies the near-black fill.
+
+Small browser icons use a heavier stroke so the meridians stay visible at 16 px.
+Android supplies its own mask; never bake Mac corners, a rim, or an outer shadow
+into the adaptive layers.
 
 After exporting, run `pnpm exec tsx apps/www/scripts/render-og.mjs` to refresh the
-marketing page social cards; set `CHROME_PATH` to a headless Chrome executable when
-it is not available at the script's default location.
+per-page social cards; set `CHROME_PATH` to a headless Chrome executable when it
+is not available at the script's default location.
 
-## Animated vector avatars
+## Mascot
 
-The animated Rakazo avatar uses SVG paths and gradients in the shared
-`logo-avatar-art.ts` definition. Its contour is sampled from this canonical
-source's alpha silhouette. The hands and lighting are simplified vector shapes;
-the original photographic skin grain is intentionally not reproduced. No raster
-body is embedded or loaded by the vector renderer. The canonical icon and its
-platform exports remain unchanged.
+[`mascot/orange-bot.png`](./mascot/orange-bot.png) is the orange character
+inherited from Rakazo. It is no longer the app logo. It stays as the reference for
+the animated "atlas" bot avatar set, whose SVG paths and gradients live in the
+shared `logo-avatar-art.ts` definition and were sampled from its alpha silhouette.

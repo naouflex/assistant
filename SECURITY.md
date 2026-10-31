@@ -2,7 +2,7 @@
 
 ## Reporting vulnerabilities
 
-Email **security@rakazo.com** only. Do not open public GitHub issues for security bugs.
+Report privately through [GitHub security advisories](https://github.com/naouflex/assistant/security/advisories/new) only. Do not open public GitHub issues for security bugs.
 
 Please include:
 
@@ -14,12 +14,12 @@ We will acknowledge your report and work on a fix. Please do not file a public i
 
 ## Other contact
 
-- General support: **support@rakazo.com**
-- Maintainer: **elie@rakazo.com**
+- General support: [GitHub issues](https://github.com/naouflex/assistant/issues)
+- Issues in upstream Rakazo code: report them to [elie222/rakazo](https://github.com/elie222/rakazo) as well
 
 ## Scope
 
-This policy covers the Rakazo self-hosted product in **this repository**.
+This policy covers the Atlas self-hosted product in **this repository**.
 
 Out of scope:
 
