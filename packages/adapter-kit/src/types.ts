@@ -269,6 +269,8 @@ export interface ConnectorTool {
   batch?: ToolBatch;
   /** In-process routing metadata. It is never exposed to the model. */
   route?: ConnectorRoute;
+  /** In-process: list this tool only through find_tool and use_tool. Never exposed. */
+  deferred?: boolean;
 }
 
 /**

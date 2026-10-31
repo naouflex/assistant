@@ -8,19 +8,67 @@ import type { Api, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
  * after every other payload hook, so each chat-completions provider gets the same shape.
  */
 export function withChatCompletionsCompatibility<O extends SimpleStreamOptions>(
-  model: Pick<Model<Api>, "api" | "id" | "baseUrl">,
+  model: Pick<Model<Api>, "api" | "id" | "baseUrl"> & { provider?: string },
   options: O,
+  env: Record<string, string | undefined> = process.env,
 ): O {
   if (model.api !== "openai-completions") return options;
   const previous = options.onPayload;
   const stringContent = requiresStringContent(model);
+  const selfHosted = model.provider === "local" || model.provider === "openai-compatible";
+  const local = selfHosted
+    ? { disableThinking: localThinkingDisabled(model.provider, env) }
+    : undefined;
   return {
     ...options,
     async onPayload(payload, requestModel) {
       const replaced = await previous?.(payload, requestModel);
-      return normalizeChatCompletionsPayload(replaced ?? payload, { stringContent }) ?? replaced;
+      const normalized =
+        normalizeChatCompletionsPayload(replaced ?? payload, { stringContent }) ?? replaced;
+      if (!local) return normalized;
+      return selfHostedPayload(normalized ?? payload, local) ?? normalized;
     },
   };
+}
+
+/** Env switch that turns model thinking off on self-hosted servers (Ollama, llama.cpp, vLLM). */
+export const LOCAL_DISABLE_THINKING_ENV = "ATLAS_LOCAL_DISABLE_THINKING";
+
+function localThinkingDisabled(
+  provider: string | undefined,
+  env: Record<string, string | undefined>,
+): boolean {
+  const flag = env[LOCAL_DISABLE_THINKING_ENV]?.trim().toLowerCase();
+  if (flag !== "true" && flag !== "1" && flag !== "on") return false;
+  return provider === "local" || provider === "openai-compatible";
+}
+
+/**
+ * Self-hosted servers differ in what they read: Ollama ignores max_completion_tokens and
+ * reads max_tokens, `think` and `reasoning_effort`; llama.cpp and vLLM pass
+ * chat_template_kwargs to the template (Qwen's enable_thinking). Send each spelling so a
+ * cap and a thinking switch hold on all of them. A new payload when anything changed.
+ */
+export function selfHostedPayload(
+  payload: unknown,
+  options: { disableThinking?: boolean },
+): unknown {
+  if (!isRecord(payload)) return undefined;
+  const next: Record<string, unknown> = { ...payload };
+  let changed = false;
+  if (typeof payload.max_completion_tokens === "number" && payload.max_tokens === undefined) {
+    next.max_tokens = payload.max_completion_tokens;
+    changed = true;
+  }
+  if (options.disableThinking) {
+    const kwargs = isRecord(payload.chat_template_kwargs) ? payload.chat_template_kwargs : {};
+    next.chat_template_kwargs = { ...kwargs, enable_thinking: false };
+    next.think = false;
+    next.reasoning_effort = "none";
+    delete next.reasoning;
+    changed = true;
+  }
+  return changed ? next : undefined;
 }
 
 /** Workers AI validates every message's content as a string, including tool-call turns. */

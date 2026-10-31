@@ -68,7 +68,16 @@ ATLAS_LOCAL_CONTEXT_WINDOW=32768
 ATLAS_LOCAL_MAX_TOKENS=4096
 # Optional: model ids on this endpoint that accept images (screenshot computer tools).
 ATLAS_LOCAL_VISION_MODELS=qwen3-vl
+# Optional: turn thinking off (Ollama `think`/`reasoning_effort`, llama.cpp/vLLM `enable_thinking`).
+ATLAS_LOCAL_DISABLE_THINKING=true
 ```
+
+Local runs get a compact system prompt and list only everyday tools (the rest stay reachable
+through `find_tool` and `use_tool`), so a small model reads about 2.6K prompt tokens per call
+instead of about 9.9K. The prompt and tool block do not change between turns (the clock rides on
+the user message), so the server's prefix cache is reused. Set `ATLAS_LOCAL_COMPACT_PROMPT=false`
+for the full prompt. Requests to local and OpenAI-compatible servers also carry `max_tokens`
+alongside `max_completion_tokens`, because Ollama only reads the former.
 
 The loopback default is suitable when running Atlas from a source checkout. From containers,
 prefer a stable LAN RFC1918 address (not Compose service DNS alone). On Docker Desktop,

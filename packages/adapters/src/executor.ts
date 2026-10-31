@@ -57,7 +57,7 @@ import {
   loadRunLoginRedactions,
 } from "./bot-secrets.js";
 import { createBrowserProvider } from "./browser-provider-factory.js";
-import { partitionTools } from "./builtin-tool-bridge.js";
+import { compactToolSet, partitionTools } from "./builtin-tool-bridge.js";
 import { agentConnectionTools, builtinAgentTools } from "./builtin-tools.js";
 import { cloudAgentsEnabled } from "./cloud-agent-factory.js";
 import { mergeConnectedPlugins, needsLivePluginSync } from "./composio-connector.js";
@@ -127,6 +127,8 @@ import { restoreTurnCheckpointEffects, settleRunningHelpers } from "./run-contex
 import { APPROVED_EFFECT_REPLAY_ORDER, buildApprovalContinuation } from "./run-effects.js";
 import {
   BOT_DIRECTORY_LIMIT,
+  compactInstructionsEnabled,
+  compactUserTurnInstructions,
   dockerComputerToolInstruction,
   persistentComputerInstruction,
   runIdentityInstruction,
@@ -1150,8 +1152,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           !ownerStartedRun || Boolean(turnCheckpoint) || Boolean(checkpointLoadError);
         // The creation intro only asks what the bot is for (see selectBuiltinToolsForRun),
         // so it gets no connector tools either.
-        const tools =
+        // Small local models pay for every prompt token on every call; see compactInstructionsEnabled.
+        const compactRun = compactInstructionsEnabled(runModelProvider);
+        const offeredTools =
           run.trigger === "created" ? builtins : [...builtins, ...exposedConnectorTools];
+        const tools = compactRun ? compactToolSet(offeredTools) : offeredTools;
         const taskCatalogInstruction = tools.some((tool) => tool.name === "task_catalog")
           ? TASK_CATALOG_GUIDANCE
           : undefined;
@@ -1533,7 +1538,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               // Keep an explicit executor override, but let the runtime select
               // cache-aware context for connections declaring a cache window.
               contextStrategy: deps.contextStrategy,
-              instructions: userTurnInstructions({
+              instructions: (compactRun ? compactUserTurnInstructions : userTurnInstructions)({
                 botInstructions: runIdentityInstruction(bot, run.trigger),
                 groupContext,
                 messagingContext,

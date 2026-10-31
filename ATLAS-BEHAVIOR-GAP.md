@@ -33,3 +33,13 @@ tokens on system guidance, so changes here trim or replace text instead of addin
 - First-class journal (dated entries, "what did I do last week" summary): ~1?2 days.
 - Paid-action detector (checkout and purchase tool names) on the mandatory gate: ~0.5 day.
 - Persona eval suite against qwen3.5:9b-text (brevity, link format, routine offers): ~1 day.
+
+## Local speed (added)
+
+- Compact local mode: `compactUserTurnInstructions` and `compactToolSet` (packages/adapters/src/run-instructions.ts,
+  builtin-tool-bridge.ts), on for the `local` provider; `ATLAS_LOCAL_COMPACT_PROMPT=false|always`.
+  Same Debug-probe request on qwen3.5: 9,857 prompt tokens with the full prompt (26 tools) vs 2,649 compact (12 tools).
+- Prefix cache: the system prompt and tools are byte-stable across turns; the date line is on the user message.
+- `max_tokens` is mirrored from `max_completion_tokens` for local and OpenAI-compatible servers;
+  `ATLAS_LOCAL_DISABLE_THINKING=true` sends `think:false`, `reasoning_effort:"none"`, `chat_template_kwargs.enable_thinking:false`.
+- Not done: a per-connection thinking toggle in the UI (env only for now, ~0.5 day).

@@ -69,8 +69,41 @@ const AREAS: Array<[area: string, matches: (name: string) => boolean]> = [
   ["purchases", (name) => name.includes("purchase") || name === "paid_request"],
 ];
 
-export function isDeferredTool(name: string): boolean {
+export function isDeferredTool(name: string, deferred?: boolean): boolean {
+  if (deferred) return true;
   return BUILTIN_AGENT_TOOL_NAMES.has(name) && !CORE_BUILTIN_TOOL_NAMES.has(name);
+}
+
+/**
+ * The listed built-ins for a compact (small local model) run. Each listed schema costs
+ * prompt tokens on every call, so everything else is reached through find_tool and
+ * use_tool. ask_user and request_takeover stay listed because the runtime pauses on
+ * their call names; message_user and end_call are answered by the runtime too.
+ */
+export const COMPACT_CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
+  "ask_user",
+  "message_user",
+  "request_takeover",
+  "end_call",
+  "web_search",
+  "web_fetch",
+  "remember",
+  "save_memory",
+  "recall_memory",
+  "shell",
+  "user_computer_shell",
+  "read_file",
+  "write_file",
+  "list_files",
+]);
+
+/** Marks every built-in outside the compact core as deferred; connector tools are unchanged. */
+export function compactToolSet(tools: readonly ConnectorTool[]): ConnectorTool[] {
+  return tools.map((tool) =>
+    BUILTIN_AGENT_TOOL_NAMES.has(tool.name) && !COMPACT_CORE_BUILTIN_TOOL_NAMES.has(tool.name)
+      ? { ...tool, deferred: true }
+      : tool,
+  );
 }
 
 /** Splits a run's offered tools into the ones listed to the model and the deferred built-ins. */
@@ -78,8 +111,8 @@ export function partitionTools(tools: readonly ConnectorTool[]): {
   listed: ConnectorTool[];
   deferred: ConnectorTool[];
 } {
-  const deferred = tools.filter((tool) => isDeferredTool(tool.name));
-  const listed = tools.filter((tool) => !isDeferredTool(tool.name));
+  const deferred = tools.filter((tool) => isDeferredTool(tool.name, tool.deferred));
+  const listed = tools.filter((tool) => !isDeferredTool(tool.name, tool.deferred));
   return { listed: deferred.length ? [...listed, ...bridgeTools(deferred)] : listed, deferred };
 }
 
