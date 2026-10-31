@@ -7,6 +7,7 @@ import {
   instructionUpdateDiff,
   messagingProviderName,
   redactSecrets,
+  riskyShellCommand,
   sanitizeMessagingLabel,
   toolRequiresExplicitApproval,
 } from "@atlas/core";
@@ -149,6 +150,26 @@ export function buildApprovalAskBlock(
       status: "pending",
       actions: [
         { id: "allow", label: "Allow in this space" },
+        { id: "deny", label: "Deny" },
+      ],
+    };
+  }
+  const risk = toolName === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
+  if (risk) {
+    const cwd = typeof args.cwd === "string" && args.cwd.trim() ? `cd ${args.cwd.trim()}\n` : "";
+    // A risky command asks every time, so the card offers no "always allow".
+    return {
+      kind: "ask",
+      approvalEffectId: effectId,
+      text: `Run this risky command? It ${risk}.`,
+      detail: truncate(
+        redactSecrets(`${cwd}${String(args.command ?? "")}`, secrets),
+        MAX_APPROVAL_DETAIL_LENGTH,
+      ),
+      detailFormat: "code",
+      status: "pending",
+      actions: [
+        { id: "allow", label: "Allow once" },
         { id: "deny", label: "Deny" },
       ],
     };

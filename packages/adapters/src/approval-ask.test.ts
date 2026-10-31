@@ -2,6 +2,25 @@ import { describe, expect, it } from "vitest";
 import { approvalDetailLength, buildApprovalAskBlock } from "./approval-ask.js";
 
 describe("buildApprovalAskBlock", () => {
+  it("shows a risky shell command with its reason and no always-allow", () => {
+    const block = buildApprovalAskBlock(
+      "effect-r",
+      "shell",
+      { command: "rm -rf /workspace/build" },
+      [],
+    );
+    expect(block).toMatchObject({
+      kind: "ask",
+      text: "Run this risky command? It deletes files recursively.",
+      detail: "rm -rf /workspace/build",
+      detailFormat: "code",
+      actions: [
+        { id: "allow", label: "Allow once" },
+        { id: "deny", label: "Deny" },
+      ],
+    });
+  });
+
   it("binds the approval to its effect and redacts secrets", () => {
     const block = buildApprovalAskBlock(
       "effect-1",

@@ -192,6 +192,36 @@ export function connectorToolSendsMessage(toolName: string): boolean {
   return OUTBOUND_MESSAGE_CONNECTOR_PATTERN.test(toolName);
 }
 
+const RISKY_SHELL_PATTERNS: Array<[RegExp, string]> = [
+  [
+    /(^|[\s;&|(])rm\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r|-r\s+-f|-f\s+-r|--recursive\s+--force|--force\s+--recursive)\b/i,
+    "deletes files recursively",
+  ],
+  [
+    /(^|[\s;&|(])git\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-z]*f\b|\s\+\S)/i,
+    "force-pushes git history",
+  ],
+  [/(^|[\s;&|(])git\s+(reset\s+--hard|clean\s+-[a-z]*f)/i, "discards git changes"],
+  [/(^|[\s;&|(])sudo\b/, "runs as root"],
+  [/\b(drop|truncate)\s+(database|schema|table)\b/i, "deletes database data"],
+  [/(^|[\s;&|(])(mkfs(\.\w+)?|fdisk|wipefs|shutdown|reboot)\b/, "changes the machine or its disks"],
+  [/(^|[\s;&|(])dd\b[^;&|]*\bof=\/dev\//, "writes to a raw device"],
+  [
+    /(^|[\s;&|(])(chmod|chown)\s+-[a-z]*R[a-z]*\s+\S*\s*\/(\s|$)/,
+    "changes permissions on the whole disk",
+  ],
+  [/\b(curl|wget)\b[^;&]*\|\s*(sudo\s+)?(ba|z)?sh\b/, "runs a downloaded script"],
+];
+
+/**
+ * Why a shell command is risky enough that a person must see it first, or undefined. These ask
+ * even in Never ask: they cannot be undone, and a model or injected content may have typed them.
+ */
+export function riskyShellCommand(command: string): string | undefined {
+  for (const [pattern, reason] of RISKY_SHELL_PATTERNS) if (pattern.test(command)) return reason;
+  return undefined;
+}
+
 export function toolRequiresExplicitApproval(toolName: string): boolean {
   return EXPLICIT_APPROVAL_BUILTIN_TOOLS.has(toolName);
 }
@@ -582,6 +612,8 @@ export function planActionGate(input: {
   mandatory?: boolean;
   /** Never ask refuses it: the owner did not start this run, or outside content entered it. */
   steerable?: boolean;
+  /** Ask even in Never ask: sends in the owner's name, or a shell command that cannot be undone. */
+  alwaysAsk?: boolean;
   consequential: boolean;
   /**
    * A read whose arguments outside content may have chosen (see connectorReadRequiresApproval).
@@ -593,6 +625,7 @@ export function planActionGate(input: {
   newDestination?: boolean;
 }): "ask" | "allow" | "judge" | "deny" {
   if (input.resolved.decision === "deny") return "deny";
+  if (input.alwaysAsk) return "ask";
   if (input.mandatory) {
     if (input.mode !== "never") return "ask";
     return input.steerable ? "deny" : "allow";

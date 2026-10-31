@@ -23,6 +23,7 @@ import {
   redactSecrets,
   repeatsDeniedAction,
   resolveActionApprovalForTools,
+  riskyShellCommand,
   toolRequiresApproval,
   toolRequiresExplicitApproval,
   unattendedTriggerToolRequiresApproval,
@@ -240,8 +241,14 @@ export async function gateToolCall(
       (name === "schedule_update" && Boolean(args.prompt))) &&
     (await isRunTainted(ctx)) &&
     (await ctx.trust.routineNamesNewSite(String(args.prompt ?? "")));
+  // A shell command that cannot be undone (rm -rf, force push, sudo, DROP DATABASE?) waits for a person.
+  const riskyShell = name === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
+  // Confirm before send: outbound email and messages always wait for the owner.
+  const sendsMessage =
+    viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName));
   const requiresApprovalByDefault =
     request.ownerApproval ||
+    Boolean(riskyShell) ||
     commandWatch ||
     requiresUnattendedApproval ||
     siteGate === "new" ||
@@ -257,8 +264,8 @@ export async function gateToolCall(
     scheduleNamesNewSite ||
     requiresUnattendedApproval ||
     toolRequiresExplicitApproval(name) ||
-    // Confirm before send: outbound email and messages always wait for the owner.
-    (viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName)));
+    Boolean(riskyShell) ||
+    sendsMessage;
   // Never ask runs everything else: only another owner's connection could have been steered into it.
   const guardedInNeverAsk = name === "respond_agent_connection";
   const resolvedRules = resolveActionApprovalForTools({
@@ -315,6 +322,7 @@ export async function gateToolCall(
         resolved: approvalResolved,
         mode,
         mandatory: requiresMandatoryApproval,
+        alwaysAsk: Boolean(riskyShell) || sendsMessage,
         steerable:
           guardedInNeverAsk && mode === "never"
             ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
