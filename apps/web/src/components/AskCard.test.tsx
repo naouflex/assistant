@@ -21,7 +21,7 @@ vi.mock("../lib/rpc", () => ({ rpc }));
 
 import { ChoiceCard } from "../pages/shell/message-cards";
 import type { AskBlock } from "./AskCard";
-import { AskCard } from "./AskCard";
+import { AskCard, optionShortcutIndex } from "./AskCard";
 
 let root: Root;
 let container: HTMLDivElement;
@@ -654,4 +654,34 @@ it("discards a draft as a deny", async () => {
   await act(async () => button("Discard")!.click());
   expect(denied.mock.calls[0]?.[0]).toBe("deny");
   expect(container.textContent).toContain("Discarded");
+});
+
+it("answers an option question with a letter or number key", async () => {
+  const onAnswer = vi.fn(async (_text: string) => undefined);
+  await render(
+    {
+      kind: "ask",
+      text: "Which city?",
+      status: "pending",
+      actions: [
+        { id: "paris", label: "Paris" },
+        { id: "lyon", label: "Lyon" },
+      ],
+    },
+    undefined,
+    onAnswer,
+  );
+  await act(async () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "b" }));
+  });
+  expect(onAnswer.mock.calls[0]?.[0]).toBe("lyon");
+});
+
+it("ignores option shortcuts while typing, with modifiers, or past the options", () => {
+  const field = document.createElement("textarea");
+  expect(optionShortcutIndex({ key: "2", target: null } as never, 3)).toBe(1);
+  expect(optionShortcutIndex({ key: "A", target: null } as never, 3)).toBe(0);
+  expect(optionShortcutIndex({ key: "d", target: null } as never, 3)).toBe(-1);
+  expect(optionShortcutIndex({ key: "1", target: field } as never, 3)).toBe(-1);
+  expect(optionShortcutIndex({ key: "1", ctrlKey: true, target: null } as never, 3)).toBe(-1);
 });

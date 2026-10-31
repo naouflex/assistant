@@ -16,7 +16,7 @@ import { Button, Input, Label, Switch, Textarea } from "@atlas/ui-web";
 import { t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Check } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { rpc } from "../lib/rpc";
 import { errorText } from "../lib/user-error";
 import { BuiCard } from "./ai/primitives";
@@ -167,6 +167,30 @@ export function AskCard({
     field.addEventListener("beforeinput", keepLineBreaks);
     return () => field.removeEventListener("beforeinput", keepLineBreaks);
   }, [commandInput, secretField]);
+
+  // Keys A-D or 1-4 pick an option, so a choice is one keystroke as well as one tap.
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const submitRef = useRef(submitAnswer);
+  submitRef.current = submitAnswer;
+  const shortcutsLive = optionQuestion && canAnswer && !answered && !submitting && !ownerOnly;
+  const optionIds = shortcutsLive ? (askActions ?? []).map((action) => action.id) : [];
+  const optionKey = optionIds.join("\n");
+  useEffect(() => {
+    if (!optionKey) return;
+    const ids = optionKey.split("\n");
+    const onKey = (event: KeyboardEvent) => {
+      const index = optionShortcutIndex(event, ids.length);
+      if (index < 0) return;
+      // Several open questions: only the newest one on the page listens.
+      if (document.querySelector('[role="dialog"]')) return;
+      const open = document.querySelectorAll("[data-option-shortcuts]");
+      if (open[open.length - 1] !== optionsRef.current) return;
+      event.preventDefault();
+      void submitRef.current(ids[index]!);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [optionKey]);
 
   async function submitAnswer(value: string, fields?: LoginFieldInput[]) {
     if (submitting) return;
@@ -340,7 +364,11 @@ export function AskCard({
         </form>
       ) : optionQuestion ? (
         // Options stay in place once answered: the chosen one is marked, the rest dim.
-        <div className="mt-2.5 space-y-0.5">
+        <div
+          ref={optionsRef}
+          className="mt-2.5 space-y-0.5"
+          data-option-shortcuts={shortcutsLive ? "" : undefined}
+        >
           {askActions?.map((action, index) => (
             <OptionRow
               key={action.id}
@@ -626,4 +654,33 @@ function MessageDraftFields({
       })}
     </div>
   );
+}
+
+/**
+ * The option a key picks: A-D or 1-4, case-insensitive. -1 while typing in a field,
+ * with a modifier held, or for keys past the option count.
+ */
+export function optionShortcutIndex(
+  event: Pick<KeyboardEvent, "key" | "altKey" | "ctrlKey" | "metaKey" | "target"> & {
+    isComposing?: boolean;
+    repeat?: boolean;
+    defaultPrevented?: boolean;
+  },
+  count: number,
+): number {
+  if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return -1;
+  if (event.repeat || event.defaultPrevented) return -1;
+  const target = event.target as HTMLElement | null;
+  if (
+    target &&
+    (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName ?? ""))
+  )
+    return -1;
+  const key = event.key.toLowerCase();
+  const index = /^[1-9]$/.test(key)
+    ? Number(key) - 1
+    : /^[a-z]$/.test(key)
+      ? key.charCodeAt(0) - 97
+      : -1;
+  return index >= 0 && index < count ? index : -1;
 }
