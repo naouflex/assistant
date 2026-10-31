@@ -17,7 +17,7 @@
 
 | Planned | Found | Shipped |
 |---|---|---|
-| Approval cards for risky shell commands | Shell commands only asked when the bot's approval mode said so; "Never ask" ran `rm -rf` silently | 0e804a9d: `riskyShellCommand` (rm -rf, force push, reset --hard, sudo, DROP/TRUNCATE, mkfs/dd, chmod -R /, curl\|sh) always shows "Run this risky command? It ?" with Allow once / Deny, in every mode. Message sends now always ask too (closes the "Never ask" send gap). |
+| Approval cards for risky shell commands | Shell commands only asked when the bot's approval mode said so; "Never ask" ran `rm -rf` silently | 0e804a9d: `riskyShellCommand` (rm -rf, force push, reset --hard, sudo, DROP/TRUNCATE, mkfs/dd, chmod -R /, curl\|sh) always shows "Run this risky command? It ..." with Allow once / Deny, in every mode. Message sends now always ask too (closes the "Never ask" send gap). |
 | Draft-before-send cards | Sends had a confirm card with the body as read-only detail | 04c03531: send cards show To / Cc / Subject / Message fields you can edit, with Send and Discard. Edits are checked against the card's own fields and rewrite the stored request before replay. No card is editable when a value holds a secret. |
 | Routines list UI | Per-bot routine list in the bot side panel only | 31519aa1: /app/routines (sidebar menu > Routines) lists every bot's routines with next run, last run, Pause/Resume, Edit (opens the bot's routine editor), Delete. |
 
