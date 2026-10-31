@@ -308,7 +308,7 @@ services:
     profiles: [pitr]
     # Tagged with a hash of Dockerfile.pitr and pitr-agent.sh, so a deploy builds it once per change
     # instead of on every run (compose-service.test.ts checks the hash).
-    image: atlas-pitr:aa7cf1bde2aa8051
+    image: atlas-pitr:5df6efe8052ec4a9
     build:
       context: .
       dockerfile: Dockerfile.pitr
@@ -331,7 +331,7 @@ services:
       # Stops pg_receivewal and uploads with the container, not only the script.
       TINI_KILL_PROCESS_GROUP: "1"
       PGHOST: postgres
-      PGUSER: atlas_pitr
+      PGUSER: rakazo_pitr
       PGDATABASE: postgres
       PGPASSWORD: ${PITR_DATABASE_PASSWORD:-}
       PITR_AGE_RECIPIENTS:

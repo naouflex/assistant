@@ -94,8 +94,8 @@ describe("desktop release workflow", () => {
 
   it("pins every platform update feed to the official GitHub owner and repo", () => {
     expect(workflow).toContain('grep -Fqx "provider: github"');
-    expect(workflow).toContain('grep -Fqx "owner: elie222"');
-    expect(workflow).toContain('grep -Fqx "repo: atlas"');
+    expect(workflow).toContain('grep -Fqx "owner: naouflex"');
+    expect(workflow).toContain('grep -Fqx "repo: assistant"');
     expect(workflow).toContain("Verify Linux update feed is pinned to the official GitHub channel");
     expect(workflow).toContain("Windows update config missing");
     expect(workflow).toContain("RELEASE_VERSION:");

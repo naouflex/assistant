@@ -39,7 +39,11 @@ describe("the production computer provider", () => {
  * break by accident in YAML, so they are asserted rather than reviewed.
  */
 /** The Compose interpolation this file is expected to carry, as Compose spells it. */
-const interpolated = (name: string, fallback = "") => `\${${name}:-${fallback}}`;
+/** ATLAS_* variables fall back to their legacy RAKAZO_* spelling so existing .env files keep working. */
+const interpolated = (name: string, fallback = ""): string =>
+  name.startsWith("ATLAS_")
+    ? `\${${name}:-${interpolated(`RAKAZO_${name.slice("ATLAS_".length)}`, fallback)}}`
+    : `\${${name}:-${fallback}}`;
 
 describe("worker error reporting configuration", () => {
   it.each([
@@ -91,7 +95,7 @@ describe("the updater compose service", () => {
   it("is bind-mounted at the same path it has on the host", () => {
     const mount = (updater.volumes ?? []).find((volume) => volume.includes("ATLAS_DEPLOY_DIR"));
     // biome-ignore lint/suspicious/noTemplateCurlyInString: this is the literal Compose expression
-    const deployDir = "${ATLAS_DEPLOY_DIR:-/srv/atlas}";
+    const deployDir = interpolated("ATLAS_DEPLOY_DIR", "/srv/atlas");
     const separatorIndex = mount?.indexOf("}:${") ?? -1;
     const source = separatorIndex < 0 ? undefined : mount?.slice(0, separatorIndex + 1);
     const destination = separatorIndex < 0 ? undefined : mount?.slice(separatorIndex + 2);
@@ -147,7 +151,7 @@ describe("the updater compose service", () => {
   it("does not load the application env_file into the root-equivalent process", () => {
     expect(updater.env_file).toBeUndefined();
     // biome-ignore lint/suspicious/noTemplateCurlyInString: this is the literal Compose expression
-    expect(updater.environment?.ATLAS_UPDATER_TOKEN).toBe("${ATLAS_UPDATER_TOKEN:-}");
+    expect(updater.environment?.ATLAS_UPDATER_TOKEN).toBe(interpolated("ATLAS_UPDATER_TOKEN"));
   });
 
   it("does not let the api container reach the Docker socket to update itself", () => {
@@ -209,7 +213,7 @@ describe("the point-in-time recovery sidecar", () => {
       "PITR_SECRET_ACCESS_KEY",
       "TINI_KILL_PROCESS_GROUP",
     ]);
-    expect(pitr.environment?.PGUSER).toBe("atlas_pitr");
+    expect(pitr.environment?.PGUSER).toBe("rakazo_pitr");
     expect(pitr.environment?.PGPASSWORD).toBe(interpolated("PITR_DATABASE_PASSWORD"));
     expect(pitr.env_file).toBeUndefined();
     expect(pitr.ports).toBeUndefined();

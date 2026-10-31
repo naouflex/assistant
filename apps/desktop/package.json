@@ -124,8 +124,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "elie222",
-        "repo": "atlas"
+        "owner": "naouflex",
+        "repo": "assistant"
       }
     ]
   }

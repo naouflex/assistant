@@ -14,7 +14,7 @@
 set -Eeuo pipefail
 umask 077
 
-SLOT=atlas_pitr
+SLOT=rakazo_pitr
 SPOOL=/var/lib/atlas-pitr
 # pg_receivewal's directory. Segments from an earlier cluster or timeline move to held/<system id>
 # so pg_receivewal never resumes from them; they are still uploaded.

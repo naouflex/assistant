@@ -249,8 +249,8 @@ jobs:
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=2 "$app"
           grep -Fqx "provider: github" "$app/Contents/Resources/app-update.yml"
-          grep -Fqx "owner: elie222" "$app/Contents/Resources/app-update.yml"
-          grep -Fqx "repo: atlas" "$app/Contents/Resources/app-update.yml"
+          grep -Fqx "owner: naouflex" "$app/Contents/Resources/app-update.yml"
+          grep -Fqx "repo: assistant" "$app/Contents/Resources/app-update.yml"
 
       - name: Verify packaged native dependencies
         if: runner.os == 'macOS'
@@ -343,7 +343,7 @@ jobs:
           if ($executables.Count -lt 2) { throw "Windows installer or application was not created." }
           $config = "apps/desktop/out/win-unpacked/resources/app-update.yml"
           $feed = Get-Content -Raw $config
-          foreach ($expected in @("provider: github", "owner: elie222", "repo: atlas")) {
+          foreach ($expected in @("provider: github", "owner: naouflex", "repo: assistant")) {
             if ($feed -notmatch "(?m)^$([regex]::Escape($expected))\r?$") {
               throw "Windows update config missing '$expected'."
             }
@@ -386,8 +386,8 @@ jobs:
           test -n "$config"
           test -f "$config"
           grep -Fqx "provider: github" "$config"
-          grep -Fqx "owner: elie222" "$config"
-          grep -Fqx "repo: atlas" "$config"
+          grep -Fqx "owner: naouflex" "$config"
+          grep -Fqx "repo: assistant" "$config"
           test -f apps/desktop/out/latest-linux.yml
           grep -Fqx "version: $RELEASE_VERSION" apps/desktop/out/latest-linux.yml
 

@@ -217,7 +217,7 @@ describe("ComposioConnector over the fake Composio client", () => {
     const events = await run(
       connector,
       "GITHUB_LIST_RELEASES",
-      { owner: "elie222", repo: "atlas" },
+      { owner: "naouflex", repo: "assistant" },
       ctx,
     );
     expect(events).toEqual([
@@ -239,7 +239,7 @@ describe("ComposioConnector over the fake Composio client", () => {
     const ctx = context([connection("GMAIL", await connect(connector, "GMAIL"))]);
 
     await expect(
-      run(connector, "GITHUB_LIST_RELEASES", { owner: "elie222", repo: "atlas" }, ctx),
+      run(connector, "GITHUB_LIST_RELEASES", { owner: "naouflex", repo: "assistant" }, ctx),
     ).resolves.toEqual([
       {
         type: "error",

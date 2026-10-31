@@ -22,7 +22,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="${ATLAS_DEPLOY_DIR:-$(cd "${HERE}/../.." && pwd)}"
 ENV_FILE="${PITR_ENV_FILE:-${PROJECT_DIR}/.env}"
 COMPOSE_FILE="${PROJECT_DIR}/infra/compose/docker-compose.prod.yml"
-ROLE=atlas_pitr
+ROLE=rakazo_pitr
 HBA_LINE="host replication ${ROLE} all scram-sha-256"
 
 die() { echo "$*" >&2; exit 1; }

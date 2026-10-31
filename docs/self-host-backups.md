@@ -262,7 +262,7 @@ unset for AWS S3. Then turn it on from the checkout:
 sudo infra/compose/pitr.sh enable
 ```
 
-This creates the `atlas_pitr` replication login, allows it in `pg_hba.conf`, sets
+This creates the `rakazo_pitr` replication login, allows it in `pg_hba.conf`, sets
 `archive_timeout` and `max_slot_wal_keep_size`, and reloads Postgres without restarting it. The
 sidecar then takes its first base backup. Run `enable` again after changing `PITR_DATABASE_PASSWORD`
 or `PITR_MAX_WAL_GB`, or after moving Postgres to a new cluster. Uploads are grouped by the

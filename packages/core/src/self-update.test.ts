@@ -73,7 +73,7 @@ describe("repoIdentity", () => {
     expect(repoIdentity("https://github.com/naouflex/assistant")).toBe(identity);
     expect(repoIdentity("https://github.com/naouflex/assistant.git")).toBe(identity);
     expect(repoIdentity("git@github.com:naouflex/assistant.git")).toBe(identity);
-    expect(repoIdentity("ssh://git@github.com/Elie222/Atlas")).toBe(identity);
+    expect(repoIdentity("ssh://git@github.com/Naouflex/Assistant")).toBe(identity);
     expect(repoIdentity("not a url")).toBeNull();
   });
 

@@ -452,7 +452,7 @@ describe("graphical computer spec", () => {
     expect(isRegistryQualifiedImage("localhost/atlas/computer:local")).toBe(true);
     expect(isRegistryQualifiedImage("docker.io/atlas/computer:edge")).toBe(true);
     expect(isRegistryQualifiedImage("Registry/atlas/computer:edge")).toBe(true);
-    expect(isRegistryQualifiedImage("atlas/computer:edge")).toBe(true);
+    expect(isRegistryQualifiedImage("atlaS/computer:edge")).toBe(true);
     expect(isRegistryQualifiedImage("atlas/computer:local")).toBe(false);
     expect(isRegistryQualifiedImage("atlas/computer@sha256:0123")).toBe(false);
     expect(isRegistryQualifiedImage("computer:local")).toBe(false);
