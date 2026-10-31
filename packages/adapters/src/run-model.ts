@@ -180,7 +180,15 @@ export async function resolveModelKey(...args: Parameters<typeof resolveModelKey
   }
   const callObserver =
     !credential && billingEnabled ? await hostedModelCreditObserver(deps.prisma, scope) : undefined;
-  return { ...material, apiKey: material.apiKey ?? runtimeKey, callObserver };
+  return {
+    ...material,
+    apiKey: material.apiKey ?? runtimeKey,
+    callObserver,
+    // A local server keeps its KV cache warm between calls; declaring it keeps history append-only.
+    cacheCapabilities:
+      material.cacheCapabilities ??
+      (provider === LOCAL_PROVIDER_ID ? localCacheCapabilities() : undefined),
+  };
 }
 
 async function resolveModelKeyMaterial(
