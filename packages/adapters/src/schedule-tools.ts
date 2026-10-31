@@ -148,7 +148,11 @@ export function resolveScheduleTiming(
       nextRunAt = new Date(Date.now() + delayMinutes * 60_000);
     } else {
       const parsed = zonedDateTime(String(input.runAt), timezone);
-      if (!parsed) return { ok: false, error: "runAt must be a valid ISO datetime." };
+      if (!parsed)
+        return {
+          ok: false,
+          error: `runAt must be a valid ISO datetime such as 2026-01-31T09:00. ${nowIn(timezone)}`,
+        };
       nextRunAt = parsed;
     }
     if (nextRunAt.getTime() <= Date.now()) {

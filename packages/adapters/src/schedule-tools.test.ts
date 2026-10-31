@@ -80,7 +80,7 @@ describe("resolveScheduleTiming", () => {
     expect(at("2026-11-02T10:00", "Europe/Berlin")).toBe("2026-11-02T09:00:00.000Z");
     expect(at("2026-11-02T10:00", "America/New_York")).toBe("2026-11-02T15:00:00.000Z");
     expect(at("2026-11-02T10:00:00Z", "America/New_York")).toBe("2026-11-02T10:00:00.000Z");
-    expect(at("2026-02-30T10:00", "UTC")).toBe("runAt must be a valid ISO datetime.");
+    expect(at("2026-02-30T10:00", "UTC")).toMatch(/^runAt must be a valid ISO datetime/);
     // 00:30 in Berlin on the 20th already passed (it is 02:11 there).
     expect(at("2026-10-20T00:30", "Europe/Berlin")).toMatch(/^One-shot schedules must run/);
   });
@@ -90,7 +90,7 @@ describe("resolveScheduleTiming", () => {
     (date) => {
       expect.soft(resolveScheduleTiming({ runAt: date })).toEqual({
         ok: false,
-        error: "runAt must be a valid ISO datetime.",
+        error: expect.stringMatching(/^runAt must be a valid ISO datetime/),
       });
       expect.soft(resolveScheduleTiming({ cron: "0 9 * * *", startAt: date })).toEqual({
         ok: false,
@@ -309,7 +309,7 @@ describe("schedule tool persistence", () => {
     } as unknown as Parameters<typeof createScheduleFromTool>[0];
 
     for (const [schedule, error] of [
-      [{ runAt: date }, "runAt must be a valid ISO datetime."],
+      [{ runAt: date }, expect.stringMatching(/^runAt must be a valid ISO datetime/)],
       [{ cron: "0 9 * * *", startAt: date }, "startAt must be an ISO date or datetime."],
     ] as const) {
       expect
@@ -1031,7 +1031,7 @@ describe("updateScheduleFromTool", () => {
     async (date) => {
       const { updateMany, enqueue, cancel, append, update } = setup();
       expect.soft(await update({ schedule: { runAt: date } })).toEqual({
-        error: "runAt must be a valid ISO datetime.",
+        error: expect.stringMatching(/^runAt must be a valid ISO datetime/),
       });
       expect.soft(await update({ schedule: { startAt: date } })).toEqual({
         error: "startAt must be an ISO date or datetime.",
