@@ -13,6 +13,7 @@ import {
   connectorKindFromToolName,
   connectorReadRequiresApproval,
   connectorToolRequiresApproval,
+  connectorToolSendsMessage,
   decisiveActionApprovalRules,
   displayName,
   humanizeToolName,
@@ -255,7 +256,9 @@ export async function gateToolCall(
     commandWatch ||
     scheduleNamesNewSite ||
     requiresUnattendedApproval ||
-    toolRequiresExplicitApproval(name);
+    toolRequiresExplicitApproval(name) ||
+    // Confirm before send: outbound email and messages always wait for the owner.
+    (viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName)));
   // Never ask runs everything else: only another owner's connection could have been steered into it.
   const guardedInNeverAsk = name === "respond_agent_connection";
   const resolvedRules = resolveActionApprovalForTools({

@@ -932,9 +932,9 @@ describe("connector read-only metadata and approval enforcement", () => {
     it("keeps an explicit allow rule ahead of automatic review", async () => {
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         autoReview: true,
-        rules: [{ effect: "always_allow", matchKind: "tool", matchValue: "demo_send_message" }],
+        rules: [{ effect: "always_allow", matchKind: "tool", matchValue: "demo_update_record" }],
       });
       await f.run();
       expect(f.execute).toHaveBeenCalledOnce();
@@ -945,7 +945,7 @@ describe("connector read-only metadata and approval enforcement", () => {
     it("runs a write without asking or review when the owner skips approvals", async () => {
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         autoReview: true,
         skipApprovals: true,
       });
@@ -958,9 +958,11 @@ describe("connector read-only metadata and approval enforcement", () => {
     it("runs past an older ask rule in Never ask, which never waits", async () => {
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         skipApprovals: true,
-        rules: [{ effect: "require_approval", matchKind: "tool", matchValue: "demo_send_message" }],
+        rules: [
+          { effect: "require_approval", matchKind: "tool", matchValue: "demo_update_record" },
+        ],
       });
       await f.run();
       expect(f.execute).toHaveBeenCalledOnce();
@@ -970,7 +972,7 @@ describe("connector read-only metadata and approval enforcement", () => {
     it("runs a webhook-triggered write in Never ask", async () => {
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         trigger: "webhook",
         skipApprovals: true,
       });
@@ -982,9 +984,9 @@ describe("connector read-only metadata and approval enforcement", () => {
     it("refuses a blocked tool in Never ask without asking or running it", async () => {
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         skipApprovals: true,
-        rules: [{ effect: "deny", matchKind: "tool", matchValue: "demo_send_message" }],
+        rules: [{ effect: "deny", matchKind: "tool", matchValue: "demo_update_record" }],
       });
       await f.run();
       expect(f.execute).not.toHaveBeenCalled();
@@ -993,7 +995,7 @@ describe("connector read-only metadata and approval enforcement", () => {
     });
 
     it("asks before an unlisted write in Ask mode", async () => {
-      const f = fixture({ catalog, name: "demo_send_message" });
+      const f = fixture({ catalog, name: "demo_update_record" });
       await f.run();
       expect(f.execute).not.toHaveBeenCalled();
       expect(f.pauseRunForInput).toHaveBeenCalledOnce();
@@ -1002,9 +1004,9 @@ describe("connector read-only metadata and approval enforcement", () => {
     it("forces owner approval for webhook-triggered writes despite an allow rule", async () => {
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         trigger: "webhook",
-        rules: [{ effect: "always_allow", matchKind: "tool", matchValue: "demo_send_message" }],
+        rules: [{ effect: "always_allow", matchKind: "tool", matchValue: "demo_update_record" }],
       });
       await f.run();
       expect(f.execute).not.toHaveBeenCalled();
@@ -1058,11 +1060,11 @@ describe("connector read-only metadata and approval enforcement", () => {
           reason: "Review result",
           model: "scripted/checker",
         });
-        const f = fixture({ catalog, name: "demo_send_message", autoReview: true });
+        const f = fixture({ catalog, name: "demo_update_record", autoReview: true });
         await f.run();
         expect(reviewMock).toHaveBeenCalledOnce();
         expect(reviewMock).toHaveBeenCalledWith(
-          expect.objectContaining({ toolName: "demo_send_message", connectorKind: "demo" }),
+          expect.objectContaining({ toolName: "demo_update_record", connectorKind: "demo" }),
           expect.objectContaining({ runId: "run-1" }),
         );
         expect(f.effects[0]?.reviewDecision).toBe(decision);
@@ -1073,7 +1075,7 @@ describe("connector read-only metadata and approval enforcement", () => {
 
     it("reviews automatically when no approval mode was ever saved", async () => {
       reviewMock.mockResolvedValue({ decision: "pass", model: "scripted/checker" });
-      const f = fixture({ catalog, name: "demo_send_message", savedPreference: false });
+      const f = fixture({ catalog, name: "demo_update_record", savedPreference: false });
       await f.run();
       expect(reviewMock).toHaveBeenCalledOnce();
       expect(f.execute).toHaveBeenCalledOnce();
@@ -1084,7 +1086,7 @@ describe("connector read-only metadata and approval enforcement", () => {
       reviewMock.mockResolvedValue({ decision: "pass", model: "mock" });
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         autoReview: true,
         secrets: ["super-secret-token"],
         prompt: "Send mail with super-secret-token",
@@ -1111,7 +1113,7 @@ describe("connector read-only metadata and approval enforcement", () => {
       });
       const f = fixture({
         catalog,
-        name: "demo_send_message",
+        name: "demo_update_record",
         autoReview: true,
         shutdownSignal: shutdown.signal,
       });
@@ -1157,8 +1159,8 @@ describe("Composio batches", () => {
     },
   );
 
-  it("sends a send in the batch to Auto Review even with the batch tool always allowed", async () => {
-    reviewMock.mockResolvedValue({ decision: "ask", reason: "Not asked to send", model: "mock" });
+  it("asks the owner for a send in the batch, skipping Auto Review, even with the batch tool always allowed", async () => {
+    reviewMock.mockResolvedValue({ decision: "pass", reason: "Looks fine", model: "mock" });
     const f = batchFixture({
       autoReview: true,
       rules: [
@@ -1167,7 +1169,8 @@ describe("Composio batches", () => {
     });
     f.setCalls([{ args: batch("GMAIL_SEND_EMAIL"), executionId: "call-1" }]);
     await f.run();
-    expect(reviewMock).toHaveBeenCalledOnce();
+    // Confirm before send: a send never runs on the approval model's word alone.
+    expect(reviewMock).not.toHaveBeenCalled();
     expect(f.execute).not.toHaveBeenCalled();
     expect(f.pauseRunForInput).toHaveBeenCalledOnce();
   });
@@ -1490,7 +1493,10 @@ describe("own instructions through update_bot", () => {
     f.setCalls([{ args: { name: "Scout", instructions: first }, executionId: "call-1" }]);
     await f.run();
     expect(f.results).toEqual([
-      { error: "Change your instructions in their own update_bot call." },
+      {
+        error:
+          "Nothing was saved: instruction changes need the owner's approval, so they go in their own update_bot call. Call update_bot again now with only { instructions }, then make a separate update_bot call for name.",
+      },
     ]);
     expect(f.effects).toEqual([]);
   });
@@ -2564,7 +2570,7 @@ describe("selected approval decision model execution", () => {
       vi.stubGlobal("fetch", fetchMock);
       try {
         const f = fixture({
-          name: "demo_send_message",
+          name: "demo_update_record",
           readOnly: false,
           autoReview: true,
           nativeReview: true,
@@ -2618,7 +2624,7 @@ it("tries a connected approval backup when the deployment checker is unavailable
   vi.stubGlobal("fetch", fetchMock);
   try {
     const f = fixture({
-      name: "demo_send_message",
+      name: "demo_update_record",
       readOnly: false,
       autoReview: true,
       nativeReview: true,
@@ -2641,7 +2647,7 @@ it("asks instead of using deployment credentials after a selected approval conne
   vi.stubGlobal("fetch", fetchMock);
   try {
     const f = fixture({
-      name: "demo_send_message",
+      name: "demo_update_record",
       readOnly: false,
       autoReview: true,
       nativeReview: true,
@@ -2676,7 +2682,7 @@ it("uses the OpenRouter environment key for a decision checker on another deploy
   vi.stubGlobal("fetch", fetchMock);
   try {
     const f = fixture({
-      name: "demo_send_message",
+      name: "demo_update_record",
       readOnly: false,
       autoReview: true,
       nativeReview: true,

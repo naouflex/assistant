@@ -174,6 +174,24 @@ function innerToolSlugs(args: unknown): string[] {
 }
 
 /** Security-boundary changes cannot be auto-reviewed or permanently allowed. */
+/**
+ * Connector tools that deliver a message to someone outside the chat: email, chat, SMS, comments.
+ * Atlas always shows these as an approval card (a draft the owner confirms), even in Auto mode,
+ * so a model or injected content can never send in the owner's name on its own.
+ */
+const OUTBOUND_MESSAGE_CONNECTOR_PATTERN =
+  /(^|_)(send|reply|forward|post_message|post_comment|create_comment|dm|sms|text_message)(_|$)/i;
+/** Saving a draft sends nothing; sending a saved draft does. */
+const OUTBOUND_DRAFT_ONLY_PATTERN = /(^|_)drafts?$|(^|_)(create|update|save)_drafts?(_|$)/i;
+const SEND_DRAFT_PATTERN = /(^|_)send_drafts?(_|$)/i;
+
+export function connectorToolSendsMessage(toolName: string): boolean {
+  if (OUTBOUND_DRAFT_ONLY_PATTERN.test(toolName) && !SEND_DRAFT_PATTERN.test(toolName)) {
+    return false;
+  }
+  return OUTBOUND_MESSAGE_CONNECTOR_PATTERN.test(toolName);
+}
+
 export function toolRequiresExplicitApproval(toolName: string): boolean {
   return EXPLICIT_APPROVAL_BUILTIN_TOOLS.has(toolName);
 }
