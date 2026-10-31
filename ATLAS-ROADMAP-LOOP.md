@@ -27,3 +27,18 @@ Also this round: prompt-cache reuse (b9346f1f, 87ba8ec0): stable system+tools pr
 1. Interactive option cards (bot offers 2-4 choices; one tap answers).
 2. Local model auto-discovery in the model picker (Ollama /api/tags and llama-server /v1/models).
 3. Usage view per bot (tokens, cached share, time to first token).
+
+## Round 3 (2026-10-31)
+
+| Planned | Found | Shipped |
+|---|---|---|
+| Interactive option cards | Already there: ask_user with options renders lettered rows (A, B, C...); one tap answers; a typed reply still works. | Swap: 65717013 adds keyboard answers: press A-D or 1-4 to pick an option of the newest open question (ignored while typing in a field, with modifiers, or when a dialog is open). |
+| Local model auto-discovery | Local models came only from ATLAS_LOCAL_MODELS | 44d1bc9f: API and worker scan the local server's /v1/models (and Ollama's /api/tags, default 127.0.0.1:11434) at start and every 60s; new models show in the picker under "Local (Ollama / llama.cpp / LM Studio)". Configured ids keep priority. ATLAS_LOCAL_DISCOVERY_URLS adds servers, or "off" turns it off. |
+| Usage view per bot | Usage settings showed totals by day and model | 6747eabb: Settings > Usage has a "by bot" table: tokens, share served from cache, median time to first response (last 500 user runs). |
+
+Time to first response (llama-server MTP on 11436, monotonic clock): direct API 165-290 ms warm (1.2-1.6 s cold or for a new 2.4K-token prefix; cached prefix 2422/2440 tokens). Through Atlas, send to first visible bot event: median ~1.4 s (1.0-2.7 s, 8 runs).
+
+### Round 4 candidates
+1. Streamed reply text in the thread (first token visible before the whole message lands).
+2. Model picker refresh button and per-model health (reachable, context size from /props).
+3. Make the bot reach for option cards: a prompt or tool-hint tweak so 2-4 way choices come out as ask_user options, plus an eval case.
