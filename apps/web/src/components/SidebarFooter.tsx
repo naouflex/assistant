@@ -10,6 +10,7 @@ import {
 } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
+  AlarmClock,
   BookOpen,
   Download,
   FolderOpen,
@@ -43,6 +44,8 @@ type Props = {
   links?: NavLink[];
   onLink?: (link: NavLink) => void;
   onArtifacts: () => void;
+  /** Opens the list of every bot's routines. */
+  onRoutines?: () => void;
   onSettings: () => void;
   onUsage: () => void;
   onInvite?: () => void;
@@ -71,6 +74,7 @@ export function SidebarFooter({
   links = [],
   onLink,
   onArtifacts,
+  onRoutines,
   onSettings,
   onUsage,
   onInvite,
@@ -179,6 +183,16 @@ export function SidebarFooter({
               <FolderOpen className="text-muted-foreground" strokeWidth={1.75} />
               <Trans>Artifacts</Trans>
             </Button>
+            {onRoutines ? (
+              <Button
+                variant="ghost"
+                className="h-9 w-full justify-start gap-2.5 font-normal"
+                onClick={onRoutines}
+              >
+                <AlarmClock className="text-muted-foreground" strokeWidth={1.75} />
+                <Trans>Routines</Trans>
+              </Button>
+            ) : null}
             {onBoard ? (
               <Button
                 variant="ghost"

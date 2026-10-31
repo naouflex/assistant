@@ -56,6 +56,9 @@ const WelcomePage = lazyComponent(() =>
 const NotFoundPage = lazyComponent(() =>
   import("./pages/NotFound").then((module) => module.NotFoundPage),
 );
+const RoutinesPage = lazyComponent(() =>
+  import("./pages/Routines").then((module) => module.RoutinesPage),
+);
 const ArtifactsPage = lazyComponent(() =>
   import("./pages/Artifacts").then((module) => module.ArtifactsPage),
 );
@@ -266,6 +269,7 @@ function SessionApp() {
                 <Route path="/app" element={<ShellPage />} />
                 <Route path="/app/g/:groupId" element={<ShellPage />} />
                 <Route path="/app/artifacts" element={<ArtifactsPage />} />
+                <Route path="/app/routines" element={<RoutinesPage />} />
                 <Route path="/app/artifacts/:artifactId" element={<ArtifactsPage />} />
                 {ticketBoardEnabled ? <Route path="/app/board" element={<BoardPage />} /> : null}
                 <Route path="/app/x/:linkId" element={<NavLinkPage />} />

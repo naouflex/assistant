@@ -362,6 +362,11 @@ function ShellSidebarFooter({
           closeMobileSidebar();
           navigate("/app/artifacts");
         }}
+        onRoutines={() => {
+          setMenuOpen(false);
+          closeMobileSidebar();
+          navigate("/app/routines");
+        }}
         onSettings={() => {
           setMenuOpen(false);
           openSettings("general");
