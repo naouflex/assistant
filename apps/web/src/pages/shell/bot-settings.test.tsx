@@ -14,6 +14,7 @@ vi.mock("../../lib/rpc", () => {
     models: {
       credentials: vi.fn(async () => []),
       list: vi.fn(async () => []),
+      localStatus: vi.fn(async () => ({ contextWindow: null, servers: [], checkedAt: "" })),
     },
     me: vi.fn(async () => ({})),
   };

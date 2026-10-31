@@ -134,6 +134,142 @@ export async function discoverLocalModels(
   return out.slice(0, MAX_DISCOVERED_MODELS);
 }
 
+/** Above this a model file no longer fits an 8 GB GPU with room for its context, so it spills to the CPU. */
+export const LARGE_LOCAL_MODEL_BYTES = 7 * 1024 ** 3;
+
+export type LocalModelStatus = {
+  id: string;
+  aliases: string[];
+  /** Bytes of the model file, when the server says. */
+  sizeBytes: number | null;
+  /** "30.5B", when the server says. */
+  parameterSize: string | null;
+  /** Context the server runs this model with, when it says (llama-server, or a loaded Ollama model). */
+  contextWindow: number | null;
+  /** Too big for an 8 GB GPU: it runs partly on the CPU and replies slowly. */
+  large: boolean;
+};
+
+export type LocalServerStatus = {
+  baseUrl: string;
+  kind: "llama-server" | "ollama" | "openai-compatible" | "unknown";
+  reachable: boolean;
+  /** Per-slot context of a llama-server. */
+  contextWindow: number | null;
+  models: LocalModelStatus[];
+};
+
+function positiveInt(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.floor(value)
+    : null;
+}
+
+function billions(count: number | null): string | null {
+  return count ? `${(count / 1e9).toFixed(1)}B` : null;
+}
+
+function isLarge(sizeBytes: number | null, parameterSize: string | null): boolean {
+  if (sizeBytes) return sizeBytes > LARGE_LOCAL_MODEL_BYTES;
+  const params = Number.parseFloat(parameterSize ?? "");
+  return Number.isFinite(params) && /b$/i.test(parameterSize ?? "") && params >= 14;
+}
+
+function records(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+    : [];
+}
+
+/** What one server reports: reachability, its kind, context sizes, and model sizes. */
+export async function scanServerStatus(
+  fetchImpl: Fetch,
+  baseUrl: string,
+): Promise<LocalServerStatus> {
+  const origin = baseUrl.replace(/\/v1$/, "");
+  const [listed, props, tags, ps] = await Promise.all([
+    getJson(fetchImpl, `${baseUrl}/models`),
+    getJson(fetchImpl, `${origin}/props`),
+    getJson(fetchImpl, `${origin}/api/tags`),
+    getJson(fetchImpl, `${origin}/api/ps`),
+  ]);
+  const settings = (props as { default_generation_settings?: Record<string, unknown> } | undefined)
+    ?.default_generation_settings;
+  const serverContext = positiveInt(settings?.n_ctx);
+  const tagModels = records((tags as { models?: unknown } | undefined)?.models);
+  const loaded = new Map(
+    records((ps as { models?: unknown } | undefined)?.models).map((entry) => [
+      String(entry.name ?? entry.model ?? ""),
+      positiveInt(entry.context_length),
+    ]),
+  );
+  const models: LocalModelStatus[] = [];
+  const kind: LocalServerStatus["kind"] = serverContext
+    ? "llama-server"
+    : tagModels.length || tags
+      ? "ollama"
+      : listed
+        ? "openai-compatible"
+        : "unknown";
+  if (kind === "ollama") {
+    for (const entry of tagModels) {
+      const id = String(entry.name ?? entry.model ?? "").trim();
+      if (!id) continue;
+      const details = entry.details as Record<string, unknown> | undefined;
+      const sizeBytes = positiveInt(entry.size);
+      const parameterSize =
+        typeof details?.parameter_size === "string" ? details.parameter_size : null;
+      models.push({
+        id,
+        aliases: [],
+        sizeBytes,
+        parameterSize,
+        contextWindow: loaded.get(id) ?? null,
+        large: isLarge(sizeBytes, parameterSize),
+      });
+    }
+  } else {
+    for (const entry of records((listed as { data?: unknown } | undefined)?.data)) {
+      if (typeof entry.id !== "string" || !entry.id.trim()) continue;
+      const meta = entry.meta as Record<string, unknown> | undefined;
+      const sizeBytes = positiveInt(meta?.size);
+      const parameterSize = billions(positiveInt(meta?.n_params));
+      models.push({
+        id: entry.id.trim(),
+        aliases: strings(entry.aliases).filter((alias) => alias !== entry.id),
+        sizeBytes,
+        parameterSize,
+        contextWindow: positiveInt(meta?.n_ctx) ?? serverContext,
+        large: isLarge(sizeBytes, parameterSize),
+      });
+    }
+  }
+  return {
+    baseUrl,
+    kind,
+    reachable: Boolean(listed || props || tags),
+    contextWindow: serverContext,
+    models: models.slice(0, MAX_DISCOVERED_MODELS),
+  };
+}
+
+/** Status of every scanned server, in scan order. */
+export async function localServerStatus(
+  env: Env = process.env,
+  fetchImpl: Fetch = fetch,
+): Promise<LocalServerStatus[]> {
+  return Promise.all(localDiscoveryUrls(env).map((url) => scanServerStatus(fetchImpl, url)));
+}
+
+/** Scans now (the picker's refresh button); returns whether the list changed. */
+export async function refreshLocalModels(
+  env: Env = process.env,
+  fetchImpl: Fetch = fetch,
+): Promise<boolean> {
+  if (!localDiscoveryUrls(env).length) return false;
+  return setDiscoveredLocalModels(await discoverLocalModels(env, fetchImpl));
+}
+
 let discovered: DiscoveredLocalModel[] = [];
 let version = 0;
 

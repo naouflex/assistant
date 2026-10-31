@@ -1,6 +1,9 @@
 import { SecretStoreUnavailableError } from "@atlas/adapter-kit";
 import {
   listPiCatalog,
+  localContextWindow,
+  localDiscoveryUrls,
+  localServerStatus,
   ModelSignInError,
   modelCredentialDto,
   oauthCredentialEmail,
@@ -8,6 +11,7 @@ import {
   probeCatalogProviderModels,
   probeOpenAiCompatibleModels,
   providerCatalogCache,
+  refreshLocalModels,
   resolveMemberMainModel,
   selectDefaultCredentialId,
   serializeModelSecret,
@@ -69,6 +73,14 @@ export function modelsRoutes(ctx: RouterContext) {
   return {
     models: {
       list: authed.models.list.handler(async ({ context }) => chatCatalog(context.actor)),
+      localStatus: authed.models.localStatus.handler(async ({ input }) => {
+        if (input.refresh) await refreshLocalModels();
+        return {
+          contextWindow: localDiscoveryUrls().length ? localContextWindow() : null,
+          servers: await localServerStatus(),
+          checkedAt: new Date().toISOString(),
+        };
+      }),
       credentials: authed.models.credentials.handler(async ({ context }) => {
         const [rows, main] = await Promise.all([
           deps.prisma.userModelCredential.findMany({

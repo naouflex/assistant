@@ -164,4 +164,42 @@ describe("ChatModelPicker", () => {
       collisionAvoidance: { side: "flip", align: "shift", fallbackAxisSide: "none" },
     });
   });
+
+  it("shows local model notes and a refresh button", () => {
+    const refresh = vi.fn();
+    const list: ChatModelChoice[] = [
+      { key: "", label: "Space default" },
+      {
+        key: "local::qwen3:30b-a3b",
+        label: "qwen3:30b-a3b",
+        provider: "local",
+        modelId: "qwen3:30b-a3b",
+      },
+    ];
+    act(() =>
+      root.render(
+        <ChatModelPicker
+          id="model"
+          choices={list}
+          value=""
+          onChange={onChange}
+          localNotes={new Map([["local::qwen3:30b-a3b", "slow on 8 GB GPU"]])}
+          onRefreshLocal={refresh}
+        />,
+      ),
+    );
+    const select = container.querySelector("select")!;
+    expect(select.options[1]?.textContent).toBe("qwen3:30b-a3b \u00b7 slow on 8 GB GPU");
+    const button = container.querySelector<HTMLButtonElement>(
+      '[data-testid="refresh-local-models"]',
+    )!;
+    expect(button.getAttribute("aria-label")).toBe("Refresh local models");
+    act(() => button.click());
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("has no refresh button without local models", () => {
+    render(choices(3), "");
+    expect(container.querySelector('[data-testid="refresh-local-models"]')).toBeNull();
+  });
 });

@@ -84,6 +84,7 @@ import {
   GroupDetailSchema,
   GroupSchema,
   IntegrationCatalogResultSchema,
+  LocalModelsStatusSchema,
   McpServerConfigInput,
   McpServerSchema,
   MemoryDocumentSchema,
@@ -368,6 +369,10 @@ export const appContract = {
       )
       .output(ModelRoleViewSchema),
     list: oc.output(z.array(ModelCatalogEntrySchema)),
+    /** Local model servers' status; refresh rescans them so new models list at once. */
+    localStatus: oc
+      .input(z.object({ refresh: z.boolean().optional() }))
+      .output(LocalModelsStatusSchema),
     credentials: oc.output(z.array(ModelCredentialSchema)),
     backups: oc.output(z.array(ModelBackupChoiceSchema)),
     setBackups: oc.input(ModelBackupListSchema).output(z.object({ ok: z.literal(true) })),

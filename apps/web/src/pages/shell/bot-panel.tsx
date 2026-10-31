@@ -50,6 +50,7 @@ import { errorText } from "../../lib/user-error";
 import { AvatarStudioPopover } from "./avatar-studio-popover";
 import { ChatModelPicker } from "./chat-model-picker";
 import { selectableThinkingLevels } from "./composer-thinking";
+import { useLocalModelStatus } from "./local-model-status";
 
 const ScratchpadSection = lazyComponent(() =>
   import("../ScratchpadSection").then((module) => module.ScratchpadSection),
@@ -305,6 +306,8 @@ export function BotSettings({
     t`Space default`,
     defaultEntry?.images,
   );
+
+  const localStatus = useLocalModelStatus(connectedOptions);
 
   const effectiveProvider = selectedModel?.provider ?? me?.defaultProvider ?? null;
   const effectiveModelId = selectedModel?.modelId ?? me?.defaultModel ?? null;
@@ -617,6 +620,11 @@ export function BotSettings({
                     <ChatModelPicker
                       id={`${ids}-model`}
                       choices={modelChoices}
+                      localNotes={localStatus.notes}
+                      onRefreshLocal={
+                        localStatus.hasLocal ? () => void localStatus.refresh() : undefined
+                      }
+                      refreshingLocal={localStatus.refreshing}
                       value={selectedModelKey}
                       onChange={(key) => {
                         setModelKey(key);

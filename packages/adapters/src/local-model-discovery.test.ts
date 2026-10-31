@@ -3,7 +3,9 @@ import {
   discoverLocalModels,
   localDiscoveryUrls,
   localModelsVersion,
+  localServerStatus,
   parseServerModels,
+  refreshLocalModels,
   setDiscoveredLocalModels,
 } from "./local-model-discovery.js";
 import { localProvider } from "./pi-local-provider.js";
@@ -114,5 +116,53 @@ describe("local model discovery", () => {
         { id: "gemma3:4b", aliases: [], baseUrl: OLLAMA, images: false },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("local server status", () => {
+  const routes: Record<string, unknown> = {
+    "http://127.0.0.1:11436/v1/models": {
+      data: [{ id: "qwen3.5:4b", meta: { n_ctx: 16384, n_params: 4326350848, size: 2824005632 } }],
+    },
+    "http://127.0.0.1:11436/props": { default_generation_settings: { n_ctx: 16384 } },
+    "http://127.0.0.1:11434/v1/models": { data: [{ id: "gemma3:4b" }, { id: "qwen3:30b-a3b" }] },
+    "http://127.0.0.1:11434/api/tags": {
+      models: [
+        { name: "gemma3:4b", size: 3_350_000_000, details: { parameter_size: "3.9B" } },
+        { name: "qwen3:30b-a3b", size: 18_560_000_000, details: { parameter_size: "30.5B" } },
+      ],
+    },
+    "http://127.0.0.1:11434/api/ps": { models: [{ name: "gemma3:4b", context_length: 8192 }] },
+  };
+  const fetchImpl = (async (url: string) =>
+    url in routes ? json(routes[url]) : json({}, false)) as unknown as typeof fetch;
+
+  it("reports reachability, context sizes, and models too big for an 8 GB GPU", async () => {
+    const [llama, ollama, gone] = await localServerStatus(
+      {
+        ATLAS_LOCAL_MODELS_URL: LLAMA,
+        ATLAS_LOCAL_DISCOVERY_URLS: `${OLLAMA},http://127.0.0.1:9/v1`,
+      },
+      fetchImpl,
+    );
+    expect(llama).toMatchObject({ kind: "llama-server", reachable: true, contextWindow: 16384 });
+    expect(llama?.models[0]).toMatchObject({
+      id: "qwen3.5:4b",
+      contextWindow: 16384,
+      parameterSize: "4.3B",
+      large: false,
+    });
+    expect(ollama).toMatchObject({ kind: "ollama", reachable: true, contextWindow: null });
+    expect(ollama?.models).toEqual([
+      expect.objectContaining({ id: "gemma3:4b", contextWindow: 8192, large: false }),
+      expect.objectContaining({ id: "qwen3:30b-a3b", contextWindow: null, large: true }),
+    ]);
+    expect(gone).toMatchObject({ reachable: false, kind: "unknown", models: [] });
+  });
+
+  it("refresh rescans and lists new models at once", async () => {
+    const env = { ATLAS_LOCAL_DISCOVERY_URLS: OLLAMA };
+    expect(await refreshLocalModels(env, fetchImpl)).toBe(true);
+    expect(await refreshLocalModels({}, fetchImpl)).toBe(false);
   });
 });

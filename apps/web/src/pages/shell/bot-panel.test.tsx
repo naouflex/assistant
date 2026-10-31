@@ -17,6 +17,7 @@ vi.mock("../../lib/rpc", () => {
     models: {
       credentials: vi.fn().mockResolvedValue([]),
       list: vi.fn().mockResolvedValue([]),
+      localStatus: vi.fn().mockResolvedValue({ contextWindow: null, servers: [], checkedAt: "" }),
     },
     me: vi.fn().mockResolvedValue(null),
   };

@@ -1,6 +1,7 @@
 import type { ChatModelChoice } from "@atlas/core";
 import { groupModelChoices, MODEL_SEARCH_THRESHOLD } from "@atlas/core";
 import {
+  Button,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -14,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, RefreshCwIcon } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { TextOnlyMark } from "../../components/TextOnlyMark";
 
@@ -26,6 +27,9 @@ export function ChatModelPicker({
   onChange,
   compact = false,
   ariaLabel,
+  localNotes,
+  onRefreshLocal,
+  refreshingLocal = false,
 }: {
   id: string;
   /** Small inline control, as under the composer, labelled by ariaLabel. */
@@ -34,6 +38,11 @@ export function ChatModelPicker({
   choices: readonly ChatModelChoice[];
   value: string;
   onChange: (key: string) => void;
+  /** Status note per local choice key, such as "16K ctx" or "offline". */
+  localNotes?: ReadonlyMap<string, string>;
+  /** Shows a button that rescans the local model servers. */
+  onRefreshLocal?: () => void;
+  refreshingLocal?: boolean;
 }) {
   const { t } = useLingui();
   const imagesHintId = useId();
@@ -43,6 +52,22 @@ export function ChatModelPicker({
   const selected = choices.find((choice) => choice.key === value) ?? choices[0];
   const textOnly = selected?.images === false;
   const imagesHint = <span id={imagesHintId} hidden>{t`Can't read images`}</span>;
+  const note = (key: string) => localNotes?.get(key);
+  const refreshButton = onRefreshLocal ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size={compact ? "icon-xs" : "icon-sm"}
+      className="shrink-0 text-muted-foreground"
+      aria-label={t`Refresh local models`}
+      title={t`Refresh local models`}
+      data-testid="refresh-local-models"
+      disabled={refreshingLocal}
+      onClick={onRefreshLocal}
+    >
+      <RefreshCwIcon className={refreshingLocal ? "animate-spin" : undefined} aria-hidden="true" />
+    </Button>
+  ) : null;
 
   if (choices.length <= MODEL_SEARCH_THRESHOLD) {
     return (
@@ -59,7 +84,7 @@ export function ChatModelPicker({
         >
           {choices.map((choice) => (
             <NativeSelectOption key={choice.key} value={choice.key}>
-              {choice.label}
+              {note(choice.key) ? `${choice.label} \u00b7 ${note(choice.key)}` : choice.label}
             </NativeSelectOption>
           ))}
         </NativeSelect>
@@ -68,6 +93,7 @@ export function ChatModelPicker({
             <TextOnlyMark />
           </span>
         ) : null}
+        {refreshButton}
       </div>
     );
   }
@@ -77,7 +103,7 @@ export function ChatModelPicker({
     if (!next) setQuery("");
   }
 
-  return (
+  const popover = (
     <Popover open={open} onOpenChange={openChange}>
       {imagesHint}
       <PopoverTrigger
@@ -131,6 +157,11 @@ export function ChatModelPicker({
                       <span className="min-w-0 flex-1 truncate">
                         {choice.title ?? choice.label}
                       </span>
+                      {note(choice.key) ? (
+                        <span className="shrink-0 text-muted-foreground text-xs">
+                          {note(choice.key)}
+                        </span>
+                      ) : null}
                       {choice.images === false ? (
                         <span className="shrink-0 text-muted-foreground">
                           <TextOnlyMark />
@@ -145,5 +176,12 @@ export function ChatModelPicker({
         </PopoverContent>
       ) : null}
     </Popover>
+  );
+  if (!refreshButton) return popover;
+  return (
+    <div className="flex min-w-0 items-center gap-2 [&>button:first-of-type]:min-w-0 [&>button:first-of-type]:flex-1">
+      {popover}
+      {refreshButton}
+    </div>
   );
 }

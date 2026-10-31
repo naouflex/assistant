@@ -121,6 +121,11 @@ function localModel(spec: LocalModelSpec): Model<"openai-completions"> {
   };
 }
 
+/** Context window Atlas assumes for every local model (ATLAS_LOCAL_CONTEXT_WINDOW). */
+export function localContextWindow(): number {
+  return tokenLimit("ATLAS_LOCAL_CONTEXT_WINDOW", DEFAULT_CONTEXT_WINDOW);
+}
+
 export function localProvider(): Provider | undefined {
   const specs = localModelSpecs();
   if (!specs.length) return undefined;

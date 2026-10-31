@@ -1135,6 +1135,34 @@ const UsageTotalsSchema = z.object({
   modelCalls: z.number().optional(),
 });
 /** One bot's spend, prompt-cache reuse and responsiveness. */
+/** One local model server as the picker shows it: reachable, context sizes, slow models. */
+export const LocalModelStatusSchema = z.object({
+  id: z.string(),
+  aliases: z.array(z.string()),
+  sizeBytes: z.number().nullable(),
+  parameterSize: z.string().nullable(),
+  contextWindow: z.number().nullable(),
+  large: z.boolean(),
+});
+export type LocalModelStatus = z.infer<typeof LocalModelStatusSchema>;
+
+export const LocalServerStatusSchema = z.object({
+  baseUrl: z.string(),
+  kind: z.enum(["llama-server", "ollama", "openai-compatible", "unknown"]),
+  reachable: z.boolean(),
+  contextWindow: z.number().nullable(),
+  models: z.array(LocalModelStatusSchema),
+});
+export type LocalServerStatus = z.infer<typeof LocalServerStatusSchema>;
+
+export const LocalModelsStatusSchema = z.object({
+  /** Context Atlas sends local models (ATLAS_LOCAL_CONTEXT_WINDOW); null without local models. */
+  contextWindow: z.number().nullable(),
+  servers: z.array(LocalServerStatusSchema),
+  checkedAt: z.string(),
+});
+export type LocalModelsStatus = z.infer<typeof LocalModelsStatusSchema>;
+
 export const BotUsageSchema = z.object({
   botId: z.string(),
   /** Null when the bot no longer exists and left no deletion record. */

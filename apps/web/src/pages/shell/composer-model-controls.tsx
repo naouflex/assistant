@@ -16,6 +16,7 @@ import { useSpaceQueries } from "../../lib/query";
 import { errorText } from "../../lib/user-error";
 import { ChatModelPicker } from "./chat-model-picker";
 import { thinkingIsOn, thinkingToggleLevels } from "./composer-thinking";
+import { useLocalModelStatus } from "./local-model-status";
 
 export type ComposerModelPatch = {
   modelProvider: string | null;
@@ -42,6 +43,9 @@ export function ComposerModelControls({
   const me = useQuery(queries.me.queryOptions()).data;
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const localStatus = useLocalModelStatus(
+    credentials && catalog ? connectedModelChoices(credentials, catalog) : [],
+  );
   if (!credentials || !catalog || !me) return null;
 
   const stored =
@@ -92,6 +96,9 @@ export function ComposerModelControls({
           compact
           ariaLabel={t`Model for ${bot.name}`}
           choices={choices}
+          localNotes={localStatus.notes}
+          onRefreshLocal={localStatus.hasLocal ? () => void localStatus.refresh() : undefined}
+          refreshingLocal={localStatus.refreshing}
           value={selectedKey}
           onChange={(key) => {
             const next = key ? parseModelOptionKey(key) : null;
