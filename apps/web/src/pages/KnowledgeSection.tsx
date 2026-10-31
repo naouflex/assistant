@@ -221,6 +221,15 @@ function MemoryDocumentList({
                     {doc.path}
                   </span>
                 </Button>
+                <time
+                  dateTime={doc.updatedAt}
+                  className="shrink-0 text-muted-foreground text-xs tabular-nums"
+                >
+                  {new Date(doc.updatedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </time>
                 <Tooltip>
                   <TooltipTrigger
                     render={<Button variant="ghost" size="icon-sm" />}

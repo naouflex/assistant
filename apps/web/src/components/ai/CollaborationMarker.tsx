@@ -2,6 +2,8 @@ import type { BotAvatarSet } from "@atlas/contracts";
 import { splitPeerLabel } from "@atlas/core";
 import type { GroupAvatarMember } from "@atlas/ui-web";
 import { BotAvatar, GroupAvatar } from "@atlas/ui-web";
+import { useEffect, useState } from "react";
+import { workingElapsedLabel } from "./working-elapsed";
 
 export function CollaborationMarker({
   color,
@@ -43,12 +45,27 @@ export function CollaborationMarker({
 
 /** The working bot with what it is doing right now, such as its current tool call. */
 export function ActiveBotGlyph({ bots, label }: { bots: GroupAvatarMember[]; label: string }) {
+  const [startedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(startedAt);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const elapsed = workingElapsedLabel(now - startedAt);
   return (
     <div role="status" className="flex min-h-10 min-w-0 items-center gap-2.5 px-1">
       <GroupAvatar members={bots} size={28} />
       <span dir="auto" className="min-w-0 truncate text-[15px] text-muted-foreground text-shimmer">
         {label}
       </span>
+      {elapsed ? (
+        <span
+          data-testid="working-elapsed"
+          className="shrink-0 text-muted-foreground text-xs tabular-nums"
+        >
+          {elapsed}
+        </span>
+      ) : null}
     </div>
   );
 }
