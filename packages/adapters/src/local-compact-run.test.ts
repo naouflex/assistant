@@ -12,6 +12,7 @@ import { formatCurrentTimeInstruction } from "./current-time.js";
 import { namedAgentTools } from "./pi-runtime-tools.js";
 import {
   compactInstructionsEnabled,
+  compactSandboxInstruction,
   compactUserTurnInstructions,
   userTurnInstructions,
 } from "./run-instructions.js";
@@ -165,5 +166,23 @@ describe("self-hosted chat-completions payloads", () => {
       ATLAS_LOCAL_DISABLE_THINKING: "true",
     });
     expect(await cloud.onPayload?.(payload, hosted as never)).toBeUndefined();
+  });
+  it("answers whatever the role and explains where the shell runs", () => {
+    const compact = join(compactUserTurnInstructions(parts));
+    expect(compact).toContain("answer whatever the owner asks directly");
+    expect(compact).toContain("never tell the owner to install WSL");
+    expect(compact).toContain("schedule_create");
+    expect(
+      join(compactUserTurnInstructions({ ...parts, userComputer: "connected" })),
+    ).not.toContain("own Linux sandbox");
+  });
+
+  it("names mounted owner folders when the sandbox has them", () => {
+    expect(compactSandboxInstruction({})).toContain("cannot see the owner's files");
+    const mounted = compactSandboxInstruction({
+      SANDBOX_COMPUTER_MOUNTS: "/home/naoufel/code:/mnt/naoufel/code:ro, /srv/x:/srv/x:rw",
+    });
+    expect(mounted).toContain("/mnt/naoufel/code (read-only) = their /home/naoufel/code");
+    expect(mounted).toContain("/srv/x = their /srv/x");
   });
 });

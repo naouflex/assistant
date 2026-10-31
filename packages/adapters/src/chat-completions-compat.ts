@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import type { Api, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
 
 /**
@@ -26,9 +28,30 @@ export function withChatCompletionsCompatibility<O extends SimpleStreamOptions>(
       const normalized =
         normalizeChatCompletionsPayload(replaced ?? payload, { stringContent }) ?? replaced;
       if (!local) return normalized;
-      return selfHostedPayload(normalized ?? payload, local) ?? normalized;
+      const final = selfHostedPayload(normalized ?? payload, local) ?? normalized;
+      dumpLocalPayload(env, final ?? payload);
+      return final;
     },
   };
+}
+
+/**
+ * Diagnostics for self-hosted models: when set to a directory, each final request body is
+ * written there as JSON so an operator can read exactly what the model received. Off by default;
+ * the bodies hold conversation text, so point it at a private local directory only.
+ */
+export const LOCAL_PAYLOAD_DUMP_ENV = "ATLAS_DEBUG_LOCAL_PAYLOAD_DIR";
+
+function dumpLocalPayload(env: Record<string, string | undefined>, payload: unknown) {
+  const directory = env[LOCAL_PAYLOAD_DUMP_ENV]?.trim();
+  if (!directory) return;
+  try {
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    const name = `${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(36).slice(2, 8)}.json`;
+    writeFileSync(path.join(directory, name), JSON.stringify(payload, null, 2), { mode: 0o600 });
+  } catch {
+    // Diagnostics must never break a model call.
+  }
 }
 
 /** Env switch that turns model thinking off on self-hosted servers (Ollama, llama.cpp, vLLM). */

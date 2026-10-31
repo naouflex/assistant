@@ -1035,7 +1035,9 @@ const EMPTY_USAGE = {
 /**
  * Stored replies replay as real assistant turns, so the model sees a normal conversation and the
  * latest user message stays last. A reply before any user message stays in the older user-role
- * form, since some providers require the conversation to open with the user.
+ * form, since some providers require the conversation to open with the user. Chat-completions
+ * endpoints accept an opening assistant turn, and the user-role form would merge into the first
+ * real user message there, so those keep it as an assistant turn.
  */
 function toHistory(
   history: AgentRunRequest["history"],
@@ -1059,7 +1061,7 @@ function toHistory(
     duplicatePromptIndex < 0
       ? history
       : history.filter((_, index) => index !== duplicatePromptIndex);
-  let seenUser = afterUser;
+  let seenUser = afterUser || model.api === "openai-completions";
   return prior
     .filter((m) => m.role === "user" || m.role === "assistant")
     .map((m): Message => {
