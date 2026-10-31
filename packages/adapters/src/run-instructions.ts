@@ -284,7 +284,12 @@ function toolUsageLine(parts: {
     builtinOffered(disabled, "connect_app")
       ? "Use connect_app when an app needs connecting or the user asks to connect one, then wait for them."
       : undefined,
-    builtinOffered(disabled, "remember") ? "Use remember for durable facts." : undefined,
+    builtinOffered(disabled, "remember")
+      ? "Use remember for durable facts about the owner (preferences, people, projects, decisions); start notes about events with today's date (YYYY-MM-DD)."
+      : undefined,
+    builtinOffered(disabled, "schedule_create")
+      ? "When a request recurs or waits on time (every morning, remind me, let me know when), offer a routine with schedule_create."
+      : undefined,
     scratchpadClause(disabled),
     builtinOffered(disabled, "request_takeover")
       ? "Use request_takeover when the user must provide protected input or human judgment."
@@ -293,6 +298,10 @@ function toolUsageLine(parts: {
   ].filter((clause): clause is string => Boolean(clause));
   return `${parts.computerInstruction} ${clauses.join(" ")}`;
 }
+
+/** Atlas house style. Kept to one short clause: small local models have little prompt room. */
+export const ATLAS_STYLE_GUIDANCE =
+  "Answer first. Default to one or two warm, plain sentences; add detail only when asked or needed, with no filler or restating the question. Write links as labelled markdown links. Never invent facts: say what you could not check. Ask before destructive or paid actions; sends wait for the owner's approval card.";
 
 // Ordering matters: stable blocks first, volatile ones last, so the prefix stays cacheable.
 export function userTurnInstructions(parts: {
@@ -321,6 +330,7 @@ export function userTurnInstructions(parts: {
 }): (string | undefined)[] {
   return [
     parts.botInstructions,
+    ATLAS_STYLE_GUIDANCE,
     parts.historyRetrievalEnabled &&
     builtinOffered(parts.disabledBuiltinTools, "search_history") &&
     builtinOffered(parts.disabledBuiltinTools, "read_history")
