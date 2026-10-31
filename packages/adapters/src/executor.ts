@@ -109,6 +109,7 @@ import {
 } from "./model-selection.js";
 import { modelAcceptsImageInput } from "./model-vision.js";
 import { usesNativeShell } from "./native-shell.js";
+import { optionChoiceNote } from "./option-choice.js";
 import { paymentWalletConnected } from "./payment-wallets.js";
 import { isRetiredModelCredentialError } from "./pi-oauth.js";
 import { loadPurchaseRedactions } from "./purchase-service.js";
@@ -1399,6 +1400,13 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           // Per-turn, not in the system prompt: the timestamp changes every call and would break the cacheable prefix.
           formatCurrentTimeInstruction(new Date(), userTimeZone),
           lateRoutineNote,
+          // Per-turn too: only this turn's words decide it, and the system prompt stays cacheable.
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? optionChoiceNote(taskPrompt, {
+                askUserOffered: tools.some((tool) => tool.name === "ask_user"),
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
         ]
           .filter(Boolean)
           .join("\n\n");

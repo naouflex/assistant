@@ -459,6 +459,23 @@ export const TOOL_CHOICE_DEFINITIONS: ToolChoiceCase[] = [
     expect: { calls: [{ tool: "ask_user" }] },
   },
   {
+    id: "ask-choice-three-way",
+    area: "ask",
+    kind: "guard",
+    purpose: "Put a named three-way choice in option cards, not a text list.",
+    prompt:
+      "Help me pick a dinner for tonight: should I cook pasta, order sushi, or have a salad? Let me choose.",
+    expect: { calls: [{ tool: "ask_user" }] },
+  },
+  {
+    id: "ask-choice-open",
+    area: "ask",
+    kind: "guard",
+    purpose: "Offer two to four options as cards when the user asks for options to pick from.",
+    prompt: "I want to plan my Sunday. Give me a few options to pick from.",
+    expect: { calls: [{ tool: "ask_user" }] },
+  },
+  {
     id: "subagent-delegate",
     area: "subagents",
     kind: "guard",
