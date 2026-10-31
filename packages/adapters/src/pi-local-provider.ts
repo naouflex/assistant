@@ -1,14 +1,15 @@
 import type { Model, MutableModels, Provider } from "@earendil-works/pi-ai";
 import { createProvider } from "@earendil-works/pi-ai";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/api/openai-completions.lazy";
-
-import { declaredVisionModelIds, inputModalities } from "./model-modalities.js";
 /**
  * Local OpenAI-compatible model server (Ollama, LM Studio, llama.cpp, MLX).
  * The server is keyless, but `resolve` returns a placeholder because Models
  * hides providers with no resolvable auth.
  */
-export const LOCAL_PROVIDER_ID = "local";
+import { LOCAL_PROVIDER_ID } from "./local-provider-identity.js";
+import { declaredVisionModelIds, inputModalities } from "./model-modalities.js";
+
+export { LOCAL_PROVIDER_ID, localCacheCapabilities } from "./local-provider-identity.js";
 
 /** Model ids the local server serves with vision, declared by the operator. */
 export const LOCAL_VISION_MODELS_ENV = "ATLAS_LOCAL_VISION_MODELS";
@@ -31,23 +32,6 @@ export function localModelThinks(
       .includes(id);
   }
   return THINKING_MODEL_NAME.test(id) && !/instruct/i.test(id);
-}
-
-/**
- * Ollama and llama.cpp keep the last prompt's KV cache per slot while the model stays loaded
- * (OLLAMA_KEEP_ALIVE). Declaring that window makes context selection keep the prefix stable
- * across turns instead of sliding a recent-message window that is re-read every turn.
- */
-export function localCacheCapabilities(): {
-  scope: "connection";
-  retentionMode: "short";
-  retentionMs: number;
-} {
-  return {
-    scope: "connection",
-    retentionMode: "short",
-    retentionMs: tokenLimit("ATLAS_LOCAL_CACHE_RETENTION_MS", 30 * 60_000),
-  };
 }
 
 export function localVisionModelIds(): ReadonlySet<string> {

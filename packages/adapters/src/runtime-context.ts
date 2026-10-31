@@ -13,7 +13,7 @@ import {
   selectContext,
   shortenToolResultText,
 } from "./context-selection.js";
-import { LOCAL_PROVIDER_ID } from "./pi-local-provider.js";
+import { LOCAL_PROVIDER_ID } from "./local-provider-identity.js";
 import { effectiveOutputReserve, resolveCompletionMaxTokens } from "./pi-runtime-limits.js";
 import { withoutThinkingFrom } from "./thinking-signatures.js";
 
@@ -236,7 +236,11 @@ export function createRuntimeContextPolicy(
         catalogIds = entry.catalogIds;
         catalogMessage = rebuilt;
       } else {
-        const index = indexesByHash.get(entry.hash)?.shift();
+        // Match in order: a repeated message (the same question asked twice) must resolve to
+        // its occurrence after the previous match, or older copies would reorder history.
+        const candidates = indexesByHash.get(entry.hash);
+        const position = candidates?.findIndex((candidate) => candidate > latestMatchedIndex) ?? -1;
+        const index = position >= 0 ? candidates!.splice(position, 1)[0] : undefined;
         // The previous run's current message carried volatile context (date, run status) that
         // history stores without; the matched messages before it are still the cached prefix.
         if (index === undefined && latestMatchedIndex >= 0) break;

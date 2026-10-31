@@ -247,6 +247,40 @@ describe("runtime context policy", () => {
     );
   });
 
+  it("keeps repeated questions in order when a warm prefix is projected", () => {
+    const { request, context } = fixture(40);
+    request.threadId = "repeated-question-thread";
+    enableHistoryRetrieval(request);
+    request.model.cacheCapabilities = localCacheCapabilities();
+    const same = `Same question ${"synthetic history ".repeat(100)}`;
+    const repeated = (messages: Message[]) =>
+      messages.map((message, index) =>
+        index < messages.length - 1
+          ? ({ ...message, content: index === 35 ? `Marker ${same}` : same } as Message)
+          : ({ ...message, content: "Current objective\n\nCurrent date: 2026-10-31" } as Message),
+      );
+    const firstContext = { ...context, messages: repeated(context.messages) };
+    const first = createRuntimeContextPolicy(request);
+    const initial = first.prepareContext(firstContext, model);
+    first.onUsage({ inputTokens: 1000, outputTokens: 10, cacheReadTokens: 0 });
+    const history = firstContext.messages.slice(0, -1);
+    const next = createRuntimeContextPolicy(request);
+    const continued = next.prepareContext(
+      {
+        ...context,
+        messages: [
+          ...history,
+          { role: "user", content: "Current objective", timestamp: 100 },
+          { role: "user", content: same, timestamp: 101 },
+          { role: "user", content: "Next question", timestamp: 102 },
+        ],
+      },
+      model,
+    );
+    expect(continued.messages.length).toBeLessThanOrEqual(initial.messages.length + 2);
+    expect(continued.messages.at(-1)).toMatchObject({ content: "Next question" });
+  });
+
   it("honors an explicit retrieval override even with a declared cache window", () => {
     const { request, context } = fixture(30);
     enableHistoryRetrieval(request);

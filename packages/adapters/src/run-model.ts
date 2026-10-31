@@ -16,6 +16,7 @@ import { cloudflareProviderEnv } from "./cloudflare-ai-gateway.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetPrepareDeps } from "./fleet-tools.js";
+import { LOCAL_PROVIDER_ID, localCacheCapabilities } from "./local-provider-identity.js";
 import {
   HostedModelCreditsRequiredError,
   hostedModelCreditObserver,
@@ -34,7 +35,6 @@ import { modelIdSupportsImages } from "./model-vision.js";
 import { assertAllowedOpenAiCompatibleUrl } from "./openai-compatible-url.js";
 import { codexLiveModel } from "./pi-codex-catalog.js";
 import { toOAuthCredential } from "./pi-credentials.js";
-import { LOCAL_PROVIDER_ID, localCacheCapabilities } from "./pi-local-provider.js";
 import type { StoredModelSecret } from "./pi-oauth.js";
 import {
   CHATGPT_OAUTH_PROVIDER,
