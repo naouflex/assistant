@@ -4,6 +4,7 @@ import { stopOnShutdownSignals } from "@atlas/core/node/shutdown-signals";
 
 loadRootEnv();
 
+import { startLocalModelDiscovery } from "@atlas/adapters";
 import { SERVICE_NAMES } from "@atlas/logging";
 import { createRootLogger } from "@atlas/logging/axiom";
 import { serve } from "@hono/node-server";
@@ -14,6 +15,8 @@ const logger = createRootLogger(SERVICE_NAMES.api);
 
 try {
   const env = loadEnv();
+  // Lists the models local llama-server / Ollama report in the model picker.
+  startLocalModelDiscovery();
   const { app, stop, handleUpgrade } = await createApp({ ...env, logger });
   const server = serve({ fetch: app.fetch, port: env.port, hostname: env.apiHost }, () => {
     logger.info("api listening", { "http.host": env.apiHost, "http.port": env.port });

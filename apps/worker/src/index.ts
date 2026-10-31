@@ -1,7 +1,11 @@
 import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import type { JobPublisher, JobWorkerHost } from "@atlas/adapter-kit";
-import { ComposioConnector, IntegrationProviderSettings } from "@atlas/adapters";
+import {
+  ComposioConnector,
+  IntegrationProviderSettings,
+  startLocalModelDiscovery,
+} from "@atlas/adapters";
 import { phoneCallSettings } from "@atlas/core";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import { stopOnShutdownSignals } from "@atlas/core/node/shutdown-signals";
@@ -101,6 +105,8 @@ const logger = createRootLogger(SERVICE_NAMES.worker);
 
 async function main() {
   const stopStallWatch = watchEventLoopStalls();
+  // Runs can pick a discovered local model, so the worker needs the same list.
+  startLocalModelDiscovery();
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const poolMax = parsePositiveInteger(process.env.DB_POOL_MAX, 8);

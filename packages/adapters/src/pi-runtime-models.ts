@@ -11,6 +11,7 @@ import { clampThinkingLevel } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { localThinkingDisabled } from "./chat-completions-compat.js";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
+import { localModelsVersion } from "./local-model-discovery.js";
 import { PiRuntimeCredentialStore, toOAuthCredential } from "./pi-credentials.js";
 import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
 import { registerLocalProvider } from "./pi-local-provider.js";
@@ -27,7 +28,10 @@ import { REASONING_MODEL_MAX_TOKENS, resolveCompletionMaxTokens } from "./pi-run
 // their imports, and ESM hoists those imports, so module-level env reads here
 // would run before .env is loaded and miss the local provider entirely.
 let catalogModelsCache: Models | undefined;
+let catalogModelsVersion = -1;
 function catalogModels(): Models {
+  if (catalogModelsVersion !== localModelsVersion()) catalogModelsCache = undefined;
+  catalogModelsVersion = localModelsVersion();
   catalogModelsCache ??= registerOpenAiCompatibleCatalog(
     registerLocalProvider(applyPiModelCompatibility(builtinModels())),
   );

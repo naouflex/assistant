@@ -6,6 +6,7 @@ import { openAICompletionsApi } from "@earendil-works/pi-ai/api/openai-completio
  * The server is keyless, but `resolve` returns a placeholder because Models
  * hides providers with no resolvable auth.
  */
+import { discoveredLocalModels } from "./local-model-discovery.js";
 import { LOCAL_PROVIDER_ID } from "./local-provider-identity.js";
 import { declaredVisionModelIds, inputModalities } from "./model-modalities.js";
 
@@ -68,23 +69,51 @@ function tokenLimit(name: string, fallback: number): number {
 }
 
 /** Comma-separated model ids exactly as the local server names them. */
-function localModelIds(): string[] {
+function configuredLocalModelIds(): string[] {
   return (process.env.ATLAS_LOCAL_MODELS ?? "")
     .split(",")
     .map((id) => id.trim())
     .filter((id) => id.length > 0);
 }
 
-function localModel(id: string): Model<"openai-completions"> {
+type LocalModelSpec = { id: string; baseUrl: string; images: boolean };
+
+/**
+ * Configured ids first, on the configured server, then whatever the servers
+ * report that is not already listed under the same id or one of its aliases.
+ */
+function localModelSpecs(): LocalModelSpec[] {
+  const base = localBaseUrl();
+  const vision = localVisionModelIds();
+  const specs: LocalModelSpec[] = configuredLocalModelIds().map((id) => ({
+    id,
+    baseUrl: base,
+    images: vision.has(id),
+  }));
+  const taken = new Set(specs.map((spec) => spec.id));
+  for (const model of discoveredLocalModels()) {
+    if ([model.id, ...model.aliases].some((name) => taken.has(name))) continue;
+    taken.add(model.id);
+    specs.push({
+      id: model.id,
+      baseUrl: model.baseUrl,
+      images: model.images || vision.has(model.id),
+    });
+  }
+  return specs;
+}
+
+function localModel(spec: LocalModelSpec): Model<"openai-completions"> {
+  const { id } = spec;
   return {
     id,
     name: id,
     api: "openai-completions",
     provider: LOCAL_PROVIDER_ID,
-    baseUrl: localBaseUrl(),
+    baseUrl: spec.baseUrl,
     reasoning: localModelThinks(id),
     compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
-    input: inputModalities(localVisionModelIds().has(id)),
+    input: inputModalities(spec.images),
     // Runs on the operator's own hardware, so there is nothing to bill.
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: tokenLimit("ATLAS_LOCAL_CONTEXT_WINDOW", DEFAULT_CONTEXT_WINDOW),
@@ -93,22 +122,24 @@ function localModel(id: string): Model<"openai-completions"> {
 }
 
 export function localProvider(): Provider | undefined {
-  const ids = localModelIds();
-  if (!ids.length) return undefined;
+  const specs = localModelSpecs();
+  if (!specs.length) return undefined;
   return createProvider({
     id: LOCAL_PROVIDER_ID,
-    name: "Local (Ollama / LM Studio)",
+    name: "Local (Ollama / llama.cpp / LM Studio)",
     baseUrl: localBaseUrl(),
     auth: {
       apiKey: {
         name: "Local model server",
         resolve: async () => ({
-          auth: { apiKey: "local", baseUrl: localBaseUrl() },
+          // No baseUrl here: it would override each model's own server, and
+          // discovered models can live on another local server than the default.
+          auth: { apiKey: "local" },
           source: "local model server",
         }),
       },
     },
-    models: ids.map(localModel),
+    models: specs.map(localModel),
     api: openAICompletionsApi(),
   });
 }

@@ -8,6 +8,7 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { localThinkingDisabled } from "./chat-completions-compat.js";
+import { localModelsVersion } from "./local-model-discovery.js";
 import { LOCAL_PROVIDER_ID, registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
 import { loadProviderOAuth, SUBSCRIPTION_SIGN_IN_PROVIDERS } from "./pi-oauth.js";
@@ -248,11 +249,15 @@ function pinnedCatalogProbeBaseUrl(
 }
 
 export function listPiCatalog(): PiCatalogEntry[] {
+  // Rebuild when local discovery finds a different set of models.
+  if (cachedCatalogVersion !== localModelsVersion()) cachedCatalog = undefined;
+  cachedCatalogVersion = localModelsVersion();
   cachedCatalog ??= buildPiCatalog();
   return cachedCatalog;
 }
 
 let cachedCatalog: PiCatalogEntry[] | undefined;
+let cachedCatalogVersion = -1;
 
 // Keep existing display names across pi 1.3's provider renames.
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {

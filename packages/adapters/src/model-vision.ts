@@ -2,6 +2,7 @@ import { canonicalPiProviderId } from "@atlas/contracts";
 import type { Models } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
+import { localModelsVersion } from "./local-model-discovery.js";
 import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
 import { registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
@@ -52,9 +53,12 @@ export function updateModelImageCapabilities(
 }
 
 let catalogModelsCache: Models | undefined;
+let catalogModelsVersion = -1;
 
 function catalogModels(): Models {
   // Same catalog the runtime calls, including configured compatible providers.
+  if (catalogModelsVersion !== localModelsVersion()) catalogModelsCache = undefined;
+  catalogModelsVersion = localModelsVersion();
   catalogModelsCache ??= registerOpenAiCompatibleCatalog(
     registerLocalProvider(applyPiModelCompatibility(builtinModels())),
   );
