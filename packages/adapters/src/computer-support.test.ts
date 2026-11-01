@@ -1,11 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
+  containerCommandCwd,
   displayBotWorkspacePath,
   resolveBotUploadPath,
   resolveBotWorkspaceCwd,
   resolveBotWorkspacePath,
   teamBotWorkspaceDirectory,
 } from "./computer-support.js";
+
+describe("container command working directory", () => {
+  it("keeps a mounted project path instead of hiding it under the bot home", () => {
+    expect(containerCommandCwd("/mnt/naoufel/religion-project")).toBe(
+      "/mnt/naoufel/religion-project",
+    );
+    expect(containerCommandCwd("/tmp")).toBe("/tmp");
+    expect(containerCommandCwd("/tmp/religion.log")).toBe("/tmp/religion.log");
+    expect(containerCommandCwd("notes")).toBe("/home/atlas/notes");
+    expect(containerCommandCwd("/home/atlas/notes")).toBe("/home/atlas/notes");
+  });
+
+  it("refuses a mount path that climbs out of the mount", () => {
+    expect(() => containerCommandCwd("/mnt/naoufel/../../etc")).toThrow(
+      "Path escapes the computer workspace",
+    );
+  });
+});
 
 describe("Team Computer bot folders", () => {
   it("uses the bot folder for relative paths and cwd", () => {

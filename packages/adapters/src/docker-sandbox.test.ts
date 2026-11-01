@@ -137,6 +137,24 @@ describe("Docker sandbox", () => {
     });
   });
 
+  it("sends a mounted working directory unchanged", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ stdout: "", stderr: "", code: 0 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new DockerSandboxProvider("http://supervisor.test", "test-token");
+    const events: ProcessEvent[] = [];
+    for await (const event of provider.execute(
+      { id: "computer", botId: "bot", kind: "docker", providerRef: "computer" },
+      { argv: ["ls"], cwd: "/mnt/naoufel/religion-project" },
+      context,
+    )) {
+      events.push(event);
+    }
+    expect(events).toEqual([{ type: "exit", code: 0 }]);
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)).cwd).toBe(
+      "/mnt/naoufel/religion-project",
+    );
+  });
+
   it("yields stdout from a streaming exec before the command exits", async () => {
     let releaseExit: () => void = () => undefined;
     const exitGate = new Promise<void>((resolve) => {

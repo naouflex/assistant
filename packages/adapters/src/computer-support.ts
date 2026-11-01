@@ -71,6 +71,34 @@ export function normalizeWorkspacePath(value: string): string {
   return segments.join("/");
 }
 
+/** Mounts and the container tmp dir are real paths. Everything else stays under the bot home. */
+const CONTAINER_ABSOLUTE_ROOTS = ["/mnt", "/media", "/srv", "/tmp"];
+
+/**
+ * Working directory sent to a Linux computer. A relative path is under the bot home.
+ * A mount such as `/mnt/naoufel/religion-project` stays there; folding it under
+ * `/home/atlas` makes the command fail before it runs.
+ */
+export function containerCommandCwd(cwd: string | undefined, home = "/home/atlas"): string {
+  if (!cwd || cwd === "." || cwd === "/" || cwd === home) return home;
+  const posix = cwd.replace(/\\/g, "/");
+  const absolute = absoluteContainerCwd(posix);
+  if (absolute) return absolute;
+  const relative = posix.startsWith(`${home}/`)
+    ? posix.slice(home.length + 1)
+    : normalizeWorkspacePath(posix);
+  return relative ? path.posix.join(home, relative) : home;
+}
+
+function absoluteContainerCwd(cwd: string): string | undefined {
+  const root = CONTAINER_ABSOLUTE_ROOTS.find(
+    (candidate) => cwd === candidate || cwd.startsWith(`${candidate}/`),
+  );
+  if (!root) return undefined;
+  const rest = normalizeWorkspacePath(cwd.slice(root.length));
+  return rest ? `${root}/${rest}` : root;
+}
+
 export function workspacePath(root: string, relative: string): string {
   const normalized = normalizeWorkspacePath(relative);
   return normalized ? path.posix.join(root, normalized) : root;

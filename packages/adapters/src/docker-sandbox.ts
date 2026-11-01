@@ -29,6 +29,7 @@ import {
   boundedComputerActions,
   clampRounded,
   computerObservation,
+  containerCommandCwd,
   normalizeWorkspacePath,
 } from "./computer-support.js";
 import { sandboxCommandArgv } from "./sandbox-command-environment.js";
@@ -736,9 +737,5 @@ function parseProcessLine(line: string): ProcessEvent | undefined {
 }
 
 function dockerCwd(cwd: string | undefined) {
-  if (!cwd || cwd === "." || cwd === "/" || cwd === "/home/atlas") return "/home/atlas";
-  const relative = cwd.startsWith("/home/atlas/")
-    ? cwd.slice("/home/atlas/".length)
-    : normalizeWorkspacePath(cwd);
-  return path.posix.join("/home/atlas", relative);
+  return containerCommandCwd(cwd);
 }
