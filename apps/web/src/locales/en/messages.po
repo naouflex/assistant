@@ -6764,3 +6764,6 @@ msgstr "Your voice provider is out of credit."
 #: src/lib/user-error.ts
 msgid "Your voice provider key was rejected."
 msgstr "Your voice provider key was rejected."
+
+msgid "Local model"
+msgstr "Local model"

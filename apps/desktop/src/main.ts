@@ -32,6 +32,7 @@ import { createBadgeHandler } from "./badge.js";
 import { openBrowserAuth } from "./browser-auth.js";
 import { DOCKER_INSTALL_LINKS, isDesktopSetupLink, runDocker } from "./docker-cli.js";
 import { prepareHostComputer } from "./host-computer.js";
+import { createLocalModelHost } from "./local-model-host.js";
 import { createDesktopHostScreen, screenDriverInstaller } from "./host-screen.js";
 import { saveLocalComputerHost } from "./local-settings.js";
 import {
@@ -147,6 +148,7 @@ const desktopUpdater = new DesktopUpdateController(
 let launchUpdateCheckScheduled = false;
 let localStack: LocalStackController;
 let hostComputer: Awaited<ReturnType<typeof prepareHostComputer>> | undefined;
+let localModelHost: ReturnType<typeof createLocalModelHost> | undefined;
 let requestingComputerAccess = false;
 let userDevices: UserDeviceAccess | undefined;
 let hostScreen: HostScreen | undefined;
@@ -1183,6 +1185,12 @@ app.whenReady().then(async () => {
   } catch {
     /* Local access fails closed; Docker remains available. */
   }
+  localModelHost = createLocalModelHost({ userDataDir });
+  localModelHost.onChange((state) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send("desktop.localModel.change", state);
+    }
+  });
   hostScreen = createDesktopHostScreen({
     platform: process.platform,
     driver: screenDriverInstaller({
@@ -1405,6 +1413,9 @@ app.whenReady().then(async () => {
     await userDevices?.setAllowed(origin, allowed);
     return deviceState(remoteDeviceOrigin(event));
   });
+  ipcMain.handle("desktop.localModel.state", () => localModelHost?.state());
+  ipcMain.handle("desktop.localModel.start", () => localModelHost?.start());
+  ipcMain.handle("desktop.localModel.stop", () => localModelHost?.stop());
   ipcMain.handle(
     "desktop.badge.set",
     createBadgeHandler(permissionTarget, (count) => app.setBadgeCount(count)),

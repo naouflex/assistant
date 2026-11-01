@@ -28,6 +28,16 @@ contextBridge.exposeInMainWorld("atlasDesktop", {
     state: () => ipcRenderer.invoke("desktop.device.state"),
     setAllowed: (allowed) => ipcRenderer.invoke("desktop.device.setAllowed", allowed),
   },
+  localModel: {
+    state: () => ipcRenderer.invoke("desktop.localModel.state"),
+    start: () => ipcRenderer.invoke("desktop.localModel.start"),
+    stop: () => ipcRenderer.invoke("desktop.localModel.stop"),
+    onChange: (listener) => {
+      const handler = (_event, state) => listener(state);
+      ipcRenderer.on("desktop.localModel.change", handler);
+      return () => ipcRenderer.off("desktop.localModel.change", handler);
+    },
+  },
   monitoring: {
     enabled: () => ipcRenderer.invoke("desktop.monitoring.enabled"),
   },

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ComputerDeviceSettings } from "../components/ComputerDeviceSettings";
+import { LocalModelHostSettings } from "../components/LocalModelHostSettings";
 import { SettingsGroup, SettingsRow } from "../components/SettingsRows";
 import { desktopBridge } from "../lib/desktop";
 import { useSpaceQueries } from "../lib/query";
@@ -154,6 +155,8 @@ export function DevicesSettingsPanel() {
           )}
         </div>
       </div>
+
+      <LocalModelHostSettings />
 
       <ComputerDeviceSettings alwaysShow />
 

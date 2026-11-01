@@ -43,6 +43,33 @@ export interface AtlasDesktopDevice {
   allowed: boolean;
 }
 
+/** Windows-native CUDA llama-server managed by the desktop app. */
+export type DesktopLocalModelHostPhase =
+  | "idle"
+  | "unsupported"
+  | "downloading-runtime"
+  | "installing-runtime"
+  | "downloading-model"
+  | "installing-model"
+  | "starting"
+  | "running"
+  | "failed";
+
+export interface DesktopLocalModelHostState {
+  supported: boolean;
+  phase: DesktopLocalModelHostPhase;
+  message: string | null;
+  /** 0–100 while downloading; otherwise null. */
+  progress: number | null;
+  port: number;
+  modelId: string;
+  modelLabel: string;
+  modelReady: boolean;
+  runtimeReady: boolean;
+  online: boolean;
+  baseUrl: string;
+}
+
 /**
  * What the system recognizer reports for one listening session, shaped after Web Speech:
  * `result` carries the session's whole text so far, `error` a Web Speech error code,
@@ -71,6 +98,16 @@ export interface AtlasDesktop {
     state: () => Promise<AtlasDesktopDevice | null>;
     /** Turning it on asks with a native prompt the page cannot answer. */
     setAllowed: (allowed: boolean) => Promise<AtlasDesktopDevice | null>;
+  };
+  /**
+   * Windows-native local model host (CUDA llama-server). Absent on older builds and
+   * non-Windows platforms.
+   */
+  localModel?: {
+    state: () => Promise<DesktopLocalModelHostState>;
+    start: () => Promise<DesktopLocalModelHostState>;
+    stop: () => Promise<DesktopLocalModelHostState>;
+    onChange: (listener: (state: DesktopLocalModelHostState) => void) => () => void;
   };
   /** False for local builds, whose errors must not reach production reporting. Absent on older releases. */
   monitoring?: {
