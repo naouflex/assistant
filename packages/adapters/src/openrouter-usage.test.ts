@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { OpenRouterUsageLookup, openRouterInferenceFetch } from "./openrouter-usage.js";
+import {
+  OpenRouterUsageLookup,
+  openRouterInferenceFetch,
+  openRouterReferer,
+} from "./openrouter-usage.js";
 
 describe("OpenRouter attribution and usage recovery", () => {
   it("sends the normal user id and Atlas attribution while preserving request controls", async () => {
+    vi.stubEnv("WEB_ORIGIN", "https://atlas.example.com/");
     const fetcher = vi.fn<typeof fetch>(async () => new Response("ok"));
     const controller = new AbortController();
     await openRouterInferenceFetch(fetcher, "user_fixture")(
@@ -16,11 +21,18 @@ describe("OpenRouter attribution and usage recovery", () => {
     );
     const init = fetcher.mock.calls[0]![1]!;
     const headers = new Headers(init.headers);
-    expect(headers.get("HTTP-Referer")).toBe("https://rakazo.com");
+    expect(headers.get("HTTP-Referer")).toBe("https://atlas.example.com");
     expect(headers.get("X-OpenRouter-Title")).toBe("Atlas");
+    expect(headers.get("X-Title")).toBe("Atlas");
     expect(headers.get("Authorization")).toBe("Bearer fixture");
     expect(init.signal).toBe(controller.signal);
     expect(JSON.parse(String(init.body))).toMatchObject({ user: "user_fixture", model: "fixture" });
+  });
+  it("does not attribute this fork to the upstream Rakazo app", () => {
+    expect(openRouterReferer("https://app.rakazo.com/app")).toBeUndefined();
+    expect(openRouterReferer("https://rakazo.com")).toBeUndefined();
+    expect(openRouterReferer("http://127.0.0.1:5173")).toBeUndefined();
+    expect(openRouterReferer("not a url")).toBeUndefined();
   });
   it("does not send ids or app attribution to compatible, lookalike, or non-inference endpoints", async () => {
     const fetcher = vi.fn<typeof fetch>(async () => new Response("ok"));
