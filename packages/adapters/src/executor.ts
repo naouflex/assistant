@@ -82,6 +82,7 @@ import {
 } from "./connection-context.js";
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
+import { doTheJobNote } from "./do-the-job.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetRun } from "./fleet-tools.js";
 import { loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
@@ -93,6 +94,7 @@ import {
   MAX_RECALLED_MEMORIES,
   selectCompactedHistory,
 } from "./history-compaction.js";
+import { hostScreenSupported } from "./host-screen.js";
 import { createMediaGenerationProvider } from "./media-generation-factory.js";
 import { loadAgentMemoryContext } from "./memory-context.js";
 import { HostedModelCreditsRequiredError } from "./model-credit-observer.js";
@@ -108,7 +110,7 @@ import {
   runModelChoice,
 } from "./model-selection.js";
 import { modelAcceptsImageInput } from "./model-vision.js";
-import { ownFilesNote } from "./mounted-files.js";
+import { mountWorkNote, ownFilesNote } from "./mounted-files.js";
 import { usesNativeShell } from "./native-shell.js";
 import { optionChoiceNote } from "./option-choice.js";
 import { paymentWalletConnected } from "./payment-wallets.js";
@@ -132,11 +134,14 @@ import {
   compactInstructionsEnabled,
   compactUserTurnInstructions,
   dockerComputerToolInstruction,
+  ownerFolderNote,
   persistentComputerInstruction,
   runIdentityInstruction,
   threadContextForRun,
   userTurnInstructions,
   voiceCallInstruction,
+  windowsShellAside,
+  wslPlaceNote,
 } from "./run-instructions.js";
 import {
   computerRetryDelay,
@@ -1075,6 +1080,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           botUserId: bot.userId,
         });
         let userComputer: UserComputerState;
+        let userComputerPlatform: string | undefined;
         let userComputerScreen = false;
         if (
           userComputerOwnerId &&
@@ -1084,8 +1090,8 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           const device = await deps.userDevices.connected(userComputerOwnerId).catch(() => null);
           if (device) {
             userComputer = "connected";
-            // Only the macOS desktop bundles a screen driver so far.
-            userComputerScreen = device.platform === "darwin";
+            userComputerPlatform = device.platform;
+            userComputerScreen = hostScreenSupported(device.platform);
           }
           // A chat that used the computer earlier may continue from another device after it closed.
           else if (await deps.userDevices.pairedSince(userComputerOwnerId).catch(() => null))
@@ -1196,7 +1202,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 .catch(() => undefined)
             : undefined;
         const hostShell = hostEnvironment
-          ? `Home: ${JSON.stringify(hostEnvironment.home)}. Shell: ${JSON.stringify(hostEnvironment.shell)}. The shell tool executes commands with that shell. Use its native syntax, paths and installed tools; do not assume Linux or bash.`
+          ? `Home: ${JSON.stringify(hostEnvironment.home)}. Shell: ${JSON.stringify(hostEnvironment.shell)}. The shell tool executes commands with that shell. Use its native syntax, paths and installed tools; do not assume Linux or bash.${windowsShellAside(hostEnvironment.platform)}`
           : undefined;
         const hostInstruction = !hostEnvironment
           ? undefined
@@ -1415,6 +1421,41 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 voiceCall: Boolean(voiceCall),
               })
             : undefined,
+          // Last, so a small model follows this instead of copying an earlier pasted-code reply.
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? doTheJobNote(taskPrompt, {
+                toolsOffered:
+                  tools.some((tool) => tool.name === "write_file") &&
+                  tools.some((tool) => tool.name === "attach_file"),
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? ownerFolderNote(taskPrompt, {
+                userComputer,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? wslPlaceNote(taskPrompt, {
+                userComputer,
+                userComputerPlatform,
+                ownShellPlatform: hostEnvironment?.platform,
+                mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          // After the copied reply in history, so the next "start it" uses the mount.
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? mountWorkNote(taskPrompt, {
+                shellOffered: tools.some((tool) => tool.name === "shell"),
+                mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
+                instructions: bot.instructions,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
         ]
           .filter(Boolean)
           .join("\n\n");
@@ -1582,6 +1623,8 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 disabledBuiltinTools,
                 offeredFleetTools: offeredFleetTools(builtins),
                 userComputer,
+                userComputerPlatform,
+                ownShellPlatform: hostEnvironment?.platform,
               })
                 .filter((instruction): instruction is string => Boolean(instruction))
                 .join("\n\n"),

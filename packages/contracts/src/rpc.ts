@@ -88,6 +88,8 @@ import {
   McpServerConfigInput,
   McpServerSchema,
   MemoryDocumentSchema,
+  MemoryDreamSchema,
+  MemoryProposalSchema,
   MemoryScopeSchema,
   MeSchema,
   MessagingAgentConnectionSchema,
@@ -734,6 +736,17 @@ export const appContract = {
       .input(z.object({ defaultMemoryScope: MemoryScopeSchema }))
       .output(SpaceMemoryConfigSchema),
     disconnectProvider: oc.output(z.object({ ok: z.literal(true) })),
+    proposals: oc
+      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .output(z.array(MemoryProposalSchema)),
+    dream: oc
+      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .output(MemoryDreamSchema.nullable()),
+    startDream: oc
+      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .output(MemoryDreamSchema),
+    acceptProposal: oc.input(z.object({ proposalId: Id })).output(MemoryDocumentSchema),
+    rejectProposal: oc.input(z.object({ proposalId: Id })).output(z.object({ ok: z.literal(true) })),
   },
   routines: {
     listForMentions: oc

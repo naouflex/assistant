@@ -1,4 +1,4 @@
-import { MEMORY_REVISION_CONFLICT_ERROR } from "@atlas/adapter-kit";
+import { MEMORY_REVISION_CONFLICT_ERROR, memoryDreamJob } from "@atlas/adapter-kit";
 import { isScratchpadStatus, listScratchpadItems, mapScratchpadItem } from "@atlas/adapters";
 import { isDeletableMemoryDocument } from "@atlas/contracts";
 import { findSpaceMemoryConfig, IsolationError } from "@atlas/db";
@@ -130,6 +130,120 @@ export function memoryRoutes(ctx: RouterContext) {
       disconnectProvider: authed.memory.disconnectProvider.handler(async ({ context }) =>
         disconnectMemoryProvider(deps, context.actor),
       ),
+      proposals: authed.memory.proposals.handler(async ({ context, input }) => {
+        const botId = await memoryBotId(repos, context.actor, input);
+        const rows = await deps.prisma.memoryProposal.findMany({
+          where: {
+            spaceId: context.actor.spaceId,
+            userId: context.actor.userId,
+            scope: input.scope,
+            botId,
+            status: "pending",
+          },
+          orderBy: { createdAt: "desc" },
+        });
+        return rows.map(proposalView);
+      }),
+      dream: authed.memory.dream.handler(async ({ context, input }) => {
+        const botId = await memoryBotId(repos, context.actor, input);
+        const row = await deps.prisma.memoryDream.findFirst({
+          where: { spaceId: context.actor.spaceId, userId: context.actor.userId, botId },
+          orderBy: { createdAt: "desc" },
+        });
+        return row ? dreamView(row, input.scope) : null;
+      }),
+      startDream: authed.memory.startDream.handler(async ({ context, input }) => {
+        const botId = await memoryBotId(repos, context.actor, input);
+        const where = {
+          spaceId: context.actor.spaceId,
+          userId: context.actor.userId,
+          botId,
+        };
+        const active = await deps.prisma.memoryDream.findFirst({
+          where: { ...where, status: { in: ["queued", "running"] } },
+          orderBy: { createdAt: "desc" },
+        });
+        if (active && Date.now() - active.updatedAt.getTime() < DREAM_STALE_MS) {
+          return dreamView(active, input.scope);
+        }
+        if (active) {
+          await deps.prisma.memoryDream.update({
+            where: { id: active.id },
+            data: { status: "failed", error: "Could not review recent runs." },
+          });
+        }
+        const created = await deps.prisma.memoryDream.create({
+          data: { ...where, status: "queued" },
+        });
+        try {
+          await deps.jobs.enqueue(memoryDreamJob(created.id));
+        } catch (error) {
+          await deps.prisma.memoryDream.update({
+            where: { id: created.id },
+            data: { status: "failed", error: "Could not review recent runs." },
+          });
+          throw error;
+        }
+        return dreamView(created, input.scope);
+      }),
+      acceptProposal: authed.memory.acceptProposal.handler(async ({ context, input }) => {
+        const proposal = await deps.prisma.memoryProposal.findFirst({
+          where: {
+            id: input.proposalId,
+            spaceId: context.actor.spaceId,
+            userId: context.actor.userId,
+            status: "pending",
+          },
+        });
+        if (!proposal) throw new IsolationError();
+        const scope = proposal.scope as "bot" | "user";
+        const updated = await deps.memory
+          .commit(
+            {
+              scope,
+              botId: proposal.botId ?? undefined,
+              path: proposal.path,
+              content: proposal.content,
+              expectedRevision: proposal.baseRevision,
+            },
+            memoryContext(context.actor),
+          )
+          .catch((error: unknown) => {
+            if (error instanceof Error && error.message === MEMORY_REVISION_CONFLICT_ERROR) {
+              throw new ORPCError("CONFLICT", { message: error.message });
+            }
+            throw error;
+          });
+        await deps.prisma.memoryProposal.update({
+          where: { id: proposal.id },
+          data: { status: "accepted" },
+        });
+        return {
+          id: updated.id,
+          scope,
+          botId: proposal.botId,
+          path: updated.path,
+          content: updated.content,
+          revision: updated.revision,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+      rejectProposal: authed.memory.rejectProposal.handler(async ({ context, input }) => {
+        const proposal = await deps.prisma.memoryProposal.findFirst({
+          where: {
+            id: input.proposalId,
+            spaceId: context.actor.spaceId,
+            userId: context.actor.userId,
+            status: "pending",
+          },
+        });
+        if (!proposal) throw new IsolationError();
+        await deps.prisma.memoryProposal.update({
+          where: { id: proposal.id },
+          data: { status: "rejected" },
+        });
+        return { ok: true as const };
+      }),
     },
     scratchpad: {
       list: authed.scratchpad.list.handler(async ({ context, input }) => {
@@ -245,5 +359,73 @@ export function memoryRoutes(ctx: RouterContext) {
         agentSkills.remove(context.actor, input.skillId),
       ),
     },
+  };
+}
+
+const DREAM_STALE_MS = 10 * 60 * 1000;
+
+type MemoryActor = { spaceId: string; userId: string };
+
+function memoryContext(actor: MemoryActor) {
+  return {
+    operationId: "mem",
+    traceId: "mem",
+    spaceId: actor.spaceId,
+    userId: actor.userId,
+    signal: new AbortController().signal,
+  };
+}
+
+async function memoryBotId<Actor extends MemoryActor>(
+  repos: { getBot: (actor: Actor, botId: string) => Promise<unknown> },
+  actor: Actor,
+  input: { scope: "bot" | "user"; botId?: string },
+): Promise<string | null> {
+  if (input.scope === "bot") {
+    if (!input.botId) throw new ORPCError("BAD_REQUEST", { message: "botId is required." });
+    await repos.getBot(actor, input.botId);
+    return input.botId;
+  }
+  if (input.botId) throw new ORPCError("BAD_REQUEST", { message: "Shared memory has no bot." });
+  return null;
+}
+
+function proposalView(row: {
+  id: string;
+  scope: string;
+  botId: string | null;
+  path: string;
+  content: string;
+  baseRevision: number;
+  reason: string;
+  source: string;
+  status: string;
+  createdAt: Date;
+}) {
+  return {
+    id: row.id,
+    scope: row.scope as "bot" | "user",
+    botId: row.botId,
+    path: row.path,
+    content: row.content,
+    baseRevision: row.baseRevision,
+    reason: row.reason,
+    source: row.source as "dream" | "bot",
+    status: row.status as "pending" | "accepted" | "rejected",
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function dreamView(
+  row: { id: string; botId: string | null; status: string; error: string | null; createdAt: Date },
+  scope: "bot" | "user",
+) {
+  return {
+    id: row.id,
+    scope,
+    botId: row.botId,
+    status: row.status as "queued" | "running" | "ready" | "failed",
+    error: row.error,
+    createdAt: row.createdAt.toISOString(),
   };
 }

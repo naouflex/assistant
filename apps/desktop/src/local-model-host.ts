@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { access, copyFile, mkdir, rename, rm } from "node:fs/promises";
+import { access, copyFile, mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { arch, platform } from "node:os";
 import path from "node:path";
 import type { DesktopLocalModelHostState } from "@atlas/contracts";
@@ -22,13 +22,29 @@ export type LocalModelCatalogEntry = {
   mmprojDownloadUrl?: string;
   /** Known WSL paths to copy from (fast path on this machine). */
   importPaths: string[];
+  /** Router model id when it differs from `id`. */
+  servedAs?: string;
+  /** Extra names the router should answer for this file. */
+  aliases?: readonly string[];
+  /** Per-model llama-server preset keys. Shared flags live in the preset header. */
+  args: Readonly<Record<string, string>>;
 };
+
+const QWEN_FILENAME = "Qwen3.5-4B-MTP-Q4_K_M.gguf";
+const SPARK_25_MODEL_ID = "spark-x2.5:4b";
+const SPARK_25_FILENAME = "Spark-X2.5-4B-Q4_K_M.gguf";
+const SPARK_26_MODEL_ID = "spark-x2.6:4b";
+const SPARK_26_FILENAME = "Spark-X2.6-4B-Q4_K_M.gguf";
+const QWEN_9B_MODEL_ID = "qwen3.5:9b";
+const QWEN_9B_FILENAME = "Qwen3.5-9B-Q4_K_M.gguf";
+const QWEN_38_9B_MODEL_ID = "qwen3.8:9b";
+const QWEN_38_9B_FILENAME = "Qwen3.8-9B-Q4_K_M.gguf";
 
 export const LOCAL_MODEL_CATALOG: readonly LocalModelCatalogEntry[] = [
   {
     id: DEFAULT_MODEL_ID,
     label: "Qwen3.5 4B MTP",
-    filename: "Qwen3.5-4B-MTP-Q4_K_M.gguf",
+    filename: QWEN_FILENAME,
     downloadUrl:
       "https://huggingface.co/localweights/Qwen3.5-4B-MTP-Q4_K_M-GGUF/resolve/main/Qwen3.5-4B-MTP-Q4_K_M.gguf",
     mmprojFilename: "mmproj-Qwen3.5-4B-F16.gguf",
@@ -39,8 +55,136 @@ export const LOCAL_MODEL_CATALOG: readonly LocalModelCatalogEntry[] = [
       "\\\\wsl$\\Ubuntu-24.04\\home\\naoufel\\.local\\llama-standalone\\models\\Qwen3.5-4B-MTP-Q4_K_M.gguf",
       "\\\\wsl.localhost\\Ubuntu-24.04\\home\\naoufel\\.local\\llama-standalone\\models\\Qwen3.5-4B-MTP-Q4_K_M.gguf",
     ],
+    // The router publishes the section as qwen3.5:4B, so the old lowercase id stays an alias.
+    servedAs: "qwen3.5:4b",
+    aliases: ["qwen3.5:4b", "qwen3.5:4b-mtp"],
+    args: {
+      "ctx-size": "16384",
+      parallel: "2",
+      "kv-unified": "true",
+      "spec-type": "draft-mtp",
+      "spec-draft-n-max": "3",
+      reasoning: "off",
+      "load-on-startup": "true",
+    },
+  },
+  {
+    id: QWEN_9B_MODEL_ID,
+    label: "Qwen3.5 9B",
+    filename: QWEN_9B_FILENAME,
+    downloadUrl:
+      "https://huggingface.co/unsloth/Qwen3.5-9B-MTP-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf",
+    importPaths: [],
+    // The router publishes the section as qwen3.5:9B. The text alias is the id older chats saved.
+    servedAs: "qwen3.5:9b",
+    aliases: ["qwen3.5:9b", "qwen3.5:9b-text"],
+    args: {
+      "ctx-size": "16384",
+      parallel: "1",
+      "kv-unified": "true",
+      "cache-type-k": "q8_0",
+      "cache-type-v": "q8_0",
+      "spec-type": "draft-mtp",
+      "spec-draft-n-max": "2",
+      reasoning: "off",
+      temp: "0.7",
+      "top-k": "20",
+      "top-p": "0.8",
+      "min-p": "0",
+      "presence-penalty": "1.5",
+    },
+  },
+  {
+    id: QWEN_38_9B_MODEL_ID,
+    label: "Qwen3.8 9B",
+    filename: QWEN_38_9B_FILENAME,
+    downloadUrl:
+      "https://huggingface.co/empero-ai/Qwen3.8-9B-Distill-GGUF/resolve/main/Qwen3.8-9B-Q4_K_M.gguf",
+    importPaths: [],
+    servedAs: "qwen3.8:9b",
+    aliases: ["qwen3.8:9b"],
+    args: {
+      "ctx-size": "16384",
+      parallel: "1",
+      "kv-unified": "true",
+      "cache-type-k": "q8_0",
+      "cache-type-v": "q8_0",
+      reasoning: "off",
+      temp: "0.7",
+      "top-k": "20",
+      "top-p": "0.8",
+      "min-p": "0",
+      "presence-penalty": "1.5",
+    },
+  },
+  {
+    id: SPARK_25_MODEL_ID,
+    label: "Spark-X2.5 4B",
+    filename: SPARK_25_FILENAME,
+    downloadUrl:
+      "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF/resolve/main/Spark-X2.5-4B-Q4_K_M.gguf",
+    importPaths: [],
+    args: {
+      // The GGUF advertises a 1M context; leave that unset and llama.cpp tries to allocate it.
+      "ctx-size": "16384",
+      parallel: "1",
+      reasoning: "off",
+      "no-reasoning-preserve": "true",
+      temp: "1.0",
+      "top-k": "0",
+      "top-p": "0.95",
+    },
+  },
+  {
+    id: SPARK_26_MODEL_ID,
+    label: "Spark-X2.6 4B",
+    filename: SPARK_26_FILENAME,
+    downloadUrl:
+      "https://huggingface.co/XHToken/Spark-X2.6-4B-GGUF/resolve/main/Spark-X2.6-4B-Q4_K_M.gguf",
+    importPaths: [],
+    args: {
+      "ctx-size": "16384",
+      parallel: "1",
+      reasoning: "off",
+      "no-reasoning-preserve": "true",
+      temp: "1.0",
+      "top-k": "0",
+      "top-p": "0.95",
+    },
   },
 ];
+
+/** INI preset for llama-server router mode. One section per catalog model. */
+export function localModelRouterPreset(
+  modelsDirectory: string,
+  fileReady: (filename: string) => boolean = () => true,
+): string {
+  const lines = [
+    "version = 1",
+    "",
+    "[*]",
+    "flash-attn = on",
+    "fit = off",
+    "n-gpu-layers = 99",
+    "jinja = true",
+    "",
+  ];
+  for (const entry of LOCAL_MODEL_CATALOG) {
+    lines.push(`[${entry.servedAs ?? entry.id}]`);
+    lines.push(`model = ${presetPath(path.join(modelsDirectory, entry.filename))}`);
+    if (entry.mmprojFilename && fileReady(entry.mmprojFilename)) {
+      lines.push(`mmproj = ${presetPath(path.join(modelsDirectory, entry.mmprojFilename))}`);
+    }
+    if (entry.aliases?.length) lines.push(`alias = ${entry.aliases.join(",")}`);
+    for (const [key, value] of Object.entries(entry.args)) lines.push(`${key} = ${value}`);
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+function presetPath(file: string): string {
+  return file.replaceAll("\\", "/");
+}
 
 export function llamaReleaseTag(env: NodeJS.ProcessEnv = process.env): string {
   return env.ATLAS_LLAMA_RELEASE?.trim() || DEFAULT_LLAMA_RELEASE;
@@ -168,15 +312,15 @@ export type LocalModelHostDeps = {
 };
 
 /**
- * Windows-native CUDA llama-server host: install runtime, obtain the MTP model
- * (prefer WSL copy), start/stop, and report health for Devices.
+ * Windows-native CUDA llama-server host: install runtime, obtain catalog models
+ * (prefer a WSL copy), start/stop, and report health for Devices.
  */
 export function createLocalModelHost(deps: LocalModelHostDeps) {
   const root = hostRoot(deps.userDataDir);
   const models = modelsDir(root);
   const runtime = runtimeDir(root);
   const port = serverPort();
-  const catalog = LOCAL_MODEL_CATALOG[0]!;
+  const primary = LOCAL_MODEL_CATALOG[0]!;
   let child: ChildProcessWithoutNullStreams | null = null;
   let phase: DesktopLocalModelHostState["phase"] = "idle";
   let message: string | null = null;
@@ -200,7 +344,10 @@ export function createLocalModelHost(deps: LocalModelHostDeps) {
   }
 
   async function modelReady(): Promise<boolean> {
-    return exists(path.join(models, catalog.filename));
+    for (const entry of LOCAL_MODEL_CATALOG) {
+      if (!(await exists(path.join(models, entry.filename)))) return false;
+    }
+    return true;
   }
 
   async function runtimeReady(): Promise<boolean> {
@@ -225,8 +372,8 @@ export function createLocalModelHost(deps: LocalModelHostDeps) {
       message,
       progress,
       port,
-      modelId: catalog.id,
-      modelLabel: catalog.label,
+      modelId: primary.id,
+      modelLabel: LOCAL_MODEL_CATALOG.map((entry) => entry.label).join(", "),
       modelReady: false,
       runtimeReady: false,
       online: false,
@@ -270,30 +417,37 @@ export function createLocalModelHost(deps: LocalModelHostDeps) {
     return binary;
   }
 
-  async function ensureModel(onProgress?: (pct: number) => void): Promise<string> {
-    const dest = path.join(models, catalog.filename);
-    if (await exists(dest)) return dest;
-    setState("installing-model", "Looking for the model on this PC…", 0);
-    await mkdir(models, { recursive: true });
-    for (const source of catalog.importPaths) {
-      if (!(await exists(source))) continue;
-      setState("installing-model", "Copying model from WSL…", 10);
-      await copyFile(source, dest);
-      onProgress?.(100);
-      return dest;
-    }
-    setState("downloading-model", "Downloading model…", 0);
-    await downloadFile(catalog.downloadUrl, dest, (received, total) => {
-      if (total) onProgress?.(Math.round((received / total) * 100));
-    });
-    if (catalog.mmprojFilename && catalog.mmprojDownloadUrl) {
-      const mmproj = path.join(models, catalog.mmprojFilename);
-      if (!(await exists(mmproj))) {
-        // Best-effort; vision is optional if the URL 404s.
-        await downloadFile(catalog.mmprojDownloadUrl, mmproj).catch(() => undefined);
+  async function ensureModel(
+    entry: LocalModelCatalogEntry,
+    onProgress?: (pct: number) => void,
+  ): Promise<void> {
+    const dest = path.join(models, entry.filename);
+    if (!(await exists(dest))) {
+      setState("installing-model", "Looking for the model on this PC…", 0);
+      await mkdir(models, { recursive: true });
+      let copied = false;
+      for (const source of entry.importPaths) {
+        if (!(await exists(source))) continue;
+        setState("installing-model", "Copying model from WSL…", 10);
+        await copyFile(source, dest);
+        onProgress?.(100);
+        copied = true;
+        break;
+      }
+      if (!copied) {
+        setState("downloading-model", `Downloading ${entry.label}…`, 0);
+        await downloadFile(entry.downloadUrl, dest, (received, total) => {
+          if (total) onProgress?.(Math.round((received / total) * 100));
+        });
       }
     }
-    return dest;
+    if (entry.mmprojFilename && entry.mmprojDownloadUrl) {
+      const mmproj = path.join(models, entry.mmprojFilename);
+      if (!(await exists(mmproj))) {
+        // Best-effort; vision is optional if the URL 404s.
+        await downloadFile(entry.mmprojDownloadUrl, mmproj).catch(() => undefined);
+      }
+    }
   }
 
   async function start(): Promise<DesktopLocalModelHostState> {
@@ -311,41 +465,30 @@ export function createLocalModelHost(deps: LocalModelHostDeps) {
     }
     try {
       const binary = await ensureRuntime((pct) => setState(phase, message, pct));
-      const model = await ensureModel((pct) => setState(phase, message, pct));
+      for (const entry of LOCAL_MODEL_CATALOG) {
+        await ensureModel(entry, (pct) => setState(phase, message, pct));
+      }
       setState("starting", "Starting llama-server…", null);
-      const mmproj = catalog.mmprojFilename
-        ? path.join(models, catalog.mmprojFilename)
-        : null;
+      const ready = new Set<string>();
+      for (const entry of LOCAL_MODEL_CATALOG) {
+        if (entry.mmprojFilename && (await exists(path.join(models, entry.mmprojFilename)))) {
+          ready.add(entry.mmprojFilename);
+        }
+      }
+      const presetPath = path.join(root, "models.ini");
+      await writeFile(
+        presetPath,
+        localModelRouterPreset(models, (filename) => ready.has(filename)),
+      );
       const args = [
-        "-m",
-        model,
-        ...(mmproj && (await exists(mmproj)) ? ["--mmproj", mmproj] : []),
+        "--models-preset",
+        presetPath,
+        "--models-max",
+        "1",
         "--host",
         serverHost(),
         "--port",
         String(port),
-        "--alias",
-        "qwen3.5:4b-mtp,qwen3.5:4b",
-        "-c",
-        "16384",
-        "-np",
-        "2",
-        "--kv-unified",
-        "-ngl",
-        "99",
-        "--fit",
-        "off",
-        "--flash-attn",
-        "on",
-        "--spec-type",
-        "draft-mtp",
-        "--spec-draft-n-max",
-        "3",
-        "--jinja",
-        "--reasoning",
-        "off",
-        "--chat-template-kwargs",
-        '{"enable_thinking":false}',
         "--no-webui",
         "--metrics",
       ];

@@ -5,6 +5,7 @@ import {
   avatarIdentitySeed,
   BOT_AVATAR_COLORS,
   BOT_COLOR_LIST,
+  contrastRatio,
   DEFAULT_BOT_AVATAR_COLOR,
   organicAvatarPath,
   resolvePersonaColorDef,
@@ -12,6 +13,7 @@ import {
   SHIPPED_BOT_AVATAR_SHAPE_KEYS,
   SHIPPED_BOT_AVATAR_SHAPES,
   SHIPPED_BOT_AVATAR_VIEWBOX,
+  shippedBotAvatarGoggles,
   shippedBotAvatarShapePath,
 } from "@atlas/core";
 import { tokens } from "@atlas/ui-tokens";
@@ -29,6 +31,11 @@ export const BOT_SHAPES = SHIPPED_BOT_AVATAR_SHAPES;
 export const SHIPPED_SHAPE_KEYS = SHIPPED_BOT_AVATAR_SHAPE_KEYS;
 const VIEWBOX = SHIPPED_BOT_AVATAR_VIEWBOX;
 const CENTER = SHIPPED_BOT_AVATAR_CENTER;
+/** Organic eyes are 7×24 pills in a 120-unit box; scale into the shape viewBox. */
+const SHAPE_EYE_SCALE = 229 / 120;
+const SHAPE_EYE_W = 7 * SHAPE_EYE_SCALE;
+const SHAPE_EYE_H = 24 * SHAPE_EYE_SCALE;
+const SHAPE_EYE_OFFSET_X = 10.5 * SHAPE_EYE_SCALE;
 
 export const BOT_MASCOT_SHAPES = SHIPPED_SHAPE_KEYS.map(
   (k) => BOT_SHAPES[k] ?? FALLBACK_SHAPE_PATH,
@@ -104,14 +111,31 @@ export const BotAvatar = memo(function BotAvatar({
   );
 
   if (parsed.isImage && parsed.imageUrl) {
+    const goggles = shippedBotAvatarGoggles(parsed.imageUrl);
     return (
       <div
         className={cn("atlas-bot-avatar relative shrink-0 select-none", className)}
         data-working={isWorking}
         style={{ width: size, height: size }}
       >
-        <div className="atlas-bot-avatar-picture relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-border bg-secondary">
-          <img src={parsed.imageUrl} alt="" className="h-full w-full object-cover" />
+        <div className="atlas-bot-avatar-picture relative size-full">
+          <div className="atlas-bot-avatar-picture-face relative size-full">
+            <img
+              src={parsed.imageUrl}
+              alt=""
+              className="atlas-bot-avatar-picture-body size-full object-contain"
+              draggable={false}
+            />
+            {goggles ? (
+              <img
+                src={goggles}
+                alt=""
+                className="atlas-bot-avatar-picture-goggles pointer-events-none absolute inset-0 size-full object-contain"
+                draggable={false}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
         </div>
         {isWorking ? (
           <svg
@@ -166,15 +190,47 @@ export const BotAvatar = memo(function BotAvatar({
   }
 
   return (
+    <ShippedShapeAvatar
+      id={id}
+      color={colorDef}
+      shapeIndex={parsed.shapeIndex}
+      identity={effectiveId}
+      size={size}
+      isWorking={isWorking}
+      className={className}
+    />
+  );
+});
+
+/** Studio shapes share organic eye/body CSS so web matches mobile's living shapes. */
+function ShippedShapeAvatar({
+  id,
+  color,
+  shapeIndex,
+  identity,
+  size,
+  isWorking,
+  className,
+}: {
+  id: string;
+  color: BotColorDef;
+  shapeIndex: number;
+  identity: string;
+  size: number;
+  isWorking: boolean;
+  className?: string;
+}) {
+  const seed = avatarIdentitySeed(identity || color.hex || DEFAULT_BOT_AVATAR_COLOR);
+  const path = shippedBotAvatarShapePath(shapeIndex);
+  const pale = contrastRatio(color.hex, "#FFFFFF") < 1.15;
+
+  return (
     <div
       className={cn(
         "atlas-bot-avatar bot-avatar-container relative inline-flex items-center justify-center shrink-0 select-none",
         className,
       )}
-      style={{
-        width: size,
-        height: size,
-      }}
+      style={{ width: size, height: size }}
       data-working={isWorking}
     >
       <svg
@@ -183,7 +239,7 @@ export const BotAvatar = memo(function BotAvatar({
           inset: -4,
           width: size + 8,
           height: size + 8,
-          filter: `drop-shadow(0 0 6px ${colorDef.light}) drop-shadow(0 0 10px #ffffff)`,
+          filter: `drop-shadow(0 0 6px ${color.light}) drop-shadow(0 0 10px #ffffff)`,
         }}
         viewBox="0 0 48 48"
         fill="none"
@@ -202,46 +258,72 @@ export const BotAvatar = memo(function BotAvatar({
         <defs>
           <linearGradient id={`${id}-ring`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="60%" stopColor={colorDef.light} stopOpacity="0.9" />
-            <stop offset="100%" stopColor={colorDef.light} stopOpacity="0" />
+            <stop offset="60%" stopColor={color.light} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={color.light} stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>
       <svg
         viewBox={VIEWBOX}
         aria-hidden="true"
-        className={cn(
-          "overflow-visible transition-transform duration-300",
-          isWorking
-            ? "animate-pulse scale-[1.04] motion-reduce:animate-none"
-            : "hover:scale-[1.03] motion-reduce:hover:scale-100",
-        )}
-        // Inline size so a parent's icon sizing (Button sizes bare SVGs) cannot shrink it.
+        className="atlas-organic-avatar atlas-shape-avatar overflow-visible select-none"
+        data-working={isWorking}
+        data-shape-family={seed % 10}
+        data-eye-pattern={seed % 4}
         style={{
           width: size,
           height: size,
           filter: isWorking
-            ? `drop-shadow(0 0 8px ${colorDef.light}) drop-shadow(0 0 2px #ffffff)`
+            ? `drop-shadow(0 0 8px ${color.light}) drop-shadow(0 0 2px #ffffff)`
             : "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
         }}
       >
         <defs>
           <linearGradient id={`bot-ink-${id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={colorDef.light} />
-            <stop offset="100%" stopColor={colorDef.dark} />
+            <stop offset="0%" stopColor={color.light} />
+            <stop offset="100%" stopColor={color.dark} />
           </linearGradient>
         </defs>
-        <g>
-          <path d={shippedBotAvatarShapePath(parsed.shapeIndex)} fill={`url(#bot-ink-${id})`} />
-          <g fill={colorDef.eyeColor} className="bot-character-eyes">
-            <ellipse cx={CENTER - 29} cy={CENTER - 8} rx={10} ry={7} />
-            <ellipse cx={CENTER + 29} cy={CENTER - 8} rx={10} ry={7} />
-          </g>
+        {(["idle", "working"] as const).map((mode) => (
+          <path
+            key={mode}
+            className={`atlas-organic-avatar-body atlas-organic-avatar-body-${mode}`}
+            d={path}
+            fill={`url(#bot-ink-${id})`}
+            stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
+            strokeWidth={pale ? 6 : undefined}
+            style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
+          />
+        ))}
+        {/* Same pill eyes as OrganicAvatar, scaled into the shape viewBox. */}
+        <g transform={`rotate(${(seed % 9) - 4} ${CENTER} ${CENTER})`}>
+          {(["idle", "working"] as const).map((mode) => (
+            <g
+              key={mode}
+              className={`atlas-organic-avatar-eyes atlas-organic-avatar-eyes-${mode} bot-character-eyes`}
+              fill={pale ? "#141414" : tokens.background}
+            >
+              <rect
+                x={CENTER - SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
+                y={CENTER - SHAPE_EYE_H / 2 - 8}
+                width={SHAPE_EYE_W}
+                height={SHAPE_EYE_H}
+                rx={SHAPE_EYE_W / 2}
+              />
+              <rect
+                x={CENTER + SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
+                y={CENTER - SHAPE_EYE_H / 2 - 8}
+                width={SHAPE_EYE_W}
+                height={SHAPE_EYE_H}
+                rx={SHAPE_EYE_W / 2}
+              />
+            </g>
+          ))}
         </g>
       </svg>
     </div>
   );
-});
+}
 
 /** Only live Atlas consumers subscribe to public activity updates. */
 function LiveLogoAvatar({
@@ -274,6 +356,7 @@ function OrganicAvatar({
   const duration = `${4.8 + (seed % 24) / 10}s`;
   const shapeA = organicAvatarPath(seed);
   const shapeB = organicAvatarPath(seed, 0.42);
+  const pale = contrastRatio(color, "#FFFFFF") < 1.15;
 
   return (
     <svg
@@ -295,6 +378,8 @@ function OrganicAvatar({
           className={`atlas-organic-avatar-body atlas-organic-avatar-body-${mode}`}
           d={shapeA}
           fill={color}
+          stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
+          strokeWidth={pale ? 3.5 : undefined}
           style={
             {
               "--atlas-organic-path": `path("${shapeA}")`,
@@ -320,7 +405,7 @@ function OrganicAvatar({
           <g
             key={mode}
             className={`atlas-organic-avatar-eyes atlas-organic-avatar-eyes-${mode}`}
-            fill={tokens.background}
+            fill={pale ? "#141414" : tokens.background}
           >
             <rect x="-14" y="-12" width="7" height="24" rx="3.5" />
             <rect x="7" y="-12" width="7" height="24" rx="3.5" />
@@ -363,7 +448,8 @@ export function BotShapePreview({
     shapeIndex === undefined
       ? undefined
       : (SHIPPED_SHAPE_KEYS[shapeIndex % SHIPPED_SHAPE_KEYS.length] ?? "hex");
-  const colorDef = resolvePersonaColorDef("preview", color);
+  const previewColor =
+    shapeIndex === undefined ? color : `${color}::shape_${shapeIndex % SHIPPED_SHAPE_KEYS.length}`;
 
   return (
     <button
@@ -378,17 +464,7 @@ export function BotShapePreview({
           : "hover:bg-white/5",
       )}
     >
-      {shapeIndex === undefined ? (
-        <BotAvatar color={color} identity={identity} size={32} />
-      ) : (
-        <svg viewBox={VIEWBOX} className="size-8 overflow-visible" aria-hidden="true">
-          <path d={shippedBotAvatarShapePath(shapeIndex)} fill={colorDef.light} />
-          <g fill={colorDef.eyeColor}>
-            <ellipse cx={CENTER - 29} cy={CENTER - 8} rx={10} ry={7} />
-            <ellipse cx={CENTER + 29} cy={CENTER - 8} rx={10} ry={7} />
-          </g>
-        </svg>
-      )}
+      <BotAvatar color={previewColor} identity={identity ?? "preview"} size={32} />
     </button>
   );
 }

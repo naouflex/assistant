@@ -1254,6 +1254,12 @@ export const RU_MESSAGES: Record<string, string> = {
   "1 free month earned": "Получен 1 бесплатный месяц",
   "{count} free months earned": "Бесплатных месяцев получено: {count}",
   "Submit a plugin": "Предложить плагин",
+  "Review recent runs": "Проверить недавние запуски",
+  "Reviewing recent runs": "Проверяем недавние запуски",
+  "Proposed notes": "Предложенные заметки",
+  Accept: "Принять",
+  Reject: "Отклонить",
+  "Nothing to change": "Менять нечего",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

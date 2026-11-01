@@ -380,6 +380,8 @@ model Space {
   connections                 Connection[]
   capabilities                CapabilityInstall[]
   memoryDocuments             MemoryDocument[]
+  memoryDreams                MemoryDream[]
+  memoryProposals             MemoryProposal[]
   agentHomes                  AgentHome[]
   browserProfiles             BrowserProfile[]
   artifacts                   Artifact[]
@@ -681,6 +683,8 @@ model Bot {
   scratchpadItems   ScratchpadItem[]
   taughtSkills      TaughtSkill[]
   memoryDocuments   MemoryDocument[]
+  memoryDreams      MemoryDream[]
+  memoryProposals   MemoryProposal[]
   agentHome         AgentHome?
   browserProfile    BrowserProfile?
   artifacts         Artifact[]
@@ -1295,6 +1299,51 @@ model MemoryRevision {
 
   @@unique([documentId, revision])
   @@map("memory_revisions")
+}
+
+/// A later pass over finished runs. It proposes memory edits and never writes them.
+model MemoryDream {
+  id          String           @id @default(cuid())
+  spaceId     String
+  space       Space            @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId      String
+  botId       String?
+  bot         Bot?             @relation(fields: [botId], references: [id], onDelete: Cascade)
+  status      String           @default("queued")
+  error       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  proposals   MemoryProposal[]
+
+  @@index([spaceId, userId, status])
+  @@index([botId])
+  @@map("memory_dreams")
+}
+
+/// A full replacement for one memory note, waiting for the person who owns it.
+model MemoryProposal {
+  id           String       @id @default(cuid())
+  spaceId      String
+  space        Space        @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId       String
+  botId        String?
+  bot          Bot?         @relation(fields: [botId], references: [id], onDelete: Cascade)
+  scope        String
+  path         String
+  content      String
+  baseRevision Int
+  reason       String
+  evidence     Json
+  source       String
+  status       String       @default("pending")
+  dreamId      String?
+  dream        MemoryDream? @relation(fields: [dreamId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([spaceId, userId, status])
+  @@index([dreamId])
+  @@map("memory_proposals")
 }
 
 model AgentHome {

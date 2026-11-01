@@ -126,7 +126,7 @@ export function RoutinesPage() {
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-background text-foreground/90">
-      <header className="app-drag border-b border-border px-4 py-4 md:px-6">
+      <header className="app-drag desktop-caption-end border-b border-border px-4 py-4 md:px-6">
         <div className="flex items-center gap-2">
           {desktopBridge() ? <WindowChrome /> : null}
           <Link

@@ -88,50 +88,50 @@ export function ComposerModelControls({
     }
   }
 
+  const thinkingToggle = toggle ? (
+    <Toggle
+      size="sm"
+      variant="outline"
+      aria-label={t`Thinking`}
+      title={thinking ? t`Thinking on: slower, more careful` : t`Thinking off: fastest replies`}
+      pressed={thinking}
+      disabled={saving}
+      onPressedChange={(on) =>
+        void save({
+          modelProvider: bot.modelProvider ?? null,
+          modelId: bot.modelId ?? null,
+          thinkingLevel: on ? toggle.on : toggle.off,
+        })
+      }
+      className="h-7 gap-1 rounded-full px-2.5 text-xs"
+    >
+      <Brain size={13} strokeWidth={1.8} />
+      {thinking ? t`Thinking` : t`No thinking`}
+    </Toggle>
+  ) : null;
+
   return (
     <div className="flex min-w-0 items-center gap-2 text-xs" data-testid="composer-model-controls">
-      <div className="min-w-0 max-w-[18rem]">
-        <ChatModelPicker
-          id={id}
-          compact
-          ariaLabel={t`Model for ${bot.name}`}
-          choices={choices}
-          localNotes={localStatus.notes}
-          onRefreshLocal={localStatus.hasLocal ? () => void localStatus.refresh() : undefined}
-          refreshingLocal={localStatus.refreshing}
-          value={selectedKey}
-          onChange={(key) => {
-            const next = key ? parseModelOptionKey(key) : null;
-            void save({
-              modelProvider: next?.provider ?? null,
-              modelId: next?.modelId ?? null,
-              // A saved level may not exist on the next model; let it use its default.
-              thinkingLevel: null,
-            });
-          }}
-        />
-      </div>
-      {toggle ? (
-        <Toggle
-          size="sm"
-          variant="outline"
-          aria-label={t`Thinking`}
-          title={thinking ? t`Thinking on: slower, more careful` : t`Thinking off: fastest replies`}
-          pressed={thinking}
-          disabled={saving}
-          onPressedChange={(on) =>
-            void save({
-              modelProvider: bot.modelProvider ?? null,
-              modelId: bot.modelId ?? null,
-              thinkingLevel: on ? toggle.on : toggle.off,
-            })
-          }
-          className="h-7 gap-1 rounded-full px-2.5 text-xs"
-        >
-          <Brain size={13} strokeWidth={1.8} />
-          {thinking ? t`Thinking` : t`No thinking`}
-        </Toggle>
-      ) : null}
+      <ChatModelPicker
+        id={id}
+        compact
+        ariaLabel={t`Model for ${bot.name}`}
+        choices={choices}
+        localNotes={localStatus.notes}
+        onRefreshLocal={localStatus.hasLocal ? () => void localStatus.refresh() : undefined}
+        refreshingLocal={localStatus.refreshing}
+        value={selectedKey}
+        afterControl={thinkingToggle}
+        onChange={(key) => {
+          const next = key ? parseModelOptionKey(key) : null;
+          void save({
+            modelProvider: next?.provider ?? null,
+            modelId: next?.modelId ?? null,
+            // A saved level may not exist on the next model; let it use its default.
+            thinkingLevel: null,
+          });
+        }}
+      />
       {error ? <span className="truncate text-destructive">{error}</span> : null}
     </div>
   );

@@ -1216,6 +1216,12 @@ export const NL_MESSAGES: Record<string, string> = {
   "1 free month earned": "1 gratis maand verdiend",
   "{count} free months earned": "{count} gratis maanden verdiend",
   "Submit a plugin": "Plugin indienen",
+  "Review recent runs": "Recente runs bekijken",
+  "Reviewing recent runs": "Recente runs worden bekeken",
+  "Proposed notes": "Voorgestelde notities",
+  Accept: "Accepteren",
+  Reject: "Afwijzen",
+  "Nothing to change": "Niets te wijzigen",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

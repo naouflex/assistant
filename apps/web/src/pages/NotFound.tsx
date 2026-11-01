@@ -5,7 +5,7 @@ import { WindowChrome } from "./WindowChrome";
 export function NotFoundPage() {
   return (
     <div className="flex min-h-full flex-col bg-background" data-atlas-surface="not-found">
-      <div className="app-drag flex gap-2 px-5 py-[18px]">
+      <div className="app-drag desktop-caption-end flex gap-2 px-5 py-[18px]">
         <WindowChrome />
       </div>
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-5 pb-[90px] text-center">

@@ -16,10 +16,10 @@ test("photo working avatars show a visible ring while idle avatars stay plain", 
   await expect(ring).toBeVisible();
 
   const overflow = await working.evaluate((el) => getComputedStyle(el).overflowX);
-  const pictureOverflow = await picture.evaluate((el) => getComputedStyle(el).overflowX);
   const ringAnimation = await ring.evaluate((el: SVGElement) => getComputedStyle(el).animationName);
   const ringColor = await ring.locator("circle").evaluate((el) => getComputedStyle(el).stroke);
-  const pictureAnimation = await picture.evaluate((el) => getComputedStyle(el).animationName);
+  const pictureFace = picture.locator(".atlas-bot-avatar-picture-face");
+  const pictureAnimation = await pictureFace.evaluate((el) => getComputedStyle(el).animationName);
   const workingColor = await page.evaluate(() => {
     const probe = document.createElement("span");
     probe.style.color = "var(--status-working)";
@@ -29,19 +29,21 @@ test("photo working avatars show a visible ring while idle avatars stay plain", 
     return color;
   });
   expect(overflow).not.toBe("hidden");
-  expect(pictureOverflow).toBe("hidden");
   expect(ringAnimation).toBe("atlas-avatar-spin");
   expect(ringColor).toBe(workingColor);
-  expect(pictureAnimation).toBe("atlas-avatar-breathe");
-  const firstPictureTransform = await picture.evaluate((el) => getComputedStyle(el).transform);
+  expect(pictureAnimation).toBe("atlas-picture-working");
+  const firstPictureTransform = await pictureFace.evaluate((el) => getComputedStyle(el).transform);
   await page.waitForTimeout(300);
-  const secondPictureTransform = await picture.evaluate((el) => getComputedStyle(el).transform);
+  const secondPictureTransform = await pictureFace.evaluate((el) => getComputedStyle(el).transform);
   expect(secondPictureTransform).not.toBe(firstPictureTransform);
 
   const idle = page.locator(".avatar-idle");
   await expect(idle).toHaveAttribute("data-working", "false");
   await expect(idle.locator(".atlas-bot-avatar-ring")).toHaveCount(0);
-  await expect(idle.locator(".atlas-bot-avatar-picture")).toHaveCSS("animation-name", "none");
+  await expect(idle.locator(".atlas-bot-avatar-picture-face")).toHaveCSS(
+    "animation-name",
+    "atlas-picture-idle",
+  );
   await captureScreenshot(page, testInfo, "avatar-photo-working-and-idle");
 });
 
@@ -54,7 +56,7 @@ test("photo avatar animations stay still when reduced motion is enabled", async 
   await expect(avatar).toHaveAttribute("data-working", "true");
 
   const ring = avatar.locator(".atlas-bot-avatar-ring");
-  const picture = avatar.locator(".atlas-bot-avatar-picture");
+  const pictureFace = avatar.locator(".atlas-bot-avatar-picture-face");
   await expect(ring).toBeVisible();
   const snapshot = () =>
     Promise.all([
@@ -62,7 +64,7 @@ test("photo avatar animations stay still when reduced motion is enabled", async 
         animationName: getComputedStyle(el).animationName,
         transform: getComputedStyle(el).transform,
       })),
-      picture.evaluate((el) => ({
+      pictureFace.evaluate((el) => ({
         animationName: getComputedStyle(el).animationName,
         transform: getComputedStyle(el).transform,
       })),

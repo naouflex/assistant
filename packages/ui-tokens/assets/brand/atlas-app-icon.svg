@@ -1,20 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Atlas">
-  <defs>
-    <linearGradient id="atlas-plate" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#171513"/>
-      <stop offset="1" stop-color="#0E0D0C"/>
-    </linearGradient>
-    <linearGradient id="atlas-stroke" gradientUnits="userSpaceOnUse" x1="300" y1="250" x2="724" y2="770">
-      <stop offset="0" stop-color="#FFF8EE"/>
-      <stop offset="0.45" stop-color="#F8E2BC"/>
-      <stop offset="1" stop-color="#F0B35A"/>
-    </linearGradient>
-  </defs>
-  <rect width="1024" height="1024" rx="224" fill="url(#atlas-plate)"/>
-  <g fill="none" stroke="url(#atlas-stroke)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="512" cy="470" r="222"/>
-    <ellipse cx="512" cy="470" rx="112" ry="222"/>
-    <path d="M512 248V692"/>
-    <path d="M370 760H654"/>
+  <rect width="1024" height="1024" rx="224" fill="#F7F4EF"/>
+  <g transform="scale(2)">
+    <path fill="#141210" d="M63.92 447.43C52.36 447.43 41.7 441.18 36.06 431.08C30.42 420.99 30.67 408.63 36.73 398.78C102.85 291.28 168.97 183.77 235.08 76.26C239.55 69 247.47 64.57 256 64.57C264.53 64.57 272.45 69 276.92 76.26C343.03 183.77 409.15 291.28 475.27 398.78C481.33 408.63 481.58 420.99 475.94 431.08C470.3 441.18 459.64 447.43 448.08 447.43C320.03 447.43 191.97 447.43 63.92 447.43Z"/>
+    <path fill="#FFFFFF" d="M171.82 211.21C197.68 169.16 223.54 127.11 249.4 85.07C250.81 82.77 253.31 81.38 256 81.38C258.69 81.38 261.19 82.77 262.6 85.07C288.46 127.11 314.32 169.16 340.18 211.21C331.76 211.21 323.34 206.04 314.92 202.02C306.51 198 298.09 187.08 289.67 187.08C284.06 187.08 278.45 183.38 272.84 187.85C267.22 192.32 261.61 213.89 256 213.89C250.39 213.89 244.78 204.89 239.16 200.1C233.55 195.32 227.94 185.17 222.33 185.17C213.91 185.17 205.49 195.76 197.08 200.1C188.66 204.44 180.24 211.21 171.82 211.21Z"/>
+    <ellipse cx="283.33" cy="275.53" rx="12.24" ry="28.65" transform="rotate(-34 283.33 275.53)" fill="#FFFFFF"/>
+    <ellipse cx="339.33" cy="262.13" rx="8.8" ry="27.68" transform="rotate(-34 339.33 262.13)" fill="#FFFFFF"/>
   </g>
 </svg>

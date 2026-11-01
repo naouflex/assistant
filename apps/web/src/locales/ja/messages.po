@@ -4751,10 +4751,6 @@ msgstr "プロバイダー"
 msgid "Pull request"
 msgstr "プルリクエスト"
 
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Push needs Expo token"
-msgstr ""
-
 #: src/pages/ActivityList.tsx
 msgid "Queued"
 msgstr "待機中"

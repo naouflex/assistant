@@ -14,7 +14,8 @@
   stroke-width: 1;
 }
 .logo-avatar-body {
-  transform-origin: 50px 84px;
+  /* Pivot near the mountain base (art is translated +9 in the SVG). */
+  transform-origin: 50px 88px;
 }
 .logo-avatar-gaze {
   transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -24,7 +25,13 @@
   opacity: 0.15;
 }
 .logo-avatar-eye-lid {
+  transform-box: fill-box;
+  transform-origin: center;
   transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.logo-avatar-eye {
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 /* Separate clocks keep a bot's two eyes paired without synchronising the fleet. */
@@ -53,7 +60,10 @@
 .atlas-logo-avatar[data-motion="true"]
   .logo-avatar-layer:where([data-activity="idle"])
   .logo-avatar-scan {
+  /* Match default organic eye tempo (~6s), not the 24s blink export loop. */
   animation-name: logo-avatar-idle;
+  animation-duration: 5.8s;
+  animation-delay: var(--logo-move-delay);
 }
 
 .logo-avatar-layer:where([data-activity="reading"]) .logo-avatar-gaze {
@@ -229,21 +239,38 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.005);
+    transform: scale(1.04);
   }
 }
+/* Same continuous glance language as the default organic eyes. */
 @keyframes logo-avatar-idle {
   0%,
-  66%,
   100% {
-    transform: translate(0, 0);
+    transform: translate(0, 0) scaleY(1);
   }
-  70%,
-  78% {
-    transform: translate(calc(4px * var(--logo-side)), -2px);
+  18% {
+    transform: translate(calc(8px * var(--logo-side)), -3px) scaleY(1);
   }
-  82% {
-    transform: translate(0, 0);
+  22% {
+    transform: translate(calc(8px * var(--logo-side)), -3px) scaleY(0.08);
+  }
+  26% {
+    transform: translate(calc(8px * var(--logo-side)), -3px) scaleY(1);
+  }
+  42% {
+    transform: translate(calc(-7px * var(--logo-side)), 2px) scaleY(1);
+  }
+  58% {
+    transform: translate(calc(5px * var(--logo-side)), -5px) scaleY(1);
+  }
+  72% {
+    transform: translate(0, 3px) scaleY(1);
+  }
+  76% {
+    transform: translate(0, 3px) scaleY(0.08);
+  }
+  80% {
+    transform: translate(0, 3px) scaleY(1);
   }
 }
 @keyframes logo-avatar-read {

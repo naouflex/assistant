@@ -33,8 +33,9 @@ describe("local thinking toggle", () => {
 
   it("lets a thinking-capable model think when the run asks for it, despite the env default", async () => {
     const body = await wire({ ...local, reasoning: true }, "medium");
-    expect(body.think).toBeUndefined();
-    expect(body.chat_template_kwargs).toBeUndefined();
+    expect(body.think).toBe(true);
+    expect(body.reasoning_effort).toBe("medium");
+    expect(body.chat_template_kwargs).toEqual({ enable_thinking: true });
   });
 
   it("keeps the env switch for models that cannot think", async () => {
@@ -44,6 +45,7 @@ describe("local thinking toggle", () => {
 
   it("detects thinking models by name, or by the declared list", () => {
     expect(localModelThinks("qwen3.5:4b", {})).toBe(true);
+    expect(localModelThinks("spark-x2.5:4b", {})).toBe(true);
     expect(localModelThinks("qwen2.5:7b-instruct", {})).toBe(false);
     expect(localModelThinks("llama3.1:8b", {})).toBe(false);
     expect(localModelThinks("llama3.1:8b", { ATLAS_LOCAL_REASONING_MODELS: "llama3.1:8b" })).toBe(

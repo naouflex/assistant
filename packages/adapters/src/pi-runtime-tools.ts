@@ -7,7 +7,7 @@ import type {
   ConnectorTool,
   ModelCallObserver,
 } from "@atlas/adapter-kit";
-import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
+import { DEFAULT_CONTEXT_STRATEGY, SandboxUnreachableError } from "@atlas/adapter-kit";
 import { FLEET_TOOL_NAMES } from "@atlas/contracts";
 import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
 import type { Api, Model, Models } from "@earendil-works/pi-ai";
@@ -203,8 +203,9 @@ export function describeToolActivity(toolName: string, args: unknown): string {
   if (toolName === "set_child_instructions") return "Rewriting a bot's instructions";
   if (toolName === "set_child_bot_model") return "Setting a bot's model";
   if (toolName === "create_child_routine") return `Scheduling routine: ${detail(record.name)}`;
+  if (toolName === "read_memory") return `Reading memory: ${detail(record.path)}`;
   if (toolName === "remember") return "Saving a note to memory";
-  if (toolName === "save_shared_memory") return `Saving shared memory: ${detail(record.path)}`;
+  if (toolName === "save_shared_memory") return `Proposing shared memory: ${detail(record.path)}`;
   if (toolName === "web_search") return `Searching the web: ${detail(record.query)}`;
   if (toolName === "web_fetch") return `Reading page: ${detail(redactActivityUrl(record.url))}`;
   if (toolName === "skill_read")
@@ -569,6 +570,12 @@ function toAgentTool(
             return boundAgentToolResult(result as AgentToolResult<unknown>);
           } catch (error) {
             failure = error;
+            // Pi turns a thrown tool into a result and asks the model to continue. A computer
+            // that cannot be reached is not a command the model should explain.
+            if (error instanceof SandboxUnreachableError) {
+              host.computerUnreachable = error;
+              host.abortTurn();
+            }
             throw error;
           } finally {
             // Pi only terminates a parallel batch when every result terminates.
@@ -694,6 +701,8 @@ export interface ToolHost {
   /** Shared fallback uniqueness when the model omits toolCallId (nested hosts reuse this). */
   toolCallSeq: { value: number };
   abortTurn(): void;
+  /** Set when a tool finds that nothing is accepting computer connections. */
+  computerUnreachable?: SandboxUnreachableError;
   signal: AbortSignal;
   depth: number;
   agentNamespace?: string;

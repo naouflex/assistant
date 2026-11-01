@@ -1,6 +1,6 @@
 import { parseBotAvatarValue } from "@atlas/contracts";
 import type { LogoAvatarActivity } from "@atlas/core";
-import { contrastRatio, logoAvatarTraits } from "@atlas/core";
+import { contrastRatio, LOGO_EYES, logoAvatarTraits } from "@atlas/core";
 import { botEyeColor, tokens } from "@atlas/ui-tokens";
 import type { CSSProperties } from "react";
 import { memo, useId, useMemo } from "react";
@@ -116,23 +116,27 @@ export const LogoAvatar = memo(function LogoAvatar({
                   id={`${id}-${layer.key}`}
                   color={traits.color}
                   originalOrange={traits.originalOrange}
+                  mark={eyeInk}
                 />
+                {/*
+                  Default organic pill eyes sit on the mountain without a body clip:
+                  gaze/blink CSS translates would otherwise disappear inside the silhouette.
+                */}
                 <g className="logo-avatar-gaze">
                   <g className="logo-avatar-scan">
-                    {[40.5, 59.5].map((x, index) => (
+                    {LOGO_EYES.map((eye, index) => (
                       <g
                         className={`logo-avatar-eye-lid logo-avatar-eye-${index}`}
-                        key={x}
-                        style={{ transformOrigin: `${x}px 40px` }}
+                        key={eye.cx}
                       >
-                        <g className="logo-avatar-eye" style={{ transformOrigin: `${x}px 40px` }}>
-                          <ellipse cx={x} cy="40" rx="5.2" ry="8" fill={`url(#logo-eye-${id})`} />
-                          <ellipse
-                            className="logo-avatar-glint"
-                            cx={x - 1.2}
-                            cy="36.4"
-                            rx="1.4"
-                            ry="2.2"
+                        <g className="logo-avatar-eye">
+                          <rect
+                            x={eye.cx - eye.width / 2}
+                            y={eye.cy - eye.height / 2}
+                            width={eye.width}
+                            height={eye.height}
+                            rx={eye.width / 2}
+                            fill={`url(#logo-eye-${id})`}
                           />
                         </g>
                       </g>

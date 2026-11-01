@@ -4751,10 +4751,6 @@ msgstr "Fournisseurs"
 msgid "Pull request"
 msgstr "Demande de fusion"
 
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Push needs Expo token"
-msgstr ""
-
 #: src/pages/ActivityList.tsx
 msgid "Queued"
 msgstr "En file d'attente"

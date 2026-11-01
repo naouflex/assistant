@@ -16,6 +16,7 @@ import {
 } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ChevronDownIcon, RefreshCwIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { useId, useMemo, useState } from "react";
 import { TextOnlyMark } from "../../components/TextOnlyMark";
 
@@ -30,6 +31,7 @@ export function ChatModelPicker({
   localNotes,
   onRefreshLocal,
   refreshingLocal = false,
+  afterControl,
 }: {
   id: string;
   /** Small inline control, as under the composer, labelled by ariaLabel. */
@@ -43,6 +45,8 @@ export function ChatModelPicker({
   /** Shows a button that rescans the local model servers. */
   onRefreshLocal?: () => void;
   refreshingLocal?: boolean;
+  /** Sits immediately after the selector, before the image mark and refresh button. */
+  afterControl?: ReactNode;
 }) {
   const { t } = useLingui();
   const imagesHintId = useId();
@@ -52,6 +56,11 @@ export function ChatModelPicker({
   const selected = choices.find((choice) => choice.key === value) ?? choices[0];
   const textOnly = selected?.images === false;
   const imagesHint = <span id={imagesHintId} hidden>{t`Can't read images`}</span>;
+  const imageMark = textOnly ? (
+    <span className="shrink-0 text-muted-foreground">
+      <TextOnlyMark />
+    </span>
+  ) : null;
   const note = (key: string) => localNotes?.get(key);
   const refreshButton = onRefreshLocal ? (
     <Button
@@ -88,11 +97,8 @@ export function ChatModelPicker({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-        {textOnly ? (
-          <span className="text-muted-foreground">
-            <TextOnlyMark />
-          </span>
-        ) : null}
+        {afterControl}
+        {imageMark}
         {refreshButton}
       </div>
     );
@@ -114,7 +120,7 @@ export function ChatModelPicker({
       >
         <span className="min-w-0 truncate">{selected?.label}</span>
         <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
-          {textOnly ? <TextOnlyMark /> : null}
+          {textOnly && !afterControl ? <TextOnlyMark /> : null}
           <ChevronDownIcon className="size-4" aria-hidden="true" />
         </span>
       </PopoverTrigger>
@@ -177,10 +183,14 @@ export function ChatModelPicker({
       ) : null}
     </Popover>
   );
-  if (!refreshButton) return popover;
+  if (!refreshButton && !afterControl) return popover;
   return (
-    <div className="flex min-w-0 items-center gap-2 [&>button:first-of-type]:min-w-0 [&>button:first-of-type]:flex-1">
+    <div
+      className={`flex min-w-0 items-center gap-2 ${afterControl ? "" : "[&>button:first-of-type]:min-w-0 [&>button:first-of-type]:flex-1"}`}
+    >
       {popover}
+      {afterControl}
+      {afterControl ? imageMark : null}
       {refreshButton}
     </div>
   );

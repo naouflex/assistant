@@ -1,3 +1,4 @@
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type { ProcessEvent } from "@atlas/adapter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -19,6 +20,36 @@ const context = {
 };
 
 describe("Docker sandbox", () => {
+  it("names a refused supervisor instead of a bare fetch failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed", {
+          cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:7091"), {
+            code: "ECONNREFUSED",
+          }),
+        });
+      }),
+    );
+    const provider = new DockerSandboxProvider("http://127.0.0.1:7091", "test-token");
+    await expect(provider.provision({ botId: "bot", homePath: "/home" }, context)).rejects.toBeInstanceOf(
+      SandboxUnreachableError,
+    );
+  });
+
+  it("leaves an aborted supervisor call aborted", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new DOMException("The operation was aborted", "AbortError");
+      }),
+    );
+    const provider = new DockerSandboxProvider("http://127.0.0.1:7091", "test-token");
+    await expect(provider.provision({ botId: "bot", homePath: "/home" }, context)).rejects.toMatchObject({
+      name: "AbortError",
+    });
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();

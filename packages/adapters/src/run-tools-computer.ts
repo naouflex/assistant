@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type { SandboxProvider } from "@atlas/adapter-kit";
 import type { ComputerCommand } from "@atlas/contracts";
 import { COMPUTER_COMMAND_OUTPUT_MAX_CHARS } from "@atlas/contracts";
@@ -409,6 +410,9 @@ export const computerTools: ToolHandlers = {
       });
       return call.finish(redacted);
     } catch (error) {
+      // A service that is not listening never ran the command. Leave it off the activity
+      // feed so the model is not asked to explain a command that did not start.
+      if (error instanceof SandboxUnreachableError) throw error;
       await appendComputerCommand(ctx, {
         ...commandEvent,
         status: "done",

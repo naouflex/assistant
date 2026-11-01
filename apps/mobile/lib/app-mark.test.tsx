@@ -37,6 +37,7 @@ vi.mock("react-native", () => {
 
 vi.mock("./native", () => ({
   native: { label: "label" },
+  useResolvedAppearance: () => "light",
   useThemedStyles: <T,>(factory: () => T) => factory(),
 }));
 

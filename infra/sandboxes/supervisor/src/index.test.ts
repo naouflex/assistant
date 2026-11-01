@@ -7,6 +7,8 @@ import path from "node:path";
 import { resolveSupervisorToken } from "@atlas/core";
 import { describe, expect, it } from "vitest";
 import {
+  SUPERVISOR_BIND_ATTEMPTS,
+  supervisorBindShouldRetry,
   MAX_SUPERVISOR_FILE_REQUEST_BYTES,
   MAX_SUPERVISOR_REQUEST_BYTES,
   resolveDockerSocketPath,
@@ -60,6 +62,18 @@ import {
 } from "./supervisor-logic.js";
 
 const token = resolveSupervisorToken(process.env);
+
+describe("supervisor bind", () => {
+  it("retries while a restart still holds the port", () => {
+    const busy = Object.assign(new Error("listen EADDRINUSE"), { code: "EADDRINUSE" });
+    expect(supervisorBindShouldRetry(busy, 0)).toBe(true);
+    expect(supervisorBindShouldRetry(busy, SUPERVISOR_BIND_ATTEMPTS - 2)).toBe(true);
+    expect(supervisorBindShouldRetry(busy, SUPERVISOR_BIND_ATTEMPTS - 1)).toBe(false);
+    expect(supervisorBindShouldRetry(Object.assign(new Error("EACCES"), { code: "EACCES" }), 0)).toBe(
+      false,
+    );
+  });
+});
 
 describe("computer screen readiness", () => {
   it("waits for the server to actually answer HTTP requests before succeeding", async () => {

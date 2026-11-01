@@ -1,3 +1,4 @@
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import { ATTACHMENT_MAX_BYTES } from "@atlas/contracts";
 import { inferAttachmentMimeType, isBackgroundRunTrigger } from "@atlas/core";
 import { resolveBotWorkspacePath } from "./computer-support.js";
@@ -168,7 +169,8 @@ export const fileTools: ToolHandlers = {
           maxBytes: deps.maxUploadSizeBytes ?? ATTACHMENT_MAX_BYTES,
         },
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof SandboxUnreachableError) throw error;
       return failAttach("file not found or unreadable");
     }
     const mimeType = inferAttachmentMimeType(filePath);

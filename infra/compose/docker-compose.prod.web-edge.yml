@@ -1,0 +1,28 @@
+# Shared apps-prod edge: HTTPS stays on rechat-caddy (host 80/443).
+# Atlas api/web join the external `web-edge` network; this stack's own Caddy
+# only starts with `--profile atlas-caddy` and must not publish host ports.
+services:
+  postgres:
+    mem_limit: 1g
+  migrate:
+    mem_limit: 768m
+  api:
+    mem_limit: ${ATLAS_API_MEMORY_LIMIT:-1g}
+    networks:
+      web-edge:
+        aliases:
+          - atlas-api
+  worker:
+    mem_limit: ${ATLAS_WORKER_MEMORY_LIMIT:-1g}
+  web:
+    networks:
+      web-edge:
+        aliases:
+          - atlas-web
+  caddy:
+    profiles: ["atlas-caddy"]
+    ports: !reset []
+
+networks:
+  web-edge:
+    external: true

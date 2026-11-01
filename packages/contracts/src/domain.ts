@@ -726,6 +726,30 @@ export const MemoryDocumentSchema = z.object({
 });
 export type MemoryDocument = z.infer<typeof MemoryDocumentSchema>;
 
+export const MemoryProposalSchema = z.object({
+  id: Id,
+  scope: MemoryScope,
+  botId: Id.nullable(),
+  path: z.string(),
+  content: z.string(),
+  baseRevision: z.number().int(),
+  reason: z.string(),
+  source: z.enum(["dream", "bot"]),
+  status: z.enum(["pending", "accepted", "rejected"]),
+  createdAt: z.string(),
+});
+export type MemoryProposal = z.infer<typeof MemoryProposalSchema>;
+
+export const MemoryDreamSchema = z.object({
+  id: Id,
+  scope: MemoryScope,
+  botId: Id.nullable(),
+  status: z.enum(["queued", "running", "ready", "failed"]),
+  error: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type MemoryDream = z.infer<typeof MemoryDreamSchema>;
+
 /** Every bot and Space keeps its MEMORY.md index; other memory documents can be deleted. */
 export const MEMORY_INDEX_PATH = "MEMORY.md";
 export function isDeletableMemoryDocument(path: string): boolean {
@@ -1120,7 +1144,9 @@ export const UsageRecordSchema = z.object({
   usageSource: z.string().nullable().optional(),
   callId: z.string().nullable().optional(),
   operationId: z.string().nullable().optional(),
-  operationKind: z.enum(["answer", "setup", "retrieval", "subagent", "compaction"]).optional(),
+  operationKind: z
+    .enum(["answer", "setup", "retrieval", "subagent", "compaction", "dream"])
+    .optional(),
   parentRunId: z.string().nullable().optional(),
   agentId: z.string().nullable().optional(),
   createdAt: z.string(),

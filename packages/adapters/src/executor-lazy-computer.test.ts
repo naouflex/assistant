@@ -1,5 +1,9 @@
 import type { AgentRunRequest, ComputerRef } from "@atlas/adapter-kit";
-import { SandboxRateLimitError, SandboxUnresponsiveError } from "@atlas/adapter-kit";
+import {
+  SandboxRateLimitError,
+  SandboxUnreachableError,
+  SandboxUnresponsiveError,
+} from "@atlas/adapter-kit";
 import type { MessageBlock } from "@atlas/contracts";
 import { createLogger, createTestSink, installLogger } from "@atlas/logging";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -604,6 +608,17 @@ describe("run computer provisioning", () => {
 
     // One from starting the computer, one from the takeover request.
     expect(sleepJobs).toHaveLength(2);
+  });
+
+  it("fails the run once when the computer service is not listening", async () => {
+    provisionComputer.mockRejectedValue(new SandboxUnreachableError());
+
+    const { finalizeRun, enqueue } = await runRoutine([{ name: "list_files", args: { path: "" } }]);
+
+    expect(finalizeRun).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ outcome: "failed", error: "The computer could not be reached." }),
+    );
+    expect(enqueue).not.toHaveBeenCalled();
   });
 
   it("keeps setup-failure retry semantics when the computer cannot start", async () => {

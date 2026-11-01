@@ -1165,6 +1165,12 @@ export const ES_MESSAGES: Record<string, string> = {
   "Use email code": "Usar código por correo",
   "Use password": "Usar contraseña",
   "{count} messages with {peer}": "{count} mensajes con {peer}",
+  "Review recent runs": "Revisar ejecuciones recientes",
+  "Reviewing recent runs": "Revisando ejecuciones recientes",
+  "Proposed notes": "Notas propuestas",
+  Accept: "Aceptar",
+  Reject: "Rechazar",
+  "Nothing to change": "Nada que cambiar",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

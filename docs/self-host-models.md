@@ -68,9 +68,12 @@ ATLAS_LOCAL_CONTEXT_WINDOW=32768
 ATLAS_LOCAL_MAX_TOKENS=4096
 # Optional: model ids on this endpoint that accept images (screenshot computer tools).
 ATLAS_LOCAL_VISION_MODELS=qwen3-vl
-# Optional: turn thinking off (Ollama `think`/`reasoning_effort`, llama.cpp/vLLM `enable_thinking`).
+# Optional: default thinking off (Ollama `think`/`reasoning_effort`, llama.cpp/vLLM `enable_thinking`).
 ATLAS_LOCAL_DISABLE_THINKING=true
 ```
+
+A bot's Thinking switch overrides that default. On, the request sets `enable_thinking` true,
+which llama.cpp honors even when the server was started with reasoning off. Off sends it false.
 
 Local runs get a compact system prompt and list only everyday tools (the rest stay reachable
 through `find_tool` and `use_tool`), so a small model reads about 2.6K prompt tokens per call

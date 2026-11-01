@@ -4,6 +4,7 @@ import {
   createThreadMessage,
   createThreadMessageInTransaction,
   RunHistoryWriteError,
+  seqPastExisting,
 } from "./messages.js";
 
 function transaction() {
@@ -11,6 +12,7 @@ function transaction() {
     thread: { update: vi.fn().mockResolvedValue({ nextMessageSeq: 1 }) },
     run: { findUnique: vi.fn().mockResolvedValue({ status: "running" }) },
     message: { create: vi.fn().mockResolvedValue({ id: "message-1" }) },
+    $queryRaw: vi.fn(async () => [{ floor: 0 }]),
   };
 }
 
@@ -55,6 +57,37 @@ describe("createThreadMessageInTransaction", () => {
       allowCancelledRun: true,
     });
     expect(tx.message.create).toHaveBeenCalledOnce();
+  });
+
+  it("places a new message after rows a rewound counter would have reused", async () => {
+    const tx = transaction();
+    tx.thread.update
+      .mockResolvedValueOnce({ nextMessageSeq: 8 })
+      .mockResolvedValueOnce({ nextMessageSeq: 15 });
+    tx.$queryRaw.mockResolvedValueOnce([{ floor: 14 }]);
+
+    await createThreadMessageInTransaction(tx as unknown as Prisma.TransactionClient, {
+      threadId: "thread-1",
+      role: "user",
+      blocks: [{ kind: "text", text: "hello" }],
+    });
+
+    expect(tx.thread.update).toHaveBeenLastCalledWith({
+      where: { id: "thread-1" },
+      data: { nextMessageSeq: 15 },
+    });
+    expect(tx.message.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ seq: 14 }) }),
+    );
+  });
+});
+
+describe("seqPastExisting", () => {
+  it("keeps a claimed seq that is already past the saved rows", async () => {
+    const tx = transaction();
+    tx.$queryRaw.mockResolvedValueOnce([{ floor: 3 }]);
+    await expect(seqPastExisting(tx, "thread-1", 7, "event")).resolves.toBe(7);
+    expect(tx.thread.update).not.toHaveBeenCalled();
   });
 });
 

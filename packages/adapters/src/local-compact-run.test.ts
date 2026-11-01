@@ -11,10 +11,14 @@ import { selfHostedPayload, withChatCompletionsCompatibility } from "./chat-comp
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { namedAgentTools } from "./pi-runtime-tools.js";
 import {
+  compactEnvironmentInstruction,
   compactInstructionsEnabled,
   compactSandboxInstruction,
   compactUserTurnInstructions,
+  ownerFolderNote,
   userTurnInstructions,
+  windowsShellAside,
+  wslPlaceNote,
 } from "./run-instructions.js";
 import { selectBuiltinToolsForRun } from "./run-tool-selection.js";
 
@@ -175,6 +179,91 @@ describe("self-hosted chat-completions payloads", () => {
     expect(
       join(compactUserTurnInstructions({ ...parts, userComputer: "connected" })),
     ).not.toContain("own Linux sandbox");
+    const connected = join(compactUserTurnInstructions({ ...parts, userComputer: "connected" }));
+    expect(connected).toContain("user_computer_shell");
+    expect(connected).toContain("Downloads");
+    const offline = join(compactUserTurnInstructions({ ...parts, userComputer: "offline" }));
+    expect(offline).toContain("Atlas desktop app");
+    expect(offline).not.toContain("cannot see the owner's files");
+  });
+
+  it("keeps the bot's computer, Windows, and WSL apart", () => {
+    const windows = compactEnvironmentInstruction({
+      userComputer: "connected",
+      userComputerPlatform: "win32",
+    });
+    expect(windows).toContain("own Linux computer");
+    expect(windows).toContain("PowerShell");
+    expect(windows).toContain("wsl -e ls ~");
+    expect(windows).toContain("Never tell them to install WSL");
+    expect(windows).not.toContain("own Linux sandbox");
+    const mounted = compactEnvironmentInstruction(
+      { userComputer: "connected", userComputerPlatform: "win32" },
+      { SANDBOX_COMPUTER_MOUNTS: "/home/naoufel/code:/mnt/naoufel/code:ro" },
+    );
+    expect(mounted).toContain("/mnt/naoufel/code");
+    expect(mounted).toContain("use shell on these /mnt paths");
+    expect(mounted).toContain("not on this computer or on Windows");
+    const ownWindows = compactEnvironmentInstruction({ ownShellPlatform: "win32" });
+    expect(ownWindows).toContain("PowerShell");
+    expect(ownWindows).toContain("list them with shell");
+    expect(ownWindows).not.toContain("user_computer_shell");
+    const mac = join(
+      compactUserTurnInstructions({
+        ...parts,
+        userComputer: "connected",
+        userComputerPlatform: "darwin",
+      }),
+    );
+    expect(mac).toContain("separate from theirs");
+    expect(mac).not.toContain("PowerShell");
+    const full = join(
+      userTurnInstructions({
+        ...parts,
+        userComputer: "connected",
+        userComputerPlatform: "win32",
+      }),
+    );
+    expect(full).toContain("separate from your shell and from their WSL");
+    expect(
+      join(
+        userTurnInstructions({
+          ...parts,
+          userComputer: "connected",
+          userComputerPlatform: "win32",
+          ownShellPlatform: "win32",
+        }),
+      ),
+    ).not.toContain("separate from your shell and from their WSL");
+    expect(windowsShellAside("win32")).toContain("not WSL");
+    expect(windowsShellAside("darwin")).toBe("");
+    expect(
+      wslPlaceNote("list my WSL home", {
+        userComputer: "connected",
+        userComputerPlatform: "win32",
+      }),
+    ).toContain("user_computer_shell");
+    expect(
+      wslPlaceNote("list my WSL home", {
+        userComputer: "connected",
+        userComputerPlatform: "win32",
+        mounts: "/home/n/code:/mnt/n/code:ro",
+      }),
+    ).toBeUndefined();
+    expect(wslPlaceNote("list my WSL home", {})).toContain("not their WSL");
+    expect(
+      wslPlaceNote("hello", { userComputer: "connected", userComputerPlatform: "win32" }),
+    ).toBeUndefined();
+  });
+
+  it("sends a personal folder to the owner's computer", () => {
+    const ask = "list files in download folder";
+    expect(ownerFolderNote(ask, { userComputer: "connected" })).toContain("user_computer_shell");
+    expect(ownerFolderNote(ask, { userComputer: "offline" })).toContain("Atlas desktop app");
+    expect(ownerFolderNote(ask, { userComputer: "offline" })).toContain("Do not invent file names");
+    expect(ownerFolderNote(ask, { userComputer: undefined })).toBeUndefined();
+    expect(ownerFolderNote("hello chief", { userComputer: "connected" })).toBeUndefined();
+    expect(ownerFolderNote(ask, { userComputer: "connected", voiceCall: true })).toBeUndefined();
   });
 
   it("names mounted owner folders when the sandbox has them", () => {

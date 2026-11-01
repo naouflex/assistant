@@ -136,7 +136,10 @@ export interface AtlasDesktop {
     onEvent: (listener: (event: AtlasDesktopSpeechEvent) => void) => () => void;
   };
   platform: string;
-  /** Absent on older frameless releases, which still need in-app controls. */
+  /**
+   * Windows uses a hidden title bar with a native caption overlay (no separate
+   * title strip). Absent on older frameless releases, which still need in-app controls.
+   */
   nativeWindowFrame?: boolean;
   window: {
     close: () => Promise<void>;
@@ -175,7 +178,9 @@ export interface DesktopSetup {
 
 export interface DesktopSetupState {
   defaultLocalUrl: string;
-  /** Hosted Atlas origin, saved as an `existing` server when chosen. */
+  /** Prefill for "Existing instance" (day-to-day local Atlas web). */
+  defaultExistingUrl?: string;
+  /** Hosted Atlas origin when configured; empty hides the Cloud choice. */
   cloudUrl: string;
   saved: DesktopSetup | null;
   /** Present when a saved or newly selected server could not be reopened. */

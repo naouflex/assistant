@@ -17,7 +17,7 @@ import "../../src/styles.css";
 const params = new URLSearchParams(location.search);
 const theme = params.get("theme") === "light" ? "light" : "dark";
 document.documentElement.dataset.theme = theme;
-// The vector "atlas" avatar set is traced from the original mascot, not from the Atlas globe logo.
+// The Atlas avatar set is the mountain mark. The orange image is the retired mascot.
 const officialMark = new URL(
   "../../../../packages/ui-tokens/assets/mascot/orange-bot.png",
   import.meta.url,

@@ -443,7 +443,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "user_computer_shell",
     description:
-      "Run a command on the user's own computer. Use only when the task needs their local files, credentials, or network. cwd defaults to their home folder and must stay inside it.",
+      "Run a command on the user's own computer, not on this bot's computer. Use only when the task needs their local files, credentials, or network. cwd defaults to their home folder and must stay inside it. On Windows this shell is PowerShell, not WSL: run wsl for their Linux environment and leave cwd on their Windows home.",
     inputSchema: {
       type: "object",
       properties: {
@@ -724,6 +724,19 @@ export const builtinAgentTools: ConnectorTool[] = [
     },
   },
   {
+    name: "read_memory",
+    description: "Read one memory note. path and scope come from the memory index.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        scope: { type: "string", enum: ["bot", "user"] },
+      },
+      required: ["path"],
+    },
+    readOnly: true,
+  },
+  {
     name: "remember",
     description:
       "Add a durable fact to this bot's explicit memory. The fact is appended; existing memory is kept.",
@@ -739,7 +752,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "save_shared_memory",
     description:
-      "Save a Space shared memory document every bot reads. Replaces the full content, so include everything it should keep.",
+      "Propose a replacement for a shared memory note every bot reads. The current note stays until the user accepts the proposal. Include the complete new content.",
     inputSchema: {
       type: "object",
       properties: {

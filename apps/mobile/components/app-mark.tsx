@@ -1,14 +1,32 @@
 import { Image, StyleSheet, View } from "react-native";
 import appMark from "../assets/monochrome-icon.png";
-import { native, useThemedStyles } from "../lib/native";
+import { native, useResolvedAppearance } from "../lib/native";
 
-const MARK = 56;
+const DEFAULT_MARK = 56;
 // The face of the 1024 px monochrome icon: a 480 px circle inside the silhouette, eyes included.
 const CROP = { x: 272, y: 303, size: 480 };
-const SCALE = MARK / CROP.size;
 
-export function AppMark() {
-  const styles = useThemedStyles(createAppMarkStyles);
+export function AppMark({ size = DEFAULT_MARK }: { size?: number }) {
+  // Re-read tint when appearance flips; size is applied every render.
+  useResolvedAppearance();
+  const scale = size / CROP.size;
+  const styles = StyleSheet.create({
+    circle: {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      overflow: "hidden",
+      alignSelf: "center",
+    },
+    image: {
+      position: "absolute",
+      width: 1024 * scale,
+      height: 1024 * scale,
+      left: -CROP.x * scale,
+      top: -CROP.y * scale,
+      tintColor: native.label,
+    },
+  });
   return (
     <View
       accessible={false}
@@ -19,24 +37,4 @@ export function AppMark() {
       <Image source={appMark} style={styles.image} />
     </View>
   );
-}
-
-function createAppMarkStyles() {
-  return StyleSheet.create({
-    circle: {
-      width: MARK,
-      height: MARK,
-      borderRadius: MARK / 2,
-      overflow: "hidden",
-      alignSelf: "center",
-    },
-    image: {
-      position: "absolute",
-      width: 1024 * SCALE,
-      height: 1024 * SCALE,
-      left: -CROP.x * SCALE,
-      top: -CROP.y * SCALE,
-      tintColor: native.label,
-    },
-  });
 }

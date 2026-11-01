@@ -1247,6 +1247,12 @@ export const JA_MESSAGES: Record<string, string> = {
   "1 free month earned": "1か月分の無料期間を獲得",
   "{count} free months earned": "{count}か月分の無料期間を獲得",
   "Submit a plugin": "プラグインを申請",
+  "Review recent runs": "最近の実行を確認",
+  "Reviewing recent runs": "最近の実行を確認中",
+  "Proposed notes": "提案されたメモリ",
+  Accept: "受け入れる",
+  Reject: "却下",
+  "Nothing to change": "変更はありません",
 };
 
 export const PEER_MESSAGE_FORMS = { other: "{peer}とのメッセージ{count}件" };

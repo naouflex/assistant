@@ -1,4 +1,5 @@
 import type { AdapterContext, ComputerRef, SandboxProvider } from "@atlas/adapter-kit";
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type { ComputerMode } from "@atlas/contracts";
 import { ATTACHMENT_MAX_BYTES } from "@atlas/contracts";
 import { redactSecrets } from "@atlas/core";
@@ -6,6 +7,7 @@ import { getLogger } from "@atlas/logging";
 import { JSDOM } from "jsdom";
 import { displayBotWorkspacePath, resolveBotWorkspacePath } from "./computer-support.js";
 import type { ExecutorDeps } from "./executor-deps.js";
+import { outsideWorkspaceFileHint } from "./mounted-files.js";
 import type { PlotSpec } from "./plot-tool.js";
 import {
   assertPlotDataWithinLimits,
@@ -36,6 +38,8 @@ export async function listFilesFromTool(
 ) {
   const { botId, computerMode, computer, context, runSecrets } = workspace;
   const requestedPath = String(args.path ?? "");
+  const hint = outsideWorkspaceFileHint(requestedPath);
+  if (hint) return { error: hint, path: requestedPath };
   const entries = await sandbox.listFiles(
     await computer(),
     resolveBotWorkspacePath(computerMode, botId, requestedPath),
@@ -61,6 +65,8 @@ export async function readFileFromTool(
 ) {
   const { botId, computerMode, computer, context, runSecrets } = workspace;
   const filePath = String(args.path ?? "");
+  const hint = outsideWorkspaceFileHint(filePath);
+  if (hint) return { error: hint, path: filePath };
   const storedPath = resolveBotWorkspacePath(computerMode, botId, filePath);
   let bytes: Uint8Array;
   try {
@@ -198,6 +204,7 @@ export async function renderPlotFromTool(
     }
     return finish({ ok: true, path: outPath, attached });
   } catch (error) {
+    if (error instanceof SandboxUnreachableError) throw error;
     const message = redactSecrets(
       error instanceof Error ? error.message : String(error),
       runSecrets,

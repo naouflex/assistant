@@ -1,5 +1,6 @@
 import type { MessageBlock } from "@atlas/contracts";
-import type { Prisma, PrismaClient } from "./client.js";
+import { Prisma } from "./client.js";
+import type { PrismaClient } from "./client.js";
 import { withTransactionRetry } from "./transaction-retry.js";
 
 /** Group turns use channel inputs and their own outputs, never private thread history. */
@@ -88,6 +89,7 @@ export async function createThreadMessageInTransaction(
     },
     select: { nextMessageSeq: true },
   });
+  const seq = await seqPastExisting(tx, input.threadId, thread.nextMessageSeq - 1, "message");
   await assertRunCanWriteHistory(tx, input.runId, {
     allowCancelled: input.allowCancelledRun,
     lease: input.lease,
@@ -95,7 +97,7 @@ export async function createThreadMessageInTransaction(
   return tx.message.create({
     data: {
       threadId: input.threadId,
-      seq: thread.nextMessageSeq - 1,
+      seq,
       role: input.role,
       blocks: input.blocks as Prisma.InputJsonValue,
       botId: input.botId,
@@ -105,6 +107,41 @@ export async function createThreadMessageInTransaction(
       clientNonce: input.clientNonce,
     },
   });
+}
+
+/**
+ * The counter is the next seq only when it is ahead of every saved row. A counter that was
+ * written backwards would otherwise reuse a hole and place the new row before an older one.
+ * The caller already holds the thread row, so the max cannot move until this transaction ends.
+ */
+export async function seqPastExisting(
+  tx: Pick<Prisma.TransactionClient, "$queryRaw" | "thread">,
+  threadId: string,
+  claimed: number,
+  kind: "message" | "event",
+): Promise<number> {
+  // Unit fixtures allocate through the counter alone. A real client always has the raw query.
+  if (typeof tx.$queryRaw !== "function") return claimed;
+  const rows = await tx.$queryRaw<Array<{ floor?: unknown }>>(
+    kind === "message"
+      ? Prisma.sql`SELECT COALESCE(MAX(seq), -1) + 1 AS floor FROM messages WHERE "threadId" = ${threadId}`
+      : Prisma.sql`SELECT COALESCE(MAX(seq), -1) + 1 AS floor FROM events WHERE "threadId" = ${threadId}`,
+  );
+  const floor = sequenceFloor(Array.isArray(rows) ? rows[0]?.floor : undefined);
+  if (floor === null || claimed >= floor) return claimed;
+  if (kind === "message") {
+    await tx.thread.update({ where: { id: threadId }, data: { nextMessageSeq: floor + 1 } });
+  } else {
+    await tx.thread.update({ where: { id: threadId }, data: { nextEventSeq: floor + 1 } });
+  }
+  return floor;
+}
+
+function sequenceFloor(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string" && /^-?\d+$/.test(value)) return Number(value);
+  return null;
 }
 
 export class RunHistoryWriteError extends Error {

@@ -3,6 +3,7 @@
 import {
   avatarIdentitySeed,
   LOGO_BODY_PATH,
+  LOGO_EYES,
   logoAvatarFrame,
   logoAvatarTraits,
   organicAvatarPath,
@@ -158,7 +159,7 @@ describe("BotAvatar", () => {
     const latestEye = () =>
       nativeProps
         .map((sample) => sample())
-        .filter((props) => typeof props.cx === "number")
+        .filter((props) => typeof props.x === "number" && typeof props.height === "number")
         .slice(-2)[0]!;
     const send = (seq: number, thinking: boolean) =>
       act(() =>
@@ -173,9 +174,19 @@ describe("BotAvatar", () => {
       );
     send(1, true);
     const frame = logoAvatarFrame("thinking", logoAvatarTraits("bot-1", "#10B981"), 0, true);
-    expect(latestEye()).toMatchObject({ cx: 40.5 + frame.eyeX, cy: 49 + frame.eyeY });
+    const eye = LOGO_EYES[0];
+    const height = eye.height * frame.lid * frame.blink;
+    expect(latestEye()).toMatchObject({
+      x: eye.cx - eye.width / 2 + frame.eyeX,
+      y: eye.cy + 9 - height / 2 + frame.eyeY,
+      height,
+    });
     send(2, false);
-    expect(latestEye()).toMatchObject({ cx: 40.5, cy: 49 });
+    expect(latestEye()).toMatchObject({
+      x: eye.cx - eye.width / 2,
+      y: eye.cy + 9 - eye.height / 2,
+      height: eye.height,
+    });
   });
 
   it("uses the same shared seed colour as SSR for a bot without a saved colour", () => {
@@ -309,14 +320,15 @@ describe("BotAvatar", () => {
   it("keeps a shape picked in Avatar Studio", () => {
     const view = render("#8B5CF6::shape_3");
     expect(bodies(view)).toEqual([shippedBotAvatarShapePath(3)]);
-    expect(view.querySelectorAll("ellipse")).toHaveLength(2);
+    expect(view.querySelectorAll("rect")).toHaveLength(2);
   });
   it("draws the explicitly selected Atlas set as paths and gradients without a raster image", () => {
     const view = render("#3EC5A8", "atlas");
     expect(bodies(view)).toContain(LOGO_BODY_PATH);
     expect(bodies(view)).not.toContain(organicAvatarPath(avatarIdentitySeed("bot-1")));
     expect(view.querySelector("img, image")).toBeNull();
-    expect(view.querySelectorAll("ellipse")).toHaveLength(2);
+    expect(view.querySelectorAll("ellipse")).toHaveLength(0);
+    expect(view.querySelectorAll("rect").length).toBeGreaterThanOrEqual(2);
     expect(view.querySelector("radialGradient")).not.toBeNull();
   });
 
@@ -341,14 +353,16 @@ describe("BotAvatar", () => {
       expect(matrix).toHaveLength(6);
       expect(matrix.every(Number.isFinite)).toBe(true);
     }
-    expect(updates.filter((update) => "cx" in update)).toHaveLength(2);
+    expect(updates.filter((update) => "x" in update && "height" in update)).toHaveLength(2);
     expect(updates.every((update) => !("transform" in update))).toBe(true);
   });
 
   it("keeps eyes legible on a saved dark body in the light theme", () => {
     const view = render("#101014", "atlas");
     expect(
-      Array.from(view.querySelectorAll("ellipse"), (eye) => eye.getAttribute("data-fill")),
+      Array.from(view.querySelectorAll("rect"), (eye) => eye.getAttribute("data-fill")).filter(
+        (fill) => fill === "#FFF",
+      ),
     ).toEqual(["#FFF", "#FFF"]);
   });
 

@@ -1,5 +1,4 @@
-import { readFile } from "node:fs/promises";
-import { BOT_AVATAR_COLORS } from "@atlas/core";
+import { BOT_AVATAR_COLORS, LOGO_BODY_PATH, LOGO_EYES, LOGO_SNOW_PATH } from "@atlas/core";
 import { expect, test } from "@playwright/test";
 import { captureScreenshot } from "./helpers";
 
@@ -447,8 +446,8 @@ test("thinking ponders in one direction with a long squint and a small reconside
           reconsiderLooksUp: reconsider[1]! < main[1]! - 1.5,
           rest,
           squint: [lidAt(1800), lidAt(3600), lidAt(6000)],
-          eyeCenters: [...avatar.querySelectorAll(".logo-avatar-eye ellipse:first-child")].map(
-            (eye) => Number(eye.getAttribute("cx")),
+          eyeCenters: [...avatar.querySelectorAll(".logo-avatar-eye rect")].map(
+            (eye) => Number(eye.getAttribute("x")) + Number(eye.getAttribute("width")) / 2,
           ),
         };
       }),
@@ -465,7 +464,7 @@ test("thinking ponders in one direction with a long squint and a small reconside
     expect(avatar.reconsiderLooksUp).toBe(true);
     expect(avatar.rest).toEqual([0, -2]);
     expect(avatar.squint).toEqual([0.8, 0.68, 1]);
-    expect(avatar.eyeCenters).toEqual([40.5, 59.5]);
+    expect(avatar.eyeCenters).toEqual([LOGO_EYES[0].cx, LOGO_EYES[1].cx]);
     for (const [start, end] of avatar.holds) expect(start).toEqual(end);
   }
 });
@@ -542,9 +541,7 @@ test("expressive gaze reads at24/32/38px and stays on the logo silhouette", asyn
     return avatars.map((avatar) => {
       const scan = avatar.querySelector<SVGGElement>(".logo-avatar-scan")!;
       const imageElement = avatar.querySelector<SVGPathElement>(".logo-avatar-art > path")!;
-      const eyes = [
-        ...avatar.querySelectorAll<SVGEllipseElement>(".logo-avatar-eye ellipse:first-child"),
-      ];
+      const eyes = [...avatar.querySelectorAll<SVGRectElement>(".logo-avatar-eye rect")];
       const tracks = avatar.getAnimations({ subtree: true });
       tracks.forEach((track) => {
         track.pause();
@@ -723,68 +720,26 @@ test("native small-size indicators keep one-pixel strokes and omit fine detail i
   }
 });
 
-test("directional vector rim follows the source edge falloff without whitening the face", async ({
-  page,
-}) => {
-  const original = await readFile(
-    new URL("../../../packages/ui-tokens/assets/mascot/orange-bot.png", import.meta.url),
-  );
+test("atlas avatar draws the mountain, snow cap, and eyes", async ({ page }) => {
   await page.goto("/e2e/fixtures/logo-avatars.html?compare=1&theme=light");
-  const art = await page
-    .getByRole("img", { name: "Idle", exact: true })
-    .locator(".logo-avatar-art")
-    .evaluate((node) => node.outerHTML);
-  const proof = await page.evaluate(
-    async ({ art, original }) => {
-      const pixels = async (src: string) => {
-        const image = new Image();
-        image.src = src;
-        await image.decode();
-        const canvas = document.createElement("canvas");
-        canvas.width = canvas.height = 1024;
-        const context = canvas.getContext("2d")!;
-        context.drawImage(image, 0, 0, 1024, 1024);
-        return context.getImageData(0, 0, 1024, 1024).data;
-      };
-      const source = await pixels(original);
-      const vector = await pixels(
-        `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100">${art}</svg>`)}`,
-      );
-      const rgba = (data: Uint8ClampedArray, x: number, y: number) =>
-        Array.from(data.slice((y * 1024 + x) * 4, (y * 1024 + x) * 4 + 4));
-      const y = 420;
-      const opaque = Array.from({ length: 1024 }, (_, x) => x).filter(
-        (x) => rgba(source, x, y)[3]! > 245,
-      );
-      const left = opaque[0]!,
-        right = opaque[opaque.length - 1]!;
-      const sample = (data: Uint8ClampedArray, side: "left" | "right", inset: number) =>
-        rgba(data, side === "left" ? left + inset : right - inset, y);
-      return {
-        sourceLeft: sample(source, "left", 4),
-        vectorLeft: sample(vector, "left", 4),
-        sourceRight: sample(source, "right", 4),
-        vectorRight: sample(vector, "right", 4),
-        leftInside: sample(vector, "left", 40),
-        rightInside: sample(vector, "right", 40),
-        sourceHotspot: rgba(source, 580, 220),
-        vectorHotspot: rgba(vector, 580, 220),
-        outsideAlpha: rgba(vector, 512, 20)[3],
-      };
-    },
-    { art, original: `data:image/png;base64,${original.toString("base64")}` },
-  );
-  expect(proof.vectorRight[2]! - proof.rightInside[2]!).toBeGreaterThan(25);
-  expect(proof.vectorLeft[2]! - proof.leftInside[2]!).toBeGreaterThan(15);
-  expect(proof.vectorRight[1]! - proof.vectorLeft[1]!).toBeGreaterThan(25);
-  for (const [actual, source] of [
-    [proof.vectorLeft, proof.sourceLeft],
-    [proof.vectorRight, proof.sourceRight],
-    [proof.vectorHotspot, proof.sourceHotspot],
-  ])
-    for (let channel = 0; channel < 3; channel++)
-      expect(Math.abs(actual![channel]! - source![channel]!)).toBeLessThan(30);
-  expect(proof.outsideAlpha).toBe(0);
+  const avatar = page.getByRole("img", { name: "Idle", exact: true });
+  const art = await avatar.locator(".logo-avatar-art").evaluate((node) => node.outerHTML);
+  expect(art).toContain(LOGO_BODY_PATH);
+  expect(art).toContain(LOGO_SNOW_PATH);
+  const proof = await page.evaluate(async (markup) => {
+    const image = new Image();
+    image.src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 100 100">${markup}</svg>`)}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 200;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.drawImage(image, 0, 0, 200, 200);
+    const alpha = (x: number, y: number) => context.getImageData(x, y, 1, 1).data[3] ?? 0;
+    return { abovePeak: alpha(100, 2), face: alpha(100, 100) };
+  }, art);
+  expect(proof?.abovePeak).toBe(0);
+  expect(proof?.face).toBeGreaterThan(200);
 });
 
 test("seed colours persist through rerenders and reloads at actual avatar sizes", async ({

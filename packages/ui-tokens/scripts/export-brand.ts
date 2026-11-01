@@ -16,10 +16,8 @@ const wordmarkLight = await readFile(brand("atlas-wordmark-light.svg"), "utf8");
 const rounded = appIcon;
 /** Full-bleed plate for platforms that apply their own mask (iOS, PWA, apple-touch). */
 const square = appIcon.replace('rx="224"', 'rx="0"');
-/** The globe alone on transparent, positioned exactly as on the plate. */
+/** The mountain alone on transparent, positioned exactly as on the plate. */
 const foreground = appIcon.replace(/\s*<rect [^>]*\/>/, "");
-/** Small browser marks need heavier strokes so the meridians survive at 16 px. */
-const roundedSmall = rounded.replace('stroke-width="22"', 'stroke-width="44"');
 
 function render(svg: string, width: number, height = width) {
   const intrinsic = Number(/width="(\d+)"/.exec(svg)?.[1] ?? width);
@@ -37,7 +35,7 @@ async function png(svg: string, name: string, size: number) {
 async function ico(name: string, sizes: number[]) {
   const frames = await Promise.all(
     sizes.map((size) =>
-      render(size <= 48 ? roundedSmall : rounded, size)
+      render(rounded, size)
         .png()
         .toBuffer(),
     ),
@@ -60,8 +58,8 @@ async function ico(name: string, sizes: number[]) {
 
 for (const app of ["web", "www"]) {
   const publicDir = `apps/${app}/public`;
-  await png(roundedSmall, `${publicDir}/favicon-16x16.png`, 16);
-  await png(roundedSmall, `${publicDir}/favicon-32x32.png`, 32);
+  await png(rounded, `${publicDir}/favicon-16x16.png`, 16);
+  await png(rounded, `${publicDir}/favicon-32x32.png`, 32);
   await png(rounded, `${publicDir}/favicon.png`, 128);
   await png(square, `${publicDir}/apple-touch-icon.png`, 180);
   await png(square, `${publicDir}/icon-192.png`, 192);
@@ -80,7 +78,7 @@ await png(rounded, "apps/mobile/assets/favicon.png", 128);
 await png(rounded, "apps/desktop/assets/icon.png", 1024);
 await ico("apps/desktop/assets/icon.ico", [16, 32, 48, 64, 128, 256]);
 
-// Icon Composer source: the globe is the only layer; icon.json supplies the plate colour.
+// Icon Composer source: the mountain is the only layer; icon.json supplies the plate colour.
 await png(foreground, "packages/ui-tokens/assets/Atlas.icon/Assets/atlas-globe.png", 1024);
 
 // macOS pre-Tahoe development icon: an 824-point plate inside the 1024 canvas, as the Dock expects.
@@ -92,20 +90,15 @@ await sharp({ create: { width: 1024, height: 1024, channels: 4, background: "#00
 
 // Expo: opaque legacy icon, Android adaptive layers and the splash.
 await render(square, 1024)
-  .flatten({ background: "#0E0D0C" })
+  .flatten({ background: "#F7F4EF" })
   .png()
   .toFile(path("apps/mobile/assets/icon.png"));
-await sharp({ create: { width: 1024, height: 1024, channels: 3, background: "#0E0D0C" } })
+await sharp({ create: { width: 1024, height: 1024, channels: 3, background: "#F7F4EF" } })
   .png()
   .toFile(path("apps/mobile/assets/icon-background.png"));
-// The globe and its base stay inside the launcher's 66% safe zone at full size.
+// The mountain stays inside the launcher's 66% safe zone at full size.
 await png(foreground, "apps/mobile/assets/adaptive-icon.png", 1024);
-// Same footprint as the adaptive foreground: circle r=222 centred at (512, 470) on the 1024 canvas.
-const monochromeFramed = monochrome.replace(
-  'viewBox="0 0 512 512"',
-  'viewBox="-182.2 -180.3 876.4 876.4"',
-);
-await png(monochromeFramed, "apps/mobile/assets/monochrome-icon.png", 1024);
+await png(monochrome, "apps/mobile/assets/monochrome-icon.png", 1024);
 // The splash shows the plated icon so it reads on both the light and dark splash colours.
 await render(rounded, 620)
   .extend({ top: 202, bottom: 202, left: 202, right: 202, background: "#00000000" })

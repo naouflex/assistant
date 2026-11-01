@@ -614,7 +614,13 @@ export interface AgentUsage {
   usageSource?: string | null;
 }
 
-export type UsageOperationKind = "answer" | "setup" | "retrieval" | "subagent" | "compaction";
+export type UsageOperationKind =
+  | "answer"
+  | "setup"
+  | "retrieval"
+  | "subagent"
+  | "compaction"
+  | "dream";
 
 export interface ModelCallObserver {
   beforeCall(call: {
@@ -753,6 +759,8 @@ export interface BackgroundJobPayloads {
   /** The bot's call rang out: mark it missed if nobody answered. */
   "call.expire": { threadId: string; callId: string };
   "history.compact": { threadId: string };
+  /** One opt-in review of a space's memory. Failures stay on the dream row. */
+  "memory.dream": { dreamId: string };
   "messaging.deliver": { runId?: string };
   "messaging.credential-cleanup": { installationId: string; ref: string };
   /** Reconcile durable remote-agent intent; scope is loaded from the database. */

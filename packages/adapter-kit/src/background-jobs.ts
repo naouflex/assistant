@@ -23,6 +23,7 @@ const payloadSchemas = {
   "skill.teaching-expire": z.object({ skillId: z.string().min(1) }),
   "call.expire": z.object({ threadId: z.string().min(1), callId: z.string().min(1) }),
   "history.compact": z.object({ threadId: z.string().min(1) }),
+  "memory.dream": z.object({ dreamId: z.string().min(1) }),
   "messaging.deliver": z.object({ runId: z.string().min(1).optional() }),
   "messaging.credential-cleanup": z.object({
     installationId: z.string().min(1),
@@ -166,6 +167,16 @@ export function messagingDeliverJob(runId?: string, availableAt?: Date): Backgro
     payload: runId ? { runId } : {},
     replaceKey: `messaging.deliver:${runId ?? "drain"}`,
     ...(availableAt ? { availableAt } : {}),
+  };
+}
+
+/** The dream records its own failure, so a queue retry would review the same runs twice. */
+export function memoryDreamJob(dreamId: string): BackgroundJob {
+  return {
+    name: "memory.dream",
+    payload: { dreamId },
+    replaceKey: `memory.dream:${dreamId}`,
+    maxAttempts: 1,
   };
 }
 

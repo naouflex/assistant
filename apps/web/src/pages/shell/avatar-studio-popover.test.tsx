@@ -113,4 +113,22 @@ describe("selectable bot icon sets", () => {
     await click("Atlas");
     expect(changed).toHaveBeenLastCalledWith("#10B981", "atlas");
   });
+
+  it("applies a shipped custom picture from the bot tab", async () => {
+    await render("#8B5CF6");
+    await click("Customize bot avatar");
+    const preset = document.querySelector<HTMLButtonElement>(
+      '[data-testid="avatar-studio-custom-beach-punk"]',
+    );
+    expect(preset).not.toBeNull();
+    await act(async () => preset!.click());
+    expect(changed).toHaveBeenCalled();
+    const [next] = changed.mock.calls.at(-1)!;
+    expect(next.startsWith("data:image/webp;base64,")).toBe(true);
+    const preview = document.querySelector<HTMLImageElement>(
+      ".atlas-bot-avatar-picture img",
+    );
+    expect(preview?.getAttribute("src")).toBe(next);
+    expect(preset!.getAttribute("aria-pressed")).toBe("true");
+  });
 });

@@ -17,6 +17,7 @@ import {
   SandboxDamagedError,
   SandboxRateLimitError,
   SandboxUnavailableError,
+  SandboxUnreachableError,
   SandboxUnresponsiveError,
   VoiceAccountError,
 } from "@atlas/adapter-kit";
@@ -1537,6 +1538,13 @@ export function handleRpcError(
       message: error.message,
       cause: error,
     });
+  }
+  // Nothing is listening for the computer. Retrying the screen will not start the service.
+  if (error instanceof SandboxUnreachableError) {
+    getLogger().warn(`rpc ${path.join("/")} computer unreachable`, {
+      reason: error.cause instanceof Error ? error.cause.message : undefined,
+    });
+    throw new ORPCError("SERVICE_UNAVAILABLE", { message: error.message, cause: error });
   }
   // The computer provider did not start the computer in time, or could not be reached: an outage
   // on its side the user can retry, not a server failure.

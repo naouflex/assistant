@@ -1233,6 +1233,12 @@ export const ZH_MESSAGES: Record<string, string> = {
   "1 free month earned": "已获得 1 个月免费",
   "{count} free months earned": "已获得 {count} 个月免费",
   "Submit a plugin": "提交插件",
+  "Review recent runs": "查看最近的运行",
+  "Reviewing recent runs": "正在查看最近的运行",
+  "Proposed notes": "建议的笔记",
+  Accept: "接受",
+  Reject: "拒绝",
+  "Nothing to change": "无需更改",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

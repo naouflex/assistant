@@ -91,34 +91,66 @@ export const memoryTools: ToolHandlers = {
       }
     }
   },
+  async read_memory(ctx, call) {
+    const { deps, bot, context } = ctx;
+    const { args } = call;
+    const path = String(args.path ?? "").trim();
+    if (!path) return call.finish({ error: "path is required" });
+    const scope = args.scope === "user" ? "user" : "bot";
+    const snapshot = await deps.memory.read(
+      { scope, path, ...(scope === "bot" ? { botId: bot.id } : {}) },
+      context,
+    );
+    const document = snapshot.documents[0];
+    if (!document) return call.finish({ error: "No note at that path." });
+    return call.finish({
+      path: document.path,
+      scope,
+      revision: document.revision,
+      content: document.content,
+    });
+  },
   async save_shared_memory(ctx, call) {
-    const { deps, runId, thread, context } = ctx;
+    const { deps, runId, context } = ctx;
     const { args } = call;
     const invalid = sharedMemorySaveError(args);
     if (invalid) return call.finish({ error: invalid });
     const path = String(args.path ?? "").trim();
-    // The save replaces the whole document. Pass the revision just read so a
-    // concurrent edit is rejected instead of overwritten.
+    const content = String(args.content ?? "");
+    // The current note stays. The person accepts the full replacement later, and
+    // that accept uses the revision recorded here so a newer edit is not overwritten.
     const snapshot = await deps.memory.read({ scope: "user", path }, context);
-    const expectedRevision = snapshot.documents[0]?.revision ?? 0;
-    try {
-      const saved = await deps.memory.commit(
-        {
-          scope: "user",
-          path,
-          content: String(args.content ?? ""),
-          expectedRevision,
-          sourceRunId: runId,
-          sourceThreadId: thread.id,
-        },
-        context,
-      );
-      return call.finish({ ok: true, path: saved.path, revision: saved.revision });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not save shared memory.";
-      if (message === MEMORY_REVISION_CONFLICT_ERROR) return call.finish({ error: message });
-      throw error;
+    const existing = snapshot.documents[0];
+    if ((existing?.content ?? "") === content) {
+      return call.finish({ ok: true, pending: true, path });
     }
+    const duplicate = await deps.prisma.memoryProposal.findFirst({
+      where: {
+        spaceId: context.spaceId,
+        userId: context.userId,
+        scope: "user",
+        botId: null,
+        path,
+        content,
+        status: "pending",
+      },
+    });
+    if (duplicate) return call.finish({ ok: true, pending: true, path });
+    await deps.prisma.memoryProposal.create({
+      data: {
+        spaceId: context.spaceId,
+        userId: context.userId,
+        scope: "user",
+        path,
+        content,
+        baseRevision: existing?.revision ?? 0,
+        reason: "Proposed during a run.",
+        evidence: { runIds: [runId], count: 1 },
+        source: "bot",
+        status: "pending",
+      },
+    });
+    return call.finish({ ok: true, pending: true, path });
   },
   async recall_memory(ctx, call) {
     const { bot, thread, context } = ctx;

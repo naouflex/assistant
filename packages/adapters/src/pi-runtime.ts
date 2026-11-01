@@ -9,7 +9,12 @@ import type {
   AgentUsage,
   ModelCallObserver,
 } from "@atlas/adapter-kit";
-import { ModelAccountError, ModelOutputError, TransientModelError } from "@atlas/adapter-kit";
+import {
+  ModelAccountError,
+  ModelOutputError,
+  SandboxUnreachableError,
+  TransientModelError,
+} from "@atlas/adapter-kit";
 import {
   MISSING_TOOL_FINAL_RESPONSE_ERROR,
   MODEL_IMAGE_INPUT_ERROR,
@@ -826,6 +831,7 @@ export class PiAgentRuntime implements AgentRuntime {
                     : await tool.execute(call.id, args, signal);
                 } catch (error) {
                   signal.throwIfAborted();
+                  if (error instanceof SandboxUnreachableError) throw error;
                   result = {
                     content: [
                       {
@@ -855,8 +861,9 @@ export class PiAgentRuntime implements AgentRuntime {
             }
             restoringCalls = false;
             if (!host.pausePending) {
-              const addedHistory = withoutSteeringMessages(request.history, initialSteering).filter(
-                (message) => message.id && !representedHistoryIds.has(message.id),
+              const addedHistory = userMessagesSincePause(
+                withoutSteeringMessages(request.history, initialSteering),
+                representedHistoryIds,
               );
               agent.state.messages.push(
                 ...toHistory(
@@ -895,6 +902,7 @@ export class PiAgentRuntime implements AgentRuntime {
         }
         // A continuation that failed or stopped early still hands over what it wrote.
         releaseJoin();
+        if (host.computerUnreachable) throw host.computerUnreachable;
 
         // Budget abort stops the agent underneath the model, which leaves
         // errorMessage set. Treat that as a soft stop so the turn still ends
@@ -991,7 +999,9 @@ export class PiAgentRuntime implements AgentRuntime {
               ? new ModelAccountError(message)
               : error instanceof ModelOutputError
                 ? new ModelOutputError(message)
-                : new Error(message),
+                : error instanceof SandboxUnreachableError
+                  ? error
+                  : new Error(message),
         );
       } finally {
         stopThinking();
@@ -1095,6 +1105,22 @@ function toHistory(
         ...metadata,
       } as Message;
     });
+}
+
+/**
+ * Rows written while a turn was paused. Assistant rows are this run's own cards, such as
+ * the approval ask. The checkpoint already holds the tool call, and the tool result has to
+ * stay last: continue() rejects a transcript that ends on the assistant, and a card between
+ * the call and its result breaks providers that require that order. New user rows stay.
+ */
+export function userMessagesSincePause<T extends { id?: string; role: string }>(
+  history: readonly T[],
+  representedIds: ReadonlySet<string>,
+): T[] {
+  return history.filter(
+    (message): message is T =>
+      Boolean(message.id) && !representedIds.has(message.id!) && message.role === "user",
+  );
 }
 
 function withoutSteeringMessages(

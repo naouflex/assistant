@@ -207,7 +207,7 @@ export function ArtifactsPage() {
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-background text-foreground/90">
-      <header className="app-drag border-b border-border px-4 py-4 md:px-6">
+      <header className="app-drag desktop-caption-end border-b border-border px-4 py-4 md:px-6">
         {/* Wraps so window controls and the way back stay on screen with Filters. */}
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { COMPUTER_RATE_LIMIT_ERROR } from "@atlas/contracts";
+import { COMPUTER_RATE_LIMIT_ERROR, COMPUTER_UNREACHABLE_ERROR } from "@atlas/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   APPROVED_ACTION_NOT_RUN_ERROR,
@@ -198,6 +198,13 @@ describe("normalizeRunError", () => {
         summary,
         details,
         ...(summary === tooLong ? { kind: "context" } : {}),
+      });
+    });
+
+    it("keeps a down computer distinct from a model timeout", () => {
+      expect(normalizeRunError(COMPUTER_UNREACHABLE_ERROR)).toEqual({
+        summary: COMPUTER_UNREACHABLE_ERROR,
+        details: COMPUTER_UNREACHABLE_ERROR,
       });
     });
 

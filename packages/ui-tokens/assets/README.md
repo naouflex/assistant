@@ -2,19 +2,17 @@
 
 ## Logo sources
 
-The Atlas logo is a line-art globe (outer circle, one straight and two curved
-meridians) resting on a short bar. The stroke runs from warm white (`#FFF8EE`) at
-the top left to amber (`#F0B35A`) at the bottom right. The app icon puts it on a
-near-black (`#0E0D0C`) rounded square.
+The Atlas logo is a rounded mountain in ink (`#141210`) with a white snow cap
+and two eyes. The app icon puts it on a warm paper plate (`#F7F4EF`).
 
 The hand-authored SVGs in [`brand/`](./brand) are the only sources:
 
-- `atlas-mark.svg`: the globe on a transparent background.
+- `atlas-mark.svg`: the mountain on a transparent background.
 - `atlas-mark-monochrome.svg`: the white silhouette used for Android themed and
-  notification icons.
-- `atlas-app-icon.svg`: the globe on the near-black rounded square.
-- `atlas-wordmark-dark.svg`: globe and "Atlas" for dark backgrounds.
-- `atlas-wordmark-light.svg`: globe and "Atlas" for light backgrounds.
+  notification icons. Snow and eyes are cut out.
+- `atlas-app-icon.svg`: the mountain on the warm paper rounded square.
+- `atlas-wordmark-dark.svg`: mountain and "Atlas" for dark backgrounds.
+- `atlas-wordmark-light.svg`: mountain and "Atlas" for light backgrounds.
 
 The wordmark letters are drawn as monoline paths, so the SVGs render the same
 without any font installed.
@@ -34,9 +32,8 @@ rewrites every raster at its existing path:
   `icon-background.png`, `monochrome-icon.png`, `notification-icon.png`,
   `splash-icon.png` and `favicon.png`;
 - `Atlas.icon/Assets/atlas-globe.png`, the single layer of the Icon Composer
-  source used for macOS and iOS. `icon.json` supplies the near-black fill.
+  source used for macOS and iOS. `icon.json` supplies the paper plate colour.
 
-Small browser icons use a heavier stroke so the meridians stay visible at 16 px.
 Android supplies its own mask; never bake Mac corners, a rim, or an outer shadow
 into the adaptive layers.
 
@@ -47,6 +44,9 @@ is not available at the script's default location.
 ## Mascot
 
 [`mascot/orange-bot.png`](./mascot/orange-bot.png) is the orange character
-inherited from Rakazo. It is no longer the app logo. It stays as the reference for
-the animated "atlas" bot avatar set, whose SVG paths and gradients live in the
-shared `logo-avatar-art.ts` definition and were sampled from its alpha silhouette.
+inherited from Rakazo. It is no longer the app logo or the Atlas avatar. The
+animated Atlas set is the same mountain, drawn from `logo-avatar-art.ts`.
+
+[`mascot/beach-punk.png`](./mascot/beach-punk.png) is a shipped custom bot
+picture (pixel portrait). Avatar Studio selects it via the data URL in
+`packages/core/src/bot-avatar-images.ts`.

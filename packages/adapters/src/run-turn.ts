@@ -7,6 +7,7 @@ import {
   runContinueJob,
   SandboxAllowanceUsedError,
   SandboxRateLimitError,
+  SandboxUnreachableError,
   TransientModelError,
 } from "@atlas/adapter-kit";
 import {
@@ -859,7 +860,8 @@ export async function failRun(
   } catch (computerError) {
     if (
       !(computerError instanceof SandboxRateLimitError) &&
-      !(computerError instanceof SandboxAllowanceUsedError)
+      !(computerError instanceof SandboxAllowanceUsedError) &&
+      !(computerError instanceof SandboxUnreachableError)
     )
       throw computerError;
     error = computerError;
@@ -905,7 +907,8 @@ export async function failRun(
     error instanceof ModelAccountError ||
     error instanceof ModelOutputError ||
     error instanceof SandboxRateLimitError ||
-    error instanceof SandboxAllowanceUsedError
+    error instanceof SandboxAllowanceUsedError ||
+    error instanceof SandboxUnreachableError
   ) {
     // Provider outages that outlasted retries, provider accounts, plans and model
     // choices the user fixes, unusable model output, the computer provider's own rate limit
