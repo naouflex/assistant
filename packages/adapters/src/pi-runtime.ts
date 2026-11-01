@@ -33,10 +33,12 @@ import type {
   Model,
 } from "@earendil-works/pi-ai";
 import { validateToolArguments } from "@earendil-works/pi-ai";
+import { needsWebLookup } from "./answer-quality.js";
 import { uncertainEffectResult } from "./approval-effect.js";
 import { automated, withAutomatedLabels } from "./automated-messages.js";
 import { LOCAL_PAYLOAD_DUMP_ENV } from "./chat-completions-compat.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
+import { exactArithmetic } from "./exact-arithmetic.js";
 import { estimatePiImageTokens } from "./pi-image-context.js";
 import {
   assistantText,
@@ -70,6 +72,7 @@ import type { EventQueue, ToolCallBudget, ToolHost } from "./pi-runtime-tools.js
 import {
   describeToolActivity,
   releaseToolCallBudget,
+  serializeToolResult,
   toAgentTools,
   toolCallBudgetExceededMessage,
   toolCallBudgetFor,
@@ -96,6 +99,9 @@ const running = new Map<string, { controller: AbortController; work: Promise<voi
 const MAX_SILENT_TOOL_CONTINUATIONS = 3;
 // Sent in the user's role, so marked as automated: otherwise models read it as the user
 // telling them never to stop, and keep going instead of asking.
+export const SEARCH_BEFORE_ANSWER_PROMPT = automated(
+  "You replied without calling web_search. Call web_search now for the question, then answer only from its result. Saying you searched does not count.",
+);
 export const SILENT_TOOL_CONTINUATION_PROMPT = automated(
   "Your last turn ended right after a tool result, without a reply. Continue the original task from the latest tool result. If you need information or a decision from the user, ask them instead of guessing; otherwise use any remaining tools needed, then give the user the final answer.",
 );
@@ -227,6 +233,15 @@ export class PiAgentRuntime implements AgentRuntime {
       try {
         const selectedModel = resolveRuntimeModel(request.model);
         if (!selectedModel.model) {
+          // Claim waiting messages first. A completed run otherwise puts them back
+          // and starts another turn, so one unknown model retries without stopping.
+          if (request.claimSteering) {
+            try {
+              await request.claimSteering([]);
+            } catch {
+              // The model error is still the reply if the claim cannot be recorded.
+            }
+          }
           queue.push({
             type: "text",
             text: `Unknown model ${selectedModel.provider}/${selectedModel.modelId}`,
@@ -578,6 +593,12 @@ export class PiAgentRuntime implements AgentRuntime {
         let currentMessageStreamed = "";
         let toolCalls = 0;
         let toolActivityShowing = false;
+        // A public-fact question that answers before web_search is hidden and replaced once.
+        let searchNudged = false;
+        let withholdSearchAnswer =
+          !request.allowSilentEmpty &&
+          request.tools.some((tool) => tool.name === "web_search") &&
+          needsWebLookup(request.utterance ?? request.prompt);
         let silentToolContinuations = 0;
         // A reply cut off by a dropped connection continues in the same bubble: no turn break,
         // and a continuation that starts by repeating the end of the cut text loses that repeat.
@@ -602,6 +623,12 @@ export class PiAgentRuntime implements AgentRuntime {
         // it counts as the final reply, including when the completed message omits it.
         let streamedBeforePendingFinal = 0;
         agent.subscribe(async (event) => {
+          const hideUnsearchedReply =
+            event.type === "message_end" &&
+            event.message.role === "assistant" &&
+            withholdSearchAnswer &&
+            toolCalls === 0 &&
+            !messageHasToolCall(event.message);
           if (event.type === "tool_execution_end" && !event.result.terminate) {
             finishedCalls.set(event.toolCallId, {
               role: "toolResult",
@@ -643,7 +670,9 @@ export class PiAgentRuntime implements AgentRuntime {
             event.assistantMessageEvent.type === "text_delta"
           ) {
             const delta = event.assistantMessageEvent.delta;
-            if (delta) {
+            if (delta && withholdSearchAnswer && toolCalls === 0) {
+              // Held until web_search runs, or until the one follow-up is spent.
+            } else if (delta) {
               if (toolActivityShowing) {
                 // Real text replaces the activity line instead of appending to it.
                 toolActivityShowing = false;
@@ -667,6 +696,23 @@ export class PiAgentRuntime implements AgentRuntime {
               event.message.role === "assistant" ? assistantText(event.message) : "";
             const hasToolCalls = messageHasToolCall(event.message);
             const hasToolResults = event.toolResults.length > 0;
+            if (
+              withholdSearchAnswer &&
+              !searchNudged &&
+              toolCalls === 0 &&
+              !hasToolCalls &&
+              !hasToolResults &&
+              !host.pausePending &&
+              !providerFailureText(event.message)
+            ) {
+              searchNudged = true;
+              withholdSearchAnswer = false;
+              agent.followUp({
+                role: "user",
+                content: SEARCH_BEFORE_ANSWER_PROMPT,
+                timestamp: Date.now(),
+              });
+            }
 
             // Text in a turn that also contains a tool call is narration, not a final
             // response. Keep the run alive until a later text-only turn answers the user.
@@ -725,10 +771,16 @@ export class PiAgentRuntime implements AgentRuntime {
             const alreadyEmitted =
               !continued &&
               (streamedThisMessage.includes(text) || sincePendingFinal.endsWith(text));
-            if (textToEmit && !messageHasToolCall(event.message) && !alreadyEmitted) {
+            const hideUnsearched = hideUnsearchedReply;
+            if (
+              !hideUnsearched &&
+              textToEmit &&
+              !messageHasToolCall(event.message) &&
+              !alreadyEmitted
+            ) {
               streamed += textToEmit;
               queue.push({ type: "text", text: textToEmit });
-            } else if (text && !streamed) {
+            } else if (!hideUnsearched && text && !streamed) {
               streamed = text;
               queue.push({ type: "text", text });
             }
@@ -891,7 +943,64 @@ export class PiAgentRuntime implements AgentRuntime {
               await agent.continue();
             }
           } else {
-            await agent.prompt(initialPrompt, images?.length ? images : undefined);
+            let promptForModel = initialPrompt;
+            const solved =
+              request.allowSilentEmpty || !request.utterance
+                ? undefined
+                : exactArithmetic(request.utterance, request.history);
+            if (solved) {
+              queue.push({
+                type: "tool",
+                name: "calculate",
+                args: { expression: solved.expression },
+                executionId: JSON.stringify(["pi-tool", "main", `${request.runId}:calculate`]),
+              });
+              queue.push({ type: "text", text: solved.value });
+              streamed = solved.value;
+            } else if (withholdSearchAnswer && request.executeTool) {
+              const query = (request.utterance ?? request.prompt).trim().slice(0, 300);
+              const args = { query };
+              const executionId = JSON.stringify([
+                "pi-tool",
+                "main",
+                `${request.runId}:web-lookup`,
+              ]);
+              const startedAt = Date.now();
+              queue.push({
+                type: "progress",
+                text: describeToolActivity("web_search", args),
+                activity: true,
+              });
+              queue.push({ type: "tool", name: "web_search", args, executionId });
+              try {
+                const result = await request.executeTool("web_search", args, executionId);
+                const text = serializeToolResult(
+                  result,
+                  request.contextStrategy,
+                  "web_search",
+                  args,
+                );
+                promptForModel = `${initialPrompt}\n\n${automated(
+                  "web_search already ran for this question. Answer only from the result below. Do not ask whether to search. If the result does not say it, say you could not find it.",
+                )}\n${text}`;
+                withholdSearchAnswer = false;
+                toolCalls += 1;
+                void Promise.resolve(
+                  request.onToolCompleted?.({
+                    name: "web_search",
+                    executionId,
+                    durationMs: Math.max(0, Date.now() - startedAt),
+                    result,
+                  }),
+                ).catch(() => undefined);
+              } catch {
+                // The reply stays hidden until the model calls web_search itself.
+              }
+              queue.push({ type: "progress", text: "", activity: true });
+            }
+            if (!solved) {
+              await agent.prompt(promptForModel, images?.length ? images : undefined);
+            }
           }
         } finally {
           try {

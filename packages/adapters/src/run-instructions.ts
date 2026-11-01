@@ -151,9 +151,11 @@ function webLookupClause(disabled?: ReadonlySet<string>): string | undefined {
   const search = builtinOffered(disabled, "web_search");
   const fetch = builtinOffered(disabled, "web_fetch");
   if (search && fetch) {
-    return "Use web_search and web_fetch to look something up or read a page without a computer.";
+    return "If the fact is not already in this conversation, call web_search before any sentence. Do not ask whether to search. Use web_fetch to read a result page.";
   }
-  if (search) return "Use web_search to look something up without a computer.";
+  if (search) {
+    return "If the fact is not already in this conversation, call web_search before any sentence. Do not ask whether to search.";
+  }
   if (fetch) return "Use web_fetch to read a page without a computer.";
   return undefined;
 }
@@ -378,7 +380,7 @@ function toolUsageLine(parts: {
 
 /** Atlas house style. Kept to one short clause: small local models have little prompt room. */
 export const ATLAS_STYLE_GUIDANCE =
-  "Answer first. Default to one or two warm, plain sentences; add detail only when asked or needed, with no filler or restating the question. Write links as labelled markdown links. Never invent facts: say what you could not check. Ask before destructive or paid actions; sends wait for the owner's approval card.";
+  "Answer first. If it is not already in this conversation, call web_search first and do not ask to search. Default to one or two warm, plain sentences; add detail only when asked or needed, with no filler or restating the question. Write links as labelled markdown links. Never invent facts: if a search does not say it, say you could not find it. Ask before destructive or paid actions; sends wait for the owner's approval card.";
 
 // Ordering matters: stable blocks first, volatile ones last, so the prefix stays cacheable.
 export function userTurnInstructions(parts: {
@@ -601,7 +603,7 @@ export function sandboxMountTargets(
 }
 
 export const COMPACT_CORE_GUIDANCE = [
-  "Use web_search and web_fetch to look things up. Use shell, write_file, and attach_file whenever they ask you to run, create, or show something.",
+  "Call web_search before answering a person or fact that is not already in this conversation. Do not ask to search. Use shell, write_file, and attach_file whenever they ask you to run, create, or show something.",
   "Other built-in tools (schedule_create and schedule_list for reminders and routines, browser tools, update_bot for your own settings, request_secret, connect_app, react_to_message for an emoji ack, skills) are reached by calling find_tool with their names, then use_tool.",
   'For a reminder or timed request with a clear time (remind me tomorrow at 9), set it right away (find_tool schedule_create, then use_tool) without asking to confirm; for a recurring wish (every morning, let me know when), offer a routine. Use ask_user when a required detail is missing, or when the user wants to pick between two to four options (let me choose, give me options): then put the options in ask_user rather than listing them. Use remember for durable facts about the owner; start notes about events with today\'s date (YYYY-MM-DD). For meeting notes, remember a short dated note beginning with "Meeting:" (who, decisions, next steps) and offer to attach a fuller write-up as a file when they want one. For a quick ack with no words needed, find_tool react_to_message then use_tool with an emoji.',
   "If a tool returns an error, correct the specific field and retry once; if that fails, say it did not work. Never claim an action succeeded unless its tool said so. Never print API keys, tokens, or secret values.",

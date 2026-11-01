@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { access, copyFile, mkdir, rename, rm, writeFile } from "node:fs/promises";
@@ -65,7 +65,6 @@ export const LOCAL_MODEL_CATALOG: readonly LocalModelCatalogEntry[] = [
       "spec-type": "draft-mtp",
       "spec-draft-n-max": "3",
       reasoning: "off",
-      "load-on-startup": "true",
     },
   },
   {
@@ -169,6 +168,9 @@ export function localModelRouterPreset(
     "jinja = true",
     "",
   ];
+  // The 9B answers. The 4B stays for helper turns and loads when one runs.
+  // If the 9B file is not on disk yet, start on the 4B so the server still comes up.
+  const startupFilename = [QWEN_9B_FILENAME, QWEN_FILENAME].find((name) => fileReady(name));
   for (const entry of LOCAL_MODEL_CATALOG) {
     lines.push(`[${entry.servedAs ?? entry.id}]`);
     lines.push(`model = ${presetPath(path.join(modelsDirectory, entry.filename))}`);
@@ -177,6 +179,7 @@ export function localModelRouterPreset(
     }
     if (entry.aliases?.length) lines.push(`alias = ${entry.aliases.join(",")}`);
     for (const [key, value] of Object.entries(entry.args)) lines.push(`${key} = ${value}`);
+    if (entry.filename === startupFilename) lines.push("load-on-startup = true");
     lines.push("");
   }
   return lines.join("\n");
@@ -325,7 +328,7 @@ export function createLocalModelHost(deps: LocalModelHostDeps) {
   let phase: DesktopLocalModelHostState["phase"] = "idle";
   let message: string | null = null;
   let progress: number | null = null;
-  let listeners = new Set<(state: DesktopLocalModelHostState) => void>();
+  const listeners = new Set<(state: DesktopLocalModelHostState) => void>();
 
   function emit() {
     const state = snapshot();

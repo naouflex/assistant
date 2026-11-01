@@ -180,6 +180,28 @@ describe("resolveRuntimeModel", () => {
     expect(resolved.model).toBeUndefined();
     expect(resolved.provider).toBe("anthropic");
   });
+
+  it("resolves a local alias to the model the server lists", async () => {
+    const { setDiscoveredLocalModels } = await import("./local-model-discovery.js");
+    const previous = process.env.ATLAS_LOCAL_MODELS_URL;
+    process.env.ATLAS_LOCAL_MODELS_URL = "http://127.0.0.1:11436/v1";
+    setDiscoveredLocalModels([
+      {
+        id: "qwen3.5:9B",
+        aliases: ["qwen3.5:9b", "qwen3.5:9b-text"],
+        baseUrl: "http://127.0.0.1:11436/v1",
+        images: true,
+      },
+    ]);
+    try {
+      const resolved = resolveRuntimeModel({ provider: "local", id: "qwen3.5:9b-text" });
+      expect(resolved.model?.id).toBe("qwen3.5:9B");
+    } finally {
+      setDiscoveredLocalModels([]);
+      if (previous === undefined) delete process.env.ATLAS_LOCAL_MODELS_URL;
+      else process.env.ATLAS_LOCAL_MODELS_URL = previous;
+    }
+  });
 });
 
 it("resolves a saved Azure provider reference without changing its model id", () => {

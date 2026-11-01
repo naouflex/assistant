@@ -280,6 +280,17 @@ judge for natural-language meaning, with a versioned rubric and calibration
 against reviewed examples. Do not match prose against keywords or regexes, and
 do not let a judge override forbidden effects or missing artifacts.
 
+### Answer quality
+
+```sh
+pnpm test:evals --suite answers --list
+```
+
+Two cases check that a CRM reply was read from the records and that nothing was
+written. A live run also asks the judge whether the reply is brief and matches
+those records, or says the customer is missing without inventing one. Use the
+same `--judge-connection` and `--judge-pricing` flags as the silence suite.
+
 ### Routine silence evals
 
 ```sh

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  cudartZipUrl,
   DEFAULT_LLAMA_RELEASE,
   DEFAULT_MODEL_ID,
-  LOCAL_MODEL_CATALOG,
-  cudartZipUrl,
   hostRoot,
   isWindowsNativeHostSupported,
+  LOCAL_MODEL_CATALOG,
   llamaReleaseTag,
   localModelRouterPreset,
   modelsDir,
@@ -60,6 +60,12 @@ describe("local model host helpers", () => {
     expect(preset).toContain("/models/Spark-X2.6-4B-Q4_K_M.gguf");
     expect(preset).toContain("reasoning = off");
     expect(preset).toContain("no-reasoning-preserve = true");
+    expect(preset).not.toContain("load-on-startup");
+    const ready = localModelRouterPreset("/models", () => true);
+    const answer = ready.split("[qwen3.5:9b]")[1]?.split("\n[")[0] ?? "";
+    expect(answer).toContain("load-on-startup = true");
+    const fast = ready.split("[qwen3.5:4b]")[1]?.split("\n[")[0] ?? "";
+    expect(fast).not.toContain("load-on-startup");
     expect(preset).not.toContain("mmproj");
     expect(localModelRouterPreset("/models", () => true)).toContain("mmproj-Qwen3.5-4B-F16.gguf");
   });

@@ -65,6 +65,9 @@ vi.mock("@earendil-works/pi-ai/providers/all", () => ({
     getModel: (_provider: string, modelId: string) => {
       if (modelId === "reasoning-model") return { provider: "test", id: modelId, reasoning: true };
       if (modelId === "plain-model") return { provider: "test", id: modelId, reasoning: false };
+      if (modelId === "qwen3.5:9b" || modelId === "qwen3.5:4b") {
+        return { provider: "local", id: modelId, reasoning: true };
+      }
       if (modelId === "grok-4.6") {
         return {
           provider: "xai",
@@ -90,6 +93,7 @@ vi.mock("@earendil-works/pi-ai/providers/all", () => ({
 }));
 
 vi.mock("./pi-local-provider.js", () => ({
+  LOCAL_PROVIDER_ID: "local",
   registerLocalProvider: (models: unknown) => models,
 }));
 
@@ -209,6 +213,29 @@ describe("Pi agent thinking level", () => {
   it("honors a per-bot thinking level on reasoning models", async () => {
     const levels = await runWithModel("grok-4.6", "xai", new AbortController().signal, "high");
     expect(levels).toEqual(["high", "high"]);
+  });
+
+  it("runs a helper on the local 4B when the answer model is the 9B", async () => {
+    const resolveModel = vi.fn(async (provider: string, modelId: string) => ({
+      provider,
+      id: modelId,
+      thinkingLevel: "high" as const,
+    }));
+
+    const levels = await runWithModel(
+      "qwen3.5:9b",
+      "local",
+      new AbortController().signal,
+      "low",
+      resolveModel,
+    );
+
+    expect(resolveModel).toHaveBeenCalledWith("local", "qwen3.5:4b");
+    expect(fakeAgentState.models.map((model) => `${model.provider}/${model.id}`)).toEqual([
+      "local/qwen3.5:9b",
+      "local/qwen3.5:4b",
+    ]);
+    expect(levels).toEqual(["low", "off"]);
   });
 
   it("resolves and runs an explicitly selected subagent model", async () => {

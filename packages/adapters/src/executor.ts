@@ -47,6 +47,7 @@ import {
 import { enrichLogContext, getLogger } from "@atlas/logging";
 import { sanitizedError } from "@atlas/logging/monitoring";
 import { formatAgentEnvironmentInstruction } from "./agent-environment.js";
+import { localAnswerThinking } from "./answer-quality.js";
 import { createApprovedEffectReplayQueue } from "./approval-effect.js";
 import { PARTIAL_REPLY_NOTE } from "./automated-messages.js";
 import { loadBotMessageContext } from "./bot-messages.js";
@@ -1593,6 +1594,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 });
               },
               prompt,
+              utterance: taskPrompt,
               // Keep an explicit executor override, but let the runtime select
               // cache-aware context for connections declaring a cache window.
               contextStrategy: deps.contextStrategy,
@@ -1658,7 +1660,16 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 maxTokens: resolved.maxTokens,
                 acceptsImages: resolved.acceptsImages,
                 maxImagesPerPrompt: resolved.maxImagesPerPrompt,
-                thinkingLevel: thinkingLevel ?? resolved.thinkingLevel ?? null,
+                thinkingLevel: localAnswerThinking({
+                  provider: runModelProvider,
+                  explicit: thinkingLevel ?? resolved.thinkingLevel ?? null,
+                  text:
+                    run.trigger === "user" ||
+                    run.trigger === "follow_up" ||
+                    run.trigger === "messaging"
+                      ? taskPrompt
+                      : undefined,
+                }),
                 oauth: resolved.oauth
                   ? {
                       credential: resolved.oauth,

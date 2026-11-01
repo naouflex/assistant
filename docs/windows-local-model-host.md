@@ -13,7 +13,9 @@ runs on Windows.
    missing from Hugging Face.
 3. Starts the server on port **11436** (override with `ATLAS_LOCAL_MODELS_PORT`),
    bound to **0.0.0.0** so WSL can reach it (override with `ATLAS_LOCAL_MODELS_HOST`).
-   All of them are listed; only one is loaded at a time.
+   Qwen3.5 9B loads at startup and answers. Qwen3.5 4B stays in the catalog for
+   helper turns. Only one model is loaded at a time; if the 9B file is not
+   there yet, the server starts on the 4B.
 
 Controls live in **Settings → Devices → Local model** (Start / Stop).
 

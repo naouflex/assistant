@@ -528,6 +528,11 @@ export interface AgentRunRequest {
   routineId?: string | null;
   sourceMessageId?: string | null;
   prompt: string;
+  /**
+   * The user's own words, without the dated turn notes added around them.
+   * Arithmetic is read from this so a timestamp is not treated as a sum.
+   */
+  utterance?: string;
   instructions: string;
   history: Array<{
     id?: string;
