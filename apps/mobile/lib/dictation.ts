@@ -123,6 +123,12 @@ export function stop(): void {
   }
 }
 
+/** Ends the active listen and delivers any heard text through `onFinal` (hold-to-talk release). */
+export function commit(): void {
+  if (!active) return;
+  finish(active);
+}
+
 /** Opens the microphone until a quiet gap ends the utterance, or `signal` aborts it. */
 export async function listen(opts: {
   onInterim?: (text: string) => void;

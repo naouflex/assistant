@@ -35,6 +35,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useComposerDictation } from "../lib/composer-dictation";
 import type { ComposerDraftScope } from "../lib/composer-draft";
 import { readComposerDraft, writeComposerDraft } from "../lib/composer-draft";
 import { useI18n } from "../lib/i18n";
@@ -331,6 +332,21 @@ export function ThreadComposer({
   } as const;
 
   const canSend = Boolean(draft.trim()) || selectedSkill !== null || attachmentIds.length > 0;
+  const dictate = useComposerDictation({
+    disabled: onCall || sending,
+    draft,
+    onDraft: (text) => {
+      pendingNativeEdit.current = null;
+      draftRef.current = text;
+      setDraft(text);
+      nativeSelection.current = { start: text.length, end: text.length };
+      selectionHistory.current = [nativeSelection.current];
+      completedSelection.current = null;
+      setSelection(nativeSelection.current);
+      setMentionQuery(null);
+      setSlashQuery(null);
+    },
+  });
 
   return (
     <>
@@ -643,6 +659,36 @@ export function ThreadComposer({
               </TextInput>
             </Pressable>
           </View>
+          {dictate.available && !onCall ? (
+            <Pressable
+              testID="hold-to-talk"
+              accessibilityRole="button"
+              accessibilityLabel={t("Hold to talk")}
+              accessibilityState={{ busy: dictate.listening }}
+              disabled={sending}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              onPressIn={dictate.start}
+              onPressOut={dictate.release}
+              style={{ marginBottom: 8, opacity: sending ? 0.5 : 1 }}
+            >
+              <GlassSurface
+                tint={dictate.listening ? tokens.destructiveFill : undefined}
+                style={composerPillStyle}
+                fallbackStyle={{
+                  backgroundColor: dictate.listening ? tokens.destructiveFill : tokens.muted,
+                }}
+              >
+                <NativeSymbol
+                  ios="mic.fill"
+                  android="mic"
+                  size={15}
+                  color={
+                    dictate.listening ? tokens.destructiveForeground : tokens.mutedForeground
+                  }
+                />
+              </GlassSurface>
+            </Pressable>
+          ) : null}
           {!canSend && botId && !onCall ? (
             <Pressable
               accessibilityRole="button"

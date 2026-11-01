@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SpeechRecognizer } from "./dictation";
-import { ENDPOINT_SILENCE_MS, listen, setSpeechRecognizer, stop } from "./dictation";
+import { commit, ENDPOINT_SILENCE_MS, listen, setSpeechRecognizer, stop } from "./dictation";
 import { reportMobileError } from "./monitoring";
 
 vi.mock("./monitoring", () => ({ reportMobileError: vi.fn() }));
@@ -309,5 +309,14 @@ describe("mobile dictation", () => {
       "voice.microphone",
       { source: "dictation" },
     );
+  });
+
+  it("commits heard text when the caller releases hold-to-talk", async () => {
+    const onFinal = vi.fn();
+    await listen({ onFinal });
+    fake.hear("ship the notes");
+    commit();
+    expect(onFinal).toHaveBeenCalledExactlyOnceWith("ship the notes");
+    expect(fake.abort).toHaveBeenCalled();
   });
 });
