@@ -81,8 +81,34 @@ describe("mountWorkNote", () => {
         "The only path is /mnt/naoufel/religion-project. Start it with ./start.sh from that directory.",
     });
     expect(note).toContain("Call the shell tool before any sentence");
-    expect(note).toContain("cd /mnt/naoufel/religion-project && ./start.sh");
+    expect(note).toContain(
+      "cd /mnt/naoufel/religion-project && nohup ./start.sh > /tmp/atlas-start.log 2>&1 &",
+    );
     expect(note).toContain("Do not paste a command");
+  });
+  it("starts a Grok local project on the owner's laptop, not in the bot computer", () => {
+    const instructions =
+      "You are a local agent on the owner's laptop. The only path is /mnt/naoufel/religion-project. Start it with ./start.sh from that directory.";
+    const note = mountWorkNote("run it on my laptop instead", {
+      shellOffered: true,
+      mounts,
+      instructions,
+      userComputerPlatform: "win32",
+    });
+    expect(note).toContain("user_computer_shell");
+    expect(note).toContain(
+      "wsl -e bash -lc 'cd /home/n/religion-project && nohup ./start.sh --host 0.0.0.0 --port 8000 > /tmp/atlas-start.log 2>&1 &'",
+    );
+    expect(note).toContain("Do not web_fetch");
+    expect(note).not.toContain("Call the shell tool");
+    expect(
+      mountWorkNote("replay isn't working", {
+        shellOffered: true,
+        mounts,
+        instructions,
+        userComputerPlatform: "win32",
+      }),
+    ).toContain("http://localhost:8000 is their browser");
   });
   it("stays silent for an unrelated turn, a call, or no shell", () => {
     expect(mountWorkNote("what's the weather?", { shellOffered: true, mounts })).toBeUndefined();

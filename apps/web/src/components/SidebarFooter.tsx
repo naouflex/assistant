@@ -15,6 +15,7 @@ import {
   Download,
   FolderOpen,
   Gauge,
+  LayoutGrid,
   Link2,
   LogOut,
   Plug,
@@ -46,6 +47,8 @@ type Props = {
   onArtifacts: () => void;
   /** Opens the list of every bot's routines. */
   onRoutines?: () => void;
+  /** Opens the floor of agent desks. */
+  onCubicle?: () => void;
   onSettings: () => void;
   onUsage: () => void;
   onInvite?: () => void;
@@ -75,6 +78,7 @@ export function SidebarFooter({
   onLink,
   onArtifacts,
   onRoutines,
+  onCubicle,
   onSettings,
   onUsage,
   onInvite,
@@ -191,6 +195,16 @@ export function SidebarFooter({
               >
                 <AlarmClock className="text-muted-foreground" strokeWidth={1.75} />
                 <Trans>Routines</Trans>
+              </Button>
+            ) : null}
+            {onCubicle ? (
+              <Button
+                variant="ghost"
+                className="h-9 w-full justify-start gap-2.5 font-normal"
+                onClick={onCubicle}
+              >
+                <LayoutGrid className="text-muted-foreground" strokeWidth={1.75} />
+                <Trans>Cubicle</Trans>
               </Button>
             ) : null}
             {onBoard ? (

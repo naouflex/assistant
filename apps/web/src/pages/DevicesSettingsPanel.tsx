@@ -77,6 +77,7 @@ export function DevicesSettingsPanel() {
   const queryClient = useQueryClient();
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingModel, setLoadingModel] = useState<string | null>(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => {
@@ -106,6 +107,17 @@ export function DevicesSettingsPanel() {
       await queryClient.invalidateQueries({ queryKey: queries.models.list.key() });
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  async function loadModel(baseUrl: string, modelId: string) {
+    setLoadingModel(modelId);
+    try {
+      const next = await queries.models.loadLocal.call({ baseUrl, modelId });
+      queryClient.setQueryData(queries.models.localStatus.queryKey({ input: {} }), next);
+      await queryClient.invalidateQueries({ queryKey: queries.models.list.key() });
+    } finally {
+      setLoadingModel(null);
     }
   }
 
@@ -184,23 +196,61 @@ export function DevicesSettingsPanel() {
                     ? t`1 model`
                     : t`${server.models.length} models`;
               return (
-                <SettingsRow
-                  key={server.baseUrl}
-                  label={
-                    <p className="flex min-w-0 flex-col gap-0.5">
-                      <span className="truncate">{serverHost(server)}</span>
+                <div key={server.baseUrl} className="divide-y divide-border">
+                  <SettingsRow
+                    label={
+                      <p className="flex min-w-0 flex-col gap-0.5">
+                        <span className="truncate">{serverHost(server)}</span>
+                        <span className="text-[12.5px] text-muted-foreground">
+                          {kind}
+                          {modelCount ? ` · ${modelCount}` : null}
+                        </span>
+                      </p>
+                    }
+                    control={
                       <span className="text-[12.5px] text-muted-foreground">
-                        {kind}
-                        {modelCount ? ` · ${modelCount}` : null}
+                        {server.reachable ? <Trans>Online</Trans> : <Trans>Offline</Trans>}
                       </span>
-                    </p>
-                  }
-                  control={
-                    <span className="text-[12.5px] text-muted-foreground">
-                      {server.reachable ? <Trans>Online</Trans> : <Trans>Offline</Trans>}
-                    </span>
-                  }
-                />
+                    }
+                  />
+                  {server.models.map((model) => {
+                    const loading = loadingModel === model.id;
+                    const state = loading ? "loading" : model.loadState;
+                    return (
+                      <SettingsRow
+                        key={model.id}
+                        label={
+                          <p className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate">{model.id}</span>
+                            <span className="text-[12.5px] text-muted-foreground">
+                              {state === "loaded" ? (
+                                <Trans>Loaded</Trans>
+                              ) : state === "loading" ? (
+                                <Trans>Loading</Trans>
+                              ) : state === "unloaded" ? (
+                                <Trans>Not loaded</Trans>
+                              ) : null}
+                            </span>
+                          </p>
+                        }
+                        control={
+                          server.kind === "llama-server" && state === "unloaded" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={loadingModel != null}
+                              data-testid={`devices-model-load-${model.id}`}
+                              onClick={() => void loadModel(server.baseUrl, model.id)}
+                            >
+                              <Trans>Load</Trans>
+                            </Button>
+                          ) : null
+                        }
+                      />
+                    );
+                  })}
+                </div>
               );
             })
           )}

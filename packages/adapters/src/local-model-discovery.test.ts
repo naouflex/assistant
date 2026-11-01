@@ -104,11 +104,11 @@ describe("local model discovery", () => {
     expect(localModelsVersion()).toBe(before + 1);
     const models = localProvider()?.getModels() ?? [];
     expect(models.map((model) => [model.id, model.baseUrl])).toEqual([
-      ["qwen3.5:4b-mtp", LLAMA],
+      ["qwen3.5:4b", LLAMA],
       ["gemma3:4b", OLLAMA],
     ]);
     const local = listPiCatalog().filter((entry) => entry.provider === "local");
-    expect(local.map((entry) => entry.id)).toEqual(["qwen3.5:4b-mtp", "gemma3:4b"]);
+    expect(local.map((entry) => entry.id)).toEqual(["qwen3.5:4b", "gemma3:4b"]);
     // The same list again is not a change, so caches stay warm.
     expect(
       setDiscoveredLocalModels([
@@ -151,11 +151,12 @@ describe("local server status", () => {
       contextWindow: 16384,
       parameterSize: "4.3B",
       large: false,
+      loadState: null,
     });
     expect(ollama).toMatchObject({ kind: "ollama", reachable: true, contextWindow: null });
     expect(ollama?.models).toEqual([
-      expect.objectContaining({ id: "gemma3:4b", contextWindow: 8192, large: false }),
-      expect.objectContaining({ id: "qwen3:30b-a3b", contextWindow: null, large: true }),
+      expect.objectContaining({ id: "gemma3:4b", contextWindow: 8192, large: false, loadState: "loaded" }),
+      expect.objectContaining({ id: "qwen3:30b-a3b", contextWindow: null, large: true, loadState: "unloaded" }),
     ]);
     expect(gone).toMatchObject({ reachable: false, kind: "unknown", models: [] });
   });
@@ -164,5 +165,41 @@ describe("local server status", () => {
     const env = { ATLAS_LOCAL_DISCOVERY_URLS: OLLAMA };
     expect(await refreshLocalModels(env, fetchImpl)).toBe(true);
     expect(await refreshLocalModels({}, fetchImpl)).toBe(false);
+  });
+
+  it("reads a llama router load state and only loads a configured server", async () => {
+    const calls: string[] = [];
+    const fetchImpl = (async (url: string, init?: { method?: string; body?: string }) => {
+      calls.push(`${init?.method ?? "GET"} ${url}`);
+      if (url.includes(":11436") && url.endsWith("/models") && !init?.method) {
+        return json({
+          data: [
+            { id: "qwen3.5:9B", aliases: ["qwen3.5:9b"], status: { value: "loaded" } },
+            { id: "qwen3.5:4B", status: { value: "unloaded" } },
+          ],
+        });
+      }
+      if (url.endsWith("/models/load")) return json({ success: true });
+      return json({}, false);
+    }) as unknown as typeof fetch;
+    const { loadLocalModel, localServerStatus: status } = await import("./local-model-discovery.js");
+    const [server] = await status({ ATLAS_LOCAL_MODELS_URL: LLAMA }, fetchImpl);
+    expect(server?.models.map((model) => [model.id, model.loadState])).toEqual([
+      ["qwen3.5:9B", "loaded"],
+      ["qwen3.5:4B", "unloaded"],
+    ]);
+    await loadLocalModel(LLAMA, "qwen3.5:4B", { ATLAS_LOCAL_MODELS_URL: LLAMA }, fetchImpl);
+    await expect(
+      loadLocalModel(
+        "http://evil.test/v1",
+        "qwen3.5:4B",
+        { ATLAS_LOCAL_MODELS_URL: LLAMA },
+        fetchImpl,
+      ),
+    ).rejects.toThrow(/not a configured/);
+    expect(calls.some((call) => call.startsWith("POST http://127.0.0.1:11436/models/load"))).toBe(
+      true,
+    );
+    expect(calls.some((call) => call.includes("evil.test"))).toBe(false);
   });
 });

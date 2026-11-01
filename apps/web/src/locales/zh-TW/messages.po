@@ -431,6 +431,10 @@ msgstr "{title}，儲存為 {savedAs}"
 msgid "{toolCount, plural, one {# tool} other {# tools}}"
 msgstr "{toolCount, plural, one {# 個工具} other {# 個工具}}"
 
+#: src/pages/Cubicle.tsx
+msgid "{waiting} need you"
+msgstr ""
+
 #. placeholder {0}: mention.name
 #: src/pages/shell/composer.tsx
 msgid "@{0}"
@@ -438,6 +442,10 @@ msgstr "@{0}"
 
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "1 model"
+msgstr ""
+
+#: src/pages/Cubicle.tsx
+msgid "1 needs you"
 msgstr ""
 
 #: src/components/integrations/space-availability.tsx
@@ -465,6 +473,10 @@ msgstr "訂閱憑證已安全儲存。"
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "關於 {label}"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
@@ -1122,6 +1134,7 @@ msgid "Both"
 msgstr "兩者都有"
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Routines.tsx
 msgid "Bots"
 msgstr "機器人"
@@ -2017,6 +2030,10 @@ msgstr "無法載入"
 msgid "Could not load activity"
 msgstr "無法載入活動紀錄"
 
+#: src/pages/Cubicle.tsx
+msgid "Could not load agents"
+msgstr ""
+
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Could not load approval rules"
 msgstr "無法載入核准規則"
@@ -2184,6 +2201,10 @@ msgstr "無法重設密碼"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2430,6 +2451,11 @@ msgstr "Cron"
 msgid "Cron expression"
 msgstr "Cron 表示式"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Cubicle.tsx
+msgid "Cubicle"
+msgstr ""
+
 #: src/components/ApprovalRulePreview.tsx
 msgid "Current"
 msgstr "目前"
@@ -2438,6 +2464,15 @@ msgstr "目前"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
 msgstr "目前密碼"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom"
+msgstr ""
+
+#. placeholder {0}: image.id
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom {0}"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Custom header"
@@ -2909,8 +2944,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "每 {n} 小時 {minute} 分"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "此空間中的每個機器人都會讀取並更新這些筆記。"
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -2995,6 +3030,7 @@ msgstr "極高"
 msgid "failed"
 msgstr "失敗"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/components/SubagentCard.tsx
 #: src/pages/ActivityList.tsx
 msgid "Failed"
@@ -3377,6 +3413,14 @@ msgstr ""
 msgid "Install update"
 msgstr "安裝更新"
 
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing model"
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing runtime"
+msgstr ""
+
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
 msgstr "正在安裝…"
@@ -3583,6 +3627,10 @@ msgstr "自動載入網路圖片"
 msgid "Loading activity…"
 msgstr "正在載入動態…"
 
+#: src/pages/Cubicle.tsx
+msgid "Loading agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Loading integrations…"
 msgstr "正在載入整合…"
@@ -3636,6 +3684,10 @@ msgstr "本機存取權限允許機器人無需詢問就執行命令。請勿在
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local computer access requires the latest desktop app."
 msgstr "存取本機電腦需要最新版桌面應用程式。"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Local model"
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 #: src/components/SidebarFooter.tsx
@@ -4147,6 +4199,10 @@ msgstr ""
 msgid "Next settings sections"
 msgstr "下一組設定區段"
 
+#: src/pages/Cubicle.tsx
+msgid "No agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "No apps match your search."
 msgstr "沒有符合搜尋條件的應用程式。"
@@ -4316,6 +4372,10 @@ msgstr "無法正常工作"
 msgid "Nothing remembered yet"
 msgstr "尚無記憶"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "通知"
@@ -4355,6 +4415,7 @@ msgid "offline"
 msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
 msgstr ""
@@ -4398,6 +4459,7 @@ msgstr "單次購買，額度不會到期。"
 msgid "online"
 msgstr ""
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Online"
 msgstr ""
@@ -4734,6 +4796,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "程式：{name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr "受保護的輸入"
@@ -4902,6 +4968,7 @@ msgstr "重新整理中…"
 msgid "Registration is closed"
 msgstr "註冊已關閉"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5166,6 +5233,14 @@ msgstr "返回與 {0} 的通話"
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "請檢查供應商設定並重新測試。"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Revoke"
@@ -5758,6 +5833,7 @@ msgstr "語音模型"
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO 暫時不可用，請重試。"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
 msgid "Start"
 msgstr "啟動"
@@ -5771,6 +5847,7 @@ msgstr "開始 {trialDays} 天免費試用"
 msgid "Start recording"
 msgstr "開始錄製"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/ActivityList.tsx
 msgid "Starting"
 msgstr "正在開始"
@@ -5791,6 +5868,7 @@ msgstr "狀態"
 msgid "Steps"
 msgstr "步驟"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6121,6 +6199,10 @@ msgstr "此模型的上下文視窗太小。請選擇其他模型。"
 msgid "This month"
 msgstr "本月"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
 msgstr "此操作將永久刪除你的帳號和資料。"
@@ -6278,6 +6360,7 @@ msgid "Trusted sites"
 msgstr "受信任的網站"
 
 #: src/pages/ActivityList.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Onboarding.tsx
 msgid "Try again"
 msgstr "重試"
@@ -6649,6 +6732,10 @@ msgstr "何時使用"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "機器人應在哪裡執行？"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Windows only"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

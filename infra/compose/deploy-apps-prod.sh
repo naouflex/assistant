@@ -27,6 +27,7 @@ cmd_upload() {
     --exclude node_modules \
     --exclude .git \
     --exclude .env \
+    --exclude data \
     --exclude 'apps/desktop/dist' \
     --exclude 'apps/desktop/out' \
     --exclude '*.log' \

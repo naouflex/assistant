@@ -244,6 +244,7 @@ describeWithDatabase("API authorization and resource isolation", () => {
       ["updater/apply", {}],
       ["models/list"],
       ["models/localStatus", {}],
+      ["models/loadLocal", { baseUrl: "http://127.0.0.1:9/v1", modelId: "missing" }],
       ["models/credentials"],
       ["models/connect", { provider: "test", apiKey: "not-a-real-key" }],
       ["models/beginOAuth", { provider: "openai-codex" }],

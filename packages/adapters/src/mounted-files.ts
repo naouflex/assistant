@@ -61,6 +61,10 @@ export function ownFilesNote(
 const ON_THIS_COMPUTER =
   /\b(your|this) (computer|machine)\b|\b(start|install|run|launch|restart)\b|\btry again\b/i;
 
+/** The owner wants the page on their own machine, where localhost is their browser. */
+const ON_OWNER_LAPTOP =
+  /\b(my laptop|my pc|my computer|my machine)\b|\blocally\b|\blocalhost\b|\b127\.0\.0\.1\b|\breplay\b/i;
+
 const MOUNT_PATH = /\/mnt\/[A-Za-z0-9._/-]+/g;
 
 /** Mount paths named in the bot's own instructions, longest first. */
@@ -88,9 +92,22 @@ export function mentionedMountPaths(text: string, mounts: string | undefined): s
   return found;
 }
 
+/** Source path of a mount (`source:target[:opts]`), when the target is one of ours. */
+export function mountSource(mounts: string | undefined, target: string): string | undefined {
+  for (const entry of (mounts ?? "").split(",")) {
+    const [source, dest] = entry.split(":");
+    if (dest?.trim().replace(/\/+$/, "") === target && source?.trim().startsWith("/")) {
+      return source.trim();
+    }
+  }
+  return undefined;
+}
+
 /**
  * Sits after the chat so a small model does not repeat the owner's WSL path or open
  * their Windows shell. list_files cannot see these mounts; shell can.
+ * A Grok local agent ran on the owner's laptop, so a request for that laptop, or for
+ * localhost in their browser, uses user_computer_shell and wsl on the mount's source.
  */
 export function mountWorkNote(
   text: string | undefined,
@@ -99,6 +116,7 @@ export function mountWorkNote(
     mounts?: string;
     voiceCall?: boolean;
     instructions?: string;
+    userComputerPlatform?: string;
   },
 ): string | undefined {
   if (!text || options.voiceCall || !options.shellOffered) return undefined;
@@ -107,13 +125,23 @@ export function mountWorkNote(
   const named = mentionedMountPaths(head, options.mounts);
   const instructed = instructedMountPaths(options.instructions);
   const act = ON_THIS_COMPUTER.test(head);
-  if (!named.length && !act && !asksAboutOwnFiles(head)) return undefined;
+  const laptop =
+    ON_OWNER_LAPTOP.test(head) || (act && /owner's laptop/.test(options.instructions ?? ""));
+  if (!named.length && !act && !laptop && !asksAboutOwnFiles(head)) return undefined;
   const path = named[0] ?? instructed[0];
+  const source = path ? mountSource(options.mounts, path) : undefined;
+  if (laptop && source && options.userComputerPlatform === "win32") {
+    const body =
+      options.instructions?.includes("start.sh") === true
+        ? `cd ${source} && nohup ./start.sh --host 0.0.0.0 --port 8000 > /tmp/atlas-start.log 2>&1 &`
+        : `ls ${source}`;
+    return `This turn is the owner's laptop, not your computer. Call user_computer_shell before any sentence, with command wsl -e bash -lc '${body}'. http://localhost:8000 is their browser. Do not use shell. Do not web_fetch 127.0.0.1 or localhost. Do not ask where the project is.`;
+  }
   // A start request otherwise copies the previous pasted command, which used the WSL path.
   if (act && path) {
     const command =
       options.instructions?.includes(path) && options.instructions.includes("start.sh")
-        ? `cd ${path} && ./start.sh`
+        ? `cd ${path} && nohup ./start.sh > /tmp/atlas-start.log 2>&1 &`
         : `ls ${path}`;
     return `Call the shell tool before any sentence, with command ${command}. That folder is on your computer. /home/naoufel does not exist here or on Windows. Do not paste a command, do not repeat the earlier /home command, and do not call user_computer_shell or list_files.`;
   }

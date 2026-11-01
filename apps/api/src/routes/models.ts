@@ -3,6 +3,7 @@ import {
   listPiCatalog,
   localContextWindow,
   localDiscoveryUrls,
+  loadLocalModel,
   localServerStatus,
   ModelSignInError,
   modelCredentialDto,
@@ -75,6 +76,21 @@ export function modelsRoutes(ctx: RouterContext) {
       list: authed.models.list.handler(async ({ context }) => chatCatalog(context.actor)),
       localStatus: authed.models.localStatus.handler(async ({ input }) => {
         if (input.refresh) await refreshLocalModels();
+        return {
+          contextWindow: localDiscoveryUrls().length ? localContextWindow() : null,
+          servers: await localServerStatus(),
+          checkedAt: new Date().toISOString(),
+        };
+      }),
+      loadLocal: authed.models.loadLocal.handler(async ({ input }) => {
+        try {
+          await loadLocalModel(input.baseUrl, input.modelId);
+        } catch (error) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: error instanceof Error ? error.message : "Could not load that model",
+          });
+        }
+        await refreshLocalModels();
         return {
           contextWindow: localDiscoveryUrls().length ? localContextWindow() : null,
           servers: await localServerStatus(),

@@ -23,6 +23,7 @@ const status: LocalModelsStatus = {
           parameterSize: "4.3B",
           contextWindow: 16384,
           large: false,
+          loadState: "loaded",
         },
       ],
     },
@@ -39,6 +40,7 @@ const status: LocalModelsStatus = {
           parameterSize: "34.7B",
           contextWindow: null,
           large: true,
+          loadState: "unloaded",
         },
       ],
     },
@@ -52,6 +54,7 @@ describe("localModelFacts", () => {
       contextWindow: 16384,
       atlasContextWindow: 16384,
       large: false,
+      loadState: "loaded",
     });
     expect(localModelFacts(status, "qwen3.5:35b-a3b")?.large).toBe(true);
   });

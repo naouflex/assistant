@@ -531,7 +531,7 @@ export function compactEnvironmentInstruction(
   if (parts.userComputer === "connected" && parts.userComputerPlatform === "win32") {
     const mounts = sandboxMountTargets(env);
     const shared = mounts.length
-      ? ` Owner folders mounted into your computer: ${describeMountGroups(mounts)}. For their files and git repos, use shell on these /mnt paths. The /home path is not on this computer or on Windows. Do not cd to it, and do not use list_files or user_computer_shell for it.`
+      ? ` Owner folders mounted into your computer: ${describeMountGroups(mounts)}. For their files and git repos, use shell on these /mnt paths. The /home path is not on this computer or on Windows PowerShell. Do not cd to it in shell, and do not use list_files for it. When they want a project on their laptop or at localhost in their browser, call user_computer_shell with wsl on that /home path. Do not web_fetch 127.0.0.1 or localhost.`
       : "";
     return `Your shell and file tools run on your own Linux computer (home /home/atlas), not on the owner's Windows PC and not in their WSL. It is already Linux.${shared} ${WINDOWS_USER_COMPUTER} Desktop, Documents, and Downloads are on that Windows computer: call user_computer_shell to list them, and do not tell the owner to open File Explorer.`;
   }

@@ -1453,6 +1453,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 shellOffered: tools.some((tool) => tool.name === "shell"),
                 mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
                 instructions: bot.instructions,
+                userComputerPlatform,
                 voiceCall: Boolean(voiceCall),
               })
             : undefined,

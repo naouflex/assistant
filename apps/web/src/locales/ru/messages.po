@@ -430,6 +430,10 @@ msgstr "{title}, сохранится как {savedAs}"
 msgid "{toolCount, plural, one {# tool} other {# tools}}"
 msgstr "{toolCount, plural, one {# инструмент} few {# инструмента} many {# инструментов} other {# инструмента}}"
 
+#: src/pages/Cubicle.tsx
+msgid "{waiting} need you"
+msgstr ""
+
 #. placeholder {0}: mention.name
 #: src/pages/shell/composer.tsx
 msgid "@{0}"
@@ -437,6 +441,10 @@ msgstr "@{0}"
 
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "1 model"
+msgstr ""
+
+#: src/pages/Cubicle.tsx
+msgid "1 needs you"
 msgstr ""
 
 #: src/components/integrations/space-availability.tsx
@@ -464,6 +472,10 @@ msgstr "Учётные данные подписки надежно сохран
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "О настройке «{label}»"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
@@ -1121,6 +1133,7 @@ msgid "Both"
 msgstr ""
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Routines.tsx
 msgid "Bots"
 msgstr ""
@@ -2016,6 +2029,10 @@ msgstr "Не удалось загрузить"
 msgid "Could not load activity"
 msgstr ""
 
+#: src/pages/Cubicle.tsx
+msgid "Could not load agents"
+msgstr ""
+
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Could not load approval rules"
 msgstr "Не удалось загрузить правила одобрения."
@@ -2183,6 +2200,10 @@ msgstr "Не удалось сбросить пароль"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2429,6 +2450,11 @@ msgstr "Крон"
 msgid "Cron expression"
 msgstr "Выражение Cron"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Cubicle.tsx
+msgid "Cubicle"
+msgstr ""
+
 #: src/components/ApprovalRulePreview.tsx
 msgid "Current"
 msgstr "Сейчас"
@@ -2437,6 +2463,15 @@ msgstr "Сейчас"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
 msgstr "Текущий пароль"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom"
+msgstr ""
+
+#. placeholder {0}: image.id
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom {0}"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Custom header"
@@ -2908,8 +2943,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "Раз в {n} ч, на {minute}-й минуте"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "Все боты в этом пространстве читают эти заметки и поддерживают их в актуальном состоянии."
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -2994,6 +3029,7 @@ msgstr "Очень высокий"
 msgid "failed"
 msgstr "неуспешный"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/components/SubagentCard.tsx
 #: src/pages/ActivityList.tsx
 msgid "Failed"
@@ -3376,6 +3412,14 @@ msgstr ""
 msgid "Install update"
 msgstr "Установить обновление"
 
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing model"
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing runtime"
+msgstr ""
+
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
 msgstr "Установка…"
@@ -3582,6 +3626,10 @@ msgstr "Автоматически загружать изображения и�
 msgid "Loading activity…"
 msgstr "Загрузка активности…"
 
+#: src/pages/Cubicle.tsx
+msgid "Loading agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Loading integrations…"
 msgstr "Загрузка интеграций…"
@@ -3634,6 +3682,10 @@ msgstr "Локальный доступ позволяет ботам выпол
 
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local computer access requires the latest desktop app."
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Local model"
 msgstr ""
 
 #: src/components/ModelCredits.tsx
@@ -4146,6 +4198,10 @@ msgstr ""
 msgid "Next settings sections"
 msgstr ""
 
+#: src/pages/Cubicle.tsx
+msgid "No agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "No apps match your search."
 msgstr "Нет приложений, соответствующих вашему запросу."
@@ -4315,6 +4371,10 @@ msgstr "Не работает"
 msgid "Nothing remembered yet"
 msgstr "Пока ничего не запомнено"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "Уведомления"
@@ -4354,6 +4414,7 @@ msgid "offline"
 msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
 msgstr ""
@@ -4397,6 +4458,7 @@ msgstr ""
 msgid "online"
 msgstr ""
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Online"
 msgstr ""
@@ -4733,6 +4795,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "Программа: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr ""
@@ -4901,6 +4967,7 @@ msgstr "Обновление…"
 msgid "Registration is closed"
 msgstr "Регистрация закрыта"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5165,6 +5232,14 @@ msgstr "Вернуться к звонку с {0}"
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "Проверьте настройки поставщика и повторите тест."
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Revoke"
@@ -5757,6 +5832,7 @@ msgstr "Речевая модель"
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO временно недоступен. Попробуйте снова."
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
 msgid "Start"
 msgstr ""
@@ -5770,6 +5846,7 @@ msgstr "Начать бесплатный пробный период на {tria
 msgid "Start recording"
 msgstr "Начать запись"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/ActivityList.tsx
 msgid "Starting"
 msgstr "Запуск"
@@ -5790,6 +5867,7 @@ msgstr ""
 msgid "Steps"
 msgstr "Шаги"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6120,6 +6198,10 @@ msgstr "Контекстное окно этой модели слишком м�
 msgid "This month"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
 msgstr "Это навсегда удалит ваш аккаунт и данные."
@@ -6277,6 +6359,7 @@ msgid "Trusted sites"
 msgstr "Доверенные сайты"
 
 #: src/pages/ActivityList.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Onboarding.tsx
 msgid "Try again"
 msgstr ""
@@ -6648,6 +6731,10 @@ msgstr "Когда использовать"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "Где должны работать боты?"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Windows only"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

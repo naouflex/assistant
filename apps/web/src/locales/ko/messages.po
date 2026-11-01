@@ -430,6 +430,10 @@ msgstr "{title}, {savedAs}(으)로 저장"
 msgid "{toolCount, plural, one {# tool} other {# tools}}"
 msgstr "{toolCount, plural, other {도구 #개}}"
 
+#: src/pages/Cubicle.tsx
+msgid "{waiting} need you"
+msgstr ""
+
 #. placeholder {0}: mention.name
 #: src/pages/shell/composer.tsx
 msgid "@{0}"
@@ -437,6 +441,10 @@ msgstr "@{0}"
 
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "1 model"
+msgstr ""
+
+#: src/pages/Cubicle.tsx
+msgid "1 needs you"
 msgstr ""
 
 #: src/components/integrations/space-availability.tsx
@@ -464,6 +472,10 @@ msgstr "구독 인증 정보가 안전하게 저장되어 있습니다."
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "{label} 정보"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
@@ -1121,6 +1133,7 @@ msgid "Both"
 msgstr ""
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Routines.tsx
 msgid "Bots"
 msgstr ""
@@ -2016,6 +2029,10 @@ msgstr "불러올 수 없음"
 msgid "Could not load activity"
 msgstr ""
 
+#: src/pages/Cubicle.tsx
+msgid "Could not load agents"
+msgstr ""
+
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Could not load approval rules"
 msgstr "확인 규칙을 불러오지 못했습니다."
@@ -2183,6 +2200,10 @@ msgstr "비밀번호를 재설정할 수 없습니다"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2429,6 +2450,11 @@ msgstr "Cron"
 msgid "Cron expression"
 msgstr "Cron 표현식"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Cubicle.tsx
+msgid "Cubicle"
+msgstr ""
+
 #: src/components/ApprovalRulePreview.tsx
 msgid "Current"
 msgstr "현재"
@@ -2437,6 +2463,15 @@ msgstr "현재"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
 msgstr "현재 비밀번호"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom"
+msgstr ""
+
+#. placeholder {0}: image.id
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom {0}"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Custom header"
@@ -2908,8 +2943,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "{n}시간마다 {minute}분"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "이 공간의 모든 봇이 이 메모를 읽고 최신 상태로 유지합니다."
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -2994,6 +3029,7 @@ msgstr "매우 높음"
 msgid "failed"
 msgstr "실패"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/components/SubagentCard.tsx
 #: src/pages/ActivityList.tsx
 msgid "Failed"
@@ -3376,6 +3412,14 @@ msgstr ""
 msgid "Install update"
 msgstr "업데이트 설치"
 
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing model"
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing runtime"
+msgstr ""
+
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
 msgstr "설치 중…"
@@ -3582,6 +3626,10 @@ msgstr "웹 이미지 자동으로 불러오기"
 msgid "Loading activity…"
 msgstr "활동을 불러오는 중…"
 
+#: src/pages/Cubicle.tsx
+msgid "Loading agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Loading integrations…"
 msgstr "연동 목록을 불러오는 중…"
@@ -3634,6 +3682,10 @@ msgstr "로컬 접근을 허용하면 Bot이 묻지 않고 명령을 실행할 �
 
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local computer access requires the latest desktop app."
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Local model"
 msgstr ""
 
 #: src/components/ModelCredits.tsx
@@ -4146,6 +4198,10 @@ msgstr ""
 msgid "Next settings sections"
 msgstr ""
 
+#: src/pages/Cubicle.tsx
+msgid "No agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "No apps match your search."
 msgstr "검색 결과가 없습니다."
@@ -4315,6 +4371,10 @@ msgstr "작동하지 않음"
 msgid "Nothing remembered yet"
 msgstr "아직 기억한 내용이 없습니다"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "알림"
@@ -4354,6 +4414,7 @@ msgid "offline"
 msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
 msgstr ""
@@ -4397,6 +4458,7 @@ msgstr ""
 msgid "online"
 msgstr ""
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Online"
 msgstr ""
@@ -4733,6 +4795,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "프로그램: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr ""
@@ -4901,6 +4967,7 @@ msgstr "새로고침 중…"
 msgid "Registration is closed"
 msgstr "가입이 마감되었습니다"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5165,6 +5232,14 @@ msgstr ""
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "서비스 설정을 확인한 뒤 다시 테스트하세요."
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Revoke"
@@ -5757,6 +5832,7 @@ msgstr "음성 모델"
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO를 일시적으로 사용할 수 없습니다. 다시 시도하세요."
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
 msgid "Start"
 msgstr ""
@@ -5770,6 +5846,7 @@ msgstr "{trialDays}일 무료 체험 시작"
 msgid "Start recording"
 msgstr "작업 녹화 시작"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/ActivityList.tsx
 msgid "Starting"
 msgstr "시작 중"
@@ -5790,6 +5867,7 @@ msgstr ""
 msgid "Steps"
 msgstr "실행 단계"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6120,6 +6198,10 @@ msgstr "이 모델의 컨텍스트 창이 너무 작습니다. 다른 모델을 
 msgid "This month"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
 msgstr "계정과 데이터가 영구적으로 삭제됩니다."
@@ -6277,6 +6359,7 @@ msgid "Trusted sites"
 msgstr "신뢰할 수 있는 사이트"
 
 #: src/pages/ActivityList.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Onboarding.tsx
 msgid "Try again"
 msgstr "다시 시도"
@@ -6648,6 +6731,10 @@ msgstr "언제 사용할지"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "Bot을 어디에서 실행할까요?"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Windows only"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

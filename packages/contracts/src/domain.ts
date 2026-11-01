@@ -1162,6 +1162,9 @@ const UsageTotalsSchema = z.object({
 });
 /** One bot's spend, prompt-cache reuse and responsiveness. */
 /** One local model server as the picker shows it: reachable, context sizes, slow models. */
+export const LocalModelLoadStateSchema = z.enum(["loaded", "loading", "unloaded"]);
+export type LocalModelLoadState = z.infer<typeof LocalModelLoadStateSchema>;
+
 export const LocalModelStatusSchema = z.object({
   id: z.string(),
   aliases: z.array(z.string()),
@@ -1169,6 +1172,8 @@ export const LocalModelStatusSchema = z.object({
   parameterSize: z.string().nullable(),
   contextWindow: z.number().nullable(),
   large: z.boolean(),
+  /** Whether this model is in GPU memory. Null when the server does not say. */
+  loadState: LocalModelLoadStateSchema.nullable(),
 });
 export type LocalModelStatus = z.infer<typeof LocalModelStatusSchema>;
 

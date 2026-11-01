@@ -367,6 +367,11 @@ function ShellSidebarFooter({
           closeMobileSidebar();
           navigate("/app/routines");
         }}
+        onCubicle={() => {
+          setMenuOpen(false);
+          closeMobileSidebar();
+          navigate("/app/cubicle");
+        }}
         onSettings={() => {
           setMenuOpen(false);
           openSettings("general");

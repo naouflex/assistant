@@ -79,26 +79,31 @@ function configuredLocalModelIds(): string[] {
 type LocalModelSpec = { id: string; baseUrl: string; images: boolean };
 
 /**
- * Configured ids first, on the configured server, then whatever the servers
- * report that is not already listed under the same id or one of its aliases.
+ * The names the servers report come first, so each model is one row under the id
+ * Load uses. A configured id is added only when it is not already that id or an alias.
  */
 function localModelSpecs(): LocalModelSpec[] {
   const base = localBaseUrl();
   const vision = localVisionModelIds();
-  const specs: LocalModelSpec[] = configuredLocalModelIds().map((id) => ({
-    id,
-    baseUrl: base,
-    images: vision.has(id),
-  }));
-  const taken = new Set(specs.map((spec) => spec.id));
+  const specs: LocalModelSpec[] = [];
+  const taken = new Set<string>();
+  const claim = (names: string[]) => {
+    for (const name of names) taken.add(name);
+  };
   for (const model of discoveredLocalModels()) {
-    if ([model.id, ...model.aliases].some((name) => taken.has(name))) continue;
-    taken.add(model.id);
+    const names = [model.id, ...model.aliases];
+    if (names.some((name) => taken.has(name))) continue;
+    claim(names);
     specs.push({
       id: model.id,
       baseUrl: model.baseUrl,
-      images: model.images || vision.has(model.id),
+      images: names.some((name) => vision.has(name)) || model.images,
     });
+  }
+  for (const id of configuredLocalModelIds()) {
+    if (taken.has(id)) continue;
+    claim([id]);
+    specs.push({ id, baseUrl: base, images: vision.has(id) });
   }
   return specs;
 }

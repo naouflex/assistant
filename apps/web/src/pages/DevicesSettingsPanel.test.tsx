@@ -48,7 +48,7 @@ vi.mock("@tanstack/react-query", () => ({
           kind: "llama-server",
           reachable: true,
           contextWindow: 16384,
-          models: [{ id: "qwen", aliases: [], sizeBytes: null, parameterSize: null, contextWindow: 16384, large: false }],
+          models: [{ id: "qwen", aliases: [], sizeBytes: null, parameterSize: null, contextWindow: 16384, large: false, loadState: "unloaded" }],
         },
       ],
     },
@@ -80,6 +80,9 @@ it("lists the server, local models, computers, and phone", async () => {
   expect(host.querySelector('[data-testid="devices-settings"]')).not.toBeNull();
   expect(host.querySelector('[data-testid="devices-server"]')?.textContent).toContain("Online");
   expect(host.querySelector('[data-testid="devices-models"]')?.textContent).toContain("127.0.0.1:11436");
+  expect(host.querySelector('[data-testid="devices-models"]')?.textContent).toContain("qwen");
+  expect(host.querySelector('[data-testid="devices-models"]')?.textContent).toContain("Not loaded");
+  expect(host.querySelector('[data-testid="devices-model-load-qwen"]')).not.toBeNull();
   expect(host.querySelector('[data-testid="computer-devices"]')?.textContent).toBe("computers");
   const qr = host.querySelector('[data-testid="devices-apk-qr"]');
   expect(qr?.getAttribute("href")).toBe(ANDROID_APK_URL);

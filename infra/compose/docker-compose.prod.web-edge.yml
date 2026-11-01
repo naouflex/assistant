@@ -8,12 +8,20 @@ services:
     mem_limit: 768m
   api:
     mem_limit: ${ATLAS_API_MEMORY_LIMIT:-1g}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ATLAS_LOCAL_DISABLE_THINKING: ${ATLAS_LOCAL_DISABLE_THINKING:-}
     networks:
       web-edge:
         aliases:
           - atlas-api
   worker:
     mem_limit: ${ATLAS_WORKER_MEMORY_LIMIT:-1g}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ATLAS_LOCAL_DISABLE_THINKING: ${ATLAS_LOCAL_DISABLE_THINKING:-}
   web:
     networks:
       web-edge:

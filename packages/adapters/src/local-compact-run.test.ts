@@ -204,6 +204,8 @@ describe("self-hosted chat-completions payloads", () => {
     expect(mounted).toContain("/mnt/naoufel/code");
     expect(mounted).toContain("use shell on these /mnt paths");
     expect(mounted).toContain("not on this computer or on Windows");
+    expect(mounted).toContain("user_computer_shell with wsl");
+    expect(mounted).toContain("Do not web_fetch 127.0.0.1 or localhost");
     const ownWindows = compactEnvironmentInstruction({ ownShellPlatform: "win32" });
     expect(ownWindows).toContain("PowerShell");
     expect(ownWindows).toContain("list them with shell");
