@@ -45,6 +45,27 @@ describe("BotAvatar", () => {
   it("keeps working attribute false when idle", () => {
     const html = renderToString(<BotAvatar color="#F59E0B" status="idle" />);
     expect(html).toContain('data-working="false"');
+    expect(html).not.toContain("atlas-bot-avatar-ring");
+  });
+
+  it("circles a working organic avatar with the same status ring as a photo", () => {
+    const html = renderToString(<BotAvatar color="#3B82F6" identity="maya" status="running" />);
+    expect(html).toContain("atlas-organic-avatar");
+    expect(html).toContain("atlas-bot-avatar-ring-working");
+    expect(html).toContain("stroke-status-working");
+  });
+
+  it("circles a working Atlas logo with the same status ring", () => {
+    const working = renderToString(
+      <BotAvatar color="#10B981" identity="chief" avatarSet="atlas" status="running" />,
+    );
+    expect(working).toContain("atlas-logo-avatar");
+    expect(working).toContain("atlas-bot-avatar-ring-working");
+    expect(working).toContain("stroke-status-working");
+    const idle = renderToString(
+      <BotAvatar color="#10B981" identity="chief" avatarSet="atlas" status="idle" />,
+    );
+    expect(idle).not.toContain("atlas-bot-avatar-ring");
   });
 
   it("renders distinct shapes for distinct bot identities", () => {

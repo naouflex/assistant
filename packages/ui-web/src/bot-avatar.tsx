@@ -17,7 +17,7 @@ import {
   shippedBotAvatarShapePath,
 } from "@atlas/core";
 import { tokens } from "@atlas/ui-tokens";
-import type { ComponentProps, CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { memo, useId, useMemo, useSyncExternalStore } from "react";
 import { useBotAvatarActivity } from "./bot-avatar-activity.js";
 import { cn } from "./lib/utils.js";
@@ -100,10 +100,13 @@ export const BotAvatar = memo(function BotAvatar({
   className,
 }: BotAvatarProps) {
   const id = useId().replace(/[^a-zA-Z0-9-_]/g, "");
-  const isWorking = ACTIVE_RUN_STATUSES.some((s) => s === status);
-
   const parsed = useMemo(() => parseBotAvatar(color, identity), [color, identity]);
   const effectiveId = identity || parsed.color || "agent";
+  const liveActivity = useBotAvatarActivity(effectiveId, status);
+  const resolvedActivity = activity ?? liveActivity;
+  const isWorking =
+    (resolvedActivity !== "idle" && resolvedActivity !== "error") ||
+    (activity === undefined && ACTIVE_RUN_STATUSES.some((runStatus) => runStatus === status));
 
   const colorDef = useMemo(
     () => resolvePersonaColorDef(effectiveId, parsed.color),
@@ -137,55 +140,41 @@ export const BotAvatar = memo(function BotAvatar({
             ) : null}
           </div>
         </div>
-        {isWorking ? (
-          <svg
-            className="atlas-bot-avatar-ring atlas-bot-avatar-ring-working absolute pointer-events-none"
-            style={{
-              inset: -4,
-              width: size + 8,
-              height: size + 8,
-            }}
-            viewBox="0 0 48 48"
-            fill="none"
-            aria-hidden="true"
-          >
-            <circle
-              cx="24"
-              cy="24"
-              r="22"
-              className="stroke-status-working"
-              strokeWidth="3.2"
-              strokeLinecap="round"
-              strokeDasharray="45 80"
-            />
-          </svg>
-        ) : null}
+        {isWorking ? <WorkingRing size={size} /> : null}
       </div>
     );
   }
 
   if (parsed.shapeIndex === undefined && avatarSet === "atlas") {
-    const Avatar = activity === undefined ? LiveLogoAvatar : LogoAvatar;
     return (
-      <Avatar
-        avatarValue={color ? colorDef.hex : undefined}
-        identity={effectiveId}
-        size={size}
-        activity={activity}
-        status={status}
-        className={className}
-      />
+      <div
+        className={cn("atlas-bot-avatar relative inline-flex shrink-0", className)}
+        style={{ width: size, height: size }}
+      >
+        <LogoAvatar
+          avatarValue={color ? colorDef.hex : undefined}
+          identity={effectiveId}
+          size={size}
+          activity={resolvedActivity}
+        />
+        {isWorking ? <WorkingRing size={size} /> : null}
+      </div>
     );
   }
   if (parsed.shapeIndex === undefined) {
     return (
-      <OrganicAvatar
-        color={colorDef.hex}
-        identity={effectiveId}
-        size={size}
-        isWorking={isWorking}
-        className={className}
-      />
+      <div
+        className={cn("atlas-bot-avatar relative inline-flex shrink-0", className)}
+        style={{ width: size, height: size }}
+      >
+        <OrganicAvatar
+          color={colorDef.hex}
+          identity={effectiveId}
+          size={size}
+          isWorking={isWorking}
+        />
+        {isWorking ? <WorkingRing size={size} /> : null}
+      </div>
     );
   }
 
@@ -325,13 +314,27 @@ function ShippedShapeAvatar({
   );
 }
 
-/** Only live Atlas consumers subscribe to public activity updates. */
-function LiveLogoAvatar({
-  status,
-  ...props
-}: ComponentProps<typeof LogoAvatar> & { status?: string }) {
-  const activity = useBotAvatarActivity(props.identity ?? "", status);
-  return <LogoAvatar {...props} activity={activity} />;
+/** The same spinning ring Chief's photo uses, for every working bot. */
+function WorkingRing({ size }: { size: number }) {
+  return (
+    <svg
+      className="atlas-bot-avatar-ring atlas-bot-avatar-ring-working absolute pointer-events-none"
+      style={{ inset: -4, width: size + 8, height: size + 8 }}
+      viewBox="0 0 48 48"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="24"
+        cy="24"
+        r="22"
+        className="stroke-status-working"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeDasharray="45 80"
+      />
+    </svg>
+  );
 }
 
 function OrganicAvatar({

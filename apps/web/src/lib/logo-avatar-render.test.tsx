@@ -67,10 +67,10 @@ async function mount(status?: string) {
   );
 }
 const live = () => container.querySelector<SVGSVGElement>('[data-testid="live"] svg')!;
-it("projects production feed events into the live avatar and subscribes only live Atlas consumers", async () => {
+it("projects production feed events into the live avatar", async () => {
   const subscribe = vi.spyOn(webLogoAvatarActivity, "subscribe");
   await mount();
-  expect(subscribe).toHaveBeenCalledTimes(1);
+  expect(subscribe).toHaveBeenCalledTimes(5);
   expect(live().dataset.activity).toBe("idle");
   await act(async () => webLogoAvatarActivity.hydrate("chat", snapshot));
   const steps = [
@@ -99,7 +99,20 @@ it("projects production feed events into the live avatar and subscribes only liv
     expect(live().dataset.activity).toBe(expected);
     expect(live().dataset.working).toBe(String(expected !== "idle" && expected !== "error"));
   }
-  expect(subscribe).toHaveBeenCalledTimes(1);
+  expect(subscribe).toHaveBeenCalledTimes(5);
+});
+
+it("circles a non-logo bot from the same activity feed while its list status is still idle", async () => {
+  await act(async () =>
+    root.render(
+      <BotAvatarActivityProvider source={webLogoAvatarActivity}>
+        <BotAvatar identity="bot-a" color="#8B5CF6" status="idle" />
+      </BotAvatarActivityProvider>,
+    ),
+  );
+  expect(container.querySelector(".atlas-bot-avatar-ring-working")).toBeNull();
+  await act(async () => webLogoAvatarActivity.hydrate("chat", snapshot));
+  expect(container.querySelector(".atlas-bot-avatar-ring-working")).not.toBeNull();
 });
 it("retains the live pose through overlapping feed hydration, hidden updates and reconnect", async () => {
   await mount();
