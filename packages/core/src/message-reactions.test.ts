@@ -30,9 +30,16 @@ describe("reaction conversation presentation", () => {
     const reply = message("reply", "❤️", "old-parent");
     expect(projectMessageReactions([reply]).visibleMessages).toEqual([reply]);
   });
-  it("does not collapse ordinary replies, standalone emoji, or bot messages", () => {
+  it("does not collapse ordinary replies or standalone emoji", () => {
     expect(messageReaction(message("one", "❤️"))).toBeNull();
     expect(messageReaction(message("two", "❤️ thank you", "parent"))).toBeNull();
-    expect(messageReaction({ ...message("three", "❤️", "parent"), role: "bot" })).toBeNull();
+  });
+
+  it("collapses bot emoji replies onto their target like user reactions", () => {
+    const parent = message("parent", "Hello");
+    const botReact = { ...message("bot-react", "👍", parent.id), role: "bot" };
+    const result = projectMessageReactions([parent, botReact]);
+    expect(result.visibleMessages).toEqual([parent]);
+    expect([...result.reactions.get(parent.id)!]).toEqual([["👍", 1]]);
   });
 });

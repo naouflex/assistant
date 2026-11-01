@@ -8,11 +8,18 @@ type ReactionMessage = {
   replyToMessageId?: string | null;
 };
 
-/** Emoji-only user replies are conversation messages displayed compactly beneath their target. */
+/**
+ * Emoji-only replies (from the owner or a bot) are conversation messages displayed
+ * compactly beneath their target.
+ */
 export function messageReaction(
   message: Pick<ReactionMessage, "role" | "blocks" | "replyToMessageId">,
 ): MessageReaction | null {
-  if (message.role !== "user" || !message.replyToMessageId || message.blocks.length !== 1)
+  if (
+    (message.role !== "user" && message.role !== "bot") ||
+    !message.replyToMessageId ||
+    message.blocks.length !== 1
+  )
     return null;
   const block = message.blocks[0];
   return block?.kind === "text" ? (MessageReactionSchema.safeParse(block.text).data ?? null) : null;

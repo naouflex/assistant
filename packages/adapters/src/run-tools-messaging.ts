@@ -1,3 +1,4 @@
+import { MessageReactionSchema } from "@atlas/contracts";
 import { isBackgroundRunTrigger, redactSecrets } from "@atlas/core";
 import {
   connectAgent,
@@ -102,6 +103,34 @@ export const messagingTools: ToolHandlers = {
           }
         : { ok: true },
     );
+  },
+  async react_to_message(ctx, call) {
+    const { deps, run } = ctx;
+    const { args } = call;
+    const emoji = MessageReactionSchema.safeParse(args.emoji).data;
+    if (!emoji) return call.finish({ error: "emoji must be one of the six reaction emoji" });
+    const targetId =
+      typeof args.message_id === "string" && args.message_id.trim()
+        ? args.message_id.trim()
+        : (run.sourceMessageId ?? undefined);
+    if (!targetId) return call.finish({ error: "No message to react to on this turn" });
+    const target = await deps.prisma.message.findFirst({
+      where: { id: targetId, threadId: run.threadId },
+      select: { id: true },
+    });
+    if (!target) return call.finish({ error: "That message is not in this chat" });
+    await flushProgress(ctx);
+    await publishMessage(
+      deps,
+      run,
+      "bot",
+      [{ kind: "text", text: emoji }],
+      false,
+      nextProgressNonce(ctx),
+      undefined,
+      target.id,
+    );
+    return call.finish({ ok: true, emoji, messageId: target.id });
   },
   async message_bot(ctx, call) {
     const { deps, run, bot } = ctx;

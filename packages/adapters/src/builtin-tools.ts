@@ -8,6 +8,7 @@ import {
   GenerateSecretInput,
   HISTORY_QUERIES_MAX_BYTES,
   LOGIN_FIELD_LIMIT,
+  MESSAGE_REACTIONS,
   PAID_REQUEST_METHODS,
   PURCHASE_CARD_FIELDS,
   SecretAskPurpose,
@@ -590,6 +591,26 @@ export const builtinAgentTools: ConnectorTool[] = [
         },
         required: ["message"],
       };
+    },
+  },
+  {
+    name: "react_to_message",
+    description:
+      "Add an emoji reaction pill under a message in this chat. Use for a quick ack (👍), celebration (🎉), or empathy (❤️) instead of a short text reply when no words are needed. Defaults to the message that started this turn.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        emoji: {
+          type: "string",
+          enum: [...MESSAGE_REACTIONS],
+          description: "One of the six reaction emoji.",
+        },
+        message_id: {
+          type: "string",
+          description: "Message to react to. Omit to react to the message that started this turn.",
+        },
+      },
+      required: ["emoji"],
     },
   },
   {
