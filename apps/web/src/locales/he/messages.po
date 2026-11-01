@@ -131,10 +131,25 @@ msgstr "{0} KB"
 msgid "{0} MB"
 msgstr "{0} MB"
 
+#. placeholder {0}: count.format(row.modelCalls)
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "{0} model calls"
+msgstr ""
+
+#. placeholder {0}: server.models.length
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "{0} models"
+msgstr ""
+
 #. placeholder {0}: sender.name
 #: src/pages/ExternalConversationSettings.tsx
 msgid "{0} rollup hours"
 msgstr "שעות סיכום של {0}"
+
+#. placeholder {0}: pendingDelete.bot.name
+#: src/pages/Routines.tsx
+msgid "{0} stops running it. This can't be undone."
+msgstr ""
 
 #. placeholder {0}: parts.amount
 #: src/components/ArtifactFileCard.tsx
@@ -189,6 +204,15 @@ msgstr "{count} שבועות"
 #: src/lib/billing.ts
 msgid "{count} years"
 msgstr "{count} שנים"
+
+#: src/pages/shell/local-model-status.ts
+msgid "{ctx} ctx"
+msgstr ""
+
+#. placeholder {0}: contextLabel(facts.atlasContextWindow)
+#: src/pages/shell/local-model-status.ts
+msgid "{ctx} ctx, Atlas sends {0}"
+msgstr ""
 
 #: src/lib/relative-time.ts
 msgid "{days}d ago"
@@ -411,6 +435,10 @@ msgstr "{toolCount, plural, one {# כלי} other {# כלים}}"
 msgid "@{0}"
 msgstr "@{0}"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "1 model"
+msgstr ""
+
 #: src/components/integrations/space-availability.tsx
 msgid "1 space"
 msgstr ""
@@ -461,6 +489,10 @@ msgstr "תווית חשבון"
 #: src/components/SidebarFooter.tsx
 msgid "Account menu for {name}"
 msgstr "תפריט החשבון של {name}"
+
+#: src/pages/Routines.tsx
+msgid "Actions"
+msgstr ""
 
 #. placeholder {0}: bot.name
 #. placeholder {0}: group.spaceName
@@ -571,6 +603,10 @@ msgstr "הוספת פריט"
 #: src/components/integrations/IntegrationSetup.tsx
 msgid "Add MCP server"
 msgstr "הוספת שרת MCP"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Add one in Models"
+msgstr ""
 
 #: src/pages/ScratchpadSection.tsx
 msgid "Add open work"
@@ -1044,8 +1080,10 @@ msgid "bot"
 msgstr "בוט"
 
 #: src/lib/identity-display.ts
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/IntegrationSetup.tsx
 #: src/pages/MessagingSettingsPanel.tsx
+#: src/pages/Routines.tsx
 #: src/pages/Shell.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
 #: src/pages/shell/message-view.tsx
@@ -1083,6 +1121,7 @@ msgid "Both"
 msgstr ""
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Routines.tsx
 msgid "Bots"
 msgstr "בוטים"
 
@@ -1163,6 +1202,7 @@ msgstr "לא ניתן לקרוא תמונות"
 #: src/pages/Onboarding.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 #: src/pages/shell/dialogs.tsx
 #: src/pages/SpaceSettingOverrides.tsx
@@ -1283,6 +1323,10 @@ msgstr "יש לבדוק את תיבת האימייל"
 #: src/components/McpServerHealthLine.tsx
 msgid "Checked {checked}"
 msgstr "נבדק {checked}"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Checking"
+msgstr ""
 
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Checking computer setup…"
@@ -1912,6 +1956,10 @@ msgstr "לא ניתן למחוק את המרחב"
 msgid "Could not delete this artifact."
 msgstr "לא ניתן למחוק את התוצר הזה."
 
+#: src/pages/Routines.tsx
+msgid "Could not delete this routine"
+msgstr ""
+
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "Could not disconnect memory provider"
 msgstr "לא ניתן לנתק את ספק הזיכרון"
@@ -2001,6 +2049,10 @@ msgstr "לא ניתן לטעון את שרתי ה-MCP"
 msgid "Could not load model settings"
 msgstr "לא ניתן לטעון את הגדרות המודל"
 
+#: src/pages/Routines.tsx
+msgid "Could not load routines"
+msgstr ""
+
 #: src/pages/RoutineRunHistory.tsx
 msgid "Could not load run history"
 msgstr "לא ניתן לטעון את היסטוריית ההרצות"
@@ -2041,6 +2093,10 @@ msgstr "לא ניתן להתנתק. יש לנסות שוב."
 #: src/pages/Paywall.tsx
 msgid "Could not open billing"
 msgstr "לא ניתן לפתוח את החיוב"
+
+#: src/pages/Routines.tsx
+msgid "Could not pause this routine"
+msgstr ""
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Could not play a test clip"
@@ -2123,6 +2179,10 @@ msgstr "לא ניתן להציג את התרשים"
 #: src/pages/Auth.tsx
 msgid "Could not reset password"
 msgstr "לא ניתן לאפס את הסיסמה"
+
+#: src/pages/Routines.tsx
+msgid "Could not resume this routine"
+msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Could not revoke connection"
@@ -2456,6 +2516,7 @@ msgstr "היקף ברירת מחדל"
 #: src/pages/KnowledgeSection.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/RoutineEditor.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/archived-chats.tsx
 #: src/pages/shell/dialogs.tsx
 #: src/pages/SpaceSettingOverrides.tsx
@@ -2479,6 +2540,8 @@ msgstr "מחיקת {0}"
 
 #. placeholder {0}: bot.name
 #. placeholder {0}: item.name
+#. placeholder {0}: pendingDelete.routine.name
+#: src/pages/Routines.tsx
 #: src/pages/shell/dialogs.tsx
 msgid "Delete {0}?"
 msgstr "למחוק את {0}?"
@@ -2511,6 +2574,14 @@ msgstr "למחוק את פרטי הגישה של המרחב הזה?"
 #: src/pages/shell/message-view.tsx
 msgid "deleted"
 msgstr "נמחק"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Deleted"
+msgstr ""
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Deleted bot"
+msgstr ""
 
 #: src/components/PasskeySettings.tsx
 #: src/pages/Artifacts.tsx
@@ -2556,6 +2627,10 @@ msgstr "פרטים"
 msgid "Developer"
 msgstr ""
 
+#: src/pages/settings-nav.ts
+msgid "Devices"
+msgstr ""
+
 #: src/lib/dictation.ts
 msgid "Dictation ended unexpectedly."
 msgstr ""
@@ -2576,8 +2651,16 @@ msgstr "השבתת כלי"
 msgid "Disabled"
 msgstr "מושבת"
 
+#: src/components/AskCard.tsx
+msgid "Discard"
+msgstr ""
+
 #: src/components/composer/HoldToTalk.tsx
 msgid "Discard recording"
+msgstr ""
+
+#: src/components/AskCard.tsx
+msgid "Discarded"
 msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
@@ -2710,6 +2793,7 @@ msgstr "ניתן להשתמש בכל שם פעם אחת בלבד."
 #: src/components/AskCard.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/McpServersOverlay.tsx
+#: src/pages/Routines.tsx
 msgid "Edit"
 msgstr "עריכה"
 
@@ -3000,6 +3084,10 @@ msgstr "הסתיים."
 msgid "Finishing MCP connection…"
 msgstr "משלים את חיבור ה-MCP…"
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "First response"
+msgstr ""
+
 #: src/pages/Auth.tsx
 msgid "Forgot password?"
 msgstr "שכחת סיסמה?"
@@ -3025,6 +3113,10 @@ msgstr "מתאריך"
 #: src/pages/ActivityList.tsx
 msgid "From {0}"
 msgstr "מ-{0}"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "From cache"
+msgstr ""
 
 #: src/components/integrations/skills-dialog.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -3271,6 +3363,14 @@ msgstr "קלט"
 msgid "Inputs"
 msgstr "קלטים"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Install the Atlas APK and sign in"
+msgstr ""
+
 #: src/components/SidebarFooter.tsx
 msgid "Install update"
 msgstr "התקנת עדכון"
@@ -3399,6 +3499,10 @@ msgstr ""
 msgid "Last check {0}: no changes"
 msgstr ""
 
+#: src/pages/Routines.tsx
+msgid "Last run"
+msgstr ""
+
 #: src/components/DesktopUpdates.tsx
 msgid "Later"
 msgstr "מאוחר יותר"
@@ -3453,6 +3557,10 @@ msgstr "מאזין"
 msgid "Listening…"
 msgstr ""
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "llama.cpp"
+msgstr ""
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "טעינת הודעות קודמות"
@@ -3494,6 +3602,10 @@ msgstr ""
 msgid "Loading preview…"
 msgstr "טוען תצוגה מקדימה…"
 
+#: src/pages/Routines.tsx
+msgid "Loading routines?"
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Loading voice providers…"
 msgstr "טוען ספקי קול…"
@@ -3509,6 +3621,10 @@ msgstr "טוען ספקי קול…"
 #: src/pages/shell/transcript.tsx
 msgid "Loading…"
 msgstr "טוען…"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Local"
+msgstr ""
 
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local access lets bots run commands without asking. Avoid it on shared or public servers."
@@ -3637,6 +3753,15 @@ msgstr ""
 #: src/pages/shell/agent-import.tsx
 msgid "MCP servers"
 msgstr "שרתי MCP"
+
+#. placeholder {0}: count.format(row.firstResponseRuns)
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Median of {0} recent runs"
+msgstr ""
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Median time from your message to the bot's first reply, tool call or question"
+msgstr ""
 
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
@@ -3797,6 +3922,11 @@ msgstr "המודל \"{modelId}\" לא הופיע ברשימה."
 msgid "Model connections"
 msgstr "חיבורים למודלים"
 
+#. placeholder {0}: bot.name
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Model for {0}"
+msgstr ""
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Model id"
@@ -3807,6 +3937,7 @@ msgstr "מזהה מודל"
 msgid "Model options"
 msgstr "אפשרויות מודל"
 
+#: src/pages/DevicesSettingsPanel.tsx
 #: src/pages/ModelSettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/SpaceSettingOverrides.tsx
@@ -4005,6 +4136,10 @@ msgstr "כרטיס חדש"
 msgid "Next page"
 msgstr "העמוד הבא"
 
+#: src/pages/Routines.tsx
+msgid "Next run"
+msgstr ""
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr ""
@@ -4029,6 +4164,10 @@ msgstr "ללא אימות"
 #: src/pages/shell/bot-picker.tsx
 msgid "No bots match"
 msgstr "אין בוטים תואמים"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "No local model server"
+msgstr ""
 
 #: src/components/AskCard.tsx
 msgid "No longer active"
@@ -4088,6 +4227,10 @@ msgstr "לא נמצאו שרתי MCP מרוחקים"
 msgid "No results"
 msgstr "אין תוצאות"
 
+#: src/pages/Routines.tsx
+msgid "No routines yet. Ask a bot to remind you or to do something on a schedule."
+msgstr ""
+
 #: src/components/markdown-copy.tsx
 msgid "No rows"
 msgstr "אין שורות"
@@ -4106,6 +4249,10 @@ msgstr "עדיין אין מיומנויות"
 
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "No submissions"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "No thinking"
 msgstr ""
 
 #: src/pages/Board.tsx
@@ -4200,8 +4347,17 @@ msgstr "חיבור OAuth נכשל"
 msgid "OAuth expired"
 msgstr "תוקף OAuth פג"
 
+#: src/pages/shell/local-model-status.ts
+msgid "offline"
+msgstr ""
+
 #: src/components/ComputerDeviceSettings.tsx
+#: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Ollama"
 msgstr ""
 
 #: src/pages/model-settings/connection-controls.tsx
@@ -4235,8 +4391,17 @@ msgstr "חד-פעמי"
 msgid "One-time purchase. Credits do not expire."
 msgstr ""
 
+#: src/pages/shell/local-model-status.ts
+msgid "online"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Online"
+msgstr ""
+
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/computer-panel.tsx
 #: src/pages/shell/import-setup-card.tsx
 #: src/pages/shell/message-view.tsx
@@ -4289,6 +4454,10 @@ msgstr "עבודה פתוחה"
 
 #: src/pages/Onboarding.tsx
 msgid "OpenAI API"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "OpenAI-compatible"
 msgstr ""
 
 #: src/pages/model-settings/compatible-model-fields.tsx
@@ -4417,7 +4586,12 @@ msgstr "יש להדביק את מפתח ה-API"
 msgid "Paste your API key, then test again."
 msgstr "יש להדביק את מפתח ה-API ולבדוק שוב."
 
+#: src/pages/Routines.tsx
+msgid "Pause"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/import-status.ts
 msgid "Paused"
 msgstr "מושהה"
@@ -4437,6 +4611,10 @@ msgstr "פרסונה"
 
 #: src/components/SignupSurvey.tsx
 msgid "Personal"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Phone"
 msgstr ""
 
 #: src/components/call/VoiceChatCard.tsx
@@ -4697,11 +4875,16 @@ msgstr "כתובת הפניה (Redirect URI)"
 #: src/App.tsx
 #: src/components/ErrorBoundary.tsx
 #: src/components/ModelCredits.tsx
+#: src/pages/DevicesSettingsPanel.tsx
 msgid "Refresh"
 msgstr "רענון"
 
 #: src/components/ModelCredits.tsx
 msgid "Refresh credits"
+msgstr ""
+
+#: src/pages/shell/chat-model-picker.tsx
+msgid "Refresh local models"
 msgstr ""
 
 #: src/components/teach/TeachComputerOverlay.tsx
@@ -4942,6 +5125,10 @@ msgstr "שוחזר"
 msgid "Restoring your workspace"
 msgstr "משחזר את סביבת העבודה"
 
+#: src/pages/Routines.tsx
+msgid "Resume"
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/components/integrations/skills-dialog.tsx
@@ -4991,11 +5178,14 @@ msgstr "החלפת מפתח"
 
 #: src/lib/identity-display.ts
 #: src/pages/RoutineEditor.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/use-routine-editor.ts
 #: src/pages/SpaceSearch.tsx
 msgid "Routine"
 msgstr "רוטינה"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Routines"
@@ -5216,6 +5406,7 @@ msgstr "בחירת בוט"
 msgid "Self-hosted"
 msgstr "באירוח עצמי"
 
+#: src/components/AskCard.tsx
 #: src/pages/shell/composer.tsx
 msgid "Send"
 msgstr "שליחה"
@@ -5272,6 +5463,10 @@ msgstr "התראת Sentry"
 msgid "Serenity endpoint is required."
 msgstr "נדרשת נקודת קצה של Serenity."
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Server"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "שם השרת"
@@ -5323,6 +5518,10 @@ msgstr "צורה"
 #. placeholder {0}: index + 1
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Shape {0}"
+msgstr ""
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Share of prompt tokens served from the model's cache"
 msgstr ""
 
 #: src/pages/MemorySettingsOverlay.tsx
@@ -5480,6 +5679,10 @@ msgstr "Slack לא מופעל"
 msgid "Slide up to lock"
 msgstr ""
 
+#: src/pages/shell/local-model-status.ts
+msgid "slow on 8 GB GPU"
+msgstr ""
+
 #: src/components/integrations/skills-dialog.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Some plugins could not be loaded."
@@ -5524,6 +5727,7 @@ msgid "Space"
 msgstr "מרחב"
 
 #: src/pages/shell/bot-panel.tsx
+#: src/pages/shell/composer-model-controls.tsx
 msgid "Space default"
 msgstr "ברירת המחדל של המרחב"
 
@@ -5810,8 +6014,17 @@ msgstr "לא ניתן לקרוא את ההגדרות השמורות. יש להס
 #: src/pages/ModelRoleSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/bot-panel.tsx
+#: src/pages/shell/composer-model-controls.tsx
 msgid "Thinking"
 msgstr "חשיבה"
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Thinking off: fastest replies"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Thinking on: slower, more careful"
+msgstr ""
 
 #. placeholder {0}: thinkingLevelLabel(choice.thinkingLevel)
 #: src/pages/ModelRoleSettings.tsx
@@ -5928,6 +6141,10 @@ msgstr "פעולה זו מסירה את החיבור מכל המרחבים."
 #: src/pages/Auth.tsx
 msgid "This reset link is invalid or expired"
 msgstr "קישור האיפוס אינו תקין או שפג תוקפו"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "This server"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "This server cannot be assigned without a bot."

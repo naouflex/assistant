@@ -69,6 +69,12 @@ it("stays hidden without any computer", async () => {
   expect(host.innerHTML).toBe("");
 });
 
+it("shows how to add a Windows computer when asked to stay visible", async () => {
+  vi.mocked(listUserDevices).mockResolvedValue([]);
+  await act(async () => root.render(<ComputerDeviceSettings alwaysShow />));
+  expect(host.textContent).toContain("Install Atlas Desktop on Windows");
+});
+
 it("lists computers with their status and removes one", async () => {
   vi.mocked(listUserDevices).mockResolvedValueOnce([laptop, desk]).mockResolvedValueOnce([laptop]);
   vi.mocked(removeUserDevice).mockResolvedValue();

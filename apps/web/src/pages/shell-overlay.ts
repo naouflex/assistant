@@ -2,6 +2,7 @@ const SETTINGS_SECTIONS = [
   "general",
   "space",
   "models",
+  "devices",
   "memory",
   "voice",
   "confirmations",

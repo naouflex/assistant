@@ -16,6 +16,7 @@ import {
   UsageSettingsPanel,
 } from "./AccountSettingsOverlay";
 import { BillingSettingsPanel } from "./BillingSettingsPanel";
+import { DevicesSettingsPanel } from "./DevicesSettingsPanel";
 import { MemorySettingsOverlay } from "./MemorySettingsOverlay";
 import { MessagingSettingsPanel } from "./MessagingSettingsPanel";
 import { ModelSettingsOverlay } from "./ModelSettingsOverlay";
@@ -409,6 +410,7 @@ export function SettingsOverlay({
                   {section === "models" ? (
                     <ModelSettingsOverlay embedded scope="account" onClose={requestClose} />
                   ) : null}
+                  {section === "devices" ? <DevicesSettingsPanel /> : null}
                   {section === "memory" ? (
                     <MemorySettingsOverlay
                       embedded

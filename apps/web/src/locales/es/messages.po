@@ -131,10 +131,25 @@ msgstr "{0} KB"
 msgid "{0} MB"
 msgstr "{0} MB"
 
+#. placeholder {0}: count.format(row.modelCalls)
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "{0} model calls"
+msgstr ""
+
+#. placeholder {0}: server.models.length
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "{0} models"
+msgstr ""
+
 #. placeholder {0}: sender.name
 #: src/pages/ExternalConversationSettings.tsx
 msgid "{0} rollup hours"
 msgstr "Horas de agrupación de {0}"
+
+#. placeholder {0}: pendingDelete.bot.name
+#: src/pages/Routines.tsx
+msgid "{0} stops running it. This can't be undone."
+msgstr ""
 
 #. placeholder {0}: parts.amount
 #: src/components/ArtifactFileCard.tsx
@@ -189,6 +204,15 @@ msgstr "{count} semanas"
 #: src/lib/billing.ts
 msgid "{count} years"
 msgstr "{count} años"
+
+#: src/pages/shell/local-model-status.ts
+msgid "{ctx} ctx"
+msgstr ""
+
+#. placeholder {0}: contextLabel(facts.atlasContextWindow)
+#: src/pages/shell/local-model-status.ts
+msgid "{ctx} ctx, Atlas sends {0}"
+msgstr ""
 
 #: src/lib/relative-time.ts
 msgid "{days}d ago"
@@ -411,6 +435,10 @@ msgstr "{toolCount, plural, one {# herramienta} other {# herramientas}}"
 msgid "@{0}"
 msgstr "@{0}"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "1 model"
+msgstr ""
+
 #: src/components/integrations/space-availability.tsx
 msgid "1 space"
 msgstr "1 espacio"
@@ -461,6 +489,10 @@ msgstr "Nombre de la cuenta"
 #: src/components/SidebarFooter.tsx
 msgid "Account menu for {name}"
 msgstr "Menú de cuenta de {name}"
+
+#: src/pages/Routines.tsx
+msgid "Actions"
+msgstr ""
 
 #. placeholder {0}: bot.name
 #. placeholder {0}: group.spaceName
@@ -571,6 +603,10 @@ msgstr "Agregar elemento"
 #: src/components/integrations/IntegrationSetup.tsx
 msgid "Add MCP server"
 msgstr "Agregar servidor MCP"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Add one in Models"
+msgstr ""
 
 #: src/pages/ScratchpadSection.tsx
 msgid "Add open work"
@@ -1044,8 +1080,10 @@ msgid "bot"
 msgstr "bot"
 
 #: src/lib/identity-display.ts
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/IntegrationSetup.tsx
 #: src/pages/MessagingSettingsPanel.tsx
+#: src/pages/Routines.tsx
 #: src/pages/Shell.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
 #: src/pages/shell/message-view.tsx
@@ -1083,6 +1121,7 @@ msgid "Both"
 msgstr "Ambos"
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Routines.tsx
 msgid "Bots"
 msgstr "Bots"
 
@@ -1163,6 +1202,7 @@ msgstr "No puede leer imágenes"
 #: src/pages/Onboarding.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 #: src/pages/shell/dialogs.tsx
 #: src/pages/SpaceSettingOverrides.tsx
@@ -1283,6 +1323,10 @@ msgstr "Revisa tu correo"
 #: src/components/McpServerHealthLine.tsx
 msgid "Checked {checked}"
 msgstr "Comprobado {checked}"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Checking"
+msgstr ""
 
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Checking computer setup…"
@@ -1912,6 +1956,10 @@ msgstr "No se pudo eliminar el espacio"
 msgid "Could not delete this artifact."
 msgstr "No se pudo eliminar este artefacto."
 
+#: src/pages/Routines.tsx
+msgid "Could not delete this routine"
+msgstr ""
+
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "Could not disconnect memory provider"
 msgstr "No se pudo desconectar el proveedor de memoria"
@@ -2001,6 +2049,10 @@ msgstr "No se pudieron cargar los servidores MCP"
 msgid "Could not load model settings"
 msgstr "No se pudo cargar la configuración de modelos"
 
+#: src/pages/Routines.tsx
+msgid "Could not load routines"
+msgstr ""
+
 #: src/pages/RoutineRunHistory.tsx
 msgid "Could not load run history"
 msgstr "No se pudo cargar el historial de ejecuciones"
@@ -2041,6 +2093,10 @@ msgstr "No se pudo cerrar sesión. Inténtalo de nuevo."
 #: src/pages/Paywall.tsx
 msgid "Could not open billing"
 msgstr "No se pudo abrir la facturación"
+
+#: src/pages/Routines.tsx
+msgid "Could not pause this routine"
+msgstr ""
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Could not play a test clip"
@@ -2123,6 +2179,10 @@ msgstr "No se pudo renderizar el gráfico"
 #: src/pages/Auth.tsx
 msgid "Could not reset password"
 msgstr "No se pudo restablecer la contraseña"
+
+#: src/pages/Routines.tsx
+msgid "Could not resume this routine"
+msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Could not revoke connection"
@@ -2456,6 +2516,7 @@ msgstr "Alcance predeterminado"
 #: src/pages/KnowledgeSection.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/RoutineEditor.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/archived-chats.tsx
 #: src/pages/shell/dialogs.tsx
 #: src/pages/SpaceSettingOverrides.tsx
@@ -2479,6 +2540,8 @@ msgstr "Eliminar {0}"
 
 #. placeholder {0}: bot.name
 #. placeholder {0}: item.name
+#. placeholder {0}: pendingDelete.routine.name
+#: src/pages/Routines.tsx
 #: src/pages/shell/dialogs.tsx
 msgid "Delete {0}?"
 msgstr "¿Eliminar {0}?"
@@ -2511,6 +2574,14 @@ msgstr "¿Eliminar las credenciales de este espacio?"
 #: src/pages/shell/message-view.tsx
 msgid "deleted"
 msgstr "eliminado"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Deleted"
+msgstr ""
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Deleted bot"
+msgstr ""
 
 #: src/components/PasskeySettings.tsx
 #: src/pages/Artifacts.tsx
@@ -2556,6 +2627,10 @@ msgstr "Detalles"
 msgid "Developer"
 msgstr "Desarrollo"
 
+#: src/pages/settings-nav.ts
+msgid "Devices"
+msgstr ""
+
 #: src/lib/dictation.ts
 msgid "Dictation ended unexpectedly."
 msgstr "El dictado se detuvo de forma inesperada."
@@ -2576,9 +2651,17 @@ msgstr "Desactivar una herramienta"
 msgid "Disabled"
 msgstr "Desactivado"
 
+#: src/components/AskCard.tsx
+msgid "Discard"
+msgstr ""
+
 #: src/components/composer/HoldToTalk.tsx
 msgid "Discard recording"
 msgstr "Descartar grabación"
+
+#: src/components/AskCard.tsx
+msgid "Discarded"
+msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/MemorySettingsOverlay.tsx
@@ -2710,6 +2793,7 @@ msgstr "Cada nombre solo se puede usar una vez."
 #: src/components/AskCard.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/McpServersOverlay.tsx
+#: src/pages/Routines.tsx
 msgid "Edit"
 msgstr "Editar"
 
@@ -3000,6 +3084,10 @@ msgstr "Terminado."
 msgid "Finishing MCP connection…"
 msgstr "Finalizando conexión MCP…"
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "First response"
+msgstr ""
+
 #: src/pages/Auth.tsx
 msgid "Forgot password?"
 msgstr "¿Olvidaste la contraseña?"
@@ -3025,6 +3113,10 @@ msgstr "Desde"
 #: src/pages/ActivityList.tsx
 msgid "From {0}"
 msgstr "Desde {0}"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "From cache"
+msgstr ""
 
 #: src/components/integrations/skills-dialog.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -3271,6 +3363,14 @@ msgstr "Entrada"
 msgid "Inputs"
 msgstr "Entradas"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Install the Atlas APK and sign in"
+msgstr ""
+
 #: src/components/SidebarFooter.tsx
 msgid "Install update"
 msgstr "Instalar actualización"
@@ -3399,6 +3499,10 @@ msgstr "Última comprobación {0}: cambios"
 msgid "Last check {0}: no changes"
 msgstr "Última comprobación {0}: sin cambios"
 
+#: src/pages/Routines.tsx
+msgid "Last run"
+msgstr ""
+
 #: src/components/DesktopUpdates.tsx
 msgid "Later"
 msgstr "Más tarde"
@@ -3453,6 +3557,10 @@ msgstr "Escuchando"
 msgid "Listening…"
 msgstr "Escuchando…"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "llama.cpp"
+msgstr ""
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "Cargar mensajes anteriores"
@@ -3494,6 +3602,10 @@ msgstr "Cargando plugins…"
 msgid "Loading preview…"
 msgstr "Cargando vista previa…"
 
+#: src/pages/Routines.tsx
+msgid "Loading routines?"
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Loading voice providers…"
 msgstr "Cargando proveedores de voz…"
@@ -3509,6 +3621,10 @@ msgstr "Cargando proveedores de voz…"
 #: src/pages/shell/transcript.tsx
 msgid "Loading…"
 msgstr "Cargando…"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Local"
+msgstr ""
 
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local access lets bots run commands without asking. Avoid it on shared or public servers."
@@ -3637,6 +3753,15 @@ msgstr "Servidor MCP"
 #: src/pages/shell/agent-import.tsx
 msgid "MCP servers"
 msgstr "Servidores MCP"
+
+#. placeholder {0}: count.format(row.firstResponseRuns)
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Median of {0} recent runs"
+msgstr ""
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Median time from your message to the bot's first reply, tool call or question"
+msgstr ""
 
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
@@ -3797,6 +3922,11 @@ msgstr "El modelo \"{modelId}\" no aparece en la lista."
 msgid "Model connections"
 msgstr "Conexiones de modelos"
 
+#. placeholder {0}: bot.name
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Model for {0}"
+msgstr ""
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Model id"
@@ -3807,6 +3937,7 @@ msgstr "ID del modelo"
 msgid "Model options"
 msgstr "Opciones del modelo"
 
+#: src/pages/DevicesSettingsPanel.tsx
 #: src/pages/ModelSettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/SpaceSettingOverrides.tsx
@@ -4005,6 +4136,10 @@ msgstr "Nuevo ticket"
 msgid "Next page"
 msgstr "Página siguiente"
 
+#: src/pages/Routines.tsx
+msgid "Next run"
+msgstr ""
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr "Siguientes secciones de configuración"
@@ -4029,6 +4164,10 @@ msgstr "Sin autenticación"
 #: src/pages/shell/bot-picker.tsx
 msgid "No bots match"
 msgstr "Ningún bot coincide"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "No local model server"
+msgstr ""
 
 #: src/components/AskCard.tsx
 msgid "No longer active"
@@ -4088,6 +4227,10 @@ msgstr "No se encontraron servidores MCP remotos"
 msgid "No results"
 msgstr "Sin resultados"
 
+#: src/pages/Routines.tsx
+msgid "No routines yet. Ask a bot to remind you or to do something on a schedule."
+msgstr ""
+
 #: src/components/markdown-copy.tsx
 msgid "No rows"
 msgstr "Sin filas"
@@ -4107,6 +4250,10 @@ msgstr "Aún no hay habilidades"
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "No submissions"
 msgstr "No hay envíos"
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "No thinking"
+msgstr ""
 
 #: src/pages/Board.tsx
 msgid "No tickets yet"
@@ -4200,9 +4347,18 @@ msgstr "Falló la conexión OAuth"
 msgid "OAuth expired"
 msgstr "OAuth expirado"
 
+#: src/pages/shell/local-model-status.ts
+msgid "offline"
+msgstr ""
+
 #: src/components/ComputerDeviceSettings.tsx
+#: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
 msgstr "Sin conexión"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Ollama"
+msgstr ""
 
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
@@ -4235,8 +4391,17 @@ msgstr "Una vez"
 msgid "One-time purchase. Credits do not expire."
 msgstr "Compra única. Los créditos no vencen."
 
+#: src/pages/shell/local-model-status.ts
+msgid "online"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Online"
+msgstr ""
+
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/computer-panel.tsx
 #: src/pages/shell/import-setup-card.tsx
 #: src/pages/shell/message-view.tsx
@@ -4290,6 +4455,10 @@ msgstr "Trabajo abierto"
 #: src/pages/Onboarding.tsx
 msgid "OpenAI API"
 msgstr "API de OpenAI"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "OpenAI-compatible"
+msgstr ""
 
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
@@ -4417,7 +4586,12 @@ msgstr "Pega tu clave de API"
 msgid "Paste your API key, then test again."
 msgstr "Pega tu clave de API y vuelve a probar."
 
+#: src/pages/Routines.tsx
+msgid "Pause"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/import-status.ts
 msgid "Paused"
 msgstr "En pausa"
@@ -4438,6 +4612,10 @@ msgstr "Personalidad"
 #: src/components/SignupSurvey.tsx
 msgid "Personal"
 msgstr "Personal"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Phone"
+msgstr ""
 
 #: src/components/call/VoiceChatCard.tsx
 msgid "Phone call"
@@ -4697,12 +4875,17 @@ msgstr "URI de redirección"
 #: src/App.tsx
 #: src/components/ErrorBoundary.tsx
 #: src/components/ModelCredits.tsx
+#: src/pages/DevicesSettingsPanel.tsx
 msgid "Refresh"
 msgstr "Actualizar"
 
 #: src/components/ModelCredits.tsx
 msgid "Refresh credits"
 msgstr "Actualizar créditos"
+
+#: src/pages/shell/chat-model-picker.tsx
+msgid "Refresh local models"
+msgstr ""
 
 #: src/components/teach/TeachComputerOverlay.tsx
 msgid "Refresh view"
@@ -4942,6 +5125,10 @@ msgstr "Restaurado"
 msgid "Restoring your workspace"
 msgstr "Restaurando tu espacio de trabajo"
 
+#: src/pages/Routines.tsx
+msgid "Resume"
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/components/integrations/skills-dialog.tsx
@@ -4991,11 +5178,14 @@ msgstr "Rotar clave"
 
 #: src/lib/identity-display.ts
 #: src/pages/RoutineEditor.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/use-routine-editor.ts
 #: src/pages/SpaceSearch.tsx
 msgid "Routine"
 msgstr "Rutina"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Routines.tsx
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Routines"
@@ -5216,6 +5406,7 @@ msgstr "Selecciona un bot"
 msgid "Self-hosted"
 msgstr "Autoalojado"
 
+#: src/components/AskCard.tsx
 #: src/pages/shell/composer.tsx
 msgid "Send"
 msgstr "Enviar"
@@ -5272,6 +5463,10 @@ msgstr "Alerta de Sentry"
 msgid "Serenity endpoint is required."
 msgstr "El endpoint de Serenity es obligatorio."
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Server"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "Nombre del servidor"
@@ -5324,6 +5519,10 @@ msgstr "Forma"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Shape {0}"
 msgstr "Forma {0}"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Share of prompt tokens served from the model's cache"
+msgstr ""
 
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/shell/bot-panel.tsx
@@ -5480,6 +5679,10 @@ msgstr "Slack no está activado"
 msgid "Slide up to lock"
 msgstr "Desliza hacia arriba para bloquear"
 
+#: src/pages/shell/local-model-status.ts
+msgid "slow on 8 GB GPU"
+msgstr ""
+
 #: src/components/integrations/skills-dialog.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Some plugins could not be loaded."
@@ -5524,6 +5727,7 @@ msgid "Space"
 msgstr "Espacio"
 
 #: src/pages/shell/bot-panel.tsx
+#: src/pages/shell/composer-model-controls.tsx
 msgid "Space default"
 msgstr "Predeterminado del Space"
 
@@ -5810,8 +6014,17 @@ msgstr "No se puede leer esta configuración guardada. Quítala y vuelve a agreg
 #: src/pages/ModelRoleSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/bot-panel.tsx
+#: src/pages/shell/composer-model-controls.tsx
 msgid "Thinking"
 msgstr "Pensando"
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Thinking off: fastest replies"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Thinking on: slower, more careful"
+msgstr ""
 
 #. placeholder {0}: thinkingLevelLabel(choice.thinkingLevel)
 #: src/pages/ModelRoleSettings.tsx
@@ -5928,6 +6141,10 @@ msgstr "Esto quita la conexión de todos los espacios."
 #: src/pages/Auth.tsx
 msgid "This reset link is invalid or expired"
 msgstr "Este enlace de restablecimiento no es válido o expiró"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "This server"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "This server cannot be assigned without a bot."

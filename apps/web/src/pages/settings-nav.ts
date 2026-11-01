@@ -6,6 +6,7 @@ import {
   CreditCard,
   Gauge,
   KeyRound,
+  Laptop,
   MessageCircle,
   Monitor,
   Settings,
@@ -34,6 +35,7 @@ export function useSettingsNavItems(available: {
   return [
     { id: "general", label: t`General`, icon: Settings },
     { id: "models", label: t`Models`, icon: Cpu },
+    { id: "devices", label: t`Devices`, icon: Laptop },
     { id: "voice", label: t`Voice`, icon: Volume2 },
     { id: "confirmations", label: t`Approvals`, icon: ShieldCheck },
     { id: "vault", label: t`Vault`, icon: KeyRound },

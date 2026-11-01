@@ -7,7 +7,7 @@ import { desktopBridge } from "../lib/desktop";
 import { listUserDevices, removeUserDevice } from "../lib/user-devices";
 import { SettingsGroup, SettingsRow } from "./SettingsRows";
 
-export function ComputerDeviceSettings() {
+export function ComputerDeviceSettings({ alwaysShow = false }: { alwaysShow?: boolean }) {
   const { t } = useLingui();
   const desktop = desktopBridge()?.device;
   const [devices, setDevices] = useState<UserDeviceSummary[]>([]);
@@ -42,7 +42,8 @@ export function ComputerDeviceSettings() {
     }
   }
 
-  if (devices.length === 0 && !thisComputer) return null;
+  const empty = devices.length === 0 && !thisComputer;
+  if (empty && !alwaysShow) return null;
 
   return (
     <SettingsGroup title={<Trans>Computers</Trans>} data-testid="computer-devices">
@@ -91,6 +92,15 @@ export function ComputerDeviceSettings() {
           }
         />
       ))}
+      {empty ? (
+        <SettingsRow
+          label={
+            <Trans>
+              Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it
+            </Trans>
+          }
+        />
+      ) : null}
       {error ? (
         <p role="alert" className="px-4 py-3 text-[12.5px] text-destructive">
           {error}
