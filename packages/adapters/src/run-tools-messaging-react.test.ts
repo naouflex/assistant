@@ -25,6 +25,7 @@ function call(args: Record<string, unknown>) {
 describe("react_to_message", () => {
   const publish = vi.mocked(publishMessage);
   const findFirst = vi.fn();
+  const react = messagingTools.react_to_message!;
 
   beforeEach(() => {
     publish.mockClear();
@@ -38,7 +39,7 @@ describe("react_to_message", () => {
       run: { id: "run-1", threadId: "thread-1", sourceMessageId: "user-1" },
       state: { reply: {} },
     };
-    const result = await messagingTools.react_to_message(ctx as never, call({ emoji: "👍" }) as never);
+    const result = await react(ctx as never, call({ emoji: "👍" }) as never);
     expect(findFirst).toHaveBeenCalledWith({
       where: { id: "user-1", threadId: "thread-1" },
       select: { id: true },
@@ -62,11 +63,11 @@ describe("react_to_message", () => {
       run: { id: "run-1", threadId: "thread-1", sourceMessageId: null },
       state: { reply: {} },
     };
-    await expect(
-      messagingTools.react_to_message(ctx as never, call({ emoji: "🚀" }) as never),
-    ).resolves.toEqual({ error: "emoji must be one of the six reaction emoji" });
-    await expect(
-      messagingTools.react_to_message(ctx as never, call({ emoji: "🎉" }) as never),
-    ).resolves.toEqual({ error: "No message to react to on this turn" });
+    await expect(react(ctx as never, call({ emoji: "🚀" }) as never)).resolves.toEqual({
+      error: "emoji must be one of the six reaction emoji",
+    });
+    await expect(react(ctx as never, call({ emoji: "🎉" }) as never)).resolves.toEqual({
+      error: "No message to react to on this turn",
+    });
   });
 });
