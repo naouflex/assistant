@@ -27,6 +27,33 @@ then enter `http://<LAN-IP>:5173` in the app's **Use a custom server** field.
 This exposes plain-HTTP sign-in to everyone on the local network. Tailscale or an HTTPS
 reverse proxy is the safer option.
 
+## Build the Android APK yourself
+
+With `pnpm dev`, set `ATLAS_DEV_HOST=0.0.0.0` in the root `.env` so the web dev server listens
+on every interface (the API stays on loopback; the web origin proxies to it). On Tailscale the
+phone can then use the server's `100.x` tailnet IP over plain HTTP, since the app treats
+`100.64.0.0/10` as a private network; a MagicDNS name such as `razer` still needs HTTPS. Add the
+name to `ATLAS_ALLOWED_HOSTS` if you open the web app by name.
+
+Build a release APK from `apps/mobile` with the Android SDK, NDK `27.1.12297006` and JDK 17:
+
+```sh
+npx expo prebuild -p android --clean
+cd android
+EXPO_PUBLIC_API_URL=http://100.x.y.z:5173 \
+ATLAS_ANDROID_KEYSTORE=$HOME/.local/atlas-android/atlas-release.jks \
+ATLAS_ANDROID_KEYSTORE_PASSWORD=... \
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+```
+
+`EXPO_PUBLIC_API_URL` becomes the default server; **Use a custom server** still overrides it.
+The `with-release-signing` plugin signs with that keystore (alias `atlas` unless
+`ATLAS_ANDROID_KEY_ALIAS` is set) and falls back to the debug key when
+`ATLAS_ANDROID_KEYSTORE` is unset. Keep the keystore outside the repo: Android only accepts
+updates signed with the same key. The APK is written to
+`android/app/build/outputs/apk/release/app-release.apk`. Push needs a `GOOGLE_SERVICES_JSON`
+file at prebuild time.
+
 ## Mobile push notifications
 
 The API and worker send iOS and Android notifications through Expo's push service. If the Expo
