@@ -1,4 +1,4 @@
-import { ANDROID_APK_URL } from "@atlas/contracts";
+import { IOS_APP_STORE_URL } from "@atlas/contracts";
 import type { LocalServerStatus } from "@atlas/contracts";
 import { Button } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -7,60 +7,9 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ComputerDeviceSettings } from "../components/ComputerDeviceSettings";
 import { LocalModelHostSettings } from "../components/LocalModelHostSettings";
+import { QrMark } from "../components/QrCode";
 import { SettingsGroup, SettingsRow } from "../components/SettingsRows";
 import { useSpaceQueries } from "../lib/query";
-
-const QR_QUIET_ZONE = 2;
-
-/** Dark modules as one SVG path, with a quiet zone so a phone camera can read it. */
-function qrPath(data: Uint8Array, size: number): string {
-  let path = "";
-  for (let row = 0; row < size; row++) {
-    let col = 0;
-    while (col < size) {
-      if (!data[row * size + col]) {
-        col += 1;
-        continue;
-      }
-      const start = col;
-      while (col < size && data[row * size + col]) col += 1;
-      const width = col - start;
-      path += `M${start + QR_QUIET_ZONE} ${row + QR_QUIET_ZONE}h${width}v1h-${width}z`;
-    }
-  }
-  return path;
-}
-
-function ApkQr() {
-  const [symbol, setSymbol] = useState<{ size: number; path: string } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void import("qrcode").then((qrcode) => {
-      if (cancelled) return;
-      const symbol = qrcode.create(ANDROID_APK_URL, { errorCorrectionLevel: "M" });
-      setSymbol({
-        size: symbol.modules.size + QR_QUIET_ZONE * 2,
-        path: qrPath(symbol.modules.data, symbol.modules.size),
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return (
-    <svg
-      viewBox={symbol ? `0 0 ${symbol.size} ${symbol.size}` : "0 0 1 1"}
-      className="size-40 bg-white text-black"
-      shapeRendering="crispEdges"
-      aria-hidden="true"
-      data-testid="devices-apk-qr-mark"
-    >
-      {symbol ? <path d={symbol.path} fill="currentColor" /> : null}
-    </svg>
-  );
-}
 
 function serverHost(server: LocalServerStatus): string {
   try {
@@ -264,15 +213,15 @@ export function DevicesSettingsPanel() {
       <SettingsGroup title={<Trans>Phone</Trans>} data-testid="devices-phone">
         <div className="flex justify-center px-4 py-4">
           <a
-            href={ANDROID_APK_URL}
+            href={IOS_APP_STORE_URL}
             data-testid="devices-apk-qr"
             className="flex flex-col items-center gap-3"
           >
             <span className="rounded-lg bg-white p-3">
-              <ApkQr />
+              <QrMark value={IOS_APP_STORE_URL} testId="devices-apk-qr-mark" />
             </span>
             <span className="text-[14px] text-foreground">
-              <Trans>Install the Atlas APK and sign in</Trans>
+              <Trans>Install Atlas and sign in</Trans>
             </span>
           </a>
         </div>

@@ -3405,7 +3405,7 @@ msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots
 msgstr ""
 
 #: src/pages/DevicesSettingsPanel.tsx
-msgid "Install the Atlas APK and sign in"
+msgid "Install Atlas and sign in"
 msgstr ""
 
 #: src/components/SidebarFooter.tsx
