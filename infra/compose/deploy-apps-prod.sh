@@ -30,6 +30,9 @@ cmd_upload() {
     --exclude data \
     --exclude 'apps/desktop/dist' \
     --exclude 'apps/desktop/out' \
+    --exclude 'apps/mobile/android' \
+    --exclude 'apps/mobile/ios' \
+    --exclude 'apps/mobile/.expo' \
     --exclude '*.log' \
     -czf "$tmp" .
   gcloud compute scp --zone="$ZONE" "$tmp" "${INSTANCE}:/tmp/atlas-src.tgz"
