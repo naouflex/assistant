@@ -13,14 +13,25 @@ describe("right panel preferences", () => {
       getItem: (key: string) => entries.get(key) ?? null,
       setItem: (key: string, value: string) => entries.set(key, value),
     });
-    writeRightPanelState("user-a:space-a:bot-a", "routine", "routine-a");
+    writeRightPanelState("user-a:space-a:bot-a", "routine", { routineId: "routine-a" });
     expect(readRightPanelState("user-a:space-a:bot-a")).toEqual({
       panel: "routine",
       routineId: "routine-a",
     });
     expect(readRightPanelState("user-b:space-a:bot-a")).toEqual({ panel: null });
-    writeRightPanelState("user-a:space-a:bot-a", null, "routine-a");
+    writeRightPanelState("user-a:space-a:bot-a", null, { routineId: "routine-a" });
     expect(readRightPanelState("user-a:space-a:bot-a")).toEqual({ panel: null });
+  });
+  it("remembers an open artifact by id", () => {
+    const entries = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => entries.get(key) ?? null,
+      setItem: (key: string, value: string) => entries.set(key, value),
+    });
+    writeRightPanelState("state", "artifact", { artifactId: "art-1" });
+    expect(readRightPanelState("state")).toEqual({ panel: "artifact", artifactId: "art-1" });
+    writeRightPanelState("state", "chart");
+    expect(readRightPanelState("state")).toEqual({ panel: "artifact", artifactId: "art-1" });
   });
   it("remembers the Routines tab", () => {
     const entries = new Map<string, string>();
@@ -39,6 +50,7 @@ describe("right panel preferences", () => {
     '{"panel":{}}',
     '{"panel":"create-group"}',
     '{"panel":"import-agent"}',
+    '{"panel":"chart"}',
   ])("ignores malformed preference %s", (value) => {
     vi.stubGlobal("localStorage", { getItem: () => value });
     expect(readRightPanelState("state")).toEqual({ panel: null });

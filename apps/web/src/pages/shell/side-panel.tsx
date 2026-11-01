@@ -18,6 +18,7 @@ import { ResizableSidePanel } from "../ResizableSidePanel";
 import { RoutineEditor } from "../RoutineEditor";
 import type { SettingsSection } from "../shell-overlay";
 import { AgentImportForm } from "./agent-import";
+import { ArtifactSideView, type ChartPanelPayload, ChartSideView } from "./artifact-panel";
 import type { BotPanelTab } from "./bot-panel";
 import { BotSettings } from "./bot-panel";
 import { firstThreadRoute } from "./use-shell-navigation";
@@ -27,6 +28,8 @@ export function ShellSidePanel({
   rpc,
   panel,
   setPanel,
+  artifactId,
+  chart,
   active,
   activeGroup,
   bots,
@@ -54,6 +57,8 @@ export function ShellSidePanel({
   rpc: ReturnType<typeof createSpaceRpc>;
   panel: Panel;
   setPanel: (panel: Panel) => void;
+  artifactId?: string;
+  chart?: ChartPanelPayload | null;
   active: Bot | undefined;
   activeGroup: Group | undefined;
   bots: Bot[];
@@ -79,7 +84,14 @@ export function ShellSidePanel({
   onClearBot: (bot: Bot) => void;
 }) {
   const { t } = useLingui();
-  const open = Boolean(panel && (active || activeGroup || panel === "import-agent"));
+  const open = Boolean(
+    panel &&
+      (active ||
+        activeGroup ||
+        panel === "import-agent" ||
+        (panel === "artifact" && artifactId) ||
+        (panel === "chart" && chart)),
+  );
   const botTab =
     panel === "computer" || panel === "routines" || panel === "settings" ? panel : null;
 
@@ -96,11 +108,17 @@ export function ShellSidePanel({
   return (
     <ResizableSidePanel open={open} panel={panel ?? "closed"}>
       {open ? (
-        <div className="rk-scroll h-full w-full overflow-y-auto px-5 py-[17px]">
+        <div
+          className={`rk-scroll h-full w-full px-5 py-[17px] ${
+            panel === "artifact" || panel === "chart" ? "flex flex-col overflow-hidden" : "overflow-y-auto"
+          }`}
+        >
           {panel !== "routine" &&
           panel !== "create-group" &&
           panel !== "group-settings" &&
-          panel !== "import-agent" ? (
+          panel !== "import-agent" &&
+          panel !== "artifact" &&
+          panel !== "chart" ? (
             <div className="mb-4 flex items-center justify-between">
               {!active && panel !== "settings" ? (
                 <span className="text-[13.5px] text-muted-foreground">
@@ -129,6 +147,18 @@ export function ShellSidePanel({
                   <X size={16} strokeWidth={1.8} />
                 </Button>
               </div>
+            </div>
+          ) : null}
+          {panel === "artifact" || panel === "chart" ? (
+            <div className="mb-3 flex shrink-0 items-center justify-end">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t`Close panel`}
+                onClick={() => setPanel(null)}
+              >
+                <X size={16} strokeWidth={1.8} />
+              </Button>
             </div>
           ) : null}
           {panel === "create-group" ? (
@@ -223,6 +253,8 @@ export function ShellSidePanel({
           {panel === "routine" && routineEditorProps ? (
             <RoutineEditor {...routineEditorProps} />
           ) : null}
+          {panel === "artifact" && artifactId ? <ArtifactSideView artifactId={artifactId} /> : null}
+          {panel === "chart" && chart ? <ChartSideView chart={chart} /> : null}
         </div>
       ) : null}
     </ResizableSidePanel>

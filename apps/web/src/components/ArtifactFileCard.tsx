@@ -22,6 +22,8 @@ type ArtifactFileCardProps = {
   name: string;
   mimeType: string;
   size: number;
+  /** When set (shell chat), preview opens the side panel instead of a dialog. */
+  onOpenBeside?: () => void;
 };
 
 const PREVIEWABLE_MIME_TYPES = new Set([
@@ -39,6 +41,7 @@ export function ArtifactFileCard(props: ArtifactFileCardProps) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const { onOpenBeside, ...fileProps } = props;
 
   async function startDownload() {
     setDownloadError(null);
@@ -54,7 +57,7 @@ export function ArtifactFileCard(props: ArtifactFileCardProps) {
       <BuiCard className="min-w-[280px] p-4 text-foreground">
         <AudioArtifactPreview
           key={JSON.stringify([props.target, props.artifactId, props.mimeType])}
-          {...props}
+          {...fileProps}
           onDownload={startDownload}
         />
         {downloadError ? <DownloadError message={downloadError} /> : null}
@@ -89,7 +92,7 @@ export function ArtifactFileCard(props: ArtifactFileCardProps) {
             ref={previewButton}
             type="button"
             aria-label={t`Preview ${props.name}`}
-            onClick={() => setPreviewOpen(true)}
+            onClick={() => (onOpenBeside ? onOpenBeside() : setPreviewOpen(true))}
             className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-accent"
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground">
@@ -119,16 +122,18 @@ export function ArtifactFileCard(props: ArtifactFileCardProps) {
         </BuiCard>
         {downloadError ? <DownloadError message={downloadError} /> : null}
       </div>
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent
-          showCloseButton={false}
-          initialFocus={closeButton}
-          finalFocus={previewButton}
-          className="flex h-[min(88vh,900px)] w-[min(960px,94vw)] flex-col gap-0 overflow-hidden p-0 sm:max-w-none"
-        >
-          <FilePreview {...props} closeButtonRef={closeButton} />
-        </DialogContent>
-      </Dialog>
+      {onOpenBeside ? null : (
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent
+            showCloseButton={false}
+            initialFocus={closeButton}
+            finalFocus={previewButton}
+            className="flex h-[min(88vh,900px)] w-[min(960px,94vw)] flex-col gap-0 overflow-hidden p-0 sm:max-w-none"
+          >
+            <FilePreview {...fileProps} closeButtonRef={closeButton} />
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

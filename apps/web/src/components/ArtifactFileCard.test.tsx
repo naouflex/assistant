@@ -199,6 +199,27 @@ it("keeps controls when automatic playback is rejected", async () => {
   expect(container.querySelector('[role="alert"]')).toBeNull();
 });
 
+it("opens beside the chat when onOpenBeside is set instead of a dialog", async () => {
+  const onOpenBeside = vi.fn();
+  await act(async () =>
+    root?.render(
+      <ArtifactFileCard
+        target={{ botId: "bot-1" }}
+        artifactId="doc-1"
+        name="notes.md"
+        mimeType="text/markdown"
+        size={12}
+        onOpenBeside={onOpenBeside}
+      />,
+    ),
+  );
+  await act(async () =>
+    container.querySelector<HTMLButtonElement>('button[aria-label="Preview notes.md"]')?.click(),
+  );
+  expect(onOpenBeside).toHaveBeenCalledOnce();
+  expect(container.querySelector('[role="dialog"]')).toBeNull();
+});
+
 it("translates every size unit and rolls up instead of 1,024.0 KB or 1,536.0 MB", async () => {
   await act(async () =>
     root?.render(

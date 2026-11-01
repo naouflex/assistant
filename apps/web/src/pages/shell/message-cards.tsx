@@ -231,7 +231,7 @@ export function AppConnectCard({
   );
 }
 
-function ChartCanvas({
+export function ChartCanvas({
   spec,
   data,
   width,
@@ -444,10 +444,13 @@ export function ChartBlockView({
   name,
   spec,
   data,
+  onOpenBeside,
 }: {
   name: string;
   spec: Record<string, unknown>;
   data: unknown[];
+  /** When set (shell chat), Expand opens the side panel instead of a dialog. */
+  onOpenBeside?: () => void;
 }) {
   const { t } = useLingui();
   const [expanded, setExpanded] = useState(false);
@@ -456,12 +459,12 @@ export function ChartBlockView({
     height: window.innerHeight,
   }));
   useEffect(() => {
-    if (!expanded) return;
+    if (!expanded || onOpenBeside) return;
     setViewport({ width: window.innerWidth, height: window.innerHeight });
     const onResize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [expanded]);
+  }, [expanded, onOpenBeside]);
   const expandedViewport = chartViewport(viewport.width, viewport.height);
   return (
     <>
@@ -470,36 +473,38 @@ export function ChartBlockView({
         <Button
           variant="outline"
           size="xs"
-          onClick={() => setExpanded(true)}
+          onClick={() => (onOpenBeside ? onOpenBeside() : setExpanded(true))}
           className="absolute end-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Trans>Expand</Trans>
         </Button>
       </div>
-      <Dialog open={expanded} onOpenChange={setExpanded}>
-        <DialogContent
-          showCloseButton={false}
-          className="max-h-[92vh] w-[min(1320px,94vw)] max-w-none overflow-auto p-8 sm:max-w-none"
-        >
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-[13px] font-normal text-muted-foreground">
-              {name}
-            </DialogTitle>
-            <DialogClose
-              aria-label={t`Close chart`}
-              render={<Button variant="ghost" size="icon-sm" />}
-            >
-              <X />
-            </DialogClose>
-          </div>
-          <ChartCanvas
-            spec={spec}
-            data={data}
-            width={expandedViewport.width}
-            height={expandedViewport.height}
-          />
-        </DialogContent>
-      </Dialog>
+      {onOpenBeside ? null : (
+        <Dialog open={expanded} onOpenChange={setExpanded}>
+          <DialogContent
+            showCloseButton={false}
+            className="max-h-[92vh] w-[min(1320px,94vw)] max-w-none overflow-auto p-8 sm:max-w-none"
+          >
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-[13px] font-normal text-muted-foreground">
+                {name}
+              </DialogTitle>
+              <DialogClose
+                aria-label={t`Close chart`}
+                render={<Button variant="ghost" size="icon-sm" />}
+              >
+                <X />
+              </DialogClose>
+            </div>
+            <ChartCanvas
+              spec={spec}
+              data={data}
+              width={expandedViewport.width}
+              height={expandedViewport.height}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

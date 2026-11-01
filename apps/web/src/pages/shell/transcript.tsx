@@ -88,6 +88,8 @@ export const Transcript = memo(function Transcript({
   speakingMessageId,
   onSpeak,
   onOpenComputer,
+  onOpenArtifactBeside,
+  onOpenChartBeside,
   onOpenImportSetup,
 }: {
   scrollRef: RefObject<HTMLDivElement | null>;
@@ -135,6 +137,12 @@ export const Transcript = memo(function Transcript({
   speakingMessageId: string | null;
   onSpeak: (message: ThreadMessage) => void;
   onOpenComputer: (botId?: string) => void;
+  onOpenArtifactBeside?: (artifactId: string) => void;
+  onOpenChartBeside?: (chart: {
+    name: string;
+    spec: Record<string, unknown>;
+    data: unknown[];
+  }) => void;
   onOpenImportSetup?: (target: ImportSetupTarget) => void;
 }) {
   const { t } = useLingui();
@@ -537,6 +545,8 @@ export const Transcript = memo(function Transcript({
                       speaking={speakingMessageId === message.id}
                       onSpeak={() => onSpeak(message)}
                       onOpenComputer={onOpenComputer}
+                      onOpenArtifactBeside={onOpenArtifactBeside}
+                      onOpenChartBeside={onOpenChartBeside}
                       onOpenImportSetup={onOpenImportSetup}
                       showToolActivity={showToolActivity}
                       onReply={onReply}

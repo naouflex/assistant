@@ -187,7 +187,16 @@ function SpaceShell() {
     () => false,
   );
   const rightPanel = useRightPanel({ searchParams, setSearchParams });
-  const { panel, setPanel, modelFocusRequest, setModelFocusRequest } = rightPanel;
+  const {
+    panel,
+    setPanel,
+    artifactId: panelArtifactId,
+    chart: panelChart,
+    openArtifact,
+    openChart,
+    modelFocusRequest,
+    setModelFocusRequest,
+  } = rightPanel;
   const [peerConversation, setPeerConversation] = usePreloadRecoveryState<{
     peerBotId: string;
     peerBotName: string;
@@ -257,8 +266,13 @@ function SpaceShell() {
 
   const inGroup = Boolean(groupId);
   const chatPanelOpen = inGroup
-    ? panel === "group-settings"
-    : panel === "computer" || panel === "routines" || panel === "settings" || panel === "routine";
+    ? panel === "group-settings" || panel === "artifact" || panel === "chart"
+    : panel === "computer" ||
+      panel === "routines" ||
+      panel === "settings" ||
+      panel === "routine" ||
+      panel === "artifact" ||
+      panel === "chart";
   // Until the route names the chat reopened from cache, that chat stands in for it.
   const routeChat = botId || groupId ? undefined : startChat;
   const active =
@@ -975,6 +989,8 @@ function SpaceShell() {
               speakingMessageId={speakingMessageId}
               onSpeak={speakMessage}
               onOpenComputer={computerControls.onOpenComputer}
+              onOpenArtifactBeside={openArtifact}
+              onOpenChartBeside={openChart}
               onOpenImportSetup={(target) => {
                 importSetupOpen.current = true;
                 if (target.kind === "models") openSettings("models");
@@ -1084,6 +1100,8 @@ function SpaceShell() {
         rpc={rpc}
         panel={panel}
         setPanel={setPanel}
+        artifactId={panelArtifactId}
+        chart={panelChart}
         active={active}
         activeGroup={activeGroup}
         bots={bots}

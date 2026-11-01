@@ -68,6 +68,8 @@ export const MessageView = memo(function MessageView({
   speaking,
   onSpeak,
   onOpenComputer,
+  onOpenArtifactBeside,
+  onOpenChartBeside,
   onOpenImportSetup,
   showToolActivity,
   onReply,
@@ -106,6 +108,12 @@ export const MessageView = memo(function MessageView({
   speaking: boolean;
   onSpeak: () => void;
   onOpenComputer: (botId?: string) => void;
+  onOpenArtifactBeside?: (artifactId: string) => void;
+  onOpenChartBeside?: (chart: {
+    name: string;
+    spec: Record<string, unknown>;
+    data: unknown[];
+  }) => void;
   /** Opens where an imported item's setup is finished. */
   onOpenImportSetup?: (target: ImportSetupTarget) => void;
   showToolActivity: boolean;
@@ -431,7 +439,21 @@ export const MessageView = memo(function MessageView({
           if (block.kind === "chart") {
             return (
               <div key={i} className="flex justify-start">
-                <ChartBlockView name={block.name} spec={block.spec} data={block.data} />
+                <ChartBlockView
+                  name={block.name}
+                  spec={block.spec}
+                  data={block.data}
+                  onOpenBeside={
+                    onOpenChartBeside
+                      ? () =>
+                          onOpenChartBeside({
+                            name: block.name,
+                            spec: block.spec,
+                            data: block.data,
+                          })
+                      : undefined
+                  }
+                />
               </div>
             );
           }
@@ -481,6 +503,11 @@ export const MessageView = memo(function MessageView({
                   name={block.name}
                   mimeType={block.mimeType}
                   size={block.size}
+                  onOpenBeside={
+                    onOpenArtifactBeside
+                      ? () => onOpenArtifactBeside(block.artifactId)
+                      : undefined
+                  }
                 />
               </div>
             );

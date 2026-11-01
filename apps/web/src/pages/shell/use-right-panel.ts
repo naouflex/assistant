@@ -7,6 +7,7 @@ import {
   rightPanelStorageKey,
   writeRightPanelState,
 } from "../../lib/right-panel-state";
+import type { ChartPanelPayload } from "./artifact-panel";
 
 /** The panel beside the chat. Each chat remembers its own; see `useRightPanelRestore`. */
 export function useRightPanel({
@@ -18,6 +19,8 @@ export function useRightPanel({
 }) {
   const [modelFocusRequest, setModelFocusRequest] = useState(0);
   const [panel, setPanelState] = useState<Panel>(null);
+  const [artifactId, setArtifactId] = useState<string | undefined>();
+  const [chart, setChart] = useState<ChartPanelPayload | null>(null);
   const [restoredPanelKey, setRestoredPanelKey] = useState<string | null>(null);
   const panelStorageKeyRef = useRef<string | null>(null);
   const observedPanelKey = useRef<string | null>(null);
@@ -41,6 +44,11 @@ export function useRightPanel({
     }
   }, []);
 
+  useEffect(() => {
+    if (panel !== "artifact") setArtifactId(undefined);
+    if (panel !== "chart") setChart(null);
+  }, [panel]);
+
   /** Opens `next` in another chat, saved under that chat's `destKey` rather than this one's. */
   function openPanelInChat(destKey: string | null, next: Panel, navigateToChat: () => void) {
     explicitPanelTarget.current = destKey;
@@ -51,10 +59,25 @@ export function useRightPanel({
     setRestoredPanelKey(destKey);
   }
 
+  function openArtifact(id: string) {
+    setArtifactId(id);
+    setPanel("artifact");
+  }
+
+  function openChart(payload: ChartPanelPayload) {
+    setChart(payload);
+    setPanel("chart");
+  }
+
   return {
     panel,
     setPanel,
     setPanelState,
+    artifactId,
+    setArtifactId,
+    chart,
+    openArtifact,
+    openChart,
     openPanelInChat,
     modelFocusRequest,
     setModelFocusRequest,
@@ -100,6 +123,8 @@ export function useRightPanelRestore({
 }) {
   const {
     panel,
+    artifactId,
+    setArtifactId,
     setPanelState,
     restoredPanelKey,
     setRestoredPanelKey,
@@ -151,6 +176,12 @@ export function useRightPanelRestore({
         : undefined;
       if (saved.routineId && !routine) next = "routines";
       restoreRoutine(routine ?? null);
+      setArtifactId(undefined);
+    } else if (next === "artifact") {
+      if (!saved.artifactId) next = null;
+      else setArtifactId(saved.artifactId);
+    } else {
+      setArtifactId(undefined);
     }
     pendingPanelRestore.current = null;
     setPanelState(next);
@@ -163,6 +194,9 @@ export function useRightPanelRestore({
     // bot-switch close so restoredPanelKey stays unset until an intentional setPanel.
     if (!panelStorageKey || restoredPanelKey !== panelStorageKey || pendingPanelRestore.current)
       return;
-    writeRightPanelState(panelStorageKey, panel, editingRoutineId);
-  }, [panelStorageKey, restoredPanelKey, panel, editingRoutineId]);
+    writeRightPanelState(panelStorageKey, panel, {
+      routineId: editingRoutineId,
+      artifactId,
+    });
+  }, [panelStorageKey, restoredPanelKey, panel, editingRoutineId, artifactId]);
 }
