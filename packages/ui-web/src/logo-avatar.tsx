@@ -80,76 +80,66 @@ export const LogoAvatar = memo(function LogoAvatar({
       }
     >
       <defs>
-        <clipPath id={`logo-plate-${id}`}>
-          <rect width="100" height="100" rx="23" />
-        </clipPath>
         <linearGradient id={`logo-eye-${id}`} x2="0.8" y2="1">
           <stop stopColor={eyeInk} stopOpacity="0.8" />
           <stop offset="0.35" stopColor={eyeInk} />
           <stop offset="1" stopColor={eyeInk} />
         </linearGradient>
       </defs>
-      <g clipPath={`url(#logo-plate-${id})`}>
-        <rect className="logo-avatar-plate" width="100" height="100" rx="23" />
-        {layers.map((layer) => (
-          <g
-            key={layer.key}
-            className="logo-avatar-layer"
-            data-logo-layer={layer.key}
-            data-activity={layer.activity}
-            data-entering={layer.entering}
-            data-outgoing={layer.outgoing}
-            style={
-              {
-                "--logo-move-duration": `${traits.periods[layer.activity]}ms`,
-                "--logo-move-delay": `${-Math.round(traits.periods[layer.activity] * traits.phase * 1000) / 1000}ms`,
-                "--logo-exit-from": layer.opacity,
-              } as CSSProperties
-            }
-            onAnimationEnd={(event) => {
-              if (event.target === event.currentTarget) finish(layer.key, event.animationName);
-            }}
-          >
-            <g className="logo-avatar-body">
-              <g transform="translate(0 9)">
-                <LogoAvatarBody
-                  id={`${id}-${layer.key}`}
-                  color={traits.color}
-                  originalOrange={traits.originalOrange}
-                  mark={eyeInk}
-                />
-                {/*
+      {layers.map((layer) => (
+        <g
+          key={layer.key}
+          className="logo-avatar-layer"
+          data-logo-layer={layer.key}
+          data-activity={layer.activity}
+          data-entering={layer.entering}
+          data-outgoing={layer.outgoing}
+          style={
+            {
+              "--logo-move-duration": `${traits.periods[layer.activity]}ms`,
+              "--logo-move-delay": `${-Math.round(traits.periods[layer.activity] * traits.phase * 1000) / 1000}ms`,
+              "--logo-exit-from": layer.opacity,
+            } as CSSProperties
+          }
+          onAnimationEnd={(event) => {
+            if (event.target === event.currentTarget) finish(layer.key, event.animationName);
+          }}
+        >
+          <g className="logo-avatar-body">
+            <g transform="translate(0 9)">
+              <LogoAvatarBody
+                id={`${id}-${layer.key}`}
+                color={traits.color}
+                originalOrange={traits.originalOrange}
+                mark={eyeInk}
+              />
+              {/*
                   Default organic pill eyes sit on the mountain without a body clip:
                   gaze/blink CSS translates would otherwise disappear inside the silhouette.
                 */}
-                <g className="logo-avatar-gaze">
-                  <g className="logo-avatar-scan">
-                    {LOGO_EYES.map((eye, index) => (
-                      <g
-                        className={`logo-avatar-eye-lid logo-avatar-eye-${index}`}
-                        key={eye.cx}
-                      >
-                        <g className="logo-avatar-eye">
-                          <rect
-                            x={eye.cx - eye.width / 2}
-                            y={eye.cy - eye.height / 2}
-                            width={eye.width}
-                            height={eye.height}
-                            rx={eye.width / 2}
-                            fill={`url(#logo-eye-${id})`}
-                          />
-                        </g>
+              <g className="logo-avatar-gaze">
+                <g className="logo-avatar-scan">
+                  {LOGO_EYES.map((eye, index) => (
+                    <g className={`logo-avatar-eye-lid logo-avatar-eye-${index}`} key={eye.cx}>
+                      <g className="logo-avatar-eye">
+                        <rect
+                          x={eye.cx - eye.width / 2}
+                          y={eye.cy - eye.height / 2}
+                          width={eye.width}
+                          height={eye.height}
+                          rx={eye.width / 2}
+                          fill={`url(#logo-eye-${id})`}
+                        />
                       </g>
-                    ))}
-                  </g>
+                    </g>
+                  ))}
                 </g>
               </g>
-              <LogoAvatarTask activity={layer.activity} id={`${id}-${layer.key}`} />
             </g>
+            <LogoAvatarTask activity={layer.activity} id={`${id}-${layer.key}`} />
           </g>
-        ))}
-      </g>
-      <rect className="logo-avatar-outline" x="0.5" y="0.5" width="99" height="99" rx="22.5" />
+        </g>
+      ))}
     </svg>
   );
 });

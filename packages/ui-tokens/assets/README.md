@@ -3,14 +3,14 @@
 ## Logo sources
 
 The Atlas logo is a rounded mountain in ink (`#141210`) with a white snow cap
-and two eyes. The app icon puts it on a warm paper plate (`#F7F4EF`).
+and two eyes. App icons are that mountain on a transparent background.
 
 The hand-authored SVGs in [`brand/`](./brand) are the only sources:
 
 - `atlas-mark.svg`: the mountain on a transparent background.
 - `atlas-mark-monochrome.svg`: the white silhouette used for Android themed and
   notification icons. Snow and eyes are cut out.
-- `atlas-app-icon.svg`: the mountain on the warm paper rounded square.
+- `atlas-app-icon.svg`: the mountain artwork. Exports drop its background rectangle.
 - `atlas-wordmark-dark.svg`: mountain and "Atlas" for dark backgrounds.
 - `atlas-wordmark-light.svg`: mountain and "Atlas" for light backgrounds.
 
@@ -27,12 +27,12 @@ rewrites every raster at its existing path:
   wordmarks next to it;
 - `apps/www/public/og-image.png`, the default social card;
 - `apps/desktop/assets/icon.png`, `icon.ico` and `icon-macos.png` (the pre-Tahoe
-  development export with Dock margins);
-- `apps/mobile/assets/icon.png` (opaque, unmasked), `adaptive-icon.png`,
-  `icon-background.png`, `monochrome-icon.png`, `notification-icon.png`,
-  `splash-icon.png` and `favicon.png`;
+  development export of the mountain);
+- `apps/mobile/assets/icon.png` (transparent), `adaptive-icon.png`,
+  `icon-background.png` (clear), `monochrome-icon.png`, `notification-icon.png`,
+  `splash-icon.png`, `splash-icon-dark.png` and `favicon.png`;
 - `Atlas.icon/Assets/atlas-globe.png`, the single layer of the Icon Composer
-  source used for macOS and iOS. `icon.json` supplies the paper plate colour.
+  source used for macOS and iOS. `icon.json` leaves the fill clear.
 
 Android supplies its own mask; never bake Mac corners, a rim, or an outer shadow
 into the adaptive layers.

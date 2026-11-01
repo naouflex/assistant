@@ -22,15 +22,7 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
 } from "react-native-reanimated";
-import Svg, {
-  ClipPath,
-  Defs,
-  G,
-  Path,
-  RadialGradient,
-  Rect,
-  Stop,
-} from "react-native-svg";
+import Svg, { ClipPath, Defs, G, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useAvatarOnScreen, usePoke } from "../lib/avatar-life";
 import { useLogoAvatarClock } from "../lib/logo-avatar-clock";
 import { useMobileTokens } from "../lib/native";
@@ -127,9 +119,6 @@ export function LogoAvatar({
   const artwork = (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessible={false}>
       <Defs>
-        <ClipPath id={`plate-${id}`}>
-          <Rect width={100} height={100} rx={23} />
-        </ClipPath>
         <RadialGradient id={`fill-${id}`} {...lighting.body}>
           <Stop stopColor={paint.base} />
           <Stop offset=".48" stopColor={paint.base} />
@@ -162,82 +151,78 @@ export function LogoAvatar({
           <Rect x={25} y={74.5} width={50} height={20} rx={1} />
         </ClipPath>
       </Defs>
-      <G clipPath={`url(#plate-${id})`}>
-        <Rect width={100} height={100} rx={23} fill={tokens.sidebar} />
-        <AnimatedG animatedProps={body}>
-          <G transform="translate(0 9)">
-            <Path d={LOGO_BODY_PATH} fill={`url(#fill-${id})`} />
-            <Path d={LOGO_BODY_PATH} fill={`url(#shade-${id})`} />
-            <Path d={LOGO_BODY_PATH} fill={`url(#light-${id})`} />
-            <Path d={LOGO_SNOW_PATH} fill={eyeInk} />
-          </G>
-          <G>
-            <AnimatedRect animatedProps={leftEye} rx={left.width / 2} fill={eyeInk} />
-            <AnimatedRect animatedProps={rightEye} rx={right.width / 2} fill={eyeInk} />
-          </G>
-          {size >= 24 ? (
-            <G
-              fill="none"
-              stroke={tokens.foreground}
-              strokeWidth={stroke}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {activity === "reading" ? (
-                <>
-                  <Path
-                    d="M22 76Q36 71 50 77Q64 71 78 76V96Q64 91 50 97Q36 91 22 96Z"
-                    fill={tokens.background}
-                  />
-                  <Path d="M50 77V97" />
-                  <G clipPath={`url(#pages-${id})`}>
-                    <Path d="M28 84H43M57 84H72" opacity=".8" />
-                    {!compact ? <AnimatedPath animatedProps={page} d="M27 81.5H36" /> : null}
-                  </G>
-                </>
-              ) : null}
-              {activity === "writing" ? (
-                <>
-                  <Rect x={22} y={75} width={56} height={22} rx={3} fill={tokens.background} />
-                  <G clipPath={`url(#keys-${id})`}>
-                    <AnimatedPath animatedProps={keyLeft} d="M29 82H35M40 82H46" />
-                    <AnimatedPath animatedProps={keyRight} d="M54 82H60M65 82H71" />
-                    <Path d="M36 90H64" opacity=".85" />
-                  </G>
-                </>
-              ) : null}
-              {activity === "computer" ? (
-                <>
-                  <Rect x={22} y={72} width={56} height={24} rx={3} fill={tokens.background} />
-                  {!compact ? <Path d="M47 96V98M39 98H61" /> : null}
-                  <G clipPath={`url(#screen-${id})`}>
-                    {!compact ? (
-                      <AnimatedRect
-                        animatedProps={selection}
-                        x={53}
-                        y={80}
-                        width={16}
-                        height={11}
-                        rx={1}
+      <AnimatedG animatedProps={body}>
+        <G transform="translate(0 9)">
+          <Path d={LOGO_BODY_PATH} fill={`url(#fill-${id})`} />
+          <Path d={LOGO_BODY_PATH} fill={`url(#shade-${id})`} />
+          <Path d={LOGO_BODY_PATH} fill={`url(#light-${id})`} />
+          <Path d={LOGO_SNOW_PATH} fill={eyeInk} />
+        </G>
+        <G>
+          <AnimatedRect animatedProps={leftEye} rx={left.width / 2} fill={eyeInk} />
+          <AnimatedRect animatedProps={rightEye} rx={right.width / 2} fill={eyeInk} />
+        </G>
+        {size >= 24 ? (
+          <G
+            fill="none"
+            stroke={tokens.foreground}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {activity === "reading" ? (
+              <>
+                <Path
+                  d="M22 76Q36 71 50 77Q64 71 78 76V96Q64 91 50 97Q36 91 22 96Z"
+                  fill={tokens.background}
+                />
+                <Path d="M50 77V97" />
+                <G clipPath={`url(#pages-${id})`}>
+                  <Path d="M28 84H43M57 84H72" opacity=".8" />
+                  {!compact ? <AnimatedPath animatedProps={page} d="M27 81.5H36" /> : null}
+                </G>
+              </>
+            ) : null}
+            {activity === "writing" ? (
+              <>
+                <Rect x={22} y={75} width={56} height={22} rx={3} fill={tokens.background} />
+                <G clipPath={`url(#keys-${id})`}>
+                  <AnimatedPath animatedProps={keyLeft} d="M29 82H35M40 82H46" />
+                  <AnimatedPath animatedProps={keyRight} d="M54 82H60M65 82H71" />
+                  <Path d="M36 90H64" opacity=".85" />
+                </G>
+              </>
+            ) : null}
+            {activity === "computer" ? (
+              <>
+                <Rect x={22} y={72} width={56} height={24} rx={3} fill={tokens.background} />
+                {!compact ? <Path d="M47 96V98M39 98H61" /> : null}
+                <G clipPath={`url(#screen-${id})`}>
+                  {!compact ? (
+                    <AnimatedRect
+                      animatedProps={selection}
+                      x={53}
+                      y={80}
+                      width={16}
+                      height={11}
+                      rx={1}
+                    />
+                  ) : null}
+                  <G transform="translate(31 75)">
+                    <AnimatedG animatedProps={pointer}>
+                      <Path
+                        d="M0 0V14L3.5 10.5L8 16L11 14L7 8.5L14 7Z"
+                        fill={tokens.foreground}
+                        stroke="none"
                       />
-                    ) : null}
-                    <G transform="translate(31 75)">
-                      <AnimatedG animatedProps={pointer}>
-                        <Path
-                          d="M0 0V14L3.5 10.5L8 16L11 14L7 8.5L14 7Z"
-                          fill={tokens.foreground}
-                          stroke="none"
-                        />
-                      </AnimatedG>
-                    </G>
+                    </AnimatedG>
                   </G>
-                </>
-              ) : null}
-            </G>
-          ) : null}
-        </AnimatedG>
-      </G>
-      <Rect width={100} height={100} rx={23} fill="none" stroke={tokens.border} strokeWidth={1} />
+                </G>
+              </>
+            ) : null}
+          </G>
+        ) : null}
+      </AnimatedG>
     </Svg>
   );
   return pokeable ? (

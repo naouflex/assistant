@@ -5,7 +5,7 @@ The shared logo sources and export notes are in
 
 Mac packaging requires Xcode 26 or newer. Electron builder compiles `Atlas.icon`
 into `Assets.car` for Tahoe and generates `icon.icns` for older macOS versions.
-`icon-macos.png` is the matching development export with Dock margins.
+`icon-macos.png` is the matching development export of the mountain.
 
 `icon.png` and `icon.ico` are the Linux and Windows exports of the Atlas app icon.
 Refresh them with `pnpm --filter @atlas/ui-tokens export:brand`.
