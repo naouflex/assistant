@@ -84,4 +84,7 @@ it("lists the server, local models, computers, and phone", async () => {
   expect(host.querySelector('[data-testid="devices-phone"]')?.textContent).toContain(
     "Install the Atlas APK",
   );
+  expect(host.querySelector('[data-testid="devices-phone"]')?.textContent).toContain(
+    "Push needs Expo token",
+  );
 });

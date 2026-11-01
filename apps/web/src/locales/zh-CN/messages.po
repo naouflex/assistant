@@ -2068,6 +2068,7 @@ msgid "Could not load skill"
 msgstr "无法加载技能"
 
 #: src/pages/Artifacts.tsx
+#: src/pages/shell/artifact-panel.tsx
 msgid "Could not load this artifact."
 msgstr "无法加载此产物。"
 
@@ -3618,6 +3619,7 @@ msgstr "正在加载语音提供方…"
 #: src/pages/PeerMessagesOverlay.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 #: src/pages/RoutineRunHistory.tsx
+#: src/pages/shell/artifact-panel.tsx
 #: src/pages/shell/transcript.tsx
 msgid "Loading…"
 msgstr "加载中…"
@@ -4699,7 +4701,7 @@ msgstr "预览"
 msgid "Preview {0}"
 msgstr "预览 {0}"
 
-#: src/pages/Artifacts.tsx
+#: src/components/ArtifactPreview.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr "这种文件无法预览，请下载后查看。"
 
@@ -4748,6 +4750,10 @@ msgstr "提供方"
 #: src/components/CloudAgentCard.tsx
 msgid "Pull request"
 msgstr "拉取请求"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Push needs Expo token"
+msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Queued"

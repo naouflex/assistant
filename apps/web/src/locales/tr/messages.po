@@ -2068,6 +2068,7 @@ msgid "Could not load skill"
 msgstr "Beceri yüklenemedi"
 
 #: src/pages/Artifacts.tsx
+#: src/pages/shell/artifact-panel.tsx
 msgid "Could not load this artifact."
 msgstr ""
 
@@ -3618,6 +3619,7 @@ msgstr "Ses sağlayıcıları yükleniyor…"
 #: src/pages/PeerMessagesOverlay.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 #: src/pages/RoutineRunHistory.tsx
+#: src/pages/shell/artifact-panel.tsx
 #: src/pages/shell/transcript.tsx
 msgid "Loading…"
 msgstr "Yükleniyor…"
@@ -4699,7 +4701,7 @@ msgstr ""
 msgid "Preview {0}"
 msgstr "{0} önizle"
 
-#: src/pages/Artifacts.tsx
+#: src/components/ArtifactPreview.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr ""
 
@@ -4748,6 +4750,10 @@ msgstr "Sağlayıcılar"
 #: src/components/CloudAgentCard.tsx
 msgid "Pull request"
 msgstr "Çekme isteği"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Push needs Expo token"
+msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Queued"

@@ -49,3 +49,30 @@ Time to first response (llama-server MTP on 11436, monotonic clock): direct API 
 - 5f59e8a4 Testkit: models/localStatus added to the unauthenticated RPC sweep.
 - d17a689a Option cards: per-turn ask_user note when the user asks to choose/get options (EN + FR), compact guidance updated, eval cases ask-choice-three-way / ask-choice-open. Live on qwen3.5:4b-mtp: 2/6 -> 8/8 runs ended in ask_user.
 - Scoped down: worker re-scans on its own 60 s timer only; Ollama context shown only for loaded models; GPU flag is a static size heuristic; ask_user tool description unchanged (30.5 KB tool-definition budget).
+
+## Round 5 (2026-11-01)
+
+| Planned | Found | Shipped |
+|---|---|---|
+| Simple-question reliability (whoami → "I am Chief") | Compact role guidance already told the bot to give its name; small models still drifted. | aecc353f: compact whoami line names the profile explicitly (e.g. "I am Chief.") and forbids inventing another name. |
+| Bot emoji reactions | User reactions only; Round 1 deferred bot path. | aecc353f: `react_to_message` posts an emoji pill (defaults to the turn's source message); projection accepts bot emoji replies; eval `react-ack`. |
+| Phone push | Expo register/send path exists; local APK still needs Expo project + `EXPO_ACCESS_TOKEN`. | Devices → Phone notes "Push needs Expo token"; no silent product rewrite of Expo. |
+| Background jobs report when done | Progress + SubagentCard existed; parent could stay quiet. | aecc353f: helper and long-work guidance require a one-sentence done outcome in the normal reply. |
+| Pages / reports beside chat | Artifacts at `/app/artifacts`; charts inline. | b2e34b62: Preview/Expand opens artifact or chart in the chat side panel. |
+
+Also: Settings → Devices (7804de4b) for server, model hosts, computers, phone.
+
+## Round 6 (2026-11-01)
+
+| Planned | Found | Shipped |
+|---|---|---|
+| Voice notes in/out | Web HoldToTalk + call dictation/TTS; mobile composer had no mic. | cf109490: mobile composer hold-to-talk mic fills the draft (hides when dictation unavailable). |
+| Meeting notes | No dedicated module. | Compact remember guidance: dated `Meeting:` notes (who, decisions, next steps) plus optional file write-up. |
+| Signed-in browser | Persistent per-bot Chrome profiles already; prompt under-said it. | Page-work clause: prefer the bot's persistent signed-in profile; takeover for login/2FA/CAPTCHA. |
+| In-app connector setup | `connect_app` + PluginsOverlay + AppConnectCard already. | Eval `connect-app-gmail` (connect_app or atlas skill). |
+| Bot-to-bot messaging | `message_bot` + peer UI already. | Eval `message-bot-teammate`. |
+
+### Later
+1. Windows Atlas Desktop pack (host computer) — needs approval before Windows host commands.
+2. Full push on the Pixel APK (`GOOGLE_SERVICES_JSON` + `EXPO_ACCESS_TOKEN`).
+3. Audio file voice notes (not only dictation-to-text).

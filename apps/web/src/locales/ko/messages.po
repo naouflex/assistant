@@ -2068,6 +2068,7 @@ msgid "Could not load skill"
 msgstr "스킬을 불러오지 못했습니다"
 
 #: src/pages/Artifacts.tsx
+#: src/pages/shell/artifact-panel.tsx
 msgid "Could not load this artifact."
 msgstr ""
 
@@ -3618,6 +3619,7 @@ msgstr "음성 서비스를 불러오는 중…"
 #: src/pages/PeerMessagesOverlay.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 #: src/pages/RoutineRunHistory.tsx
+#: src/pages/shell/artifact-panel.tsx
 #: src/pages/shell/transcript.tsx
 msgid "Loading…"
 msgstr "불러오는 중…"
@@ -4699,7 +4701,7 @@ msgstr ""
 msgid "Preview {0}"
 msgstr "{0} 미리보기"
 
-#: src/pages/Artifacts.tsx
+#: src/components/ArtifactPreview.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr ""
 
@@ -4748,6 +4750,10 @@ msgstr "서비스"
 #: src/components/CloudAgentCard.tsx
 msgid "Pull request"
 msgstr "풀 리퀘스트"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Push needs Expo token"
+msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Queued"

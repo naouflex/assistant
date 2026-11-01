@@ -159,7 +159,14 @@ export function DevicesSettingsPanel() {
 
       {!desktop ? (
         <SettingsGroup title={<Trans>Phone</Trans>} data-testid="devices-phone">
-          <SettingsRow label={<Trans>Install the Atlas APK and sign in</Trans>} />
+          <SettingsRow
+            label={<Trans>Install the Atlas APK and sign in</Trans>}
+            control={
+              <span className="text-[12.5px] text-muted-foreground">
+                <Trans>Push needs Expo token</Trans>
+              </span>
+            }
+          />
         </SettingsGroup>
       ) : null}
     </div>
