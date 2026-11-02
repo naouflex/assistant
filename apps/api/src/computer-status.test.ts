@@ -14,6 +14,17 @@ describe("toComputerStatus", () => {
       }),
     ).toMatchObject({ state: "error", screenAvailable: false });
   });
+  it("reports automatic recovery only while the computer is broken", () => {
+    const base = { kind: "novita", scope: "team", controlHolder: "none", homeRevision: "saved" };
+    const status = (state: string, extra: object) =>
+      toComputerStatus("bot", { ...base, state, ...extra }).autoRecovery;
+    expect(status("error", { healthRecoveryAttempts: 1 })).toBe("trying");
+    expect(status("error", { healthRecoveryAttempts: 3, healthAlertedAt: new Date() })).toBe(
+      "gave_up",
+    );
+    expect(status("error", {})).toBeNull();
+    expect(status("running", { healthRecoveryAttempts: 2 })).toBeNull();
+  });
   it("only marks control that is bound to a waiting run as a requested takeover", () => {
     const computer = {
       kind: "fake",

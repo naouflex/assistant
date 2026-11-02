@@ -1256,6 +1256,8 @@ export const ComputerStatusSchema = z.object({
   busyBotName: z.string().nullable(),
   canUpdate: z.boolean(),
   terminalAvailable: z.boolean(),
+  /** A broken computer Atlas is restarting by itself, or gave up on. Older servers omit it. */
+  autoRecovery: z.enum(["trying", "gave_up"]).nullable().optional(),
 });
 export type ComputerStatus = z.infer<typeof ComputerStatusSchema>;
 
