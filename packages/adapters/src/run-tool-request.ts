@@ -21,6 +21,7 @@ import { sanitizeConnectorError } from "./connector-safety.js";
 import { isFleetApprovalTool, prepareFleetRequest } from "./fleet-tools.js";
 import { assertConnectorToolArgs, CATALOG_EXECUTE } from "./lazy-tool-catalog.js";
 import { paidRequestEffect, restorePaidRequest } from "./paid-request.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import type { RunContext } from "./run-context.js";
 import { isRunTainted, neverAsks } from "./run-context.js";
 import {
@@ -316,6 +317,12 @@ export async function prepareToolRequest(
       return { error: "The user's computer is not available in this run." };
     if (isSubagentToolExecution(executionId))
       return { error: "Helpers cannot use the user's computer." };
+  }
+  if (PHONE_TOOLS.has(name)) {
+    if (!ctx.source.userComputerOwner || !deps.userDevices)
+      return { error: "The user's phone is not available in this run." };
+    if (isSubagentToolExecution(executionId))
+      return { error: "Helpers cannot use the user's phone." };
   }
   const fleetWrite =
     FLEET_WRITE_TOOL_NAMES_SET.has(name) ||

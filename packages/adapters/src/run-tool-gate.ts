@@ -53,6 +53,7 @@ import { ATLAS_DOCS_URLS } from "./builtin-skills.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import { findConnectedModelCredential } from "./model-selection.js";
 import { paidRequestEffect } from "./paid-request.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import { autoReviewCheckerProvider } from "./run-auto-review.js";
 import type { RunContext, RunTrust } from "./run-context.js";
 import {
@@ -75,6 +76,7 @@ import { resolveCompletedSecretLeftover } from "./run-secret.js";
 import type { ToolRequest } from "./run-tool-request.js";
 import { BUILTIN_AGENT_TOOL_NAMES, READ_ONLY_AGENT_TOOLS } from "./run-tool-selection.js";
 import { callMediaTool } from "./run-tools-files.js";
+import { phoneGate } from "./run-tools-phone.js";
 import { USER_COMPUTER_TOOLS, userComputerGate } from "./run-tools-user-computer.js";
 import { connectorTrustKeys } from "./run-trust.js";
 import { watchFromTool } from "./schedule-tools.js";
@@ -318,20 +320,22 @@ export async function gateToolCall(
         : false));
   const plan = USER_COMPUTER_TOOLS.has(name)
     ? await userComputerGate(ctx, approvalResolved.decision === "deny", name, args)
-    : planActionGate({
-        resolved: approvalResolved,
-        mode,
-        mandatory: requiresMandatoryApproval,
-        alwaysAsk: Boolean(riskyShell) || sendsMessage,
-        steerable:
-          guardedInNeverAsk && mode === "never"
-            ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
-            : undefined,
-        consequential: requiresApprovalByDefault,
-        reviewOnly: connectorReadGated,
-        checkerConfigured,
-        newDestination: siteGate === "new",
-      });
+    : PHONE_TOOLS.has(name)
+      ? await phoneGate(ctx, approvalResolved.decision === "deny", name)
+      : planActionGate({
+          resolved: approvalResolved,
+          mode,
+          mandatory: requiresMandatoryApproval,
+          alwaysAsk: Boolean(riskyShell) || sendsMessage,
+          steerable:
+            guardedInNeverAsk && mode === "never"
+              ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
+              : undefined,
+          consequential: requiresApprovalByDefault,
+          reviewOnly: connectorReadGated,
+          checkerConfigured,
+          newDestination: siteGate === "new",
+        });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {
       reason: approvalResolved.decision === "deny" ? "rule" : "never_asks",

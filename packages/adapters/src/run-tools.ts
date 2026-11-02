@@ -1,6 +1,7 @@
 import type { AgentToolExecutionObserver } from "@atlas/adapter-kit";
 import { toolResultTaintsRun } from "@atlas/core";
 import { IMAGE_RETURNING_COMPUTER_TOOLS, MODEL_CANNOT_SEE_MESSAGE } from "./model-vision.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolHandler } from "./run-tool-gate.js";
 import { auditToolCall, gateToolCall } from "./run-tool-gate.js";
@@ -12,6 +13,7 @@ import { fleetTools } from "./run-tools-fleet.js";
 import { cloudAgentTool, connectorTool, integrationTools } from "./run-tools-integrations.js";
 import { memoryTools } from "./run-tools-memory.js";
 import { messagingTools } from "./run-tools-messaging.js";
+import { phoneTool } from "./run-tools-phone.js";
 import { preferenceTools } from "./run-tools-preferences.js";
 import { purchaseTools } from "./run-tools-purchases.js";
 import { secretTools } from "./run-tools-secrets.js";
@@ -38,6 +40,7 @@ const TOOL_HANDLERS = new Map<string, ToolHandler>([
   [USER_COMPUTER_SHELL_TOOL, userComputerShell],
   [USER_COMPUTER_OBSERVE_TOOL, userComputerObserve],
   [USER_COMPUTER_ACT_TOOL, userComputerAct],
+  ...[...PHONE_TOOLS].map((name) => [name, phoneTool] as const),
   ...Object.entries(purchaseTools),
   ...Object.entries(preferenceTools),
   ...[...PAGE_BROWSER_TOOL_NAMES].map((name) => [name, pageBrowserTool] as const),

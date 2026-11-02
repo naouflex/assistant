@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { HostComputerRequest } from "./host-computer-protocol.js";
 import { hostComputerRequest } from "./host-computer-protocol.js";
+import type { UserDeviceKind } from "./phone-protocol.js";
 
 export const userDeviceServerMessage = z.discriminatedUnion("type", [
   z.object({
@@ -27,13 +28,15 @@ export interface UserDevice {
 
 /** How runs reach the requesting user's connected device, from any API or worker process. */
 export interface UserDeviceGateway {
-  connected(userId: string): Promise<UserDevice | null>;
-  /** When the oldest device still paired was paired, connected or not; null when none is. */
-  pairedSince(userId: string): Promise<Date | null>;
+  /** The newest connected device of that kind; computers unless `kind` is "phone". */
+  connected(userId: string, kind?: UserDeviceKind): Promise<UserDevice | null>;
+  /** When the oldest device of that kind still paired was paired, connected or not; null when none is. */
+  pairedSince(userId: string, kind?: UserDeviceKind): Promise<Date | null>;
   /**
    * Streams HostComputerFrame values for one request. Throws when the device is offline,
    * revoked, or disconnects mid-request; a command is never retried after a lost response.
    * Pass `deviceId` to keep every request of one operation on the same computer.
+   * A `phone` request only reaches a phone, and every other request only a computer.
    */
   request<T>(
     userId: string,

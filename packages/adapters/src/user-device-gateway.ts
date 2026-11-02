@@ -15,6 +15,8 @@ import {
   hostComputerDeadlineMs,
   hostComputerRequest,
 } from "./host-computer-protocol.js";
+import type { UserDeviceKind } from "./phone-protocol.js";
+import { PHONE_PLATFORM } from "./phone-protocol.js";
 import type { UserDevice, UserDeviceGateway } from "./user-device-protocol.js";
 import { userDeviceClientMessage } from "./user-device-protocol.js";
 
@@ -420,8 +422,8 @@ export class UserDevices implements UserDeviceGateway {
     this.fetch = deps.fetch ?? fetch;
   }
 
-  async connected(userId: string): Promise<UserDevice | null> {
-    const route = await this.route(userId);
+  async connected(userId: string, kind: UserDeviceKind = "computer"): Promise<UserDevice | null> {
+    const route = await this.route(userId, undefined, kind);
     return route && { deviceId: route.deviceId, name: route.name, platform: route.platform };
   }
 
@@ -448,10 +450,10 @@ export class UserDevices implements UserDeviceGateway {
     }));
   }
 
-  async pairedSince(userId: string): Promise<Date | null> {
+  async pairedSince(userId: string, kind: UserDeviceKind = "computer"): Promise<Date | null> {
     const device = await runAsSystem("find a user's paired device", () =>
       this.deps.prisma.userDevice.findFirst({
-        where: { userId, revokedAt: null },
+        where: { userId, revokedAt: null, platform: platformOf(kind) },
         orderBy: { createdAt: "asc" },
         select: { createdAt: true },
       }),
@@ -468,7 +470,8 @@ export class UserDevices implements UserDeviceGateway {
     const body = JSON.stringify(request);
     if (Buffer.byteLength(body) > HOST_COMPUTER_MAX_BYTES)
       throw new Error("Request to your computer is too large");
-    const route = await this.route(userId, deviceId);
+    const kind = request.method === "phone" ? "phone" : "computer";
+    const route = await this.route(userId, deviceId, kind);
     if (!route) throw new UserDeviceOfflineError();
     const deadline = AbortSignal.any([
       signal,
@@ -502,12 +505,12 @@ export class UserDevices implements UserDeviceGateway {
       .catch((error) => getLogger().warn("user device disconnect forward failed", { error }));
   }
 
-  private async route(userId: string, deviceId?: string) {
+  private async route(userId: string, deviceId: string | undefined, kind: UserDeviceKind) {
     const connection = await runAsSystem("find a user's connected device", () =>
       this.deps.prisma.userDeviceConnection.findFirst({
         where: {
           heartbeatAt: { gt: new Date(Date.now() - STALE_AFTER_MS) },
-          device: { userId, revokedAt: null },
+          device: { userId, revokedAt: null, platform: platformOf(kind) },
           ...(deviceId ? { deviceId } : {}),
         },
         orderBy: { connectedAt: "desc" },
@@ -670,4 +673,9 @@ class FrameQueue implements AsyncIterable<unknown> {
       this.wake = undefined;
     }
   }
+}
+
+/** Phones are android devices; computers are every other platform. */
+function platformOf(kind: UserDeviceKind) {
+  return kind === "phone" ? PHONE_PLATFORM : { not: PHONE_PLATFORM };
 }
