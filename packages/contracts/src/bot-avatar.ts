@@ -13,7 +13,7 @@ export function resolveBotAvatarSet(value?: string | null): BotAvatarSet {
 }
 
 /** Matches the shipped mascot shapes in `@atlas/core`. */
-export const BOT_AVATAR_SHAPE_COUNT = 12;
+export const BOT_AVATAR_SHAPE_COUNT = 22;
 
 /** A generated shape is named by a short word, stored with the color. */
 export const AVATAR_WORD_MAX_LENGTH = 24;

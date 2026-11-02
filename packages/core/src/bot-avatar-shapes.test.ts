@@ -11,8 +11,10 @@ describe("shipped bot avatar shapes", () => {
     expect(SHIPPED_BOT_AVATAR_SHAPE_KEYS).toHaveLength(BOT_AVATAR_SHAPE_COUNT);
     expect(shippedBotAvatarShapePath(3)).toBe(SHIPPED_BOT_AVATAR_SHAPES.tablet);
     expect(shippedBotAvatarShapePath(3)).not.toBe(shippedBotAvatarShapePath(0));
-    expect(shippedBotAvatarShapePath(12)).toBe(shippedBotAvatarShapePath(0));
+    expect(shippedBotAvatarShapePath(12)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sun);
+    expect(shippedBotAvatarShapePath(22)).toBe(shippedBotAvatarShapePath(0));
     expect(shippedBotAvatarShapePath(11)).toBe(SHIPPED_BOT_AVATAR_SHAPES.gem);
+    expect(shippedBotAvatarShapePath(21)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sparkle);
   });
 
   it("emits path geometry only", () => {
