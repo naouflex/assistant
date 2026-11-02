@@ -74,16 +74,43 @@ await png(mark, "packages/ui-tokens/assets/Atlas.icon/Assets/atlas-globe.png", 1
 // macOS pre-Tahoe development icon. The mountain already sits inside the canvas.
 await png(mark, "apps/desktop/assets/icon-macos.png", 1024);
 
-// Expo: the legacy icon and Android foreground are the mountain on transparent.
-// The adaptive background stays clear so the launcher does not paint a plate behind it.
-await png(mark, "apps/mobile/assets/icon.png", 1024);
+// Expo / Android. Launchers paint a clear adaptive background black (Pixel does), so the ink
+// mountain gets a cream rim that keeps it visible on black and on light or dark wallpapers
+// without a solid plate. Adaptive layers are 108dp and the mask can crop anything outside the
+// central 66dp circle, so launcher art is scaled to sit inside that safe zone.
+const MOBILE_RIM = "#F7F4EF";
+const SAFE_ZONE_SCALE = 0.5;
+const mountainPath = /<path fill="#141210" d="([^"]+)"/.exec(appIcon)?.[1];
+const markArt = /<g transform="scale\(2\)">([\s\S]*?)<\/g>/.exec(appIcon)?.[1];
+const monochromeArt = /<g transform="scale\(2\)">([\s\S]*?)<\/g>/.exec(monochrome)?.[1];
+if (!mountainPath || !markArt || !monochromeArt) throw new Error("Brand SVG layout changed.");
+
+/** The 512-unit mountain artwork centred on a 1024 canvas at `scale` of the canvas width. */
+function mobileCanvas(scale: number, body: string, defs = "") {
+  const transform = `translate(512 512) scale(${2 * scale}) translate(-256 -256)`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">${defs}<g transform="${transform}">${body}</g></svg>`;
+}
+/** Ink mountain with a cream rim, on transparent. */
+const rimmedMark = (scale: number) =>
+  mobileCanvas(
+    scale,
+    `<path d="${mountainPath}" fill="${MOBILE_RIM}" stroke="${MOBILE_RIM}" stroke-width="44" stroke-linejoin="round"/>${markArt}`,
+  );
+/** Single-colour white silhouette with the snow and eyes cut out (themed and notification icons). */
+function silhouetteMark(scale: number) {
+  const transform = `translate(512 512) scale(${2 * scale}) translate(-256 -256)`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><mask id="atlas-knockout"><g transform="${transform}">${monochromeArt}</g></mask><rect width="1024" height="1024" fill="#FFFFFF" mask="url(#atlas-knockout)"/></svg>`;
+}
+
+// The legacy icon (pre-Android 8 and some third-party launchers) is the rimmed mountain on clear.
+await png(rimmedMark(0.9), "apps/mobile/assets/icon.png", 1024);
 await sharp({
   create: { width: 1024, height: 1024, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
 })
   .png()
   .toFile(path("apps/mobile/assets/icon-background.png"));
-await png(mark, "apps/mobile/assets/adaptive-icon.png", 1024);
-await png(monochrome, "apps/mobile/assets/monochrome-icon.png", 1024);
+await png(rimmedMark(SAFE_ZONE_SCALE), "apps/mobile/assets/adaptive-icon.png", 1024);
+await png(silhouetteMark(SAFE_ZONE_SCALE), "apps/mobile/assets/monochrome-icon.png", 1024);
 const splashPad = { top: 202, bottom: 202, left: 202, right: 202, background: "#00000000" };
 await render(mark, 620).extend(splashPad).png().toFile(path("apps/mobile/assets/splash-icon.png"));
 await render(monochrome, 620)
@@ -91,12 +118,9 @@ await render(monochrome, 620)
   .png()
   .toFile(path("apps/mobile/assets/splash-icon-dark.png"));
 
-// Android notification icons must be white alpha silhouettes.
-const silhouette = await sharp(path("apps/mobile/assets/monochrome-icon.png"))
-  .resize(72, 72)
-  .extractChannel("alpha")
-  .toBuffer();
-await sharp({ create: { width: 72, height: 72, channels: 3, background: "white" } })
+// Android notification icons must be white alpha silhouettes with a little padding.
+const silhouette = await render(silhouetteMark(0.84), 96).extractChannel("alpha").toBuffer();
+await sharp({ create: { width: 96, height: 96, channels: 3, background: "white" } })
   .joinChannel(silhouette)
   .png()
   .toFile(path("apps/mobile/assets/notification-icon.png"));

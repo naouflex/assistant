@@ -34,8 +34,13 @@ rewrites every raster at its existing path:
 - `Atlas.icon/Assets/atlas-globe.png`, the single layer of the Icon Composer
   source used for macOS and iOS. `icon.json` leaves the fill clear.
 
-Android supplies its own mask; never bake Mac corners, a rim, or an outer shadow
-into the adaptive layers.
+Android supplies its own mask; never bake Mac corners or an outer shadow into the
+adaptive layers. The adaptive background stays clear, but Pixel and most launchers
+paint a clear adaptive background black, so the Android foreground and legacy
+`icon.png` give the ink mountain a cream (`#F7F4EF`) rim that keeps it visible on
+black and on light or dark wallpapers. Android launcher art (`adaptive-icon.png`,
+`monochrome-icon.png`) is scaled to fit the central 66dp safe zone of the 108dp
+layer so the mask never crops the peak or the base.
 
 After exporting, run `pnpm exec tsx apps/www/scripts/render-og.mjs` to refresh the
 per-page social cards; set `CHROME_PATH` to a headless Chrome executable when it
