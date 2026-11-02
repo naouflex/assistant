@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { MODEL_CANNOT_SEE_MESSAGE } from "./model-vision.js";
+import type { PhoneScreen } from "./phone-protocol.js";
 import { phoneAction, userDeviceKind } from "./phone-protocol.js";
 import type { RunContext } from "./run-context.js";
 import { phoneActionFor, phoneScreenResult, phoneShellResult } from "./run-tools-phone.js";
 
 const ctx = (acceptsImages: boolean) =>
   ({ computer: { acceptsImages }, secrets: ["sk-test-secret-value"] }) as unknown as RunContext;
-const screen = {
+const screen: PhoneScreen = {
   package: "com.android.settings",
   width: 576,
   height: 1280,
