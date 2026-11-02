@@ -98,7 +98,8 @@
         "NSLocalNetworkUsageDescription": "Atlas connects to a self-hosted Atlas server on your local network.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {

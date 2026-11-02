@@ -208,44 +208,6 @@ export function organicAvatarPath(seed: number, phaseOffset = 0): string {
   return closedSmoothPath(points);
 }
 
-/** A word is drawn as its own body. The same word always draws the same outline. */
-export function avatarWordShapePath(word: string, phaseOffset = 0): string {
-  const seed = avatarIdentitySeed(word);
-  const unit = (salt: number) => {
-    let mixed = Math.imul(seed ^ Math.imul(salt, 0x9e3779b9), 0x7feb352d);
-    mixed = Math.imul(mixed ^ (mixed >>> 15), 0x846ca68b);
-    return ((mixed ^ (mixed >>> 16)) >>> 0) / 4294967296;
-  };
-  const count = 16;
-  const base = 41 + unit(1) * 4;
-  const width = (0.9 + unit(2) * 0.2) * (1 + Math.sin(phaseOffset) * 0.03);
-  const height = (0.9 + unit(3) * 0.2) * (1 + Math.cos(phaseOffset) * 0.02);
-  const turn = unit(4) * Math.PI * 2;
-  const harmonics = [1, 2, 3, 4, 5].map((band, index) => ({
-    frequency: band + (unit(10 + index) > 0.5 ? 1 : 0),
-    amplitude: (index === 0 ? 5 : 2) + unit(20 + index) * 3,
-    phase: unit(30 + index) * Math.PI * 2,
-  }));
-  let points = Array.from({ length: count }, (_, index) => {
-    const angle = (index / count) * Math.PI * 2;
-    let radius = base;
-    for (const harmonic of harmonics) {
-      radius += harmonic.amplitude * Math.sin(harmonic.frequency * angle + harmonic.phase);
-    }
-    radius = Math.min(46, Math.max(36, radius));
-    const theta = angle + turn;
-    return { x: Math.cos(theta) * radius * width, y: Math.sin(theta) * radius * height };
-  });
-  points = points.flatMap((point, index) => {
-    const next = points[(index + 1) % points.length]!;
-    return [
-      { x: point.x * 0.75 + next.x * 0.25, y: point.y * 0.75 + next.y * 0.25 },
-      { x: point.x * 0.25 + next.x * 0.75, y: point.y * 0.25 + next.y * 0.75 },
-    ];
-  });
-  return closedSmoothPath(points);
-}
-
 function closedSmoothPath(points: readonly { x: number; y: number }[]): string {
   const pointCount = points.length;
   const round = (value: number) => Math.round(value * 100) / 100;

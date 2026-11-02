@@ -20,6 +20,7 @@ import {
 import type { AudioRecorder } from "expo-audio";
 import { File } from "expo-file-system";
 import { useSyncExternalStore } from "react";
+import { AppState } from "react-native";
 import type { ApiRequestContext, MobileSnapshot } from "./api";
 import {
   applyMobileThreadEvent,
@@ -362,7 +363,10 @@ async function openMic(): Promise<void> {
             micOpen = false;
             interim.clear();
             set({ heard: "" });
-            if (reason === "failed") onDevice = false;
+            // A drop while the app is away is the route changing, not a recognizer
+            // that can never work. Leaving on-device keeps the call able to hear
+            // when it comes back, instead of a recorder that stays silent.
+            if (reason === "failed" && AppState.currentState === "active") onDevice = false;
             // Recording must wait for playback; recognition can still hear a barge-in.
             if (state?.phase !== "speaking" || onDevice !== false) void openMic();
           },

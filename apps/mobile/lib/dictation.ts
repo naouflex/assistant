@@ -5,7 +5,7 @@
  */
 
 import { supportedSpeechTag } from "@atlas/core";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { reportMobileError } from "./monitoring";
 
 /** Quiet gap that ends an utterance. A natural breath is well under it, a finished turn well over. */
@@ -14,16 +14,31 @@ const RESTART_MIN_MS = 250;
 const RESTART_MAX_MS = 2_000;
 /** Restarts in a row that hear nothing: the recognizer is wedged, stop churning the mic. */
 const MAX_DEAD_RESTARTS = 5;
-/** Errors that mean this turn cannot recover; the rest are routine and `end` restarts. */
+/**
+ * Errors that mean this turn cannot recover. A dropped capture is not one of them:
+ * taking control of the computer, or leaving the app, changes the audio route and the
+ * microphone comes back.
+ */
 const FATAL_ERRORS = new Set([
   "not-allowed",
   "service-not-allowed",
-  "audio-capture",
   "language-not-supported",
   "bad-grammar",
 ]);
 /** Recoverable errors that indicate failure if the last empty attempt still has one. */
 const TRANSIENT_ERRORS = new Set(["client", "busy", "network", "unknown", "too-many-requests"]);
+/** A capture error is the same kind of empty failure once the app is on screen again. */
+const CAPTURE_ERROR = "audio-capture";
+
+/**
+ * iOS session for a call. `voiceChat` keeps the route across leaving the app, and
+ * mixing lets the computer screen play audio without taking the microphone.
+ */
+const IOS_CALL_CATEGORY = {
+  category: "playAndRecord",
+  categoryOptions: ["mixWithOthers", "defaultToSpeaker", "allowBluetooth"],
+  mode: "voiceChat",
+} as const;
 
 export type DictationGiveUp = "idle" | "failed";
 
@@ -31,9 +46,16 @@ type ResultEvent = { isFinal: boolean; results: { transcript: string }[] };
 type ErrorEvent = { error?: string };
 type DictationEventMap = { result: ResultEvent; end: null; error: ErrorEvent };
 
+export type RecognitionStartOptions = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  iosCategory?: typeof IOS_CALL_CATEGORY;
+};
+
 /** The slice of `expo-speech-recognition` this module needs, so tests can drive the events. */
 export type SpeechRecognizer = {
-  start(options: { lang: string; interimResults: boolean; continuous: boolean }): void;
+  start(options: RecognitionStartOptions): void;
   stop(): void;
   abort(): void;
   isRecognitionAvailable(): boolean;
@@ -60,8 +82,12 @@ type Session = {
   restart?: ReturnType<typeof setTimeout>;
   backoff: number;
   deadRestarts: number;
+  /** The native recognizer was started and has not ended. */
+  running: boolean;
   /** Reset on each native start: only the last attempt classifies empty exhaustion. */
   transientError: boolean;
+  /** The last attempt ended because the microphone was taken, not because it is denied. */
+  captureError: boolean;
 };
 
 let injected: SpeechRecognizer | null = null;
@@ -158,7 +184,9 @@ export async function listen(opts: {
     heard: "",
     backoff: RESTART_MIN_MS,
     deadRestarts: 0,
+    running: false,
     transientError: false,
+    captureError: false,
   };
   active = session;
   opts.signal?.addEventListener(
@@ -172,6 +200,7 @@ export async function listen(opts: {
     recognizer.addListener("result", (event) => onResult(session, event)),
     recognizer.addListener("end", () => onEnd(session)),
     recognizer.addListener("error", (event) => onError(session, event)),
+    AppState.addEventListener("change", (state) => onAppState(session, state)),
   ];
   try {
     start(session);
@@ -180,10 +209,31 @@ export async function listen(opts: {
   }
 }
 
+function recognitionOptions(lang: string): RecognitionStartOptions {
+  return {
+    lang,
+    interimResults: true,
+    continuous: true,
+    ...(Platform.OS === "ios" ? { iosCategory: IOS_CALL_CATEGORY } : {}),
+  };
+}
+
+/** On screen and able to hold the microphone. The switcher and a left app both drop it. */
+function appIsActive(): boolean {
+  return AppState.currentState === "active";
+}
+
 function start(session: Session): void {
   if (active !== session) return;
   session.transientError = false;
-  session.recognizer.start({ lang: session.lang, interimResults: true, continuous: true });
+  session.captureError = false;
+  session.running = true;
+  try {
+    session.recognizer.start(recognitionOptions(session.lang));
+  } catch (error) {
+    session.running = false;
+    throw error;
+  }
 }
 
 function onResult(session: Session, event: ResultEvent): void {
@@ -212,14 +262,33 @@ function onEnd(session: Session): void {
   if (active !== session) return;
   // iOS ends a session on its own — on a pause, an interruption, or its own cap — and that
   // says nothing about whether the caller finished. Pick the microphone straight back up.
+  session.running = false;
   session.carried = join(session.carried, session.heard);
   session.heard = "";
-  session.deadRestarts += 1;
-  if (session.deadRestarts > MAX_DEAD_RESTARTS) {
-    const failed = session.transientError && !session.carried;
-    giveUp(session, failed ? "failed" : "idle", failed ? "transient-restarts" : "empty-restarts");
+  // Leaving the app, or another surface taking the audio route, ends the recognizer.
+  // That is not a dead microphone: keep the turn and try again, including while away,
+  // so a call can still hear after the assistant takes control and the app is left.
+  if (!appIsActive()) {
+    session.deadRestarts = 0;
+    session.transientError = false;
+    session.captureError = false;
+    scheduleRestart(session);
     return;
   }
+  session.deadRestarts += 1;
+  if (session.deadRestarts > MAX_DEAD_RESTARTS) {
+    const failed = (session.transientError || session.captureError) && !session.carried;
+    giveUp(
+      session,
+      failed ? "failed" : "idle",
+      failed ? (session.transientError ? "transient-restarts" : CAPTURE_ERROR) : "empty-restarts",
+    );
+    return;
+  }
+  scheduleRestart(session);
+}
+
+function scheduleRestart(session: Session): void {
   clearTimeout(session.restart);
   const delay = session.backoff;
   session.backoff = Math.min(RESTART_MAX_MS, session.backoff * 2);
@@ -228,16 +297,43 @@ function onEnd(session: Session): void {
     try {
       start(session);
     } catch {
+      // Starting while the app is away throws until the session can be active again.
+      if (!appIsActive()) {
+        session.deadRestarts = 0;
+        scheduleRestart(session);
+        return;
+      }
       giveUp(session, "failed", "start-failed");
     }
   }, delay);
 }
 
+function onAppState(session: Session, state: string): void {
+  if (active !== session || state !== "active" || session.running) return;
+  session.deadRestarts = 0;
+  session.backoff = RESTART_MIN_MS;
+  session.transientError = false;
+  session.captureError = false;
+  clearTimeout(session.restart);
+  session.restart = undefined;
+  try {
+    start(session);
+  } catch {
+    giveUp(session, "failed", "start-failed");
+  }
+}
+
 function onError(session: Session, event: ErrorEvent): void {
   if (active !== session) return;
   if (!event?.error) return;
+  if (FATAL_ERRORS.has(event.error)) {
+    giveUp(session, "failed", event.error);
+    return;
+  }
+  // A capture or client error while away is the OS taking the route, not a broken mic.
+  if (!appIsActive()) return;
+  if (event.error === CAPTURE_ERROR) session.captureError = true;
   if (TRANSIENT_ERRORS.has(event.error)) session.transientError = true;
-  if (FATAL_ERRORS.has(event.error)) giveUp(session, "failed", event.error);
 }
 
 function giveUp(session: Session, reason: DictationGiveUp, code: string): void {

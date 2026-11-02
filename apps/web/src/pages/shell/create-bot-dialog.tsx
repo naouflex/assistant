@@ -65,6 +65,7 @@ export function CreateBotDialog({
   }));
   const [avatarSet, setAvatarSet] = useState<BotAvatarSet>(DEFAULT_NEW_BOT_AVATAR_SET);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingLook, setPendingLook] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const trimmed = name.trim();
 
@@ -72,7 +73,9 @@ export function CreateBotDialog({
     if (!trimmed || submitting) return;
     setError(null);
     setSubmitting(true);
-    const organic = avatarSet === "organic" && parseBotAvatar(look.value).shapeIndex === undefined;
+    const parsedLook = parseBotAvatar(look.value);
+    const organic =
+      avatarSet === "organic" && parsedLook.shapeIndex === undefined && !parsedLook.word;
     try {
       await onCreate({
         name: trimmed,
@@ -115,7 +118,7 @@ export function CreateBotDialog({
           </DialogHeader>
           <div className="flex justify-center py-2">
             <BotAvatar
-              color={look.value}
+              color={pendingLook ?? look.value}
               identity={avatarSet === "atlas" ? previewId : look.identity}
               size={96}
               avatarSet={avatarSet}
@@ -140,6 +143,7 @@ export function CreateBotDialog({
             identity={avatarSet === "atlas" ? previewId : look.identity}
             organicIdentities={ORGANIC_IDENTITIES}
             avatarSet={avatarSet}
+            onPreviewChange={setPendingLook}
             onAvatarSetChange={(set, value) => {
               setAvatarSet(set);
               setLook((current) => ({ ...current, value }));

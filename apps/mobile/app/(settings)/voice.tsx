@@ -2,7 +2,10 @@ import type { VoiceCatalogEntry, VoiceCredential, VoiceInfo, VoiceStatus } from 
 import {
   DEFAULT_COMPATIBLE_STT_MODEL,
   DEFAULT_COMPATIBLE_TTS_MODEL,
+  DEFAULT_OPENROUTER_STT_MODEL,
+  DEFAULT_OPENROUTER_TTS_MODEL,
   OPENAI_COMPATIBLE_PROVIDER_ID,
+  OPENROUTER_VOICE_PROVIDER_ID,
 } from "@atlas/contracts";
 import { fetchFresh, writeSaved } from "@atlas/core/query";
 import { isCancelledError } from "@tanstack/react-query";
@@ -329,8 +332,16 @@ export default function VoiceSettings() {
     credentials.some((entry) => entry.provider === OPENAI_COMPATIBLE_PROVIDER_ID);
 
   const selfHosted = selected?.id === OPENAI_COMPATIBLE_PROVIDER_ID;
+  const openRouter = selected?.id === OPENROUTER_VOICE_PROVIDER_ID;
+  const choosesModels = selfHosted || openRouter;
   const keyless = Boolean(selected?.keyless);
-  const canConnect = keyless || (selfHosted ? Boolean(baseUrl.trim()) : apiKey.trim().length >= 8);
+  const canConnect =
+    keyless ||
+    (selfHosted
+      ? Boolean(baseUrl.trim())
+      : openRouter
+        ? Boolean(credential) || apiKey.trim().length >= 8
+        : apiKey.trim().length >= 8);
 
   async function connect() {
     if (!selected || !canConnect) return;
@@ -348,6 +359,12 @@ export default function VoiceSettings() {
         ...(selfHosted
           ? {
               baseUrl: baseUrl.trim(),
+              ttsModel: ttsModel.trim() || undefined,
+              sttModel: sttModel.trim() || undefined,
+            }
+          : {}),
+        ...(selected.id === OPENROUTER_VOICE_PROVIDER_ID
+          ? {
               ttsModel: ttsModel.trim() || undefined,
               sttModel: sttModel.trim() || undefined,
             }
@@ -561,7 +578,7 @@ export default function VoiceSettings() {
                 textContentType="none"
               />
             )}
-            {selfHosted ? (
+            {choosesModels ? (
               <>
                 <Text style={styles.fieldLabel}>{t("Speech model")}</Text>
                 <TextInput
@@ -570,7 +587,9 @@ export default function VoiceSettings() {
                   autoCorrect={false}
                   value={ttsModel}
                   onChangeText={edit("ttsModel", setTtsModel)}
-                  placeholder={DEFAULT_COMPATIBLE_TTS_MODEL}
+                  placeholder={
+                    openRouter ? DEFAULT_OPENROUTER_TTS_MODEL : DEFAULT_COMPATIBLE_TTS_MODEL
+                  }
                   placeholderTextColor={native.tertiaryLabel}
                   style={styles.input}
                 />
@@ -581,7 +600,9 @@ export default function VoiceSettings() {
                   autoCorrect={false}
                   value={sttModel}
                   onChangeText={edit("sttModel", setSttModel)}
-                  placeholder={DEFAULT_COMPATIBLE_STT_MODEL}
+                  placeholder={
+                    openRouter ? DEFAULT_OPENROUTER_STT_MODEL : DEFAULT_COMPATIBLE_STT_MODEL
+                  }
                   placeholderTextColor={native.tertiaryLabel}
                   style={styles.input}
                 />
@@ -591,7 +612,7 @@ export default function VoiceSettings() {
               <NativeActionButton
                 disabled={pending !== null || !canConnect}
                 label={
-                  credential && selfHosted
+                  credential && choosesModels
                     ? t("Reconnect")
                     : credential
                       ? t("Replace key")

@@ -192,18 +192,16 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
       ),
     };
   }
-  if (parsed.kind === "word" && parsed.icon) {
+  if (parsed.kind === "word") {
     return {
       box: [0, 0, 24],
       outline: (paint) => <Circle cx={12} cy={12} r={11} {...paint} />,
-      face: <AvatarWordIcon nodes={parsed.icon} color={parsed.color} />,
+      face: <AvatarWordIcon word={parsed.word} color={parsed.color} />,
     };
   }
-  const color = parsed.kind === "color" || parsed.kind === "word" ? parsed.color : member.color;
-  const seed = avatarIdentitySeed(
-    parsed.kind === "word" ? parsed.word : (member.botId ?? member.name ?? color),
-  );
-  const outline = parsed.kind === "word" ? parsed.shapePath : organicAvatarPath(seed);
+  const color = parsed.kind === "color" ? parsed.color : member.color;
+  const seed = avatarIdentitySeed(member.botId ?? member.name ?? color);
+  const outline = organicAvatarPath(seed);
   return {
     box: [-60, -60, 120],
     outline: (paint) => <Path d={outline} {...paint} />,

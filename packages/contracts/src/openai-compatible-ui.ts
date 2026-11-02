@@ -64,6 +64,12 @@ export function normalizeOpenAiCompatibleBaseUrl(raw: string): string {
 export const DEFAULT_COMPATIBLE_TTS_MODEL = "mlx-community/Kokoro-82M-bf16";
 export const DEFAULT_COMPATIBLE_STT_MODEL = "mlx-community/whisper-large-v3-turbo-asr-fp16";
 
+/** OpenRouter voice. Speech and transcription are separate model ids on one key. */
+export const OPENROUTER_VOICE_PROVIDER_ID = "openrouter";
+/** Fish Audio S2.1 Pro's free OpenRouter endpoint. It lists no voices of its own. */
+export const DEFAULT_OPENROUTER_TTS_MODEL = "fish-audio/s2.1-pro-free:free";
+export const DEFAULT_OPENROUTER_STT_MODEL = "openai/whisper-large-v3-turbo";
+
 /** Preferred default, explicit enabled id (preferred first), then a list-less legacy fallback.
  * Candidates must be in stable credential order, newest first.
  */

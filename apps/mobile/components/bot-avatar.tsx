@@ -284,7 +284,7 @@ function LegacyBotAvatar({
   const clock = avatarClock({
     mode: motion,
     onScreen,
-    hasEyes: parsed.kind !== "image",
+    hasEyes: parsed.kind !== "image" && parsed.kind !== "word",
     size,
     state,
     settling,
@@ -304,21 +304,10 @@ function LegacyBotAvatar({
         style={{ width: size, height: size }}
         resizeMode="contain"
       />
-    ) : parsed.kind === "word" && parsed.icon ? (
-      <Animated.View style={[{ width: size, height: size }, bodyStyle]}>
-        <Svg width={size} height={size} viewBox="0 0 24 24">
-          <AvatarWordIcon nodes={parsed.icon} color={parsed.color} />
-        </Svg>
-      </Animated.View>
     ) : parsed.kind === "word" ? (
-      <OrganicAvatar
-        color={parsed.color}
-        identity={parsed.word}
-        bodyPath={parsed.shapePath}
-        size={size}
-        life={life}
-        bodyStyle={bodyStyle}
-      />
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <AvatarWordIcon word={parsed.word} color={parsed.color} />
+      </Svg>
     ) : parsed.kind === "shape" ? (
       <ShippedShapeAvatar
         color={parsed.color}

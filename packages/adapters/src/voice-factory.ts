@@ -1,5 +1,6 @@
 import type { VoiceProvider } from "@atlas/adapter-kit";
 import type { VoiceCatalogEntry } from "@atlas/contracts";
+import { OPENROUTER_VOICE_PROVIDER_ID } from "@atlas/contracts";
 import { CartesiaVoiceProvider } from "./cartesia-voice.js";
 import { ElevenLabsVoiceProvider } from "./elevenlabs-voice.js";
 import { FishAudioVoiceProvider } from "./fish-audio-voice.js";
@@ -15,6 +16,7 @@ import {
   OpenAiCompatibleVoiceProvider,
 } from "./openai-compatible-voice.js";
 import { OpenAIVoiceProvider } from "./openai-voice.js";
+import { OpenRouterVoiceProvider } from "./openrouter-voice.js";
 import { SCRIPTED_VOICE_CATALOG_ENTRY, ScriptedVoiceProvider } from "./scripted-voice.js";
 
 export const VOICE_CATALOG = [
@@ -43,9 +45,15 @@ export const VOICE_CATALOG = [
     transcribe: true,
   },
   {
+    id: OPENROUTER_VOICE_PROVIDER_ID,
+    name: "OpenRouter",
+    description: "Speech and transcription models on your OpenRouter key.",
+    transcribe: true,
+  },
+  {
     id: OPENAI_COMPATIBLE_VOICE_PROVIDER_ID,
     name: "Self-hosted",
-    description: "Any OpenAI-compatible speech server, like Kokoro or Whisper.",
+    description: "Any OpenAI-compatible speech server.",
     transcribe: true,
   },
 ] as const;
@@ -100,6 +108,8 @@ export function createVoiceProvider(
       return new CartesiaVoiceProvider();
     case "fish-audio":
       return new FishAudioVoiceProvider();
+    case OPENROUTER_VOICE_PROVIDER_ID:
+      return new OpenRouterVoiceProvider();
     case OPENAI_COMPATIBLE_VOICE_PROVIDER_ID:
       return new OpenAiCompatibleVoiceProvider({
         allowPrivateEndpoint: options.allowPrivateEndpoint,
@@ -114,7 +124,7 @@ export function createVoiceProvider(
       break;
   }
   throw new Error(
-    `Unknown voice provider "${kind}". Use elevenlabs | openai | cartesia | fish-audio | openai-compatible.`,
+    `Unknown voice provider "${kind}". Use elevenlabs | openai | cartesia | fish-audio | openrouter | openai-compatible.`,
   );
 }
 

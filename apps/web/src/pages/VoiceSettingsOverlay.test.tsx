@@ -292,6 +292,86 @@ it("connects a self-hosted speech server by URL without a key", async () => {
   }
 });
 
+it("connects OpenRouter with its speech and transcription models", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  voice.connect.mockReset();
+  voice.catalog.mockResolvedValue([
+    { id: "openrouter", name: "OpenRouter", description: "", transcribe: true },
+  ]);
+  voice.credentials.mockResolvedValue([]);
+  voice.status.mockResolvedValue({
+    configured: false,
+    ready: false,
+    transcribe: false,
+    provider: null,
+    voiceId: "",
+  });
+  voice.connect.mockResolvedValue({
+    id: "cred-router",
+    provider: "openrouter",
+    hasKey: true,
+    isDefault: true,
+    voiceId: "af_heart",
+    speechModel: "",
+    transcribe: true,
+    endpoint: "",
+    ttsModel: "hexgrad/kokoro-82m",
+    sttModel: "nvidia/nemotron-3.5-transcribe",
+  });
+  voice.voices.mockResolvedValue([{ id: "af_heart", label: "af_heart" }]);
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const type = async (input: HTMLInputElement, value: string) => {
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  };
+  const connect = () =>
+    [...container.querySelectorAll("button")].find((entry) => entry.textContent === "Connect");
+  try {
+    await act(async () => {
+      root.render(
+        withQueries(<VoiceSettingsOverlay embedded scope="account" onClose={() => undefined} />),
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(labelledInput(container, "Speech model").placeholder).toBe(
+      "fish-audio/s2.1-pro-free:free",
+    );
+    expect(labelledInput(container, "Transcription model").placeholder).toBe(
+      "openai/whisper-large-v3-turbo",
+    );
+    expect(container.textContent).not.toContain("Server URL");
+    expect(connect()?.disabled).toBe(true);
+
+    await type(labelledInput(container, "API key"), "sk-or-test-key");
+    await type(labelledInput(container, "Transcription model"), "nvidia/nemotron-3.5-transcribe");
+    expect(connect()?.disabled).toBe(false);
+    await act(async () => {
+      connect()?.click();
+    });
+
+    expect(voice.connect).toHaveBeenCalledWith({
+      scope: "account",
+      provider: "openrouter",
+      apiKey: "sk-or-test-key",
+      voiceId: undefined,
+      ttsModel: undefined,
+      sttModel: "nvidia/nemotron-3.5-transcribe",
+    });
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+    vi.unstubAllGlobals();
+  }
+});
+
 it.each([
   { field: "Server URL", value: "http://100.64.0.11:8880/v1" },
   { field: "Speech model", value: "new-model" },

@@ -1,5 +1,5 @@
 import { botAvatarWordValue } from "@atlas/contracts";
-import { ACTIVE_RUN_STATUSES, avatarWordShapePath, SHIPPED_BOT_AVATAR_IMAGES } from "@atlas/core";
+import { ACTIVE_RUN_STATUSES, SHIPPED_BOT_AVATAR_IMAGES } from "@atlas/core";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -80,6 +80,7 @@ describe("BotAvatar", () => {
     const html = renderToString(<BotAvatar color={value} identity="maya" size={32} />);
     expect(html).toContain("M12 6v16");
     expect(html).toContain('class="atlas-word-icon');
+    expect(html).toContain('fill="#8B5CF6"');
     expect(html).not.toContain("atlas-organic-avatar-eyes");
   });
 
@@ -88,7 +89,8 @@ describe("BotAvatar", () => {
     const html = renderToString(
       <BotAvatar color={value} identity="maya" avatarSet="atlas" size={32} />,
     );
-    expect(html).toContain(avatarWordShapePath("river"));
+    expect(html).toContain(">R<");
+    expect(html).toContain('fill="#8B5CF6"');
     expect(html).not.toContain("atlas-logo-avatar");
     expect(parseBotAvatar(value).word).toBe("river");
     expect(defaultBotAvatarValue(value)).toBe("#8B5CF6");

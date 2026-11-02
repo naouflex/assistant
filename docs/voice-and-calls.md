@@ -6,11 +6,11 @@ Talk to your bots instead of typing, have them read replies aloud, or call them.
 
 Open **Settings → Voice**, pick a **Provider** and add its **API key**:
 
-- **ElevenLabs**, **OpenAI** and **Fish Audio** can speak and transcribe.
+- **ElevenLabs**, **OpenAI**, **Fish Audio**, and **OpenRouter** can speak and transcribe.
 - **Cartesia** speaks only.
-- **Self-hosted** uses your own OpenAI-compatible speech server, such as Kokoro or Whisper. Enter its
-  **Server URL**. Compose runs Kokoro for this; the address and model are in
-  [Models](./self-host-models.md#kokoro).
+- **OpenRouter** uses your OpenRouter key. Speech starts on Fish Audio S2.1 Pro Free, and transcription
+  on Whisper Large V3 Turbo. Change either model id in the same form.
+- **Self-hosted** uses your own OpenAI-compatible speech server. Enter its **Server URL**.
 - **macOS** uses the voices installed on the Mac running your server, with no key. It appears only
   when the server runs on a Mac.
 

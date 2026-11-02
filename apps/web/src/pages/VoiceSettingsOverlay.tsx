@@ -8,7 +8,10 @@ import type {
 import {
   DEFAULT_COMPATIBLE_STT_MODEL,
   DEFAULT_COMPATIBLE_TTS_MODEL,
+  DEFAULT_OPENROUTER_STT_MODEL,
+  DEFAULT_OPENROUTER_TTS_MODEL,
   OPENAI_COMPATIBLE_PROVIDER_ID,
+  OPENROUTER_VOICE_PROVIDER_ID,
 } from "@atlas/contracts";
 import { fetchFresh } from "@atlas/core/query";
 import {
@@ -224,10 +227,18 @@ export function VoiceSettingsOverlay({
   );
 
   const selfHosted = selected?.id === OPENAI_COMPATIBLE_PROVIDER_ID;
+  const openRouter = selected?.id === OPENROUTER_VOICE_PROVIDER_ID;
+  const choosesModels = selfHosted || openRouter;
   // Connections are managed from the account; a Space can still connect one it lacks.
   const managesConnection = scope === "account" || !credential;
   const keyless = Boolean(selected?.keyless);
-  const canConnect = keyless || (selfHosted ? Boolean(baseUrl.trim()) : apiKey.trim().length >= 8);
+  const canConnect =
+    keyless ||
+    (selfHosted
+      ? Boolean(baseUrl.trim())
+      : openRouter
+        ? Boolean(credential) || apiKey.trim().length >= 8
+        : apiKey.trim().length >= 8);
 
   async function connectKey() {
     if (!selected || !canConnect) return;
@@ -245,6 +256,12 @@ export function VoiceSettingsOverlay({
         ...(selfHosted
           ? {
               baseUrl: baseUrl.trim(),
+              ttsModel: ttsModel.trim() || undefined,
+              sttModel: sttModel.trim() || undefined,
+            }
+          : {}),
+        ...(selected.id === OPENROUTER_VOICE_PROVIDER_ID
+          ? {
               ttsModel: ttsModel.trim() || undefined,
               sttModel: sttModel.trim() || undefined,
             }
@@ -428,7 +445,7 @@ export function VoiceSettingsOverlay({
                   />
                 </Field>
               )}
-              {selfHosted ? (
+              {choosesModels ? (
                 <>
                   <Field className="mt-5">
                     <FieldLabel htmlFor={ttsModelId}>
@@ -444,7 +461,9 @@ export function VoiceSettingsOverlay({
                         edited.current.add("ttsModel");
                         setTtsModel(event.target.value);
                       }}
-                      placeholder={DEFAULT_COMPATIBLE_TTS_MODEL}
+                      placeholder={
+                        openRouter ? DEFAULT_OPENROUTER_TTS_MODEL : DEFAULT_COMPATIBLE_TTS_MODEL
+                      }
                     />
                   </Field>
                   <Field className="mt-5">
@@ -461,7 +480,9 @@ export function VoiceSettingsOverlay({
                         edited.current.add("sttModel");
                         setSttModel(event.target.value);
                       }}
-                      placeholder={DEFAULT_COMPATIBLE_STT_MODEL}
+                      placeholder={
+                        openRouter ? DEFAULT_OPENROUTER_STT_MODEL : DEFAULT_COMPATIBLE_STT_MODEL
+                      }
                     />
                   </Field>
                 </>
@@ -475,7 +496,7 @@ export function VoiceSettingsOverlay({
                 >
                   {pending === "connect" ? (
                     <Trans>Connecting…</Trans>
-                  ) : credential && selfHosted ? (
+                  ) : credential && choosesModels ? (
                     <Trans>Reconnect</Trans>
                   ) : credential ? (
                     <Trans>Replace key</Trans>

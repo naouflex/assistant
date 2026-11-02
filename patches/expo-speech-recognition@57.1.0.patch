@@ -1,0 +1,23 @@
+diff --git a/ios/ExpoSpeechRecognizer.swift b/ios/ExpoSpeechRecognizer.swift
+index b27842501f72e1a5a9382636397cbef30d5a2b30..9bbdfaadeca1b3974d98c7bda100f3748ba9ddca 100644
+--- a/ios/ExpoSpeechRecognizer.swift
++++ b/ios/ExpoSpeechRecognizer.swift
+@@ -769,10 +769,14 @@ actor ExpoSpeechRecognizer: ObservableObject {
+   ) {
+     // We only care about route changes when the recognizer is active
+     if taskState == .running || taskState == .starting {
+-      // App deactivation can emit a route change while the audio session is
+-      // being torn down. In that case we should stop recognition instead of
+-      // trying to reconnect the engine again.
+-      guard appState == .active else {
++      // Leaving the app changes the route. A live call has to keep the
++      // microphone: stopping a running engine here is what makes the caller
++      // unheard after they take control and leave. If the engine has already
++      // stopped, hand the session back so it can be opened again.
++      if appState != .active {
++        if audioEngine?.isRunning == true {
++          return
++        }
+         emitError(.audioSessionInterrupted)
+         stopListening()
+         reset(andEmitEnd: true)

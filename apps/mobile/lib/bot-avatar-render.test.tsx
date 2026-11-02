@@ -3,7 +3,6 @@
 import { botAvatarWordValue } from "@atlas/contracts";
 import {
   avatarIdentitySeed,
-  avatarWordShapePath,
   LOGO_BODY_PATH,
   LOGO_EYES,
   logoAvatarFrame,
@@ -128,6 +127,7 @@ vi.mock("react-native-svg", () => {
     Polygon: element("polygon"),
     Polyline: element("polyline"),
     Rect: element("rect"),
+    Text: element("text"),
     Defs: element("defs"),
     ClipPath: element("clipPath"),
     Mask: element("mask"),
@@ -326,13 +326,15 @@ describe("BotAvatar", () => {
   it("draws an anchor when the word is anchor", () => {
     const view = render(botAvatarWordValue("#8B5CF6", "anchor")!);
     expect(bodies(view).some((path) => path?.includes("M12 6v16"))).toBe(true);
+    expect(view.querySelector("circle")).not.toBeNull();
     expect(view.querySelectorAll("rect")).toHaveLength(0);
   });
 
   it("draws a shape generated from a word", () => {
     const view = render(botAvatarWordValue("#8B5CF6", "river")!);
-    expect(bodies(view)).toEqual([avatarWordShapePath("river")]);
-    expect(view.querySelectorAll("rect")).toHaveLength(2);
+    expect(view.querySelector("text")?.textContent).toBe("R");
+    expect(view.querySelector("circle")?.dataset.fill).toBe("#8B5CF6");
+    expect(view.querySelectorAll("rect")).toHaveLength(0);
   });
 
   it("keeps a shape picked in Avatar Studio", () => {

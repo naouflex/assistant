@@ -24,6 +24,10 @@ import {
 import type { UiLocale } from "./ui-locale";
 
 const device = vi.hoisted(() => ({ languageTag: "en-US", os: "ios" }));
+const appState = vi.hoisted(() => ({
+  currentState: "active",
+  addEventListener: () => ({ remove: () => undefined }),
+}));
 
 vi.mock("./monitoring", () => ({ reportMobileError: vi.fn() }));
 vi.mock("expo-localization", () => ({ getLocales: () => [{ languageTag: device.languageTag }] }));
@@ -33,6 +37,7 @@ vi.mock("react-native", () => ({
       return device.os;
     },
   },
+  AppState: appState,
 }));
 vi.mock("expo-file-system", () => ({ File: class {}, Paths: {} }));
 vi.mock("./voice", () => ({
@@ -175,7 +180,10 @@ function fakes(opts: { onDevice?: boolean } = {}) {
   };
 }
 
-afterEach(() => endCall());
+afterEach(() => {
+  appState.currentState = "active";
+  endCall();
+});
 
 describe("mobile call session", () => {
   it("starts listening for the bot on the call", async () => {
@@ -987,7 +995,22 @@ describe("mobile call speech locales", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(start).toHaveBeenCalledOnce();
-      expect.soft(start).toHaveBeenCalledWith({ lang, interimResults: true, continuous: true });
+      expect.soft(start).toHaveBeenCalledWith(
+        expect.objectContaining({ lang, interimResults: true, continuous: true }),
+      );
+      if (os === "ios") {
+        expect.soft(start).toHaveBeenCalledWith(
+          expect.objectContaining({
+            iosCategory: {
+              category: "playAndRecord",
+              categoryOptions: ["mixWithOthers", "defaultToSpeaker", "allowBluetooth"],
+              mode: "voiceChat",
+            },
+          }),
+        );
+      } else {
+        expect.soft(start.mock.calls[0]?.[0]).not.toHaveProperty("iosCategory");
+      }
       listeners.get("result")?.({
         isFinal: false,
         results: [{ transcript: "status please" }],
@@ -1051,6 +1074,25 @@ describe("mobile call recognition recovery", () => {
       emit: (event: string, payload: unknown = null) => listeners.get(event)?.(payload as never),
     };
   }
+
+  it("keeps on-device recognition when the microphone drops after the app is left", async () => {
+    const fake = await greetedCall(true);
+    appState.currentState = "background";
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      fake.emit("error", { error: "audio-capture" });
+      fake.emit("error", { error: "client" });
+      fake.emit("end");
+      await vi.advanceTimersByTimeAsync(2_000);
+    }
+    expect(fake.recordings).toHaveLength(0);
+    expect(getSnapshot()?.phase).toBe("listening");
+
+    appState.currentState = "active";
+    fake.emit("result", { isFinal: true, results: [{ transcript: "status please" }] });
+    await vi.advanceTimersByTimeAsync(ENDPOINT_SILENCE_MS);
+    expect(fake.send).toHaveBeenCalledOnce();
+    expect(fake.recordings).toHaveLength(0);
+  });
 
   it("re-arms after empty sessions following the greeting, then sends speech", async () => {
     const fake = await greetedCall();

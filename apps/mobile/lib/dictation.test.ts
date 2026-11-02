@@ -3,8 +3,27 @@ import type { SpeechRecognizer } from "./dictation";
 import { commit, ENDPOINT_SILENCE_MS, listen, setSpeechRecognizer, stop } from "./dictation";
 import { reportMobileError } from "./monitoring";
 
+const appState = vi.hoisted(() => {
+  const listeners = new Set<(state: string) => void>();
+  return {
+    currentState: "active",
+    addEventListener: (_event: string, listener: (state: string) => void) => {
+      listeners.add(listener);
+      return {
+        remove: () => {
+          listeners.delete(listener);
+        },
+      };
+    },
+    emit(state: string) {
+      this.currentState = state;
+      for (const listener of [...listeners]) listener(state);
+    },
+  };
+});
+
 vi.mock("./monitoring", () => ({ reportMobileError: vi.fn() }));
-vi.mock("react-native", () => ({ Platform: { OS: "ios" } }));
+vi.mock("react-native", () => ({ Platform: { OS: "ios" }, AppState: appState }));
 
 type Listener = (payload: never) => void;
 
@@ -53,6 +72,7 @@ let fake: ReturnType<typeof fakeRecognizer>;
 beforeEach(() => {
   vi.useFakeTimers();
   vi.mocked(reportMobileError).mockClear();
+  appState.currentState = "active";
   fake = fakeRecognizer();
   setSpeechRecognizer(fake.recognizer);
 });
@@ -88,6 +108,11 @@ describe("mobile dictation", () => {
       lang: "en-US",
       interimResults: true,
       continuous: true,
+      iosCategory: {
+        category: "playAndRecord",
+        categoryOptions: ["mixWithOthers", "defaultToSpeaker", "allowBluetooth"],
+        mode: "voiceChat",
+      },
     });
 
     fake.hear("how is the");
@@ -151,7 +176,6 @@ describe("mobile dictation", () => {
   it.each([
     "not-allowed",
     "service-not-allowed",
-    "audio-capture",
     "language-not-supported",
     "bad-grammar",
   ])("notifies the caller when recognition fails with %s", async (error) => {
@@ -169,6 +193,69 @@ describe("mobile dictation", () => {
     fake.end();
     vi.advanceTimersByTime(RESTART_CAP_MS);
     expect(fake.start).toHaveBeenCalledOnce();
+  });
+
+  it("restarts after the microphone is taken instead of giving the turn up", async () => {
+    const onGiveUp = vi.fn();
+    await listen({ onFinal: vi.fn(), onGiveUp });
+    fake.fail("audio-capture");
+    fake.end();
+    vi.advanceTimersByTime(250);
+    expect(fake.start).toHaveBeenCalledTimes(2);
+    expect(onGiveUp).not.toHaveBeenCalled();
+    expect(reportMobileError).not.toHaveBeenCalled();
+  });
+
+  it("falls back after the microphone stays taken while the app is open", async () => {
+    const onFinal = vi.fn();
+    const onGiveUp = vi.fn();
+    await listen({ onFinal, onGiveUp });
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      fake.fail("audio-capture");
+      expect(onGiveUp).not.toHaveBeenCalled();
+      fake.end();
+      vi.advanceTimersByTime(RESTART_CAP_MS);
+    }
+    expect(onGiveUp).toHaveBeenCalledExactlyOnceWith("failed");
+    expect(onFinal).not.toHaveBeenCalled();
+    expect(reportMobileError).toHaveBeenCalledExactlyOnceWith(
+      new Error("Speech recognition stopped: audio-capture"),
+      "voice.microphone",
+      { source: "dictation" },
+    );
+  });
+
+  it("keeps the turn when the app is left and hears again when it returns", async () => {
+    const onFinal = vi.fn();
+    const onGiveUp = vi.fn();
+    await listen({ onFinal, onGiveUp });
+    appState.emit("background");
+    fake.start.mockImplementation(() => {
+      if (appState.currentState !== "active") throw new Error("background");
+    });
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      fake.fail("audio-capture");
+      fake.fail("client");
+      fake.end();
+      vi.advanceTimersByTime(RESTART_CAP_MS);
+    }
+    expect(onGiveUp).not.toHaveBeenCalled();
+    expect(reportMobileError).not.toHaveBeenCalled();
+
+    fake.start.mockImplementation(() => undefined);
+    appState.emit("active");
+    fake.hear("still here");
+    vi.advanceTimersByTime(ENDPOINT_SILENCE_MS);
+    expect(onFinal).toHaveBeenCalledExactlyOnceWith("still here");
+    expect(onGiveUp).not.toHaveBeenCalled();
+  });
+
+  it("still gives up when recognition is denied while the app is away", async () => {
+    const onGiveUp = vi.fn();
+    await listen({ onFinal: vi.fn(), onGiveUp });
+    appState.emit("background");
+    fake.fail("not-allowed");
+    expect(onGiveUp).toHaveBeenCalledExactlyOnceWith("failed");
   });
 
   it.each(["no-speech", "speech-timeout", "interrupted", "aborted"])(

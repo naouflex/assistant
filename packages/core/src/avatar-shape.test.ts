@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   avatarIdentitySeed,
-  avatarWordShapePath,
   ORGANIC_AVATAR_FAMILY_COUNT,
   ORGANIC_AVATAR_HEART_FAMILY,
   ORGANIC_AVATAR_LOOKS,
@@ -39,32 +38,6 @@ describe("organic avatar geometry", () => {
       expect(family).toBeGreaterThanOrEqual(0);
       expect(family).toBeLessThan(ORGANIC_AVATAR_FAMILY_COUNT);
       expect(unphased(avatarIdentitySeed(identity))).toBe(unphased(family));
-    }
-  });
-});
-
-describe("word avatar shapes", () => {
-  it("draws a stable closed body that changes with the word and keeps the eyes inside", () => {
-    const river = avatarWordShapePath("river");
-    const oak = avatarWordShapePath("oak");
-    expect(river).toBe(avatarWordShapePath("river"));
-    expect(river).not.toBe(oak);
-    expect(avatarWordShapePath("river", 0.42)).not.toBe(river);
-    const words = ["river", "oak", "cloud", "needle", "étoile", "川", "море", "pebble"];
-    expect(new Set(words.map((word) => avatarWordShapePath(word))).size).toBe(words.length);
-    for (const path of words.map((word) => avatarWordShapePath(word))) {
-      expect(path).toMatch(/^M[-0-9. ]+(?:C[-0-9. ]+)+Z$/);
-      const numbers = path.replace(/[MCZ]/g, " ").trim().split(/\s+/).map(Number);
-      expect(Math.max(...numbers.map((value) => Math.abs(value)))).toBeLessThanOrEqual(58);
-      const anchors: Array<[number, number]> = [[numbers[0]!, numbers[1]!]];
-      for (let index = 2; index < numbers.length; index += 6) {
-        anchors.push([numbers[index + 4]!, numbers[index + 5]!]);
-      }
-      expect(
-        anchors.every(
-          ([x, y]) => Math.hypot(x, y) >= 28 && Number.isFinite(x) && Number.isFinite(y),
-        ),
-      ).toBe(true);
     }
   });
 });

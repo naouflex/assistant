@@ -199,13 +199,9 @@ native file flow on mobile. No new mobile player or settings screen is required.
 
 ## Voice
 
-### Kokoro
+### OpenRouter
 
-The Compose stacks run [Kokoro](https://github.com/remsky/Kokoro-FastAPI) on the private network. It is not published on the host in production. In **Settings → Voice**, choose **Self-hosted**, set the server URL to `http://kokoro:8880/v1`, the speech model to `kokoro`, and the voice to `af_heart`. Leave the key empty.
-
-Saving that address needs `MCP_ALLOW_PRIVATE_ENDPOINT=true` and `ATLAS_OPENAI_COMPAT_PRIVATE_HOSTS=kokoro` on the API and worker. The flag lets every account save a private endpoint. A source checkout whose API runs on the host uses `http://127.0.0.1:8880/v1` instead. The dev Compose file publishes Kokoro on that loopback port.
-
-Kokoro speaks. It does not transcribe, so calls and phone dictation need a speech server that also implements transcription.
+Voice settings can use an OpenRouter key. Speech defaults to `fish-audio/s2.1-pro-free:free`. Transcription defaults to `openai/whisper-large-v3-turbo`. Change either model id in Voice settings. Compose does not run a speech container.
 
 ### macOS voices
 

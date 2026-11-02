@@ -17,6 +17,7 @@ import {
   speakUtterance,
   speakWithDeviceVoice,
   speechClipType,
+  setVoiceBackgroundPlayback,
   stopSpeaking,
   stopVoicePlayback,
   subscribeVoicePlayback,
@@ -80,6 +81,22 @@ class FakeAudio {
 }
 
 describe("mobile speech", () => {
+  it("keeps the call on a recording session so leaving the app does not drop the microphone", async () => {
+    vi.mocked(setAudioModeAsync).mockClear();
+    try {
+      setVoiceBackgroundPlayback(true);
+      await Promise.resolve();
+      expect(setAudioModeAsync).toHaveBeenCalledWith({
+        playsInSilentMode: true,
+        interruptionMode: "mixWithOthers",
+        shouldPlayInBackground: true,
+        allowsRecording: true,
+      });
+    } finally {
+      setVoiceBackgroundPlayback(false);
+    }
+  });
+
   beforeEach(() => {
     vi.mocked(SecureStore.getItemAsync).mockResolvedValue(null);
     vi.mocked(captureApiRequestContext).mockResolvedValue({

@@ -111,11 +111,28 @@ export function stopSpeaking(owner?: SpeechOwner): void {
 let playsInBackground = false;
 
 /**
+ * Audio mode for whatever is about to play. A call stays a recording session:
+ * switching to playback-only while a reply plays drops the microphone, and it
+ * stays dropped once the app leaves.
+ */
+function playbackAudioMode() {
+  return {
+    playsInSilentMode: true as const,
+    interruptionMode: "mixWithOthers" as const,
+    shouldPlayInBackground: playsInBackground,
+    ...(playsInBackground ? { allowsRecording: true as const } : {}),
+  };
+}
+
+/**
  * A call keeps its replies playing while the screen is off; the microphone
- * foreground service is what keeps the app alive then.
+ * foreground service is what keeps the app alive then. The recording session
+ * is applied immediately so leaving the app before the first reply still holds
+ * the microphone.
  */
 export function setVoiceBackgroundPlayback(enabled: boolean): void {
   playsInBackground = enabled;
+  void setAudioModeAsync(playbackAudioMode()).catch(() => undefined);
 }
 
 // Queued playback runs speakText one call at a time, so a single Stop always reaches whatever is
@@ -586,11 +603,7 @@ async function playWithHtmlAudio(
 
 async function playWithNativeAudio(bytes: Uint8Array, session?: HostedSession): Promise<void> {
   if (session?.isStopped) return;
-  await setAudioModeAsync({
-    playsInSilentMode: true,
-    interruptionMode: "mixWithOthers",
-    shouldPlayInBackground: playsInBackground,
-  });
+  await setAudioModeAsync(playbackAudioMode());
   const file = new File(
     Paths.cache,
     `atlas-voice-${Date.now()}.${speechClipType(bytes).extension}`,

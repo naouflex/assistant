@@ -66,6 +66,7 @@ describe("voice catalog", () => {
           mcpAllowPrivateEndpoint,
         );
         expect(catalog.some((entry) => entry.id === "elevenlabs")).toBe(true);
+        expect(catalog.some((entry) => entry.id === "openrouter")).toBe(true);
       } finally {
         vi.unstubAllEnvs();
       }

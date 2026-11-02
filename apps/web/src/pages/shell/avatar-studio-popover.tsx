@@ -25,9 +25,17 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Check, Pencil, Upload, X } from "lucide-react";
 import type { ClipboardEvent, DragEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Near-white swatches need a harder edge so they stay clickable on light popovers. */
+function avatarPictureKey(value: string): string {
+  const parsed = parseBotAvatar(value);
+  if (parsed.isImage) return "image";
+  if (parsed.word) return `word:${parsed.word}`;
+  if (parsed.shapeIndex !== undefined) return `shape:${parsed.shapeIndex}`;
+  return "default";
+}
+
 function isPaleAvatarSwatch(color: string): boolean {
   const hex = color.replace("#", "");
   const full =
@@ -53,6 +61,7 @@ export function BotLookPicker({
   avatarSet = "organic",
   onAvatarSetChange,
   onChange,
+  onPreviewChange,
 }: {
   value: string;
   identity?: string;
@@ -60,13 +69,35 @@ export function BotLookPicker({
   avatarSet?: BotAvatarSet;
   onAvatarSetChange?: (set: BotAvatarSet, value: string) => void;
   onChange: (value: string, identity?: string) => void;
+  /** The picture a typed word would save, before Generate commits it. */
+  onPreviewChange?: (value: string | null) => void;
 }) {
   const parsed = parseBotAvatar(value);
   const currentColor = parsed.color || DEFAULT_BOT_AVATAR_COLOR;
   const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined && !parsed.word;
+  const picture = avatarPictureKey(value);
   const [wordDraft, setWordDraft] = useState<string | null>(null);
-  const wordShown = wordDraft ?? parsed.word ?? "";
+  const [draftPicture, setDraftPicture] = useState<string | null>(null);
+  const draftStale = wordDraft !== null && draftPicture !== picture;
+  if (draftStale) {
+    setWordDraft(null);
+    setDraftPicture(null);
+  }
+  const wordShown = draftStale ? (parsed.word ?? "") : (wordDraft ?? parsed.word ?? "");
   const wordPreview = botAvatarWordValue(currentColor, wordShown);
+  const wordIsPicture = Boolean(parsed.word) && wordDraft === null;
+  const pending =
+    !draftStale && wordDraft !== null && wordPreview && wordPreview !== value ? wordPreview : null;
+
+  useEffect(() => {
+    onPreviewChange?.(pending);
+    return () => onPreviewChange?.(null);
+  }, [onPreviewChange, pending]);
+
+  function editWord(next: string) {
+    setDraftPicture(picture);
+    setWordDraft(next);
+  }
 
   function selectColor(color: string) {
     if (parsed.word) {
@@ -77,8 +108,13 @@ export function BotLookPicker({
   }
 
   function generateWord() {
-    if (!wordPreview) return;
+    if (!wordPreview) {
+      setWordDraft(null);
+      setDraftPicture(null);
+      return;
+    }
     setWordDraft(null);
+    setDraftPicture(null);
     if (wordPreview !== value) onChange(wordPreview);
   }
 
@@ -113,6 +149,8 @@ export function BotLookPicker({
                 data-testid="avatar-studio-default"
                 aria-pressed={isDefaultLook}
                 onClick={() => {
+                  setWordDraft(null);
+                  setDraftPicture(null);
                   const next = defaultBotAvatarValue(value);
                   if (next !== value) onChange(next);
                 }}
@@ -136,7 +174,11 @@ export function BotLookPicker({
                 label={t`Shape ${index + 1}`}
                 color={currentColor}
                 selected={isDefaultLook && identity === organicIdentity}
-                onClick={() => onChange(currentColor, organicIdentity)}
+                onClick={() => {
+                  setWordDraft(null);
+                  setDraftPicture(null);
+                  onChange(currentColor, organicIdentity);
+                }}
               />
             ))}
             {SHIPPED_BOT_AVATAR_SHAPE_KEYS.map((key, shapeIndex) => (
@@ -145,7 +187,11 @@ export function BotLookPicker({
                 shapeIndex={shapeIndex}
                 color={currentColor}
                 selected={!parsed.isImage && parsed.shapeIndex === shapeIndex}
-                onClick={() => onChange(`${currentColor}::shape_${shapeIndex}`)}
+                onClick={() => {
+                  setWordDraft(null);
+                  setDraftPicture(null);
+                  onChange(`${currentColor}::shape_${shapeIndex}`);
+                }}
               />
             ))}
           </div>
@@ -156,19 +202,29 @@ export function BotLookPicker({
               value={wordShown}
               maxLength={AVATAR_WORD_MAX_LENGTH}
               data-testid="avatar-word"
-              onChange={(event) => setWordDraft(event.target.value)}
+              data-selected={wordIsPicture ? "true" : "false"}
+              className={`w-auto min-w-0 flex-1 ${wordIsPicture ? "ring-2 ring-primary" : ""}`}
+              onChange={(event) => editWord(event.target.value)}
+              onBlur={() => {
+                if (wordPreview) return;
+                setWordDraft(null);
+                setDraftPicture(null);
+              }}
               onKeyDown={(event) => {
                 if (event.key !== "Enter") return;
                 event.preventDefault();
                 generateWord();
               }}
             />
-            <Button type="button" variant="outline" disabled={!wordPreview} onClick={generateWord}>
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              disabled={!wordPreview}
+              onClick={generateWord}
+            >
               <Trans>Generate</Trans>
             </Button>
-            {wordPreview && wordPreview !== value ? (
-              <BotAvatar color={wordPreview} identity={identity} size={36} avatarSet="organic" />
-            ) : null}
           </div>
         </div>
       ) : null}
@@ -218,7 +274,11 @@ export function BotLookPicker({
                 <button
                   key={image.id}
                   type="button"
-                  onClick={() => onChange(image.value)}
+                  onClick={() => {
+                    setWordDraft(null);
+                    setDraftPicture(null);
+                    onChange(image.value);
+                  }}
                   aria-label={t`Custom ${image.id}`}
                   aria-pressed={selected}
                   data-testid={`avatar-studio-custom-${image.id}`}
@@ -259,6 +319,7 @@ export function AvatarStudioPopover({
   disabled = false,
 }: AvatarStudioPopoverProps) {
   const [open, setOpen] = useState(false);
+  const [pendingLook, setPendingLook] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"bot" | "upload">("bot");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -343,10 +404,16 @@ export function AvatarStudioPopover({
         </div>
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setPendingLook(null);
+        }}
+      >
         <DialogContent
           showCloseButton={false}
-          className="w-[360px] max-w-full gap-4 rounded-3xl p-5 sm:max-w-[360px]"
+          className="max-h-[calc(100dvh-2rem)] w-[360px] max-w-full gap-4 overflow-y-auto rounded-3xl p-5 sm:max-w-[360px]"
           data-testid="avatar-studio"
         >
           <DialogHeader className="flex-row items-center justify-between space-y-0">
@@ -370,7 +437,7 @@ export function AvatarStudioPopover({
 
           <div className="flex flex-col items-center justify-center py-2">
             <BotAvatar
-              color={value}
+              color={pendingLook ?? value}
               identity={identity}
               size={78}
               status={status}
@@ -409,6 +476,7 @@ export function AvatarStudioPopover({
                 value={value}
                 identity={identity}
                 avatarSet={avatarSet}
+                onPreviewChange={setPendingLook}
                 onChange={(next) => onChange(next)}
                 onAvatarSetChange={(set, next) => onChange(next, set)}
               />

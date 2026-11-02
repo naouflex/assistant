@@ -759,6 +759,32 @@ describe("voiceCredentialPlaintext", () => {
     expect(JSON.parse(plaintext)).toMatchObject({ apiKey: "local-test-key" });
   });
 
+  it("stores an OpenRouter key and its speech models, keeping a blank reconnect", () => {
+    const plaintext = voiceCredentialPlaintext({
+      provider: "openrouter",
+      plaintext: "sk-or-test-key",
+      sttModel: "nvidia/nemotron-3.5-transcribe",
+    });
+    expect(JSON.parse(plaintext)).toMatchObject({
+      kind: "openrouter",
+      apiKey: "sk-or-test-key",
+      ttsModel: adapters.DEFAULT_OPENROUTER_TTS_MODEL,
+      sttModel: "nvidia/nemotron-3.5-transcribe",
+    });
+    expect(
+      JSON.parse(
+        voiceCredentialPlaintext({
+          provider: "openrouter",
+          plaintext: "",
+          previousPlaintext: plaintext,
+        }),
+      ),
+    ).toMatchObject({ apiKey: "sk-or-test-key", sttModel: "nvidia/nemotron-3.5-transcribe" });
+    expect(() => voiceCredentialPlaintext({ provider: "openrouter", plaintext: "" })).toThrow(
+      "Enter an API key.",
+    );
+  });
+
   it("rejects a public server address as a bad request", () => {
     vi.stubEnv("ATLAS_OPENAI_COMPAT_ALLOW_PUBLIC", "0");
     try {
@@ -853,6 +879,21 @@ describe("voiceChoicesChanged", () => {
     expect(voiceChoicesChanged(first, otherModel)).toBe(true);
     expect(voiceChoicesChanged(first, otherServer)).toBe(true);
     expect(voiceChoicesChanged("sk-hosted-key", "sk-other-key")).toBe(false);
+    const openRouter = adapters.serializeOpenRouterVoiceSecret({
+      apiKey: "sk-or-test-key",
+      ttsModel: "hexgrad/kokoro-82m",
+    });
+    const otherSpeechModel = adapters.serializeOpenRouterVoiceSecret({
+      apiKey: "sk-or-test-key",
+      ttsModel: "elevenlabs/eleven-flash-v2.5",
+    });
+    const otherTranscription = adapters.serializeOpenRouterVoiceSecret({
+      apiKey: "sk-or-test-key",
+      ttsModel: "hexgrad/kokoro-82m",
+      sttModel: "nvidia/nemotron-3.5-transcribe",
+    });
+    expect(voiceChoicesChanged(openRouter, otherSpeechModel)).toBe(true);
+    expect(voiceChoicesChanged(openRouter, otherTranscription)).toBe(false);
   });
 });
 

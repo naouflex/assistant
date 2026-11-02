@@ -62,33 +62,17 @@ describe("worker error reporting configuration", () => {
   });
 });
 
-describe("the bundled Kokoro speech server", () => {
-  const image =
-    "${KOKORO_IMAGE:-ghcr.io/remsky/kokoro-fastapi-cpu:v0.9.2@sha256:cbcc28802fb5d1eaaba8b91e38b0e872a669e85831c513cf6a29c709cbe25405}";
-
+describe("bundled speech", () => {
   it.each(["docker-compose.prod.yml", "docker-compose.images.yml", "docker-compose.yml"])(
-    "pins %s to the Kokoro release and publishes nothing on a public interface",
+    "does not run a Kokoro container from %s",
     (file) => {
       const { services } = parse(
         readFileSync(path.resolve(import.meta.dirname, "../../compose", file), "utf8"),
         { merge: true },
       ) as { services: Record<string, ComposeService> };
-      const kokoro = services.kokoro;
-      expect(kokoro?.image).toBe(image);
-      expect(kokoro?.env_file).toBeUndefined();
-      expect(kokoro?.volumes ?? []).not.toContain("/var/run/docker.sock");
-      const ports = kokoro?.ports ?? [];
-      expect(ports.every((port) => String(port).startsWith("127.0.0.1:"))).toBe(true);
+      expect(services.kokoro).toBeUndefined();
     },
   );
-
-  it("stays on the private app network in production", () => {
-    expect(compose.services.kokoro?.ports).toBeUndefined();
-    expect(compose.services.kokoro?.networks).toEqual(["app"]);
-    expect(compose.services.api?.networks).toContain("app");
-    expect(compose.services.kokoro?.networks).not.toContain("data");
-    expect(compose.services.kokoro?.networks).not.toContain("edge");
-  });
 });
 
 describe("the updater compose service", () => {

@@ -11,6 +11,13 @@ function source(path: string) {
   return readFileSync(resolve(nativeRoot, path), "utf8");
 }
 
+describe("iOS call background audio", () => {
+  it("keeps a voice call's audio session alive after the app leaves the screen", () => {
+    const config = readFileSync(resolve(mobileRoot, "app.json"), "utf8");
+    expect(config).toContain('"UIBackgroundModes": ["audio"]');
+  });
+});
+
 describe("Android call foreground service", () => {
   it("declares a microphone foreground service and wake lock", () => {
     const manifest = source("AndroidManifest.xml");

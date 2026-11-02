@@ -19,6 +19,9 @@ patchedDependencies:
   dockerode@5.0.1:
     hash: 4e3w6bgm3rh6hjush2fsvzwl7m
     path: patches/dockerode@5.0.1.patch
+  expo-speech-recognition@57.1.0:
+    hash: timh4f2pemtydfwuhk52re4o74
+    path: patches/expo-speech-recognition@57.1.0.patch
 
 importers:
 
@@ -241,7 +244,7 @@ importers:
         version: 57.0.3(expo@57.0.31)
       expo-speech-recognition:
         specifier: 57.1.0
-        version: 57.1.0(expo@57.0.31)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+        version: 57.1.0(patch_hash=timh4f2pemtydfwuhk52re4o74)(expo@57.0.31)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
       expo-splash-screen:
         specifier: 57.0.10
         version: 57.0.10(expo@57.0.31)(typescript@6.0.3)
@@ -18943,7 +18946,7 @@ snapshots:
       - supports-color
       - typescript
 
-  expo-speech-recognition@57.1.0(expo@57.0.31)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3):
+  expo-speech-recognition@57.1.0(patch_hash=timh4f2pemtydfwuhk52re4o74)(expo@57.0.31)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3):
     dependencies:
       expo: 57.0.31(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.17)(expo-router@57.0.29)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native-worklets@0.10.1(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
       react: 19.2.3

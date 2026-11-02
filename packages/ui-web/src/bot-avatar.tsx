@@ -3,9 +3,11 @@ import { parseBotAvatarValue } from "@atlas/contracts";
 import type { AvatarWordIconNode, BotColorDef, LogoAvatarActivity } from "@atlas/core";
 import {
   ACTIVE_RUN_STATUSES,
+  AVATAR_WORD_ICON_TRANSFORM,
   avatarIdentitySeed,
   avatarWordIcon,
-  avatarWordShapePath,
+  avatarWordInk,
+  avatarWordLetter,
   BOT_AVATAR_COLORS,
   BOT_COLOR_LIST,
   contrastRatio,
@@ -154,22 +156,12 @@ export const BotAvatar = memo(function BotAvatar({
   }
 
   if (parsed.word) {
-    const icon = avatarWordIcon(parsed.word);
     return (
       <div
         className={cn("atlas-bot-avatar relative inline-flex shrink-0", className)}
         style={{ width: size, height: size }}
       >
-        {icon ? (
-          <WordIcon color={colorDef.hex} nodes={icon} size={size} isWorking={isWorking} />
-        ) : (
-          <OrganicAvatar
-            color={colorDef.hex}
-            word={parsed.word}
-            size={size}
-            isWorking={isWorking}
-          />
-        )}
+        <WordPicture color={colorDef.hex} word={parsed.word} size={size} isWorking={isWorking} />
         {isWorking ? <WorkingRing size={size} /> : null}
       </div>
     );
@@ -367,18 +359,47 @@ function WorkingRing({ size }: { size: number }) {
   );
 }
 
-function WordIcon({
+function WordMark({ nodes }: { nodes: readonly AvatarWordIconNode[] }) {
+  return nodes.map((node, index) => {
+    const key = `${node[0]}-${index}`;
+    switch (node[0]) {
+      case "path":
+        return <path key={key} d={node[1]} />;
+      case "circle":
+        return <circle key={key} cx={node[1]} cy={node[2]} r={node[3]} />;
+      case "ellipse":
+        return <ellipse key={key} cx={node[1]} cy={node[2]} rx={node[3]} ry={node[4]} />;
+      case "line":
+        return <line key={key} x1={node[1]} y1={node[2]} x2={node[3]} y2={node[4]} />;
+      case "rect":
+        return (
+          <rect key={key} x={node[1]} y={node[2]} width={node[3]} height={node[4]} rx={node[5]} />
+        );
+      case "polyline":
+        return <polyline key={key} points={node[1]} />;
+      case "polygon":
+        return <polygon key={key} points={node[1]} />;
+      default:
+        return null;
+    }
+  });
+}
+
+/** A filled disc in the bot color, with the word's picture or its letter. */
+function WordPicture({
   color,
-  nodes,
+  word,
   size,
   isWorking,
 }: {
   color: string;
-  nodes: readonly AvatarWordIconNode[];
+  word: string;
   size: number;
   isWorking: boolean;
 }) {
-  const ink = contrastRatio(color, "#FFFFFF") < 1.15 ? "#141414" : color;
+  const ink = avatarWordInk(color);
+  const pale = contrastRatio(color, "#FFFFFF") < 1.15;
+  const nodes = avatarWordIcon(word);
   return (
     <svg
       viewBox="0 0 24 24"
@@ -392,36 +413,33 @@ function WordIcon({
       data-working={isWorking}
       style={{ width: size, height: size, flex: "none" }}
     >
-      {nodes.map((node, index) => {
-        const key = `${node[0]}-${index}`;
-        switch (node[0]) {
-          case "path":
-            return <path key={key} d={node[1]} />;
-          case "circle":
-            return <circle key={key} cx={node[1]} cy={node[2]} r={node[3]} />;
-          case "ellipse":
-            return <ellipse key={key} cx={node[1]} cy={node[2]} rx={node[3]} ry={node[4]} />;
-          case "line":
-            return <line key={key} x1={node[1]} y1={node[2]} x2={node[3]} y2={node[4]} />;
-          case "rect":
-            return (
-              <rect
-                key={key}
-                x={node[1]}
-                y={node[2]}
-                width={node[3]}
-                height={node[4]}
-                rx={node[5]}
-              />
-            );
-          case "polyline":
-            return <polyline key={key} points={node[1]} />;
-          case "polygon":
-            return <polygon key={key} points={node[1]} />;
-          default:
-            return null;
-        }
-      })}
+      <circle
+        cx={12}
+        cy={12}
+        r={11}
+        fill={color}
+        stroke={pale ? "rgba(20,20,20,0.28)" : "none"}
+        strokeWidth={pale ? 0.6 : 0}
+      />
+      {nodes ? (
+        <g transform={AVATAR_WORD_ICON_TRANSFORM}>
+          <WordMark nodes={nodes} />
+        </g>
+      ) : (
+        <text
+          x={12}
+          y={12}
+          fill={ink}
+          stroke="none"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={10}
+          fontWeight={650}
+          fontFamily="ui-sans-serif, system-ui, sans-serif"
+        >
+          {avatarWordLetter(word)}
+        </text>
+      )}
     </svg>
   );
 }
@@ -429,14 +447,12 @@ function WordIcon({
 function OrganicAvatar({
   color,
   identity,
-  word,
   size,
   isWorking,
   className,
 }: {
   color: string;
   identity?: string;
-  word?: string;
   size: number;
   isWorking: boolean;
   className?: string;
@@ -446,10 +462,10 @@ function OrganicAvatar({
     reducedMotionSnapshot,
     () => false,
   );
-  const seed = avatarIdentitySeed(word || identity || color || DEFAULT_BOT_AVATAR_COLOR);
+  const seed = avatarIdentitySeed(identity || color || DEFAULT_BOT_AVATAR_COLOR);
   const duration = `${4.8 + (seed % 24) / 10}s`;
-  const shapeA = word ? avatarWordShapePath(word) : organicAvatarPath(seed);
-  const shapeB = word ? avatarWordShapePath(word, 0.42) : organicAvatarPath(seed, 0.42);
+  const shapeA = organicAvatarPath(seed);
+  const shapeB = organicAvatarPath(seed, 0.42);
   const pale = contrastRatio(color, "#FFFFFF") < 1.15;
 
   return (
