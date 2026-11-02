@@ -348,12 +348,11 @@ export async function archiveBot(
         data: { state: "stopped" },
       });
     }
-    const archived = await tx.bot.update({
+    await tx.bot.update({
       where: { id: bot.id },
       data: { archivedAt: bot.archivedAt ?? now, pinned: false, sectionId: null },
-      select: { spaceId: true },
     });
-    if (section?.sectionId) await removeEmptySection(tx, section.sectionId, archived.spaceId);
+    if (section?.sectionId) await removeEmptySection(tx, section.sectionId, bot.spaceId);
   });
   await Promise.allSettled([
     ...activeRuns.map((run) => deps.jobs.cancel(runJobKey(run.id))),

@@ -1326,6 +1326,8 @@ describe("userTurnInstructions", () => {
   ];
   const archiveBot =
     "archive_bot safely archives another bot in this space. Use it when the user asks to remove that bot or when it is finished and unused. The user can restore it or permanently delete it later. confirm_name must exactly match its name.";
+  const moveBot =
+    "move_bot moves a bot to another space or changes its parent bot, after the owner approves.";
   const replyGuidance =
     "Send progress updates only when the work will take minutes — long computer tasks or multi-step jobs — never for quick replies and never to announce that you are starting. Even then send at most a few brief updates (a sentence or two each), not one per tool call, and do not narrate routine steps. Thinking stays private. message_user is capped at 500 characters and will be silently cut off if you exceed it \u2014 never put your final answer, a report, or any long-form deliverable in it. Always put the complete final answer in your normal reply, never split across message_user calls, and never assume a message_user update already delivered your content. When a background helper or long job finishes, your normal reply must say it is done and what the outcome was in one or two sentences.";
   const stableTail = [
@@ -1368,6 +1370,7 @@ describe("userTurnInstructions", () => {
       ...stableMiddle,
       "Bot directory",
       archiveBot,
+      moveBot,
       "Connected plugins: none",
       "Agent skills",
       expect.stringContaining("read the Atlas skill"),
@@ -1403,6 +1406,7 @@ describe("userTurnInstructions", () => {
       "This entire computer workspace is your private home.",
       ...stableMiddle,
       archiveBot,
+      moveBot,
       ...stableTail,
     ]);
     // The timestamp rides on the per-turn prompt so the system prefix stays cacheable.
@@ -1433,6 +1437,7 @@ describe("userTurnInstructions", () => {
       "This entire computer workspace is your private home.",
       ...stableMiddle,
       archiveBot,
+      moveBot,
       ...stableTail,
     ]);
   });
