@@ -94,6 +94,7 @@ export const COMPACT_CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
   "user_computer_shell",
   "read_file",
   "write_file",
+  "attach_file",
   "list_files",
 ]);
 

@@ -82,6 +82,7 @@ import {
 } from "./connection-context.js";
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
+import { doTheJobNote } from "./do-the-job.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetRun } from "./fleet-tools.js";
 import { loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
@@ -1412,6 +1413,16 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             ? ownFilesNote(taskPrompt, {
                 shellOffered: tools.some((tool) => tool.name === "shell"),
                 mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          // Last, so a small model follows this instead of copying an earlier pasted-code reply.
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? doTheJobNote(taskPrompt, {
+                toolsOffered:
+                  tools.some((tool) => tool.name === "write_file") &&
+                  tools.some((tool) => tool.name === "attach_file"),
                 voiceCall: Boolean(voiceCall),
               })
             : undefined,
