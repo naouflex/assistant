@@ -7,16 +7,22 @@ import { shellQuote } from "./computer-support.js";
 
 /** The computer image's page-browser files: the API ships them in its source tree. */
 const COMPUTER_DIR = path.join("infra", "sandboxes", "computer");
+const PAGE_BROWSER_WRAPPERS = ["atlas-page-browser", "rakazo-page-browser"] as const;
 
 let computerDir: string | undefined;
+let pageBrowserWrapper = PAGE_BROWSER_WRAPPERS[0];
 
 function computerFile(name: string): string {
   if (!computerDir) {
     // Source, tests and the bundled server all sit somewhere below the repository root.
     for (let dir = path.dirname(fileURLToPath(import.meta.url)); ; dir = path.dirname(dir)) {
       const candidate = path.join(dir, COMPUTER_DIR);
-      if (existsSync(path.join(candidate, "rakazo-page-browser"))) {
+      const wrapper = PAGE_BROWSER_WRAPPERS.find((file) =>
+        existsSync(path.join(candidate, file)),
+      );
+      if (wrapper) {
         computerDir = candidate;
+        pageBrowserWrapper = wrapper;
         break;
       }
       if (path.dirname(dir) === dir) throw new Error(`${COMPUTER_DIR} is missing`);
@@ -45,20 +51,22 @@ export function installAgentBrowserCommand(): string {
  * so a hosted computer always runs the helper its API was released with.
  */
 export function installPageBrowserFilesCommand(): string {
-  const wrapper = computerFile("rakazo-page-browser");
+  const wrapperName = pageBrowserWrapper;
+  const wrapper = computerFile(wrapperName);
   const secrets = computerFile("page_secrets.py");
   const version = createHash("sha256").update(wrapper).update("\0").update(secrets).digest("hex");
+  const installPath = `/usr/local/bin/${wrapperName}`;
   // One archive, so both files change together.
   const archive = gzipSync(
-    JSON.stringify({ "rakazo-page-browser": wrapper, "page_secrets.py": secrets }),
+    JSON.stringify({ [wrapperName]: wrapper, "page_secrets.py": secrets }),
     { level: 9 },
   ).toString("base64");
   const unpack = [
     "import gzip, json, os, sys",
     "files = json.loads(gzip.decompress(sys.stdin.buffer.read()))",
     "os.makedirs('/usr/local/lib/rakazo', exist_ok=True)",
-    "for name, mode, target in (('page_secrets.py', 0o644, '/usr/local/lib/rakazo/page_secrets.py'),",
-    "                           ('rakazo-page-browser', 0o755, '/usr/local/bin/rakazo-page-browser')):",
+    `for name, mode, target in (('page_secrets.py', 0o644, '/usr/local/lib/rakazo/page_secrets.py'),`,
+    `                           ('${wrapperName}', 0o755, '${installPath}')):`,
     "    with open(target + '.new', 'w', encoding='utf-8') as file:",
     "        file.write(files[name])",
     "    os.chmod(target + '.new', mode)",
