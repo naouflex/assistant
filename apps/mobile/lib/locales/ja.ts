@@ -1,4 +1,23 @@
 export const JA_MESSAGES: Record<string, string> = {
+  "Phone control": "スマートフォンの操作",
+  Accessibility: "ユーザー補助",
+  Allowed: "許可済み",
+  "Bots lose access to this phone until you turn Phone control on again.":
+    "スマートフォンの操作を再びオンにするまで、ボットはこのスマートフォンにアクセスできなくなります。",
+  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
+    "オンの間、ボットはこのスマートフォンの画面を見て操作し、コマンドを実行できます。すべての操作は記録されます。",
+  "Not connected": "未接続",
+  Off: "オフ",
+  On: "オン",
+  "Remove this phone": "このスマートフォンを削除",
+  "Remove this phone?": "このスマートフォンを削除しますか？",
+  "Screenshots need Android 11 or newer.": "スクリーンショットには Android 11 以降が必要です。",
+  "Turn off after": "自動オフまでの時間",
+  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
+    "ボットが画面を見てタップできるように、ユーザー補助の設定で Atlas phone control をオンにしてください。",
+  "{count} min": "{count} 分",
+  "The server did not pair this phone.": "サーバーはこのスマートフォンをペアリングしませんでした。",
+  "Phone control needs the Android app.": "スマートフォンの操作には Android アプリが必要です。",
   "How other bots see it": "他のボットからの見え方",
   "Share to": "共有先",
   "{count} files": "{count}個のファイル",
@@ -49,6 +68,9 @@ export const JA_MESSAGES: Record<string, string> = {
   "Hide password": "パスワードを非表示",
   Export: "エクスポート",
   "Edit avatar": "アバターを編集",
+  "Shape from a word": "単語から形を作る",
+  Word: "単語",
+  Generate: "生成",
   "Add open work": "未完了の作業を追加",
   Permissions: "権限",
   "Open work": "未完了の作業",

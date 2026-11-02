@@ -1,24 +1,36 @@
 import type { ProcessEvent } from "@atlas/adapter-kit";
 import type { HostComputerEnvironment, HostComputerRequest } from "./host-computer-protocol.js";
 import type { HostScreenObservation } from "./host-screen.js";
+import type { PhoneScreen, PhoneShellResult, UserDeviceKind } from "./phone-protocol.js";
 import type { UserDevice, UserDeviceGateway } from "./user-device-protocol.js";
 
 export const USER_DEVICE_EMULATOR_OUTPUT = "fixture-mac\n";
+export const USER_DEVICE_EMULATOR_PHONE_OUTPUT = "fixture-phone\n";
 
 /**
  * Deterministic, offline stand-in for a connected desktop: every user has one, every command
  * prints USER_DEVICE_EMULATOR_OUTPUT, and every app shows one empty window. Records what it was
- * asked to run.
+ * asked to run. A phone is connected only when constructed with `{ phone: true }`.
  */
 export class UserDeviceEmulator implements UserDeviceGateway {
   readonly requests: Array<{ userId: string; request: HostComputerRequest }> = [];
 
-  async connected(_userId: string): Promise<UserDevice> {
+  readonly #phone: boolean;
+
+  constructor(options: { phone?: boolean } = {}) {
+    this.#phone = options.phone ?? false;
+  }
+
+  async connected(_userId: string, kind: UserDeviceKind = "computer"): Promise<UserDevice | null> {
+    if (kind === "phone")
+      return this.#phone
+        ? { deviceId: "emulated-phone", name: "Fixture Pixel", platform: "android" }
+        : null;
     return { deviceId: "emulated-device", name: "Fixture Mac", platform: "darwin" };
   }
 
-  async pairedSince(_userId: string): Promise<Date> {
-    return new Date(0);
+  async pairedSince(_userId: string, kind: UserDeviceKind = "computer"): Promise<Date | null> {
+    return kind === "phone" && !this.#phone ? null : new Date(0);
   }
 
   async *request<T>(
@@ -55,6 +67,29 @@ export class UserDeviceEmulator implements UserDeviceGateway {
           ? { completed: request.actions.length, observation }
           : observation
       ) as T;
+      return;
+    }
+    if (request.method === "phone") {
+      if (request.action.op === "shell") {
+        const result: PhoneShellResult = {
+          exitCode: 0,
+          stdout: USER_DEVICE_EMULATOR_PHONE_OUTPUT,
+          stderr: "",
+          runner: request.action.termux ? "termux" : "sh",
+        };
+        yield result as T;
+        return;
+      }
+      const screen: PhoneScreen = {
+        package: "com.android.launcher",
+        width: 576,
+        height: 1280,
+        tree: '[0] FrameLayout (0,0,576,1280)\n[1] TextView "Settings" (40,200,160,260)',
+        ...(request.action.op === "screenshot"
+          ? { image: { mimeType: "image/png", data: "iVBORw0KGgo=", width: 576, height: 1280 } }
+          : {}),
+      };
+      yield screen as T;
       return;
     }
     yield null as T;

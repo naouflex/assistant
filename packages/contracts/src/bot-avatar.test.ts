@@ -3,6 +3,7 @@ import {
   AgentImportCreateInput,
   BOT_AVATAR_VALUE_MAX_LENGTH,
   BotAvatarValueSchema,
+  botAvatarWordValue,
   CreateBotInput,
   DEFAULT_NEW_BOT_AVATAR_SET,
   ExportManifestSchema,
@@ -52,6 +53,21 @@ describe("bot avatar values", () => {
     ).toBe(false);
     expect(UpdateBotInput.safeParse({ botId: "bot-1", color: "gray" }).success).toBe(false);
     expect(UpdateBotInput.safeParse({ botId: "bot-1", name: "Atlas" }).success).toBe(true);
+  });
+
+  it("stores a generated shape as the color plus the word", () => {
+    const river = botAvatarWordValue("#8B5CF6", " River ");
+    const star = botAvatarWordValue("#8B5CF6", "étoile");
+    expect(river).toMatch(/^#8B5CF6::word_[A-Za-z0-9_-]+$/);
+    expect(parseBotAvatarValue(river!)).toEqual({ kind: "word", color: "#8B5CF6", word: "river" });
+    expect(parseBotAvatarValue(star!)).toMatchObject({ word: "étoile" });
+    expect(botAvatarWordValue("#8B5CF6", "River")).toBe(river);
+    expect(isBotAvatarValue(river!)).toBe(true);
+    expect(isBotAvatarValue("#8B5CF6::word_@@@")).toBe(false);
+    expect(isBotAvatarValue("#8B5CF6::word_")).toBe(false);
+    expect(botAvatarWordValue("#8B5CF6", "   ")).toBeNull();
+    expect(botAvatarWordValue("purple", "river")).toBeNull();
+    expect(UpdateBotInput.safeParse({ botId: "bot-1", color: river }).success).toBe(true);
   });
 });
 

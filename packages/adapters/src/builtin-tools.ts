@@ -511,6 +511,111 @@ export const builtinAgentTools: ConnectorTool[] = [
     },
   },
   {
+    name: "phone_screenshot",
+    description:
+      "Take a screenshot of the user's own Android phone. Returns the image, the app in front, and the image size; phone_tap and phone_swipe coordinates are pixels of this image. Use only when the task needs their phone.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "phone_ui_tree",
+    description:
+      'Read what is on the user\'s phone screen as numbered accessibility rows ([N] class "text" (x1,y1,x2,y2)), cheaper than a screenshot. query keeps rows containing it. Element numbers are valid until the screen changes.',
+    inputSchema: {
+      type: "object",
+      properties: { query: { type: "string", maxLength: 200 } },
+    },
+  },
+  {
+    name: "phone_tap",
+    description:
+      "Tap on the user's phone: an element from the latest phone_ui_tree, or x,y in screenshot pixels. long holds the press. Returns the screen's rows afterwards.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        element: { type: "integer", minimum: 0 },
+        x: { type: "integer", minimum: 0 },
+        y: { type: "integer", minimum: 0 },
+        long: { type: "boolean" },
+      },
+    },
+  },
+  {
+    name: "phone_swipe",
+    description:
+      "Swipe on the user's phone: a direction (up scrolls content down) across the middle of the screen, or from x1,y1 to x2,y2 in screenshot pixels. Returns the screen's rows afterwards.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        direction: { type: "string", enum: ["up", "down", "left", "right"] },
+        x1: { type: "integer", minimum: 0 },
+        y1: { type: "integer", minimum: 0 },
+        x2: { type: "integer", minimum: 0 },
+        y2: { type: "integer", minimum: 0 },
+        duration_ms: { type: "integer", minimum: 50, maximum: 5000 },
+      },
+    },
+  },
+  {
+    name: "phone_type",
+    description:
+      "Type text into a field on the user's phone: element from the latest phone_ui_tree, or the focused field. Replaces the field's text. submit presses enter afterwards. Returns the screen's rows afterwards.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", maxLength: 10000 },
+        element: { type: "integer", minimum: 0 },
+        submit: { type: "boolean" },
+      },
+      required: ["text"],
+    },
+  },
+  {
+    name: "phone_key",
+    description: "Press a system key on the user's phone and return the screen's rows afterwards.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        key: {
+          type: "string",
+          enum: [
+            "back",
+            "home",
+            "recents",
+            "notifications",
+            "quick_settings",
+            "enter",
+            "lock",
+            "power_dialog",
+          ],
+        },
+      },
+      required: ["key"],
+    },
+  },
+  {
+    name: "phone_open_app",
+    description:
+      "Open an app on the user's phone by its name or package (like Settings or com.android.chrome) and return its screen's rows.",
+    inputSchema: {
+      type: "object",
+      properties: { app: { type: "string", minLength: 1, maxLength: 200 } },
+      required: ["app"],
+    },
+  },
+  {
+    name: "phone_shell",
+    description:
+      "Run a command on the user's Android phone with /system/bin/sh, as the Atlas app (no root), in the app's own folder. termux runs it in Termux instead, when they set it up. Not this bot's computer.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        command: { type: "string" },
+        termux: { type: "boolean" },
+      },
+      required: ["command"],
+    },
+  },
+  {
     name: "open_path",
     description:
       "Open a workspace file or an http(s) URL in its default graphical application on this bot's computer and return the resulting screen.",

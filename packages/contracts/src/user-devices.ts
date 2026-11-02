@@ -7,7 +7,7 @@ export const USER_DEVICE_CONNECT_PATH = `${USER_DEVICE_PATH}/connect`;
 
 export const userDevicePairRequest = z.object({
   name: z.string().min(1).max(128),
-  platform: z.enum(["darwin", "win32", "linux"]),
+  platform: z.enum(["darwin", "win32", "linux", "android"]),
 });
 export type UserDevicePairRequest = z.infer<typeof userDevicePairRequest>;
 

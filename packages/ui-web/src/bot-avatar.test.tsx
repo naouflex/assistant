@@ -1,4 +1,5 @@
-import { ACTIVE_RUN_STATUSES, SHIPPED_BOT_AVATAR_IMAGES } from "@atlas/core";
+import { botAvatarWordValue } from "@atlas/contracts";
+import { ACTIVE_RUN_STATUSES, avatarWordShapePath, SHIPPED_BOT_AVATAR_IMAGES } from "@atlas/core";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -72,6 +73,17 @@ describe("BotAvatar", () => {
     const maya = renderToString(<BotAvatar color={DEFAULT_BOT_AVATAR_COLOR} identity="maya" />);
     const github = renderToString(<BotAvatar color={DEFAULT_BOT_AVATAR_COLOR} identity="github" />);
     expect(maya).not.toEqual(github);
+  });
+
+  it("draws a word as its own body instead of the logo", () => {
+    const value = botAvatarWordValue("#8B5CF6", "river")!;
+    const html = renderToString(
+      <BotAvatar color={value} identity="maya" avatarSet="atlas" size={32} />,
+    );
+    expect(html).toContain(avatarWordShapePath("river"));
+    expect(html).not.toContain("atlas-logo-avatar");
+    expect(parseBotAvatar(value).word).toBe("river");
+    expect(defaultBotAvatarValue(value)).toBe("#8B5CF6");
   });
 
   it("parses shape indexes from encoded color values", () => {

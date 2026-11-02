@@ -20,6 +20,8 @@ import { FakeWebProvider } from "./fake-web.js";
 import type * as FleetToolsModule from "./fleet-tools.js";
 import type { HostComputerRequest } from "./host-computer-protocol.js";
 import { catalogEntries, resolveCatalogCall } from "./lazy-tool-catalog.js";
+import type { UserDeviceKind } from "./phone-protocol.js";
+import { UserDeviceEmulator } from "./user-device-emulator.js";
 import type { UserDeviceGateway } from "./user-device-protocol.js";
 
 vi.mock("./computer-lifecycle.js", async (importOriginal) => ({
@@ -190,11 +192,17 @@ function fixture({
       async ({
         where,
       }: {
-        where: { kind: string; status: { in: string[] }; createdAt?: { gte: Date } };
+        where: {
+          kind: string | { in: string[] };
+          status: { in: string[] };
+          createdAt?: { gte: Date };
+        };
       }) =>
         effects.find(
           (effect) =>
-            effect.kind === where.kind &&
+            (typeof where.kind === "string"
+              ? effect.kind === where.kind
+              : where.kind.in.includes(effect.kind)) &&
             where.status.in.includes(effect.status) &&
             !(where.createdAt && createdAt.get(effect.id)! < where.createdAt.gte),
         ) ?? null,
@@ -2830,7 +2838,9 @@ describe("user_computer_shell", () => {
   function devices(connected = true, paired = connected, pairedAt = new Date(0)) {
     const requests: Array<{ userId: string; request: HostComputerRequest }> = [];
     const gateway = {
-      connected: vi.fn(async (_userId: string) => (connected ? device : null)),
+      connected: vi.fn(async (_userId: string, kind?: UserDeviceKind) =>
+        connected && kind !== "phone" ? device : null,
+      ),
       pairedSince: vi.fn(async (_userId: string) => (paired ? pairedAt : null)),
       async *request<T>(userId: string, request: HostComputerRequest) {
         requests.push({ userId, request });
@@ -3038,7 +3048,10 @@ describe("user_computer_shell", () => {
       status: "completed",
       request: { command: "hostname" },
     });
-    gateway.connected.mockResolvedValueOnce(device).mockResolvedValueOnce(null);
+    let checks = 0;
+    gateway.connected.mockImplementation(async (_userId: string, kind?: UserDeviceKind) =>
+      kind !== "phone" && checks++ === 0 ? device : null,
+    );
     f.setCalls([call("ls")]);
     await f.run();
     expect(f.results).toEqual([
@@ -3058,11 +3071,9 @@ describe("user computer screen control", () => {
   function devices(platform = "darwin") {
     const requests: HostComputerRequest[] = [];
     const gateway = {
-      connected: vi.fn(async (_userId: string) => ({
-        deviceId: "device-1",
-        name: "Laptop",
-        platform,
-      })),
+      connected: vi.fn(async (_userId: string, kind?: UserDeviceKind) =>
+        kind === "phone" ? null : { deviceId: "device-1", name: "Laptop", platform },
+      ),
       pairedSince: vi.fn(async (_userId: string) => new Date(0)),
       async *request<T>(_userId: string, request: HostComputerRequest) {
         requests.push(request);
@@ -3185,5 +3196,106 @@ describe("user computer screen control", () => {
     expect(f.pauseRunForInput).not.toHaveBeenCalled();
     expect(f.results).toEqual([{ error: expect.stringMatching(/^actions\.0/) }]);
     expect(requests).toEqual([]);
+  });
+});
+
+describe("phone tools", () => {
+  const ownRun = { builtin: true, sourceRole: "user" };
+  const tap = (executionId = "call-1") => ({
+    name: "phone_tap",
+    args: { x: 100, y: 200 },
+    executionId,
+  });
+  const phoneRequests = (emulator: UserDeviceEmulator) =>
+    emulator.requests.filter(({ request }) => request.method === "phone");
+
+  it("is offered only while the owner's phone is connected", async () => {
+    const online = fixture({ ...ownRun, userDevices: new UserDeviceEmulator({ phone: true }) });
+    await online.run();
+    expect(online.offeredTools()).toEqual(
+      expect.arrayContaining(["phone_screenshot", "phone_tap", "phone_shell"]),
+    );
+    const offline = fixture({ ...ownRun, userDevices: new UserDeviceEmulator() });
+    await offline.run();
+    expect(offline.offeredTools().filter((name) => name.startsWith("phone_"))).toEqual([]);
+    const webhook = fixture({
+      ...ownRun,
+      trigger: "webhook",
+      userDevices: new UserDeviceEmulator({ phone: true }),
+    });
+    await webhook.run();
+    expect(webhook.offeredTools().filter((name) => name.startsWith("phone_"))).toEqual([]);
+  });
+
+  it("refuses a run that may not reach the phone", async () => {
+    const emulator = new UserDeviceEmulator({ phone: true });
+    const f = fixture({ ...ownRun, trigger: "webhook", userDevices: emulator });
+    f.setCalls([tap()]);
+    await f.run();
+    expect(f.results).toEqual([{ error: "The user's phone is not available in this run." }]);
+    expect(phoneRequests(emulator)).toEqual([]);
+  });
+
+  it("asks once for control, then acts without asking again in this space", async () => {
+    const emulator = new UserDeviceEmulator({ phone: true });
+    const f = fixture({ ...ownRun, userDevices: emulator });
+    f.setCalls([tap()]);
+    await f.run();
+    expect(isApprovalPausedResult(f.results[0])).toBe(true);
+    expect(f.pauseRunForInput.mock.calls[0]).toEqual([
+      expect.objectContaining({
+        blocks: [
+          expect.objectContaining({
+            kind: "ask",
+            text: "Control your phone?",
+            detail: "tap x=100 y=200",
+            actions: [
+              { id: "allow", label: "Allow in this space" },
+              { id: "deny", label: "Deny" },
+            ],
+          }),
+        ],
+      }),
+    ]);
+    expect(phoneRequests(emulator)).toEqual([]);
+
+    f.effects[0]!.status = "approved";
+    await f.run();
+    expect(phoneRequests(emulator).map(({ request }) => request)).toEqual([
+      { method: "phone", botId: "bot-1", runId: "run-1", action: { op: "tap", x: 100, y: 200 } },
+    ]);
+    expect(f.results.at(-1)).toMatchObject({
+      content: [{ type: "text", text: expect.stringContaining("tapped 100,200") }],
+      details: { package: "com.android.launcher", width: 576, height: 1280 },
+    });
+
+    f.setCalls([{ name: "phone_key", args: { key: "home" }, executionId: "call-2" }]);
+    await f.run();
+    expect(f.pauseRunForInput).toHaveBeenCalledOnce();
+    expect(phoneRequests(emulator).at(-1)!.request).toMatchObject({
+      action: { op: "key", key: "home" },
+    });
+
+    // The shell is asked for separately.
+    f.setCalls([{ name: "phone_shell", args: { command: "uptime" }, executionId: "call-3" }]);
+    await f.run();
+    expect(f.pauseRunForInput).toHaveBeenCalledTimes(2);
+    expect(f.pauseRunForInput.mock.calls[1]).toEqual([
+      expect.objectContaining({
+        blocks: [expect.objectContaining({ text: "Run on your phone?", detail: "uptime" })],
+      }),
+    ]);
+  });
+
+  it("refuses with a block rule", async () => {
+    const f = fixture({
+      ...ownRun,
+      userDevices: new UserDeviceEmulator({ phone: true }),
+      rules: [{ effect: "deny", matchKind: "tool", matchValue: "phone_tap" }],
+    });
+    f.setCalls([tap()]);
+    await f.run();
+    expect(f.results[0]).toEqual({ error: expect.stringContaining("is blocked in this space") });
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
   });
 });

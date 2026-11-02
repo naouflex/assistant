@@ -20,6 +20,7 @@ export const SECURITY_EVENT_TYPES = [
   "credential.revealed",
   "device.paired",
   "device.revoked",
+  "device.phone_action",
   "deployment.settings.changed",
   "approval.decided",
   "approval.policy.changed",

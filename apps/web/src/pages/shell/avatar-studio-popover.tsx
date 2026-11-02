@@ -1,5 +1,5 @@
 import type { BotAvatarSet } from "@atlas/contracts";
-import { resolveBotAvatarSet } from "@atlas/contracts";
+import { AVATAR_WORD_MAX_LENGTH, botAvatarWordValue, resolveBotAvatarSet } from "@atlas/contracts";
 import { SHIPPED_BOT_AVATAR_IMAGES, SHIPPED_BOT_AVATAR_SHAPE_KEYS } from "@atlas/core";
 import {
   BOT_AVATAR_COLORS,
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   defaultBotAvatarValue,
+  Input,
   parseBotAvatar,
   Tabs,
   TabsContent,
@@ -62,10 +63,23 @@ export function BotLookPicker({
 }) {
   const parsed = parseBotAvatar(value);
   const currentColor = parsed.color || DEFAULT_BOT_AVATAR_COLOR;
-  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined;
+  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined && !parsed.word;
+  const [wordDraft, setWordDraft] = useState<string | null>(null);
+  const wordShown = wordDraft ?? parsed.word ?? "";
+  const wordPreview = botAvatarWordValue(currentColor, wordShown);
 
   function selectColor(color: string) {
+    if (parsed.word) {
+      onChange(botAvatarWordValue(color, parsed.word) ?? color);
+      return;
+    }
     onChange(parsed.shapeIndex === undefined ? color : `${color}::shape_${parsed.shapeIndex}`);
+  }
+
+  function generateWord() {
+    if (!wordPreview) return;
+    setWordDraft(null);
+    if (wordPreview !== value) onChange(wordPreview);
   }
 
   return (
@@ -135,6 +149,27 @@ export function BotLookPicker({
               />
             ))}
           </div>
+          <div className="mt-3 flex items-center gap-2">
+            <Input
+              aria-label={t`Shape from a word`}
+              placeholder={t`Word`}
+              value={wordShown}
+              maxLength={AVATAR_WORD_MAX_LENGTH}
+              data-testid="avatar-word"
+              onChange={(event) => setWordDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                generateWord();
+              }}
+            />
+            <Button type="button" variant="outline" disabled={!wordPreview} onClick={generateWord}>
+              <Trans>Generate</Trans>
+            </Button>
+            {wordPreview && wordPreview !== value ? (
+              <BotAvatar color={wordPreview} identity={identity} size={36} avatarSet="organic" />
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -193,11 +228,7 @@ export function BotLookPicker({
                       : "hover:bg-white/5"
                   }`}
                 >
-                  <img
-                    src={image.value}
-                    alt=""
-                    className="size-8 object-contain"
-                  />
+                  <img src={image.value} alt="" className="size-8 object-contain" />
                 </button>
               );
             })}

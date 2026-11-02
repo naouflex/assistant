@@ -76,6 +76,7 @@ import {
   passkeysAvailable,
   renamePasskey,
 } from "../../lib/passkey";
+import { hasPhoneControl } from "../../lib/phone-control";
 import { registerPushToken } from "../../lib/push";
 import { createQueuedSave } from "../../lib/queued-save";
 import {
@@ -779,6 +780,9 @@ export default function Account() {
               { title: t("Integrations"), href: "/integrations" },
               { title: t("Skills"), href: "/skills" },
               { title: t("Messaging"), href: "/messaging" },
+              ...(hasPhoneControl()
+                ? [{ title: t("Phone control"), href: "/phone-control" } as const]
+                : []),
               { title: t("AI data sharing"), href: "/ai-data-sharing" },
             ] as const
           ).map(settingsLink)}

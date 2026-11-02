@@ -33,7 +33,12 @@ export function botAvatarActivity(
 
 export function usesLogoAvatar(bot: { avatarSet?: string; color: string }): boolean {
   const parsed = parseBotAvatarValue(bot.color);
-  return bot.avatarSet === "atlas" && parsed.kind !== "image" && parsed.kind !== "shape";
+  return (
+    bot.avatarSet === "atlas" &&
+    parsed.kind !== "image" &&
+    parsed.kind !== "shape" &&
+    parsed.kind !== "word"
+  );
 }
 
 export function logoAvatarNeedsAttention(activity: LogoAvatarActivity): boolean {
@@ -76,6 +81,14 @@ const COMPUTER_TOOLS = new Set([
   "user_computer_shell",
   "user_computer_observe",
   "user_computer_act",
+  "phone_screenshot",
+  "phone_ui_tree",
+  "phone_tap",
+  "phone_swipe",
+  "phone_type",
+  "phone_key",
+  "phone_open_app",
+  "phone_shell",
   "shell",
   "open_path",
   "launch_app",

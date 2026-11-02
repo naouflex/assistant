@@ -42,6 +42,11 @@ interface ConnectionRow {
   heartbeatAt: Date;
 }
 
+type PlatformFilter = string | { not: string } | undefined;
+const platformMatches = (platform: string, filter: PlatformFilter) =>
+  filter === undefined ||
+  (typeof filter === "string" ? platform === filter : platform !== filter.not);
+
 /** The handful of Prisma calls the hub and gateway make, over two in-memory tables. */
 function fakePrisma() {
   const devices = new Map<string, DeviceRow>();
@@ -62,8 +67,17 @@ function fakePrisma() {
         ids(where)
           .map((id) => devices.get(id))
           .filter((row) => row?.revokedAt),
-      findFirst: async ({ where }: { where: { userId: string; revokedAt: null } }) =>
-        [...devices.values()].find((row) => row.userId === where.userId && !row.revokedAt) ?? null,
+      findFirst: async ({
+        where,
+      }: {
+        where: { userId: string; revokedAt: null; platform?: PlatformFilter };
+      }) =>
+        [...devices.values()].find(
+          (row) =>
+            row.userId === where.userId &&
+            !row.revokedAt &&
+            platformMatches(row.platform, where.platform),
+        ) ?? null,
     },
     userDeviceConnection: {
       upsert: async ({ where, create }: { where: { deviceId: string }; create: ConnectionRow }) =>
@@ -84,7 +98,10 @@ function fakePrisma() {
       findFirst: async ({
         where,
       }: {
-        where: { heartbeatAt: { gt: Date }; device: { userId: string } };
+        where: {
+          heartbeatAt: { gt: Date };
+          device: { userId: string; platform?: PlatformFilter };
+        };
       }) => {
         const row = [...connections.values()]
           .filter((connection) => {
@@ -93,6 +110,7 @@ function fakePrisma() {
               device &&
               device.userId === where.device.userId &&
               !device.revokedAt &&
+              platformMatches(device.platform, where.device.platform) &&
               connection.heartbeatAt > where.heartbeatAt.gt
             );
           })
@@ -237,6 +255,44 @@ describe("user device gateway in the holding process", () => {
     socket.reply(id, { done: true });
     await expect(result).resolves.toEqual([{ platform: "darwin" }]);
     expect(socket.sent.some((message) => message.type === "cancel")).toBe(false);
+  });
+
+  it("keeps the user's phone and computer apart", async () => {
+    const { hub, devices, deviceRows } = setup();
+    const phone = { id: "phone-1", userId: "user-1", name: "Pixel", platform: "android" };
+    deviceRows.set(phone.id, {
+      ...phone,
+      tokenHash: hashUserDeviceToken("b".repeat(64)),
+      createdAt: new Date(0),
+      revokedAt: null,
+      lastSeenAt: null,
+    });
+    const phoneSocket = new FakeSocket();
+    await hub.attach(phone, phoneSocket);
+    await expect(devices.connected("user-1")).resolves.toBeNull();
+    await expect(devices.connected("user-1", "phone")).resolves.toMatchObject({
+      deviceId: phone.id,
+    });
+    const signal = new AbortController().signal;
+    await expect(collect(devices.request("user-1", environment, signal))).rejects.toThrow(
+      USER_DEVICE_OFFLINE_MESSAGE,
+    );
+
+    const computerSocket = new FakeSocket();
+    await hub.attach(device, computerSocket);
+    await expect(devices.connected("user-1")).resolves.toMatchObject({ deviceId: device.id });
+    const result = collect(
+      devices.request(
+        "user-1",
+        { method: "phone", botId: "bot-1", action: { op: "key", key: "home" } },
+        signal,
+      ),
+    );
+    const { id } = await phoneSocket.nextRequest();
+    phoneSocket.reply(id, { value: { width: 1, height: 1 } });
+    phoneSocket.reply(id, { done: true });
+    await expect(result).resolves.toEqual([{ width: 1, height: 1 }]);
+    expect(computerSocket.sent.filter((message) => message.type === "request")).toEqual([]);
   });
 
   it("raises the device's error", async () => {

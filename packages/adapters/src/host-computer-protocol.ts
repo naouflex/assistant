@@ -1,6 +1,7 @@
 import { boundedSandboxCommandTimeoutMs } from "@atlas/core";
 import { z } from "zod";
 import { hostScreenMethods } from "./host-screen.js";
+import { phoneAction } from "./phone-protocol.js";
 
 export const HOST_COMPUTER_MAX_BYTES = 12 * 1024 * 1024;
 export const HOST_COMPUTER_MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -60,6 +61,8 @@ export const hostComputerRequest = z.discriminatedUnion("method", [
   z.object({ ...base, method: z.literal("writeFile"), file }),
   z.object({ ...base, method: z.literal("screenObserve"), ...hostScreenMethods.screenObserve }),
   z.object({ ...base, method: z.literal("screenAct"), ...hostScreenMethods.screenAct }),
+  /** Only reaches an Atlas phone; computers never receive it. */
+  z.object({ ...base, method: z.literal("phone"), action: phoneAction }),
 ]);
 export type HostComputerRequest = z.infer<typeof hostComputerRequest>;
 export interface HostComputerEnvironment {
@@ -77,5 +80,7 @@ export type HostComputerFrame<T> =
 export function hostComputerDeadlineMs(request: HostComputerRequest) {
   if (request.method === "execute")
     return boundedSandboxCommandTimeoutMs(request.command.timeoutMs) + 30_000;
+  if (request.method === "phone")
+    return request.action.op === "shell" ? request.action.timeoutMs + 30_000 : 2 * 60_000;
   return request.method.startsWith("screen") ? 2 * 60_000 : 10 * 60_000;
 }
