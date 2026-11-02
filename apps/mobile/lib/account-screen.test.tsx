@@ -221,6 +221,7 @@ vi.mock("./native", () => ({
   useResolvedAppearance: () => "light",
   useThemedStyles: () => styles,
 }));
+vi.mock("./phone-control", () => ({ hasPhoneControl: () => false }));
 vi.mock("./passkey", () => ({
   addPasskey: vi.fn(),
   deletePasskey: vi.fn(),

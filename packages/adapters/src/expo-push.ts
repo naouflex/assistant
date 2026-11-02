@@ -126,10 +126,13 @@ export type ExpoPushOptions = {
   /** Sent as a bearer token when the Expo project enforces enhanced push security. */
   accessToken?: string;
   retryDelaysMs?: readonly number[];
+  /** Returns false when the user turned this kind of notification off. */
+  allows?: (message: NotificationMessage, userId: string, spaceId: string) => Promise<boolean>;
 };
 
 export class ExpoPushProvider implements NotificationProvider {
   private readonly sessionExpiresAt?: PushSessionExpiresAt;
+  private readonly allows?: ExpoPushOptions["allows"];
   private readonly jobs?: JobPublisher;
   private readonly accessToken?: string;
   private readonly retryDelaysMs: readonly number[];
@@ -139,6 +142,7 @@ export class ExpoPushProvider implements NotificationProvider {
     options: ExpoPushOptions = {},
   ) {
     this.sessionExpiresAt = options.sessionExpiresAt;
+    this.allows = options.allows;
     this.jobs = options.jobs;
     this.accessToken = options.accessToken?.trim() || undefined;
     this.retryDelaysMs = options.retryDelaysMs ?? EXPO_PUSH_RETRY_DELAYS_MS;
@@ -169,6 +173,7 @@ export class ExpoPushProvider implements NotificationProvider {
   async deliver(message: NotificationMessage, context: AdapterContext): Promise<ExpoPushDelivery> {
     const token = await this.deliverableToken(context.userId);
     if (!token) return "undeliverable";
+    if (!(await this.allowed(message, context))) return "undeliverable";
     const payload = {
       to: token,
       title: capped(message.title, MAX_PUSH_TITLE_CHARS),
@@ -252,6 +257,17 @@ export class ExpoPushProvider implements NotificationProvider {
    * row is removed. The token is read again after the lookup so a handover
    * during that wait is not sent.
    */
+  private async allowed(message: NotificationMessage, context: AdapterContext) {
+    if (!this.allows) return true;
+    try {
+      return await this.allows(message, context.userId, context.spaceId);
+    } catch (error) {
+      // A failed lookup should not silence a notice the user may want.
+      getLogger().error("push preference lookup failed", error);
+      return true;
+    }
+  }
+
   private async deliverableToken(userId: string): Promise<string | undefined> {
     const saved = await this.tokens.load(userId);
     if (!saved?.token) return undefined;

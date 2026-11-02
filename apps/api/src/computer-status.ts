@@ -60,6 +60,8 @@ export function toComputerStatus(
     controlRunId?: string | null;
     homeRevision: string;
     maintenanceId?: string | null;
+    healthRecoveryAttempts?: number;
+    healthAlertedAt?: Date | null;
   } | null,
   busyBotName: string | null = null,
 ): ComputerStatus {
@@ -96,5 +98,13 @@ export function toComputerStatus(
     busyBotName,
     canUpdate: computerSupportsUpdate(kind),
     terminalAvailable: computerSupportsTerminal(kind),
+    autoRecovery:
+      state !== "error"
+        ? null
+        : computer?.healthAlertedAt
+          ? "gave_up"
+          : computer?.healthRecoveryAttempts
+            ? "trying"
+            : null,
   };
 }

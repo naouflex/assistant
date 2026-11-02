@@ -1267,6 +1267,10 @@ msgstr "{title} wijzigen"
 msgid "Change model"
 msgstr "Model wijzigen"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Change parent"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Change password"
 msgstr "Wachtwoord wijzigen"
@@ -1568,6 +1572,10 @@ msgid "Computer"
 msgstr "Computer"
 
 #: src/pages/shell/computer-view.tsx
+msgid "Computer could not restart by itself. Restart it to try again."
+msgstr ""
+
+#: src/pages/shell/computer-view.tsx
 #: src/pages/shell/use-computer.tsx
 msgid "Computer failed to boot"
 msgstr "De computer kon niet opstarten"
@@ -1588,6 +1596,10 @@ msgstr "De computer is in slaapstand. Open hem om hem te laten ontwaken."
 #: src/pages/shell/computer-view.tsx
 msgid "Computer is stopped"
 msgstr "De computer is gestopt"
+
+#: src/pages/shell/computer-view.tsx
+msgid "Computer stopped working. Restarting it…"
+msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
 #: src/pages/AccountSettingsOverlay.tsx
@@ -1851,6 +1863,11 @@ msgstr ""
 msgid "Could not change password"
 msgstr "Wachtwoord wijzigen mislukt"
 
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not change the parent."
+msgstr ""
+
 #: src/components/integrations/space-availability.tsx
 msgid "Could not change where this is available"
 msgstr ""
@@ -2104,6 +2121,11 @@ msgstr "Steminstellingen laden mislukt"
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "Uitloggen mislukt. Probeer het opnieuw."
+
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not move this bot."
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 #: src/pages/BillingSettingsPanel.tsx
@@ -3400,12 +3422,12 @@ msgstr "Invoer"
 msgid "Inputs"
 msgstr "Invoer"
 
-#: src/components/ComputerDeviceSettings.tsx
-msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
-msgstr ""
-
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Install Atlas and sign in"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr ""
 
 #: src/components/SidebarFooter.tsx
@@ -3501,6 +3523,10 @@ msgstr "Geïsoleerd voorbeeld — geen toegang tot je account"
 #: src/pages/shell/shell-dialogs.tsx
 msgid "Its bots and groups are kept and leave the section."
 msgstr "De bots en groepen blijven behouden en verlaten de sectie."
+
+#: src/pages/shell/dialogs.tsx
+msgid "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+msgstr ""
 
 #: src/pages/shell/dialogs.tsx
 msgid "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
@@ -3606,6 +3632,10 @@ msgstr "Luistert…"
 msgid "llama.cpp"
 msgstr ""
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Load"
+msgstr ""
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "Eerdere berichten laden"
@@ -3621,6 +3651,22 @@ msgstr "Oudere runs laden"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Load web images automatically"
 msgstr "Webafbeeldingen automatisch laden"
+
+#: src/pages/shell/local-model-status.ts
+msgid "loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loaded"
+msgstr ""
+
+#: src/pages/shell/local-model-status.ts
+msgid "loading"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loading"
+msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Loading activity…"
@@ -4044,6 +4090,14 @@ msgstr ""
 msgid "More computer actions"
 msgstr "Meer computeracties"
 
+#: src/pages/shell/dialogs.tsx
+msgid "Move"
+msgstr ""
+
+#: src/pages/shell/dialogs.tsx
+msgid "Move {botName} to {spaceName}?"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move down"
 msgstr "Omlaag"
@@ -4056,9 +4110,24 @@ msgstr "Verplaats ze naar je gedeelde geheugen."
 msgid "Move to"
 msgstr "Verplaatsen naar"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Move to space"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "Omhoog"
+
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
+#. placeholder {0}: bot.name
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Moved {0} to {name}"
+msgstr ""
 
 #: src/components/call/CallCard.tsx
 msgid "Mute"
@@ -4321,6 +4390,10 @@ msgstr "Nog geen tickets"
 msgid "No trigger"
 msgstr "Geen trigger"
 
+#: src/pages/BotContextMenu.tsx
+msgid "None"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr "Normaal"
@@ -4349,6 +4422,14 @@ msgstr "Niet in de catalogus van Atlas"
 #: src/pages/PluginsOverlay.tsx
 msgid "Not in the plugin catalog"
 msgstr "Niet in de plugincatalogus"
+
+#: src/pages/shell/local-model-status.ts
+msgid "not loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Not loaded"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"

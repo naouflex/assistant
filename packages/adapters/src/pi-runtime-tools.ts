@@ -181,6 +181,11 @@ export function describeToolActivity(toolName: string, args: unknown): string {
     return `Running on your computer: ${detail(record.command)}`;
   if (toolName === "user_computer_observe") return `Looking at ${detail(record.app)}`;
   if (toolName === "user_computer_act") return `Using ${detail(record.app)}`;
+  if (toolName === "phone_shell") return `Running on your phone: ${detail(record.command)}`;
+  if (toolName === "phone_open_app") return `Opening ${detail(record.app)} on your phone`;
+  if (toolName === "phone_screenshot" || toolName === "phone_ui_tree")
+    return "Looking at your phone";
+  if (toolName.startsWith("phone_")) return "Using your phone";
   if (toolName === "read_file") return `Reading ${detail(record.path)}`;
   if (toolName === "write_file") return `Writing ${detail(record.path)}`;
   if (toolName === "list_files") return `Listing ${detail(record.path ?? ".")}`;

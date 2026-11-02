@@ -1,6 +1,10 @@
 import type { Bot, BotSection, Group } from "@atlas/contracts";
+import { toast } from "@atlas/ui-web";
+import { useLingui } from "@lingui/react/macro";
 import { lazyOverlay } from "../../components/ErrorBoundary";
+import { useOwnSpaces } from "../../components/integrations/space-availability";
 import type { createSpaceRpc } from "../../lib/rpc";
+import { errorText } from "../../lib/user-error";
 import type { ShellDialogsState } from "./shell-dialogs";
 import type { useChatRead } from "./use-chat-read";
 
@@ -14,6 +18,7 @@ type ChatRead = ReturnType<typeof useChatRead>;
 export function ChatContextMenu({
   rpc,
   bot,
+  bots,
   group,
   sections,
   spaceId,
@@ -26,6 +31,7 @@ export function ChatContextMenu({
 }: {
   rpc: ReturnType<typeof createSpaceRpc>;
   bot: Bot | undefined;
+  bots: Bot[];
   group: Group | undefined;
   sections: BotSection[];
   spaceId: string | undefined;
@@ -36,8 +42,12 @@ export function ChatContextMenu({
   openChatSettings: (kind: "bot" | "group", id: string) => void;
   navigate: (path: string) => void;
 }) {
+  const { t } = useLingui();
+  const ownSpaces = useOwnSpaces();
   const chat = bot ?? group;
   if (!chat) return null;
+  const otherSpaces = ownSpaces.filter((space) => space.id !== spaceId);
+  const parents = bot ? bots.filter((item) => item.id !== bot.id && !item.archivedAt) : undefined;
   const target = bot
     ? { kind: "bot" as const, chat: bot }
     : { kind: "group" as const, chat: group! };
@@ -107,6 +117,29 @@ export function ChatContextMenu({
           ? rpc.bots.archive({ botId: bot.id })
           : rpc.groups.archive({ groupId: group!.id });
         void request.then(() => refreshBots(true));
+      }}
+      spaces={bot ? otherSpaces : undefined}
+      onMoveToSpace={(targetSpaceId) => {
+        onClose();
+        if (!bot) return;
+        const name = otherSpaces.find((space) => space.id === targetSpaceId)?.name ?? "";
+        void rpc.bots
+          .move({ botId: bot.id, spaceId: targetSpaceId })
+          .then(async () => {
+            toast.success(t`Moved ${bot.name} to ${name}`);
+            await refreshBots();
+          })
+          .catch((err: unknown) => toast.error(errorText(err, t`Could not move this bot.`)));
+      }}
+      parents={parents}
+      parentBotId={bot?.parentBotId ?? null}
+      onSetParent={(parentBotId) => {
+        onClose();
+        if (!bot || parentBotId === bot.parentBotId) return;
+        void rpc.bots
+          .setParent({ botId: bot.id, parentBotId })
+          .then(() => refreshBots())
+          .catch((err: unknown) => toast.error(errorText(err, t`Could not change the parent.`)));
       }}
       onDelete={() => {
         if (bot) dialogs.setDeleteTarget(bot);

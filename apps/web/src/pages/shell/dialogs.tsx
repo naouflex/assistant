@@ -557,3 +557,44 @@ export function DeleteItemDialog({
     </AlertDialog>
   );
 }
+
+/** Confirms a drag-and-drop move to another space; the move itself is optimistic. */
+export function MoveBotToSpaceDialog({
+  botName,
+  spaceName,
+  onCancel,
+  onConfirm,
+}: {
+  botName: string;
+  spaceName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog open onOpenChange={closeUnlessBusy(false, onCancel)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="break-words">
+            <Trans>
+              Move {botName} to {spaceName}?
+            </Trans>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans>
+              Its connectors are unlinked, and a dedicated computer stays in this space. Bots under
+              it move too.
+            </Trans>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>
+            <Trans>Move</Trans>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

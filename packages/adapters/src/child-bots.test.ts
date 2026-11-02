@@ -230,6 +230,7 @@ describe("spawned bot archival", () => {
     const archivedAt = new Date("2026-08-16T12:00:00.000Z");
     const prisma = {
       bot: {
+        findUnique: vi.fn().mockResolvedValue({ sectionId: null }),
         findMany: vi.fn().mockResolvedValue([
           {
             id: "child-1",
@@ -2051,7 +2052,7 @@ describe("archiveBot", () => {
     });
     expect(updateBot).toHaveBeenCalledWith({
       where: { id: "bot-1" },
-      data: { archivedAt: expect.any(Date), pinned: false },
+      data: { archivedAt: expect.any(Date), pinned: false, sectionId: null },
     });
     expect(groupCleanup.$queryRaw).not.toHaveBeenCalled();
     expect(groupCleanup.chatGroup.deleteMany).not.toHaveBeenCalled();
@@ -2091,6 +2092,7 @@ describe("archiveBot", () => {
     };
     const stop = vi.fn().mockRejectedValue(new Error("stop failed"));
     const prisma = {
+      bot: { findUnique: vi.fn().mockResolvedValue({ sectionId: null }) },
       computer: {
         findUnique: vi.fn().mockResolvedValue(dedicated),
         findFirst: vi
@@ -2151,6 +2153,7 @@ describe("archiveBot", () => {
       }),
     );
     const prisma = {
+      bot: { findUnique: vi.fn().mockResolvedValue({ sectionId: null }) },
       computer: {
         findUnique: vi.fn().mockResolvedValueOnce(booting).mockResolvedValueOnce(running),
         findFirst: vi
@@ -2203,6 +2206,7 @@ describe("archiveBot", () => {
       const tx = { ...noGroupMemberships(), run: updates, task: updates, routine: updates };
       Object.assign(tx, { computerExecutionLease: updates, computer: updates, bot: updates });
       const prisma = {
+        bot: { findUnique: vi.fn().mockResolvedValue({ sectionId: null }) },
         computer: {
           findUnique: vi.fn().mockResolvedValue(computer),
           findFirst: vi
@@ -2264,6 +2268,7 @@ describe("archiveBot", () => {
         }),
       );
       const prisma = {
+        bot: { findUnique: vi.fn().mockResolvedValue({ sectionId: null }) },
         computer: {
           findUnique: vi.fn(async (query: { where: { id?: string } }) =>
             query.where.id === team.id ? team : null,

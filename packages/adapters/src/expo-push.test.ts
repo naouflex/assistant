@@ -9,7 +9,7 @@ import {
   expoPushErrorMessage,
   MAX_EXPO_PUSH_RESPONSE_BYTES,
 } from "./expo-push.js";
-
+import { notificationPreferenceKey } from "./notification-preferences.js";
 import { MemoryPushTokenStore } from "./push-token-store.test-support.js";
 
 const loadPushToken = async (store: MemoryPushTokenStore, userId: string) =>
@@ -856,5 +856,49 @@ describe("expo push access token", () => {
     await expect(
       push.checkReceipt({ userId: "user-1", ticketId: "ticket-1", tokenDigest: "digest" }),
     ).rejects.toThrow(error);
+  });
+});
+
+describe("expo push preferences", () => {
+  const message = {
+    kind: "computer" as const,
+    title: "t",
+    body: "b",
+    botId: "b",
+    threadId: "t",
+  };
+
+  it("skips Expo when the user turned the kind off", async () => {
+    const tokens = new MemoryPushTokenStore();
+    await tokens.save("user-1", "ExponentPushToken[test]");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const allows = vi.fn(async () => false);
+    const push = new ExpoPushProvider(tokens, { allows });
+    await expect(push.deliver(message, notifyContext)).resolves.toBe("undeliverable");
+    expect(allows).toHaveBeenCalledWith(message, "user-1", "w");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("still sends when the preference lookup fails", async () => {
+    const tokens = new MemoryPushTokenStore();
+    await tokens.save("user-1", "ExponentPushToken[test]");
+    const fetchMock = vi.fn(async () => jsonResponse({ data: { status: "ok" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const push = new ExpoPushProvider(tokens, {
+      allows: async () => {
+        throw new Error("db down");
+      },
+    });
+    await expect(push.deliver(message, notifyContext)).resolves.toBe("delivered");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps notice kinds to preference columns", () => {
+    expect(notificationPreferenceKey("completion")).toBe("finish");
+    expect(notificationPreferenceKey("failure")).toBe("finish");
+    expect(notificationPreferenceKey("help")).toBe("help");
+    expect(notificationPreferenceKey("takeover")).toBe("takeover");
+    expect(notificationPreferenceKey("computer")).toBe("computer");
   });
 });

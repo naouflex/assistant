@@ -45,6 +45,14 @@ const APPROVAL_REQUIRED_BUILTIN_TOOLS = new Set([
   "user_computer_shell",
   "user_computer_observe",
   "user_computer_act",
+  "phone_screenshot",
+  "phone_ui_tree",
+  "phone_tap",
+  "phone_swipe",
+  "phone_type",
+  "phone_key",
+  "phone_open_app",
+  "phone_shell",
   "create_group",
   "update_group",
   "create_child_routine",
@@ -54,6 +62,7 @@ const EXPLICIT_APPROVAL_BUILTIN_TOOLS = new Set([
   "create_space",
   "set_child_instructions",
   "set_child_bot_model",
+  "move_bot",
 ]);
 
 const UNATTENDED_SAFE_BUILTIN_TOOLS = new Set([

@@ -1098,6 +1098,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           else if (await deps.userDevices.pairedSince(userComputerOwnerId).catch(() => null))
             userComputer = "offline";
         }
+        // Online means Phone control is on: the phone only connects while it is.
+        const phoneConnected = Boolean(
+          userComputerOwnerId &&
+            deps.userDevices &&
+            (await deps.userDevices.connected(userComputerOwnerId, "phone").catch(() => null)),
+        );
         const builtins = [
           ...selectBuiltinToolsForRun({
             ticketBoardEnabled: deps.ticketBoardEnabled,
@@ -1120,6 +1126,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             followUpFromUser: sourceMessage?.role === "user",
             userComputer: userComputer === "connected",
             userComputerScreen,
+            phone: phoneConnected,
           }),
           // Cross-owner agent connections only exist for chat-linked bots.
           ...(hasMessagingIdentity &&

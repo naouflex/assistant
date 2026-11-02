@@ -138,6 +138,8 @@ export function createHostComputerRunner(options: { root: string; screen?: HostS
       case "snapshot":
         yield await provider.snapshot(computer, context);
         break;
+      case "phone":
+        throw new Error("This computer cannot run phone requests");
       case "stop":
       case "destroy":
         for (const [controller, work] of active) {

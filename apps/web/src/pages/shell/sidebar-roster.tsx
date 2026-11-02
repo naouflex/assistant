@@ -100,11 +100,11 @@ export function SidebarRoster({
         );
         const hasSpaceActions = group.canOpenSpaceSettings;
         const headerDropTarget: RosterDropTarget | null =
-          group.spaceId === bootstrapMe?.spaceId &&
-          !group.emptySpaceId &&
-          (group.sectionId || group.key.endsWith("unassigned"))
-            ? { kind: "section", sectionId: group.sectionId }
-            : null;
+          group.spaceId !== bootstrapMe?.spaceId
+            ? { kind: "space", spaceId: group.spaceId, spaceName: group.spaceName }
+            : !group.emptySpaceId && (group.sectionId || group.key.endsWith("unassigned"))
+              ? { kind: "section", sectionId: group.sectionId }
+              : null;
         const headerDropKey = `header:${group.key}`;
         const section = group.sectionId
           ? (group.spaceId === bootstrapMe?.spaceId
@@ -131,7 +131,11 @@ export function SidebarRoster({
                   group.title && hasSpaceActions
                     ? "grid pt-3 pb-0.5"
                     : `flex items-center pt-3 pb-0.5${group.title ? "" : " justify-end"}`
-                } rounded-lg ${rosterDropKey === headerDropKey ? "bg-sidebar-accent" : ""}`}
+                } rounded-lg ${
+                  rosterDropKey === headerDropKey
+                    ? `bg-sidebar-accent${headerDropTarget?.kind === "space" ? " ring-2 ring-primary ring-inset" : ""}`
+                    : ""
+                }`}
                 onDragOver={(event) => {
                   if (!headerDropTarget || !rosterDropAction(headerDropTarget, false)) return;
                   event.preventDefault();
@@ -284,7 +288,7 @@ export function SidebarRoster({
                         item.chat.members.map((member) => member.name).join(", ")));
                 const rowDropTarget: RosterDropTarget | null =
                   item.chat.spaceId !== bootstrapMe?.spaceId
-                    ? null
+                    ? { kind: "space", spaceId: item.chat.spaceId, spaceName: group.spaceName }
                     : item.kind === "bot"
                       ? { kind: "bot", chat: item.chat }
                       : {
@@ -297,6 +301,24 @@ export function SidebarRoster({
                 const rowSameList =
                   Boolean(draggedBotId) && groupBotIds.includes(draggedBotId ?? "");
                 const rowDropKey = `row:${item.kind}:${item.chat.id}`;
+                const nestDropKey = `${rowDropKey}:nest`;
+                // The middle of a bot row nests the dragged bot under it; the
+                // edges keep reordering and moving between sections.
+                const pickRowDrop = (event: { clientY: number; currentTarget: Element }) => {
+                  if (!rowDropTarget) return null;
+                  if (rowDropTarget.kind === "bot") {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const y = rect.height ? (event.clientY - rect.top) / rect.height : 0;
+                    const nest = { ...rowDropTarget, nest: true };
+                    if (y > 0.25 && y < 0.75 && rosterDropAction(nest, rowSameList)) {
+                      return { target: nest, key: nestDropKey };
+                    }
+                  }
+                  return rosterDropAction(rowDropTarget, rowSameList)
+                    ? { target: rowDropTarget, key: rowDropKey }
+                    : null;
+                };
+                const rowDropActive = rosterDropKey === rowDropKey || rosterDropKey === nestDropKey;
                 const avatar =
                   item.kind === "bot" ? (
                     <BotAvatar
@@ -347,24 +369,35 @@ export function SidebarRoster({
                       event.dataTransfer.setData("text/plain", item.chat.id);
                     }}
                     onDragOver={(event) => {
-                      if (!rowDropTarget || !rosterDropAction(rowDropTarget, rowSameList)) return;
+                      const drop = pickRowDrop(event);
+                      if (!drop) {
+                        if (rowDropActive) setRosterDropKey(null);
+                        return;
+                      }
                       event.preventDefault();
                       event.dataTransfer.dropEffect = "move";
-                      if (rosterDropKey !== rowDropKey) setRosterDropKey(rowDropKey);
+                      if (rosterDropKey !== drop.key) setRosterDropKey(drop.key);
                     }}
                     onDragLeave={() => {
-                      if (rosterDropKey === rowDropKey) setRosterDropKey(null);
+                      if (rowDropActive) setRosterDropKey(null);
                     }}
                     onDrop={(event) => {
-                      if (!rowDropTarget) return;
+                      const drop = pickRowDrop(event);
+                      if (!drop) return;
                       event.preventDefault();
-                      applyRosterDrop(rowDropTarget, rowSameList, groupBotIds);
+                      applyRosterDrop(drop.target, rowSameList, groupBotIds);
                     }}
                     onDragEnd={() => {
                       setDraggedBotId(null);
                       setRosterDropKey(null);
                     }}
-                    data-roster-drop={rosterDropKey === rowDropKey ? "true" : undefined}
+                    data-roster-drop={
+                      rosterDropKey === nestDropKey
+                        ? "nest"
+                        : rosterDropKey === rowDropKey
+                          ? "true"
+                          : undefined
+                    }
                     onKeyDown={(event) => {
                       if (
                         item.kind !== "bot" ||
@@ -396,10 +429,8 @@ export function SidebarRoster({
                     } text-start ${
                       item.kind === "bot" ? "cursor-grab active:cursor-grabbing" : ""
                     } ${
-                      selected || rosterDropKey === rowDropKey
-                        ? "bg-sidebar-accent"
-                        : "group-hover/row:bg-accent"
-                    }`}
+                      selected || rowDropActive ? "bg-sidebar-accent" : "group-hover/row:bg-accent"
+                    } ${rosterDropKey === nestDropKey ? "ring-2 ring-primary ring-inset" : ""}`}
                   >
                     {mini ? (
                       <span className="relative shrink-0">

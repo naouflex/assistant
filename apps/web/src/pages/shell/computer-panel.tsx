@@ -97,6 +97,7 @@ export function ComputerPanel({
                   computer?.state,
                   booting,
                   computerLabel(computer?.mode, bot.name),
+                  computer?.autoRecovery,
                 ))
               ))}
           </div>

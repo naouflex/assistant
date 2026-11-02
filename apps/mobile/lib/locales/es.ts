@@ -1,4 +1,24 @@
 export const ES_MESSAGES: Record<string, string> = {
+  "Phone control": "Control del teléfono",
+  Accessibility: "Accesibilidad",
+  Allowed: "Permitido",
+  "Bots lose access to this phone until you turn Phone control on again.":
+    "Los bots pierden el acceso a este teléfono hasta que vuelvas a activar el control del teléfono.",
+  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
+    "Mientras esté activado, tus bots pueden ver y controlar este teléfono y ejecutar comandos en él. Cada acción queda registrada.",
+  "Not connected": "Sin conexión",
+  Off: "Desactivado",
+  On: "Activado",
+  "Remove this phone": "Quitar este teléfono",
+  "Remove this phone?": "¿Quitar este teléfono?",
+  "Screenshots need Android 11 or newer.":
+    "Las capturas de pantalla requieren Android 11 o posterior.",
+  "Turn off after": "Desactivar después de",
+  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
+    "Activa Atlas phone control en los ajustes de Accesibilidad para que los bots puedan ver y tocar la pantalla.",
+  "{count} min": "{count} min",
+  "The server did not pair this phone.": "El servidor no vinculó este teléfono.",
+  "Phone control needs the Android app.": "El control del teléfono requiere la app de Android.",
   "How other bots see it": "Cómo lo ven otros bots",
   "Share to": "Compartir en",
   "{count} files": "{count} archivos",
@@ -617,6 +637,11 @@ export const ES_MESSAGES: Record<string, string> = {
   "Live working status": "Estado del trabajo en vivo",
   More: "Más",
   "Needs attention": "Requiere atención",
+  "Computer problems": "Problemas del ordenador",
+  "Takeover requests": "Solicitudes de control",
+  "Questions and approvals": "Preguntas y aprobaciones",
+  "Finished work": "Trabajo terminado",
+  "Push notifications": "Notificaciones push",
   "Notification settings": "Configuración de notificaciones",
   "Get notified when this Bot finishes or needs input":
     "Recibe un aviso cuando este bot termine o necesite una respuesta",

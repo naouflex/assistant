@@ -14,6 +14,7 @@ import {
   toolRequiresExplicitApproval,
 } from "@atlas/core";
 import { urlSite } from "@atlas/core/egress";
+import { PHONE_CONTROL_TOOLS, PHONE_SHELL_TOOL } from "./phone-protocol.js";
 import { USER_COMPUTER_SCREEN_TOOLS, userComputerAppName } from "./run-tools-user-computer.js";
 
 export const MAX_APPROVAL_SUMMARY_LENGTH = 500;
@@ -138,6 +139,26 @@ export function buildApprovalAskBlock(
       ],
     };
   }
+  if (toolName === PHONE_SHELL_TOOL || PHONE_CONTROL_TOOLS.has(toolName)) {
+    const shell = toolName === PHONE_SHELL_TOOL;
+    const detail = shell ? String(args.command ?? "") : phoneActionLine(toolName, args);
+    return {
+      kind: "ask",
+      approvalEffectId: effectId,
+      text: shell ? "Run on your phone?" : "Control your phone?",
+      ...(detail
+        ? {
+            detail: truncate(redactSecrets(detail, secrets), MAX_APPROVAL_DETAIL_LENGTH),
+            detailFormat: "code" as const,
+          }
+        : {}),
+      status: "pending",
+      actions: [
+        { id: "allow", label: "Allow in this space" },
+        { id: "deny", label: "Deny" },
+      ],
+    };
+  }
   if (toolName === "user_computer_shell") {
     const cwd = typeof args.cwd === "string" && args.cwd.trim() ? `cd ${args.cwd.trim()}\n` : "";
     return {
@@ -240,6 +261,14 @@ function describeApprovalAction(
   if (toolName === "delete_bot" || toolName === "archive_bot") {
     const name = args.confirm_name ?? args.confirmName;
     return name ? `${toolName.replace("_", " ")} (${String(name)})` : toolName.replace("_", " ");
+  }
+  if (toolName === "move_bot") {
+    const name = args.bot_name ?? args.bot_id ?? "bot";
+    const to = args.space_name ?? args.space_id;
+    const parent = args.parent_bot_name ?? args.parent_bot_id;
+    if (to) return `Move ${String(name)} to space “${String(to)}”`;
+    if (parent) return `Make ${String(parent)} the parent of ${String(name)}`;
+    return `Make ${String(name)} a top-level bot`;
   }
   if (toolName === "create_space") {
     const name = args.name ? String(args.name) : "Untitled";
@@ -358,4 +387,12 @@ function sendDraft(
   if (!fields?.every((field) => redactSecrets(field.value, secrets) === field.value))
     return undefined;
   return fields;
+}
+
+/** One line for a phone control card: the tool and the arguments it was given. */
+function phoneActionLine(toolName: string, args: Record<string, unknown>): string {
+  const fields = Object.entries(args)
+    .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+    .map(([key, value]) => `${key}=${typeof value === "string" ? JSON.stringify(value) : value}`);
+  return [toolName.replace(/^phone_/, ""), ...fields].join(" ");
 }

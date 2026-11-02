@@ -1,4 +1,4 @@
-import type { AccountSecurity, UsageSummary } from "@atlas/contracts";
+import type { AccountSecurity, NotificationPreferences, UsageSummary } from "@atlas/contracts";
 import { accountDisplay, displayName } from "@atlas/core";
 import * as Notifications from "expo-notifications";
 import type { Href } from "expo-router";
@@ -76,6 +76,7 @@ import {
   passkeysAvailable,
   renamePasskey,
 } from "../../lib/passkey";
+import { hasPhoneControl } from "../../lib/phone-control";
 import { registerPushToken } from "../../lib/push";
 import { createQueuedSave } from "../../lib/queued-save";
 import {
@@ -136,6 +137,22 @@ export default function Account() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [security, setSecurity] = useState<AccountSecurity | null>(null);
+  const [pushPreferences, setPushPreferences] = useState<NotificationPreferences | null>(null);
+  useEffect(() => {
+    void rpc("notifications/preferences")
+      .then(setPushPreferences)
+      .catch(() => undefined);
+  }, []);
+  function updatePushPreference(patch: Partial<NotificationPreferences>) {
+    setPushPreferences((current) => (current ? { ...current, ...patch } : current));
+    void rpc("notifications/setPreferences", patch)
+      .then(setPushPreferences)
+      .catch(() =>
+        rpc("notifications/preferences")
+          .then(setPushPreferences)
+          .catch(() => undefined),
+      );
+  }
   const canChangePassword = security?.hasPassword && security.passwordChangeEnabled !== false;
   const [deletionCodeSent, setDeletionCodeSent] = useState(false);
   const [ssoReauthenticated, setSsoReauthenticated] = useState(false);
@@ -644,6 +661,34 @@ export default function Account() {
           />
         </SettingsGroup>
 
+        {pushPreferences ? (
+          <SettingsGroup
+            accessibilityLabel={t("Push notifications")}
+            label={t("Push notifications")}
+          >
+            <SettingsSwitch
+              label={t("Finished work")}
+              value={pushPreferences.finish}
+              onChange={(finish) => updatePushPreference({ finish })}
+            />
+            <SettingsSwitch
+              label={t("Questions and approvals")}
+              value={pushPreferences.help}
+              onChange={(help) => updatePushPreference({ help })}
+            />
+            <SettingsSwitch
+              label={t("Takeover requests")}
+              value={pushPreferences.takeover}
+              onChange={(takeover) => updatePushPreference({ takeover })}
+            />
+            <SettingsSwitch
+              label={t("Computer problems")}
+              value={pushPreferences.computer}
+              onChange={(computer) => updatePushPreference({ computer })}
+            />
+          </SettingsGroup>
+        ) : null}
+
         {Platform.OS === "android" ? (
           <SettingsGroup accessibilityLabel={t("Notifications")} label={t("Notifications")}>
             {notificationPermission === "denied" ? (
@@ -735,6 +780,9 @@ export default function Account() {
               { title: t("Integrations"), href: "/integrations" },
               { title: t("Skills"), href: "/skills" },
               { title: t("Messaging"), href: "/messaging" },
+              ...(hasPhoneControl()
+                ? [{ title: t("Phone control"), href: "/phone-control" } as const]
+                : []),
               { title: t("AI data sharing"), href: "/ai-data-sharing" },
             ] as const
           ).map(settingsLink)}

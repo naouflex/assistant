@@ -24,6 +24,7 @@ import {
   createAuditLogReconciler,
   createBackgroundJobHandlers,
   createCloudAgentConnection,
+  createComputerHealthSweeper,
   createConnectorStack,
   createDeadJobPruner,
   createIdleComputerSweeper,
@@ -56,6 +57,7 @@ import {
   mcpStdioOptionsFromEnv,
   messagingEnvFromProcess,
   messagingPlatformsFromEnv,
+  notificationPreferenceGate,
   PiAgentRuntime,
   PipedreamConnector,
   PostgresRealtimeFanout,
@@ -258,6 +260,7 @@ async function main() {
     sessionExpiresAt: (sessionId) => pushSessionExpiresAt(prisma, sessionId),
     jobs,
     accessToken: process.env.EXPO_ACCESS_TOKEN,
+    allows: notificationPreferenceGate(prisma),
   });
   const executor = createRunExecutor({
     maxUploadSizeBytes: uploadSizeFromEnv(process.env),
@@ -369,6 +372,7 @@ async function main() {
     reconcileAuditLog: createAuditLogReconciler(prisma, auditLogConfig()),
     reconcileHomeStorage: homeStorageSweeper(home),
     reconcileIdleComputers: createIdleComputerSweeper({ prisma, jobs }),
+    reconcileComputerHealth: createComputerHealthSweeper({ prisma, jobs, notifications }),
     reconcileDeadJobs: inMemoryJobs ? undefined : createDeadJobPruner(pool),
   });
   let stopHealth: (() => Promise<void>) | undefined;

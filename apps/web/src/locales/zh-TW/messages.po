@@ -1268,6 +1268,10 @@ msgstr "更改 {title}"
 msgid "Change model"
 msgstr "更換模型"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Change parent"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Change password"
 msgstr "修改密碼"
@@ -1569,6 +1573,10 @@ msgid "Computer"
 msgstr "電腦"
 
 #: src/pages/shell/computer-view.tsx
+msgid "Computer could not restart by itself. Restart it to try again."
+msgstr ""
+
+#: src/pages/shell/computer-view.tsx
 #: src/pages/shell/use-computer.tsx
 msgid "Computer failed to boot"
 msgstr "電腦啟動失敗"
@@ -1589,6 +1597,10 @@ msgstr "電腦正在休眠，開啟即可喚醒。"
 #: src/pages/shell/computer-view.tsx
 msgid "Computer is stopped"
 msgstr "電腦已停止"
+
+#: src/pages/shell/computer-view.tsx
+msgid "Computer stopped working. Restarting it…"
+msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
 #: src/pages/AccountSettingsOverlay.tsx
@@ -1852,6 +1864,11 @@ msgstr ""
 msgid "Could not change password"
 msgstr "無法修改密碼"
 
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not change the parent."
+msgstr ""
+
 #: src/components/integrations/space-availability.tsx
 msgid "Could not change where this is available"
 msgstr ""
@@ -2105,6 +2122,11 @@ msgstr "無法載入語音設定"
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "無法登出，請再試一次。"
+
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not move this bot."
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 #: src/pages/BillingSettingsPanel.tsx
@@ -3401,12 +3423,12 @@ msgstr "輸入"
 msgid "Inputs"
 msgstr "輸入"
 
-#: src/components/ComputerDeviceSettings.tsx
-msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
-msgstr ""
-
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Install Atlas and sign in"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr ""
 
 #: src/components/SidebarFooter.tsx
@@ -3502,6 +3524,10 @@ msgstr "隔離預覽 — 無法存取你的帳號"
 #: src/pages/shell/shell-dialogs.tsx
 msgid "Its bots and groups are kept and leave the section."
 msgstr "其中的機器人和群組會保留，並移出該分組。"
+
+#: src/pages/shell/dialogs.tsx
+msgid "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+msgstr ""
 
 #: src/pages/shell/dialogs.tsx
 msgid "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
@@ -3607,6 +3633,10 @@ msgstr "聆聽中…"
 msgid "llama.cpp"
 msgstr ""
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Load"
+msgstr ""
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "載入更早的訊息"
@@ -3622,6 +3652,22 @@ msgstr "載入更早的執行紀錄"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Load web images automatically"
 msgstr "自動載入網路圖片"
+
+#: src/pages/shell/local-model-status.ts
+msgid "loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loaded"
+msgstr ""
+
+#: src/pages/shell/local-model-status.ts
+msgid "loading"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loading"
+msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Loading activity…"
@@ -4045,6 +4091,14 @@ msgstr ""
 msgid "More computer actions"
 msgstr "更多電腦操作"
 
+#: src/pages/shell/dialogs.tsx
+msgid "Move"
+msgstr ""
+
+#: src/pages/shell/dialogs.tsx
+msgid "Move {botName} to {spaceName}?"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move down"
 msgstr "下移"
@@ -4057,9 +4111,24 @@ msgstr "把它們移到共享記憶。"
 msgid "Move to"
 msgstr "移動到"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Move to space"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "上移"
+
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
+#. placeholder {0}: bot.name
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Moved {0} to {name}"
+msgstr ""
 
 #: src/components/call/CallCard.tsx
 msgid "Mute"
@@ -4322,6 +4391,10 @@ msgstr "尚無工作項目"
 msgid "No trigger"
 msgstr "無觸發器"
 
+#: src/pages/BotContextMenu.tsx
+msgid "None"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr "一般"
@@ -4350,6 +4423,14 @@ msgstr "不在 Atlas 目錄中"
 #: src/pages/PluginsOverlay.tsx
 msgid "Not in the plugin catalog"
 msgstr "不在外掛程式目錄中"
+
+#: src/pages/shell/local-model-status.ts
+msgid "not loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Not loaded"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"
