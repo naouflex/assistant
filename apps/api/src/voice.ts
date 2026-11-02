@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/server";
 import type { AdapterContext, SecretStore } from "@atlas/adapter-kit";
 import { VoiceAccountError } from "@atlas/adapter-kit";
 import {
@@ -9,11 +10,8 @@ import {
   MAX_TRANSCRIBE_BYTES,
   NoVoiceConfigured,
   OPENAI_COMPATIBLE_VOICE_PROVIDER_ID,
-  OPENROUTER_VOICE_PROVIDER_ID,
   openAiCompatibleVoiceServer,
-  openRouterVoiceServer,
   serializeOpenAiCompatibleVoiceSecret,
-  serializeOpenRouterVoiceSecret,
   voiceCatalogEntry,
 } from "@atlas/adapters";
 import type {
@@ -42,7 +40,7 @@ import {
   voicePreferenceTarget,
 } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
-import { ORPCError } from "@orpc/server";
+import { markExpectedFailure } from "@atlas/logging/hono";
 import type { Context, Hono } from "hono";
 import { readBoundedBody } from "./http-body.js";
 import { withSerializableRetry } from "./serializable-retry.js";
@@ -58,16 +56,16 @@ export interface VoiceDeps {
 }
 
 /** A self-hosted speech server on a private address is limited like model endpoints. */
-async function voiceMayUsePrivateEndpoint(deps: VoiceDeps, _actor: Actor, provider: string) {
+async function voiceMayUsePrivateEndpoint(deps: VoiceDeps, provider: string) {
   return (
     provider === OPENAI_COMPATIBLE_VOICE_PROVIDER_ID && deps.env?.mcpAllowPrivateEndpoint === true
   );
 }
 
-/** The voice adapter for a credential, with the actor's private-endpoint decision. */
-export async function voiceProviderFor(deps: VoiceDeps, actor: Actor, provider: string) {
+/** The voice adapter for a credential, with the caller's private-endpoint decision. */
+export async function voiceProviderFor(deps: VoiceDeps, provider: string) {
   return createVoiceProvider(provider, {
-    allowPrivateEndpoint: await voiceMayUsePrivateEndpoint(deps, actor, provider),
+    allowPrivateEndpoint: await voiceMayUsePrivateEndpoint(deps, provider),
   });
 }
 
@@ -77,7 +75,10 @@ const SPEAK_TIMEOUT_MS = 60_000;
 export const MAX_SPEAK_REQUEST_BYTES = 16 * 1024;
 export const MAX_TRANSCRIBE_REQUEST_BYTES = 4 * Math.ceil(MAX_TRANSCRIBE_BYTES / 3) + 1024;
 
-export function voiceContext(actor: Actor, signal?: AbortSignal): AdapterContext {
+export function voiceContext(
+  actor: Pick<Actor, "userId" | "spaceId">,
+  signal?: AbortSignal,
+): AdapterContext {
   return {
     operationId: "voice",
     traceId: "voice",
@@ -125,29 +126,21 @@ export function toVoiceCredential(row: {
 }
 
 /**
- * A connection that stores model ids (self-hosted or OpenRouter), read from its secret.
- * Undefined for other providers and for a secret that cannot be read.
+ * A self-hosted connection's address and model ids, read from its secret. Undefined for
+ * hosted providers and for a secret that cannot be read, which still lists the connection.
  */
 export async function voiceCredentialServer(
   deps: VoiceDeps,
   actor: Actor,
   row: { provider: string; secretId: string },
 ) {
-  if (
-    row.provider !== OPENAI_COMPATIBLE_VOICE_PROVIDER_ID &&
-    row.provider !== OPENROUTER_VOICE_PROVIDER_ID
-  ) {
-    return undefined;
-  }
+  if (row.provider !== OPENAI_COMPATIBLE_VOICE_PROVIDER_ID) return undefined;
   try {
     const secret = await deps.prisma.secret.findFirst({
       where: { id: row.secretId, userId: actor.userId, spaceId: null },
     });
     if (!secret) return undefined;
-    const plaintext = await deps.secrets.load(secret.ciphertext, secret.id);
-    return row.provider === OPENROUTER_VOICE_PROVIDER_ID
-      ? openRouterVoiceServer(plaintext)
-      : openAiCompatibleVoiceServer(plaintext);
+    return openAiCompatibleVoiceServer(await deps.secrets.load(secret.ciphertext, secret.id));
   } catch {
     // Reconnecting replaces an unreadable secret.
     return undefined;
@@ -156,23 +149,18 @@ export async function voiceCredentialServer(
 
 /**
  * Another server or speech model has its own voices, so saved voice choices cannot carry
- * over. Self-hosted and OpenRouter connections can change either while keeping the credential.
+ * over. Only self-hosted connections can change either while keeping the credential.
  */
-/** Address and model ids from a saved secret, for either connection that stores them. */
-function savedVoiceServer(plaintext: string) {
-  return openAiCompatibleVoiceServer(plaintext) ?? openRouterVoiceServer(plaintext);
-}
-
 export function voiceChoicesChanged(previousPlaintext: string | undefined, plaintext: string) {
-  const previous = previousPlaintext ? savedVoiceServer(previousPlaintext) : undefined;
+  const previous = previousPlaintext ? openAiCompatibleVoiceServer(previousPlaintext) : undefined;
   if (!previous) return false;
-  const next = savedVoiceServer(plaintext);
+  const next = openAiCompatibleVoiceServer(plaintext);
   return previous.endpoint !== next?.endpoint || previous.ttsModel !== next?.ttsModel;
 }
 
 /**
- * The secret to store. Hosted providers keep the bare key. OpenRouter stores its key and
- * model ids. A self-hosted server stores its base URL, optional key, and model ids.
+ * The secret to store. Hosted providers keep the bare key; a self-hosted server stores
+ * its base URL, optional key, and model ids, validated like model connections.
  */
 export function voiceCredentialPlaintext(input: {
   provider: string;
@@ -187,19 +175,6 @@ export function voiceCredentialPlaintext(input: {
   if (voiceCatalogEntry(input.provider)?.keyless) {
     // The credential row is what selects the provider; it has no key to keep.
     return input.provider;
-  }
-  if (input.provider === OPENROUTER_VOICE_PROVIDER_ID) {
-    try {
-      return serializeOpenRouterVoiceSecret(
-        { apiKey: input.plaintext, ttsModel: input.ttsModel, sttModel: input.sttModel },
-        input.previousPlaintext,
-      );
-    } catch (error) {
-      throw new ORPCError("BAD_REQUEST", {
-        message:
-          error instanceof Error ? error.message : "That OpenRouter connection is not valid.",
-      });
-    }
   }
   if (input.provider !== OPENAI_COMPATIBLE_VOICE_PROVIDER_ID) {
     if (input.plaintext.trim().length < 8) {
@@ -239,37 +214,15 @@ export function fishSpeechModelValue(speechModel: string): string | null {
 
 export async function loadDefaultVoiceCredential(
   deps: VoiceDeps,
-  actor: Actor,
+  actor: Pick<Actor, "userId" | "spaceId">,
   scope?: SettingsScope,
 ) {
   return loadVoiceCredential(deps, actor, undefined, scope);
 }
 
-/** Preview another speech model's voice list without saving the connection. */
-export async function voiceListPlaintext(
-  deps: VoiceDeps,
-  actor: Actor,
-  provider: string,
-  plaintext: string,
-  ttsModel?: string,
-): Promise<string> {
-  const trimmed = ttsModel?.trim();
-  if (!trimmed) return plaintext;
-  const allowPrivateEndpoint = await voiceMayUsePrivateEndpoint(deps, actor, provider);
-  if (provider === OPENROUTER_VOICE_PROVIDER_ID) {
-    return serializeOpenRouterVoiceSecret({ ttsModel: trimmed }, plaintext);
-  }
-  if (provider === OPENAI_COMPATIBLE_VOICE_PROVIDER_ID) {
-    return serializeOpenAiCompatibleVoiceSecret({ ttsModel: trimmed }, plaintext, {
-      allowPrivate: allowPrivateEndpoint,
-    });
-  }
-  return plaintext;
-}
-
 export async function loadVoiceCredential(
   deps: VoiceDeps,
-  actor: Actor,
+  actor: Pick<Actor, "userId" | "spaceId">,
   provider?: string,
   scope?: SettingsScope,
 ) {
@@ -324,20 +277,21 @@ export async function persistVoiceCredential(
   if (!isVoiceProviderId(input.provider)) {
     throw new ORPCError("BAD_REQUEST", { message: "Unknown voice provider." });
   }
-  const storesModels =
-    input.provider === OPENAI_COMPATIBLE_VOICE_PROVIDER_ID ||
-    input.provider === OPENROUTER_VOICE_PROVIDER_ID;
-  const previous = storesModels
-    ? // An unreadable old secret only means nothing is inherited; the form must be complete.
-      await loadVoiceCredential(deps, actor, input.provider).catch(() => null)
-    : null;
-  const allowPrivateEndpoint = await voiceMayUsePrivateEndpoint(deps, actor, input.provider);
+  const previous =
+    input.provider === OPENAI_COMPATIBLE_VOICE_PROVIDER_ID
+      ? // An unreadable old secret only means nothing is inherited; the form must be complete.
+        await loadVoiceCredential(deps, actor, input.provider).catch(() => null)
+      : null;
+  const allowPrivateEndpoint = await voiceMayUsePrivateEndpoint(deps, input.provider);
   const plaintext = voiceCredentialPlaintext({
     ...input,
     previousPlaintext: previous?.apiKey,
     allowPrivateEndpoint,
   });
-  const server = storesModels ? savedVoiceServer(plaintext) : undefined;
+  const server =
+    input.provider === OPENAI_COMPATIBLE_VOICE_PROVIDER_ID
+      ? openAiCompatibleVoiceServer(plaintext)
+      : undefined;
   const choicesChanged = voiceChoicesChanged(previous?.apiKey, plaintext);
   const requestedSpeechModel =
     input.provider === FISH_AUDIO_PROVIDER && input.speechModel !== undefined
@@ -576,7 +530,7 @@ export async function synthesizeVoice(
   if (text.length > MAX_SPEAK_CHARS) {
     throw new ORPCError("BAD_REQUEST", { message: "That utterance is too long to speak." });
   }
-  const provider = await voiceProviderFor(deps, actor, target.cred.provider);
+  const provider = await voiceProviderFor(deps, target.cred.provider);
   return provider.synthesize(
     {
       text,
@@ -596,7 +550,7 @@ export async function transcribeVoice(
 ) {
   const loaded = await loadDefaultVoiceCredential(deps, actor);
   if (!loaded) throw new NoVoiceConfigured("key");
-  const provider = await voiceProviderFor(deps, actor, loaded.cred.provider);
+  const provider = await voiceProviderFor(deps, loaded.cred.provider);
   if (!provider.transcribe) {
     throw new ORPCError("BAD_REQUEST", {
       message: "This voice provider does not transcribe audio. Use on-device dictation instead.",
@@ -615,6 +569,29 @@ export async function transcribeVoice(
     },
     voiceContext(actor, input.signal),
   );
+}
+
+/**
+ * Transcribes inbound messaging audio (for example a Telegram voice note) with
+ * the bot owner's default voice connection, as the app's dictation does. Null
+ * when no provider can transcribe or the audio is too large; the caller treats
+ * a throw the same way, so the file is delivered without a transcript.
+ */
+export async function transcribeInboundVoice(
+  deps: VoiceDeps,
+  owner: Pick<Actor, "userId" | "spaceId">,
+  input: { audio: Uint8Array; mimeType: string; signal?: AbortSignal },
+): Promise<string | null> {
+  if (input.audio.byteLength > MAX_TRANSCRIBE_BYTES) return null;
+  const loaded = await loadDefaultVoiceCredential(deps, owner);
+  if (!loaded) return null;
+  const provider = await voiceProviderFor(deps, loaded.cred.provider);
+  if (!provider.transcribe) return null;
+  const { text } = await provider.transcribe(
+    { audio: input.audio, mimeType: input.mimeType, apiKey: loaded.apiKey },
+    voiceContext(owner, input.signal),
+  );
+  return text;
 }
 
 export function mountVoiceHttpRoutes(
@@ -732,5 +709,16 @@ function voiceHttpError(c: Context, error: unknown) {
   const message = error instanceof Error ? error.message : "Voice request failed.";
   // Message only: request bodies, keys and audio never reach the log.
   getLogger().warn("voice request failed", { route: c.req.path, reason: message });
+  if (isVoiceProviderFailure(error)) markExpectedFailure();
   return c.json({ error: message }, 502);
+}
+
+/** Voice adapters raise plain errors for provider refusals and setup problems; anything else is a bug. */
+export function isVoiceProviderFailure(error: unknown) {
+  return (
+    error instanceof Error &&
+    (Object.getPrototypeOf(error) === Error.prototype ||
+      error.name === "AbortError" ||
+      error.name === "TimeoutError")
+  );
 }

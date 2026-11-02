@@ -15,7 +15,7 @@ export const BROWSER_APPLICATIONS = new Set([
   "firefox",
   "google-chrome",
   "google-chrome-stable",
-  "atlas-browser",
+  "rakazo-browser",
 ]);
 export interface DesktopEnvironment {
   homeDir: string;
@@ -27,9 +27,9 @@ export interface DesktopEnvironment {
   bindHost?: string;
 }
 export const DEFAULT_DESKTOP_ENV: DesktopEnvironment = {
-  homeDir: "/home/atlas",
-  workspaceDir: "/home/atlas",
-  browserProfilesDir: "/home/atlas/.browser-profiles",
+  homeDir: "/home/rakazo",
+  workspaceDir: "/home/rakazo",
+  browserProfilesDir: "/home/rakazo/.browser-profiles",
   displayStart: 1,
   bindHost: "127.0.0.1",
   preservePrimaryDisplay: true,
@@ -198,7 +198,7 @@ function browserLauncherCommand(
       ? // biome-ignore lint/suspicious/noTemplateCurlyInString: generated shell parameter expansion
         ['desktop_display="${0##*-}"', "desktop_debug=$((9221 + desktop_display))"]
       : []),
-    "browser=$(command -v atlas-browser || command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)",
+    "browser=$(command -v rakazo-browser || command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)",
     `export DISPLAY=${layout.display} HOME=${shellQuote(env.homeDir)}`,
     // Docker exec does not inherit the session bus exported by container startup.
     // biome-ignore lint/suspicious/noTemplateCurlyInString: generated shell parameter expansion
@@ -285,6 +285,9 @@ export function browserCloseProgram() {
   return CLOSE_BROWSER;
 }
 
+/** Exit status of a browser stop that found a browser open on the profile again. */
+export const BROWSER_STILL_RUNNING_EXIT = 76;
+
 export function stopBrowserCommand(screenId: string, env = DEFAULT_DESKTOP_ENV) {
   return stopBrowserProfileCommand(
     browserProfilePathForScreen(screenId, env),
@@ -304,20 +307,21 @@ export function stopBrowserProfileCommand(profile: string, pidFile: string) {
     `fi`,
     // A supervisor may have replaced the selected PID while it was closing.
     // Rediscover once before removing lock state rather than on every close poll.
-    `if browser_running; then echo 'browser still running' >&2; exit 1; fi`,
+    `if browser_running; then echo 'browser still running' >&2; exit ${BROWSER_STILL_RUNNING_EXIT}; fi`,
     `rm -f ${pidFile}`,
     `rm -f ${shellQuote(profile)}/SingletonLock ${shellQuote(profile)}/SingletonCookie ${shellQuote(profile)}/SingletonSocket`,
   ].join("\n");
 }
 
 function stopProfileDirectoriesCommand(profileList: string) {
-  const placeholder = "ATLAS_INTERNAL_PROFILE";
+  const placeholder = "RAKAZO_INTERNAL_PROFILE";
   const stop = stopBrowserProfileCommand(placeholder, '"$pid_file"')
     .replaceAll(shellQuote(`--user-data-dir=${placeholder}`), '"--user-data-dir=$profile"')
     .replaceAll(shellQuote(placeholder), '"$profile"');
   return [
     "set -eu",
     "failed=0",
+    "running=0",
     "mkdir -p /tmp/atlas",
     `for profile in ${profileList}; do`,
     '  [ -d "$profile" ] || continue',
@@ -327,9 +331,10 @@ function stopProfileDirectoriesCommand(profileList: string) {
     '    *) hash=$(basename -- "$profile") ;;',
     "  esac",
     '  pid_file="/tmp/atlas/browser-pid-$hash"',
-    `  bash -eu -c ${shellQuote(`profile=$1; pid_file=$2;\n${stop}`)} desktop "$profile" "$pid_file" || failed=1`,
+    `  bash -eu -c ${shellQuote(`profile=$1; pid_file=$2;\n${stop}`)} desktop "$profile" "$pid_file" || { [ "$?" -eq ${BROWSER_STILL_RUNNING_EXIT} ] && running=1 || failed=1; }`,
     "done",
     '[ "$failed" -eq 0 ] || exit 1',
+    `[ "$running" -eq 0 ] || exit ${BROWSER_STILL_RUNNING_EXIT}`,
   ].join("\n");
 }
 
@@ -455,7 +460,11 @@ function gatewayCommand(port: string, host = "127.0.0.1") {
     "fi",
     `for i in $(seq 1 50); do (echo >/dev/tcp/${probeHost}/${port}) >/dev/null 2>&1 && break; sleep 0.1; done`,
     `flock -u 10; exec 10>&-`,
-    `(echo >/dev/tcp/${probeHost}/${port}) >/dev/null 2>&1`,
+    `if ! (echo >/dev/tcp/${probeHost}/${port}) >/dev/null 2>&1; then`,
+    "  echo 'screen gateway did not start' >&2",
+    `  tail -c 2000 /tmp/atlas/gateway-${port}.log >&2 || true`,
+    "  exit 1",
+    "fi",
   ].join("\n");
 }
 
@@ -558,9 +567,9 @@ function renderEnsureScreenCommand(
           `  rm -f /tmp/.X${layout.displayNumber}-lock /tmp/.X11-unix/X${layout.displayNumber}`,
           `  nohup Xvfb ${layout.display} -screen 0 1280x800x24 -ac +extension RANDR +render -noreset -nolisten tcp 8>&- 9>&- </dev/null >${log}-xvfb.log 2>&1 &`,
           `  for i in $(seq 1 100); do xdpyinfo -display ${layout.display} >/dev/null 2>&1 && break; sleep 0.1; done`,
-          `  xdpyinfo -display ${layout.display} >/dev/null 2>&1 || exit 1`,
-          `  if [ -f /etc/atlas/fluxbox/init ]; then cp /etc/atlas/fluxbox/init ${fluxHome}/.fluxbox/init; else printf "session.screen0.toolbar.visible: false\\n" >${fluxHome}/.fluxbox/init; fi`,
-          `  cp /etc/atlas/fluxbox/apps ${fluxHome}/.fluxbox/apps 2>/dev/null || true`,
+          `  if ! xdpyinfo -display ${layout.display} >/dev/null 2>&1; then echo 'computer display did not start' >&2; tail -c 2000 ${log}-xvfb.log >&2 || true; exit 1; fi`,
+          `  if [ -f /etc/rakazo/fluxbox/init ]; then cp /etc/rakazo/fluxbox/init ${fluxHome}/.fluxbox/init; else printf "session.screen0.toolbar.visible: false\\n" >${fluxHome}/.fluxbox/init; fi`,
+          `  cp /etc/rakazo/fluxbox/apps ${fluxHome}/.fluxbox/apps 2>/dev/null || true`,
           `  printf '\\nsession.menuFile: %s\\n' ${fluxHome}/.fluxbox/menu >>${fluxHome}/.fluxbox/init`,
           `  HOME=${shellQuote(env.homeDir)} CHROME_USER_DATA_DIR=${shellQuote(profile)} BROWSER=${browserLauncherPath(layout.displayNumber)} DISPLAY=${layout.display} nohup fluxbox -rc ${fluxHome}/.fluxbox/init 8>&- 9>&- </dev/null >${log}-fluxbox.log 2>&1 &`,
           "fi",
@@ -574,7 +583,7 @@ function renderEnsureScreenCommand(
     `  nohup x11vnc -display ${layout.display} -forever -shared -viewonly -nopw -rfbport 0 -unixsock ${socket} -xkb -ncache 0 8>&- 9>&- </dev/null >${log}-x11vnc.log 2>&1 &`,
     "fi",
     `for i in $(seq 1 50); do [ -S ${socket} ] && break; sleep 0.1; done`,
-    `[ -S ${socket} ] || exit 1`,
+    `if [ ! -S ${socket} ]; then echo 'screen viewer did not start' >&2; tail -c 2000 ${log}-x11vnc.log >&2 || true; exit 1; fi`,
     // Leave an unchanged mapping in place. Replacing it on every ensure races
     // TokenFile, which reloads the directory on each handshake.
     `desired=$(printf '%s: unix_socket:%s\\n' "$desktop_view_token" ${socket})`,
@@ -594,16 +603,33 @@ function renderEnsureScreenCommand(
     `printf %s ${shellQuote(browserLauncherCommand(index, screenId, env))} >${browserLauncherPath(layout.displayNumber)}`,
     `chmod 700 ${browserLauncherPath(layout.displayNumber)}`,
     ...setupDisplay,
-    `xdpyinfo -display ${layout.display} >/dev/null 2>&1 || exit 1`,
+    `xdpyinfo -display ${layout.display} >/dev/null 2>&1 || { echo 'computer display is not running' >&2; exit 1; }`,
     `mkdir -p /tmp/atlas ${shellQuote(path.posix.dirname(profile))}`,
     ...browserRunningFunction(profile, pidFile),
     `printf %s ${shellQuote(profile)} >/tmp/atlas/browser-profile-${layout.displayNumber}`,
-    "if ! browser_running; then",
-    prepareBrowserProfileCommand(screenId, env),
+    "launch_browser() {",
+    `  ${prepareBrowserProfileCommand(screenId, env)}`,
     `  rm -f ${shellQuote(profile)}/SingletonLock ${shellQuote(profile)}/SingletonCookie ${shellQuote(profile)}/SingletonSocket`,
-    `  nohup ${browserLauncherPath(layout.displayNumber)} 8>&- 9>&- </dev/null >${log}-browser.log 2>&1 & printf %s "$!" >${pidFile}`,
-    "fi",
-    `for i in $(seq 1 80); do browser_running && (echo >/dev/tcp/127.0.0.1/${layout.debugPort}) >/dev/null 2>&1 && break; sleep 0.25; done`,
+    `  nohup ${browserLauncherPath(layout.displayNumber)} 8>&- 9>&- </dev/null >${log}-browser.log 2>&1 & launched=$!`,
+    `  printf %s "$launched" >${pidFile}`,
+    "}",
+    "launched=",
+    "relaunched=0",
+    "browser_running || launch_browser",
+    "waited=0",
+    'while [ "$waited" -lt 80 ]; do',
+    "  if browser_running; then",
+    `    (echo >/dev/tcp/127.0.0.1/${layout.debugPort}) >/dev/null 2>&1 && break`,
+    // The browser found running can be closed, by its window or a home save, before its port
+    // answers. Start it again once rather than wait out a browser that is gone.
+    '  elif [ "$relaunched" -eq 0 ] && ! { [ -n "$launched" ] && kill -0 "$launched" 2>/dev/null; }; then',
+    "    relaunched=1",
+    "    waited=0",
+    "    launch_browser",
+    "  fi",
+    "  sleep 0.25",
+    "  waited=$((waited + 1))",
+    "done",
     `if ! browser_running || ! (echo >/dev/tcp/127.0.0.1/${layout.debugPort}) >/dev/null 2>&1; then`,
     `  echo "computer browser CDP not ready on ${layout.debugPort} (running=$(browser_running && echo yes || echo no))" >&2`,
     `  tail -c 4000 ${log}-browser.log >&2 || true`,
@@ -611,6 +637,7 @@ function renderEnsureScreenCommand(
     "fi",
     ...setupView,
     `for i in $(seq 1 50); do (echo >/dev/tcp/${gatewayProbeHost(layout.bindHost)}/${layout.viewPort}) >/dev/null 2>&1 && exit 0; sleep 0.1; done`,
+    "echo 'screen view port did not open' >&2",
     "exit 1",
   ].join("\n");
 }
@@ -635,7 +662,7 @@ export function interactiveScreenCommand(
     return [
       `if [ -f ${tokenFile} ] && [ "$(cat ${tokenFile})" = ${shellQuote(controlToken)} ]; then`,
       stopProcesses,
-      "printf 'ATLAS_CONTROL_RELEASED\\n'",
+      "printf 'RAKAZO_CONTROL_RELEASED\\n'",
       "fi",
     ].join("\n");
   }
@@ -719,7 +746,7 @@ export function startTerminalCommand(
 }
 
 const REGISTRY = "/tmp/atlas/desktop-assignments";
-const TOKEN_PLACEHOLDER = "ATLAS_INTERNAL_VIEW_TOKEN";
+const TOKEN_PLACEHOLDER = "RAKAZO_INTERNAL_VIEW_TOKEN";
 
 function registryLockCommand(screenId: string) {
   return [
@@ -787,7 +814,7 @@ print(index)
     'mv "$slot.next" "$slot"',
     "flock -u 9; exec 9>&-",
     `bash -eu -c ${shellQuote(renderEnsureScreenCommand(undefined, screenId, TOKEN_PLACEHOLDER, env).replace(shellQuote(TOKEN_PLACEHOLDER), '"$2"'))} desktop "$index" "$view_token"`,
-    'printf "ATLAS_DESKTOP=%s:%s\\n" "$index" "$view_token"',
+    'printf "RAKAZO_DESKTOP=%s:%s\\n" "$index" "$view_token"',
   ].join("\n");
 }
 
@@ -822,7 +849,7 @@ export function releaseDesktopCommand(
     // lock or removal failure is not read as a browser that is still running.
     // set -e leaves that failure non-zero, and the slot is removed only while
     // the shared registry lock is held.
-    'printf "ATLAS_DESKTOP_RELEASED=%s\\n" "$index"',
+    'printf "RAKAZO_DESKTOP_RELEASED=%s\\n" "$index"',
     'exec 9>"$dir/.lock"',
     "flock -w 120 9",
     'rm -f -- "$slot"',
