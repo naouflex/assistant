@@ -9,16 +9,7 @@ import type { ReactNode } from "react";
 import { memo, useId } from "react";
 import type { ColorValue } from "react-native";
 import { View } from "react-native";
-import Svg, {
-  Circle,
-  Defs,
-  G,
-  Image,
-  Mask,
-  Path,
-  Rect,
-  Text as SvgText,
-} from "react-native-svg";
+import Svg, { Circle, Defs, G, Image, Mask, Path, Rect, Text as SvgText } from "react-native-svg";
 import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
 import type { GroupSeat } from "../lib/group-seats";
 import {
@@ -200,9 +191,11 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
       ),
     };
   }
-  const color = parsed.kind === "color" ? parsed.color : member.color;
-  const seed = avatarIdentitySeed(member.botId ?? member.name ?? color);
-  const outline = organicAvatarPath(seed);
+  const color = parsed.kind === "color" || parsed.kind === "word" ? parsed.color : member.color;
+  const seed = avatarIdentitySeed(
+    parsed.kind === "word" ? parsed.word : (member.botId ?? member.name ?? color),
+  );
+  const outline = parsed.kind === "word" ? parsed.shapePath : organicAvatarPath(seed);
   return {
     box: [-60, -60, 120],
     outline: (paint) => <Path d={outline} {...paint} />,

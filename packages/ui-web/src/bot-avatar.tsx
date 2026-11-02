@@ -1,8 +1,10 @@
 import type { BotAvatarSet } from "@atlas/contracts";
+import { parseBotAvatarValue } from "@atlas/contracts";
 import type { BotColorDef, LogoAvatarActivity } from "@atlas/core";
 import {
   ACTIVE_RUN_STATUSES,
   avatarIdentitySeed,
+  avatarWordShapePath,
   BOT_AVATAR_COLORS,
   BOT_COLOR_LIST,
   contrastRatio,
@@ -49,6 +51,7 @@ export function parseBotAvatar(
 ): {
   color: string;
   shapeIndex?: number;
+  word?: string;
   isImage: boolean;
   imageUrl?: string;
 } {
@@ -57,6 +60,10 @@ export function parseBotAvatar(
   // must not become <img src> (SSRF / tracking when other members view the bot).
   if (rawColor.startsWith("data:image/")) {
     return { color: "#F97316", isImage: true, imageUrl: rawColor };
+  }
+  const stored = parseBotAvatarValue(rawColor);
+  if (stored.kind === "word") {
+    return { color: stored.color, isImage: false, word: stored.word };
   }
   if (rawColor.includes("::shape_")) {
     const parts = rawColor.split("::shape_");
@@ -140,6 +147,18 @@ export const BotAvatar = memo(function BotAvatar({
             ) : null}
           </div>
         </div>
+        {isWorking ? <WorkingRing size={size} /> : null}
+      </div>
+    );
+  }
+
+  if (parsed.word) {
+    return (
+      <div
+        className={cn("atlas-bot-avatar relative inline-flex shrink-0", className)}
+        style={{ width: size, height: size }}
+      >
+        <OrganicAvatar color={colorDef.hex} word={parsed.word} size={size} isWorking={isWorking} />
         {isWorking ? <WorkingRing size={size} /> : null}
       </div>
     );
@@ -340,12 +359,14 @@ function WorkingRing({ size }: { size: number }) {
 function OrganicAvatar({
   color,
   identity,
+  word,
   size,
   isWorking,
   className,
 }: {
   color: string;
   identity?: string;
+  word?: string;
   size: number;
   isWorking: boolean;
   className?: string;
@@ -355,10 +376,10 @@ function OrganicAvatar({
     reducedMotionSnapshot,
     () => false,
   );
-  const seed = avatarIdentitySeed(identity || color || DEFAULT_BOT_AVATAR_COLOR);
+  const seed = avatarIdentitySeed(word || identity || color || DEFAULT_BOT_AVATAR_COLOR);
   const duration = `${4.8 + (seed % 24) / 10}s`;
-  const shapeA = organicAvatarPath(seed);
-  const shapeB = organicAvatarPath(seed, 0.42);
+  const shapeA = word ? avatarWordShapePath(word) : organicAvatarPath(seed);
+  const shapeB = word ? avatarWordShapePath(word, 0.42) : organicAvatarPath(seed, 0.42);
   const pale = contrastRatio(color, "#FFFFFF") < 1.15;
 
   return (

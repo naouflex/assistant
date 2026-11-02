@@ -33,7 +33,12 @@ export function botAvatarActivity(
 
 export function usesLogoAvatar(bot: { avatarSet?: string; color: string }): boolean {
   const parsed = parseBotAvatarValue(bot.color);
-  return bot.avatarSet === "atlas" && parsed.kind !== "image" && parsed.kind !== "shape";
+  return (
+    bot.avatarSet === "atlas" &&
+    parsed.kind !== "image" &&
+    parsed.kind !== "shape" &&
+    parsed.kind !== "word"
+  );
 }
 
 export function logoAvatarNeedsAttention(activity: LogoAvatarActivity): boolean {

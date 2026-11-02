@@ -248,9 +248,11 @@ vi.mock("../components/bot-avatar", () => ({ BotAvatar: () => null }));
 vi.mock("./bot-avatar-edit", () => ({
   avatarColor: (value: string) => value,
   avatarShape: () => null,
+  avatarWord: () => null,
   isAvatarPhoto: () => false,
   withAvatarColor: (_value: string, color: string) => color,
   withAvatarShape: (value: string) => value,
+  withAvatarWord: () => null,
 }));
 vi.mock("../components/native-segmented-control", () => ({
   NativeSegmentedControl: ({

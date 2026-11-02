@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 
+import { botAvatarWordValue } from "@atlas/contracts";
 import {
   avatarIdentitySeed,
+  avatarWordShapePath,
   LOGO_BODY_PATH,
   LOGO_EYES,
   logoAvatarFrame,
@@ -315,6 +317,12 @@ describe("BotAvatar", () => {
     const view = render("data:image/png;base64,abc");
     expect(view.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,abc");
     expect(bodies(view)).toEqual([]);
+  });
+
+  it("draws a shape generated from a word", () => {
+    const view = render(botAvatarWordValue("#8B5CF6", "river")!);
+    expect(bodies(view)).toEqual([avatarWordShapePath("river")]);
+    expect(view.querySelectorAll("rect")).toHaveLength(2);
   });
 
   it("keeps a shape picked in Avatar Studio", () => {

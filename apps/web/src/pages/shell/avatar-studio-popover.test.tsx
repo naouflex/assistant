@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import type { BotAvatarSet } from "@atlas/contracts";
+import { botAvatarWordValue } from "@atlas/contracts";
 import { DEFAULT_BOT_AVATAR_COLOR } from "@atlas/ui-web";
 import type { ReactNode } from "react";
 import { act, useState } from "react";
@@ -114,6 +115,23 @@ describe("selectable bot icon sets", () => {
     expect(changed).toHaveBeenLastCalledWith("#10B981", "atlas");
   });
 
+  it("generates a shape from a word and keeps it when the color changes", async () => {
+    await render("#8B5CF6");
+    await click("Customize bot avatar");
+    const input = document.querySelector<HTMLInputElement>('[data-testid="avatar-word"]');
+    expect(input).not.toBeNull();
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setValue?.call(input, "River");
+      input!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await click("Generate");
+    const river = botAvatarWordValue("#8B5CF6", "river");
+    expect(changed).toHaveBeenLastCalledWith(river, undefined);
+    await click("Color #10B981");
+    expect(changed).toHaveBeenLastCalledWith(botAvatarWordValue("#10B981", "river"), undefined);
+  });
+
   it("applies a shipped custom picture from the bot tab", async () => {
     await render("#8B5CF6");
     await click("Customize bot avatar");
@@ -125,9 +143,7 @@ describe("selectable bot icon sets", () => {
     expect(changed).toHaveBeenCalled();
     const [next] = changed.mock.calls.at(-1)!;
     expect(next.startsWith("data:image/webp;base64,")).toBe(true);
-    const preview = document.querySelector<HTMLImageElement>(
-      ".atlas-bot-avatar-picture img",
-    );
+    const preview = document.querySelector<HTMLImageElement>(".atlas-bot-avatar-picture img");
     expect(preview?.getAttribute("src")).toBe(next);
     expect(preset!.getAttribute("aria-pressed")).toBe("true");
   });

@@ -1,4 +1,5 @@
 import type { BotAvatarSet } from "@atlas/contracts";
+import { parseBotAvatarValue } from "@atlas/contracts";
 import type { AvatarMotionMode, LogoAvatarActivity } from "@atlas/core";
 import {
   AVATAR_LID_CLOSE,
@@ -164,16 +165,22 @@ function AtlasBotAvatar({
         motion={motion}
         pokeable={pokeable}
       />
-      {working ? <WorkingDot size={size} muted={muted} /> : null}
+      {working ? <WorkingDot color={color} size={size} muted={muted} /> : null}
       {muted ? <MutedBadge size={size} /> : null}
     </View>
   );
 }
 
-function WorkingDot({ size, muted }: { size: number; muted: boolean }) {
+function WorkingDot({ color, size, muted }: { color: string; size: number; muted: boolean }) {
   const tokens = useMobileTokens();
   const { t } = useI18n();
   const dot = avatarWorkingDot(size);
+  const parsed = parseBotAvatarValue(color);
+  // A photo has no separate color, so the mark stays the shared working green.
+  const fill =
+    parsed.kind === "shape" || parsed.kind === "color" || parsed.kind === "word"
+      ? parsed.color
+      : tokens.workingDot;
   return (
     <View
       accessibilityLabel={t("Working")}
@@ -187,7 +194,7 @@ function WorkingDot({ size, muted }: { size: number; muted: boolean }) {
         borderRadius: size,
         borderWidth: dot.ring,
         borderColor: tokens.background,
-        backgroundColor: tokens.workingDot,
+        backgroundColor: fill,
       }}
     />
   );
@@ -265,7 +272,6 @@ function LegacyBotAvatar({
   /** A tap plays a little reaction (the activity mark). */
   pokeable?: boolean;
 }) {
-  const tokens = useMobileTokens();
   const state = avatarLifeState(status, composing);
   // The working dot marks a bot at work, not one writing its reply; a running avatar is
   // itself that sign, so it carries none.
@@ -286,13 +292,25 @@ function LegacyBotAvatar({
   const life = useLife(state, clock, size, motion);
   const poke = usePoke(life, pokeable && clock === "running");
   const bodyStyle = useBodyStyle(life, size);
-  const fillColor = parsed.kind === "shape" || parsed.kind === "color" ? parsed.color : color;
+  const fillColor =
+    parsed.kind === "shape" || parsed.kind === "color" || parsed.kind === "word"
+      ? parsed.color
+      : color;
   const picture =
     parsed.kind === "image" && parsed.imageUrl ? (
       <Image
         source={{ uri: parsed.imageUrl }}
         style={{ width: size, height: size }}
         resizeMode="contain"
+      />
+    ) : parsed.kind === "word" ? (
+      <OrganicAvatar
+        color={parsed.color}
+        identity={parsed.word}
+        bodyPath={parsed.shapePath}
+        size={size}
+        life={life}
+        bodyStyle={bodyStyle}
       />
     ) : parsed.kind === "shape" ? (
       <ShippedShapeAvatar
@@ -317,7 +335,7 @@ function LegacyBotAvatar({
       {parsed.kind !== "image" && clock !== "still" ? (
         <ThinkingDots color={fillColor} size={size} life={life} />
       ) : null}
-      {isWorking ? <WorkingDot size={size} muted={muted} /> : null}
+      {isWorking ? <WorkingDot color={color} size={size} muted={muted} /> : null}
       {muted ? <MutedBadge size={size} /> : null}
     </View>
   );
@@ -419,12 +437,14 @@ function ShippedShapeAvatar({
 function OrganicAvatar({
   color,
   identity,
+  bodyPath,
   size,
   life,
   bodyStyle,
 }: {
   color: string;
   identity?: string;
+  bodyPath?: string;
   size: number;
   life: AvatarLife;
   bodyStyle: BodyStyle;
@@ -443,7 +463,7 @@ function OrganicAvatar({
   return (
     <Animated.View style={[{ width: size, height: size }, bodyStyle]}>
       <Svg width={size} height={size} viewBox="-60 -60 120 120">
-        <Path d={organicAvatarPath(seed)} fill={color} />
+        <Path d={bodyPath ?? organicAvatarPath(seed)} fill={color} />
         <G transform={`rotate(${(seed % 9) - 4})`}>
           <AnimatedRect animatedProps={leftEyeProps} width={7} rx={3.5} fill={botEyeColor} />
           <AnimatedRect animatedProps={rightEyeProps} width={7} rx={3.5} fill={botEyeColor} />
