@@ -1665,6 +1665,36 @@ export const SpaceMemoryConfigSchema = z.object({
 });
 export type SpaceMemoryConfig = z.infer<typeof SpaceMemoryConfigSchema>;
 
+export const LocalModelLoadStateSchema = z.enum(["loaded", "loading", "unloaded"]);
+export type LocalModelLoadState = z.infer<typeof LocalModelLoadStateSchema>;
+
+export const LocalModelStatusSchema = z.object({
+  id: z.string(),
+  aliases: z.array(z.string()),
+  sizeBytes: z.number().nullable(),
+  parameterSize: z.string().nullable(),
+  contextWindow: z.number().nullable(),
+  large: z.boolean(),
+  loadState: LocalModelLoadStateSchema.nullable(),
+});
+export type LocalModelStatus = z.infer<typeof LocalModelStatusSchema>;
+
+export const LocalServerStatusSchema = z.object({
+  baseUrl: z.string(),
+  kind: z.enum(["llama-server", "ollama", "openai-compatible", "unknown"]),
+  reachable: z.boolean(),
+  contextWindow: z.number().nullable(),
+  models: z.array(LocalModelStatusSchema),
+});
+export type LocalServerStatus = z.infer<typeof LocalServerStatusSchema>;
+
+export const LocalModelsStatusSchema = z.object({
+  contextWindow: z.number().nullable(),
+  servers: z.array(LocalServerStatusSchema),
+  checkedAt: z.string(),
+});
+export type LocalModelsStatus = z.infer<typeof LocalModelsStatusSchema>;
+
 export const ModelCatalogEntrySchema = z.object({
   /** Omitted by older servers and ordinary chat connections. */
   protocol: z.enum(["chat", "decisions"]).optional(),
