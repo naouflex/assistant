@@ -1864,6 +1864,7 @@ msgid "Could not change password"
 msgstr "Could not change password"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not change the parent."
 msgstr "Could not change the parent."
 
@@ -2122,6 +2123,7 @@ msgid "Could not log out. Try again."
 msgstr "Could not log out. Try again."
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not move this bot."
 msgstr "Could not move this bot."
 
@@ -3523,6 +3525,10 @@ msgid "Its bots and groups are kept and leave the section."
 msgstr "Its bots and groups are kept and leave the section."
 
 #: src/pages/shell/dialogs.tsx
+msgid "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+msgstr "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+
+#: src/pages/shell/dialogs.tsx
 msgid "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
 msgstr "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
 
@@ -4084,6 +4090,14 @@ msgstr "More apps"
 msgid "More computer actions"
 msgstr "More computer actions"
 
+#: src/pages/shell/dialogs.tsx
+msgid "Move"
+msgstr "Move"
+
+#: src/pages/shell/dialogs.tsx
+msgid "Move {botName} to {spaceName}?"
+msgstr "Move {botName} to {spaceName}?"
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move down"
 msgstr "Move down"
@@ -4103,6 +4117,12 @@ msgstr "Move to space"
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "Move up"
+
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr "Moved {0} to {1}"
 
 #. placeholder {0}: bot.name
 #: src/pages/shell/chat-context-menu.tsx

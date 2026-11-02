@@ -78,6 +78,7 @@ import { ComposerModelControls } from "./shell/composer-model-controls";
 import { ComputerOverlay } from "./shell/computer-overlay";
 import { ComputerPanel } from "./shell/computer-panel";
 import type { CreateBotDialogInput } from "./shell/create-bot-dialog";
+import { MoveBotToSpaceDialog } from "./shell/dialogs";
 import { ShellDialogs, useShellDialogs } from "./shell/shell-dialogs";
 import { AppOverlays, SettingsOverlays } from "./shell/shell-overlays";
 import { ShellSidebar } from "./shell/shell-sidebar";
@@ -608,6 +609,7 @@ function SpaceShell() {
   const rosterDrop = useRosterDrop({
     rpc,
     bots,
+    setBots,
     reorderRosterBot: roster.reorderRosterBot,
     refreshBots,
     refreshGroupThread: (id) => refreshGroupThreadRef.current(id),
@@ -1165,6 +1167,14 @@ function SpaceShell() {
       />
 
       <Suspense fallback={null}>
+        {rosterDrop.pendingSpaceMove ? (
+          <MoveBotToSpaceDialog
+            botName={rosterDrop.pendingSpaceMove.bot.name}
+            spaceName={rosterDrop.pendingSpaceMove.spaceName}
+            onCancel={rosterDrop.cancelSpaceMove}
+            onConfirm={rosterDrop.confirmSpaceMove}
+          />
+        ) : null}
         <ShellDialogs
           dialogs={dialogs}
           rpc={rpc}

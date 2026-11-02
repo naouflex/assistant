@@ -1864,6 +1864,7 @@ msgid "Could not change password"
 msgstr "无法修改密码"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not change the parent."
 msgstr ""
 
@@ -2122,6 +2123,7 @@ msgid "Could not log out. Try again."
 msgstr "无法退出登录。请重试。"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not move this bot."
 msgstr ""
 
@@ -3523,6 +3525,10 @@ msgid "Its bots and groups are kept and leave the section."
 msgstr "其中的 Bot 和群组会保留，并移出该分组。"
 
 #: src/pages/shell/dialogs.tsx
+msgid "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+msgstr ""
+
+#: src/pages/shell/dialogs.tsx
 msgid "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
 msgstr "它的对话、文件和例行任务将被永久删除。它创建的 Bot 仍留在列表中。"
 
@@ -4084,6 +4090,14 @@ msgstr "更多应用"
 msgid "More computer actions"
 msgstr "更多电脑操作"
 
+#: src/pages/shell/dialogs.tsx
+msgid "Move"
+msgstr ""
+
+#: src/pages/shell/dialogs.tsx
+msgid "Move {botName} to {spaceName}?"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move down"
 msgstr "下移"
@@ -4103,6 +4117,12 @@ msgstr ""
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "上移"
+
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
 
 #. placeholder {0}: bot.name
 #: src/pages/shell/chat-context-menu.tsx
