@@ -1267,6 +1267,10 @@ msgstr "Alterar {title}"
 msgid "Change model"
 msgstr "Trocar modelo"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Change parent"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Change password"
 msgstr "Alterar senha"
@@ -1851,6 +1855,10 @@ msgstr ""
 msgid "Could not change password"
 msgstr "Não foi possível alterar a senha"
 
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Could not change the parent."
+msgstr ""
+
 #: src/components/integrations/space-availability.tsx
 msgid "Could not change where this is available"
 msgstr ""
@@ -2104,6 +2112,10 @@ msgstr "Não foi possível carregar as configurações de voz"
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "Não foi possível sair. Tente novamente."
+
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Could not move this bot."
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 #: src/pages/BillingSettingsPanel.tsx
@@ -3400,12 +3412,12 @@ msgstr "Entrada"
 msgid "Inputs"
 msgstr "Entradas"
 
-#: src/components/ComputerDeviceSettings.tsx
-msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
-msgstr ""
-
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Install Atlas and sign in"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr ""
 
 #: src/components/SidebarFooter.tsx
@@ -3606,6 +3618,10 @@ msgstr ""
 msgid "llama.cpp"
 msgstr ""
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Load"
+msgstr ""
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "Carregar mensagens anteriores..."
@@ -3621,6 +3637,22 @@ msgstr "Carregar execuções anteriores"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Load web images automatically"
 msgstr "Carregar imagens da web automaticamente"
+
+#: src/pages/shell/local-model-status.ts
+msgid "loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loaded"
+msgstr ""
+
+#: src/pages/shell/local-model-status.ts
+msgid "loading"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loading"
+msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Loading activity…"
@@ -4056,9 +4088,18 @@ msgstr "Mova-os para a sua memória compartilhada."
 msgid "Move to"
 msgstr "Mover para"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Move to space"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "Mover para cima"
+
+#. placeholder {0}: bot.name
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Moved {0} to {name}"
+msgstr ""
 
 #: src/components/call/CallCard.tsx
 msgid "Mute"
@@ -4321,6 +4362,10 @@ msgstr ""
 msgid "No trigger"
 msgstr ""
 
+#: src/pages/BotContextMenu.tsx
+msgid "None"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr ""
@@ -4348,6 +4393,14 @@ msgstr "Fora do catálogo do Atlas"
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Not in the plugin catalog"
+msgstr ""
+
+#: src/pages/shell/local-model-status.ts
+msgid "not loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Not loaded"
 msgstr ""
 
 #: src/pages/shell/message-cards.tsx
