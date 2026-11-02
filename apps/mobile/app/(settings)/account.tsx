@@ -1,4 +1,4 @@
-import type { AccountSecurity, UsageSummary } from "@atlas/contracts";
+import type { AccountSecurity, NotificationPreferences, UsageSummary } from "@atlas/contracts";
 import { accountDisplay, displayName } from "@atlas/core";
 import { MenuView } from "@expo/ui/community/menu";
 import * as Notifications from "expo-notifications";
@@ -136,6 +136,22 @@ export default function Account() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [security, setSecurity] = useState<AccountSecurity | null>(null);
+  const [pushPreferences, setPushPreferences] = useState<NotificationPreferences | null>(null);
+  useEffect(() => {
+    void rpc("notifications/preferences")
+      .then(setPushPreferences)
+      .catch(() => undefined);
+  }, []);
+  function updatePushPreference(patch: Partial<NotificationPreferences>) {
+    setPushPreferences((current) => (current ? { ...current, ...patch } : current));
+    void rpc("notifications/setPreferences", patch)
+      .then(setPushPreferences)
+      .catch(() =>
+        rpc("notifications/preferences")
+          .then(setPushPreferences)
+          .catch(() => undefined),
+      );
+  }
   const canChangePassword = security?.hasPassword && security.passwordChangeEnabled !== false;
   const [deletionCodeSent, setDeletionCodeSent] = useState(false);
   const [ssoReauthenticated, setSsoReauthenticated] = useState(false);
@@ -643,6 +659,31 @@ export default function Account() {
             value={UI_LOCALE_LABELS[locale]}
           />
         </SettingsGroup>
+
+        {pushPreferences ? (
+          <SettingsGroup accessibilityLabel={t("Push notifications")} label={t("Push notifications")}>
+            <SettingsSwitch
+              label={t("Finished work")}
+              value={pushPreferences.finish}
+              onChange={(finish) => updatePushPreference({ finish })}
+            />
+            <SettingsSwitch
+              label={t("Questions and approvals")}
+              value={pushPreferences.help}
+              onChange={(help) => updatePushPreference({ help })}
+            />
+            <SettingsSwitch
+              label={t("Takeover requests")}
+              value={pushPreferences.takeover}
+              onChange={(takeover) => updatePushPreference({ takeover })}
+            />
+            <SettingsSwitch
+              label={t("Computer problems")}
+              value={pushPreferences.computer}
+              onChange={(computer) => updatePushPreference({ computer })}
+            />
+          </SettingsGroup>
+        ) : null}
 
         {Platform.OS === "android" ? (
           <SettingsGroup accessibilityLabel={t("Notifications")} label={t("Notifications")}>

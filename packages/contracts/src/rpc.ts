@@ -144,6 +144,7 @@ import {
   VoiceCredentialSchema,
   VoiceInfoSchema,
   VoiceStatusSchema,
+  NotificationPreferencesSchema,
 } from "./domain.js";
 import { ComputerCommandSchema, ProductEventSchema } from "./events.js";
 import { Id, IsoDate, ThinkingLevelSchema } from "./ids.js";
@@ -1292,6 +1293,10 @@ export const appContract = {
       .input(z.object({ token: z.string().min(8).max(512).regex(/^\S+$/) }))
       .output(z.object({ ok: z.literal(true) })),
     unregisterPush: oc.output(z.object({ ok: z.literal(true) })),
+    preferences: oc.output(NotificationPreferencesSchema),
+    setPreferences: oc
+      .input(NotificationPreferencesSchema.partial())
+      .output(NotificationPreferencesSchema),
   },
   search: {
     query: oc.input(z.object({ q: z.string().max(200) })).output(SearchQueryOutputSchema),

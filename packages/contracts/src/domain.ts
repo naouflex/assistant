@@ -1709,6 +1709,14 @@ export const VoiceCredentialSchema = z.object({
 });
 export type VoiceCredential = z.infer<typeof VoiceCredentialSchema>;
 
+export const NotificationPreferencesSchema = z.object({
+  finish: z.boolean(),
+  help: z.boolean(),
+  takeover: z.boolean(),
+  computer: z.boolean(),
+});
+export type NotificationPreferences = z.infer<typeof NotificationPreferencesSchema>;
+
 export const VoiceStatusSchema = z.object({
   configured: z.boolean(),
   ready: z.boolean(),

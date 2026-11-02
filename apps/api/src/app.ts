@@ -59,6 +59,7 @@ import {
   deploymentModelUsageLookup,
   EmailEmulator,
   ExpoPushProvider,
+  notificationPreferenceGate,
   GraphileJobPublisher,
   InMemoryJobQueue,
   InMemoryRealtimeFanout,
@@ -515,6 +516,7 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
       sessionExpiresAt: (sessionId) => pushSessionExpiresAt(prisma, sessionId),
       jobs,
       accessToken: env.expoAccessToken,
+      allows: notificationPreferenceGate(prisma),
     });
   const auth = createAuth(prisma, {
     analytics,

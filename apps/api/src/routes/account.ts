@@ -53,6 +53,8 @@ import {
 import type { RouterContext } from "./context.js";
 import { meDto } from "./shared.js";
 
+const NOTIFICATION_PREFERENCE_SELECT = { finish: true, help: true, takeover: true, computer: true } as const;
+
 export function accountRoutes(ctx: RouterContext) {
   const { deps, os, authed } = ctx;
   return {
@@ -262,6 +264,23 @@ export function accountRoutes(ctx: RouterContext) {
       unregisterPush: authed.notifications.unregisterPush.handler(async ({ context }) => {
         await deps.pushTokens.remove(context.actor.userId);
         return { ok: true as const };
+      }),
+      preferences: authed.notifications.preferences.handler(async ({ context }) => {
+        const { spaceId, userId } = context.actor;
+        const saved = await deps.prisma.notificationPreference.findUnique({
+          where: { spaceId_userId: { spaceId, userId } },
+          select: NOTIFICATION_PREFERENCE_SELECT,
+        });
+        return saved ?? { finish: true, help: true, takeover: true, computer: true };
+      }),
+      setPreferences: authed.notifications.setPreferences.handler(({ context, input }) => {
+        const { spaceId, userId } = context.actor;
+        return deps.prisma.notificationPreference.upsert({
+          where: { spaceId_userId: { spaceId, userId } },
+          create: { spaceId, userId, ...input },
+          update: input,
+          select: NOTIFICATION_PREFERENCE_SELECT,
+        });
       }),
     },
     voice: {
