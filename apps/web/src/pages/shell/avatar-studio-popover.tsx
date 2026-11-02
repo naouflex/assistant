@@ -50,7 +50,7 @@ function studioPreviewAvatarSet(
 function avatarValueForIconSet(nextSet: BotAvatarSet, value: string): string {
   if (nextSet === "organic") return value;
   const parsed = parseBotAvatar(value);
-  if (parsed.isImage) return value;
+  if (parsed.isImage) return DEFAULT_BOT_AVATAR_COLOR;
   return parsed.color || DEFAULT_BOT_AVATAR_COLOR;
 }
 
@@ -105,12 +105,13 @@ export function BotLookPicker({
   const wordPreview = botAvatarWordValue(currentColor, wordShown);
   const wordIsPicture = Boolean(parsed.word) && wordDraft === null;
   const pending =
-    !draftStale && wordDraft !== null && wordPreview && wordPreview !== value ? wordPreview : null;
+    !draftStale && wordPreview && (wordPreview !== value || wordDraft !== null) ? wordPreview : null;
 
   useEffect(() => {
     onPreviewChange?.(pending);
-    return () => onPreviewChange?.(null);
   }, [onPreviewChange, pending]);
+
+  useEffect(() => () => onPreviewChange?.(null), [onPreviewChange]);
 
   function editWord(next: string) {
     setDraftPicture(picture);
@@ -236,6 +237,17 @@ export function BotLookPicker({
             ))}
           </div>
           <div className="mt-3 flex items-center gap-2">
+            {wordPreview ? (
+              <BotAvatar
+                color={wordPreview}
+                identity={identity ?? "preview"}
+                size={40}
+                avatarSet="organic"
+                className="shrink-0"
+              />
+            ) : (
+              <span className="size-10 shrink-0" aria-hidden="true" />
+            )}
             <Input
               aria-label={t`Shape from a word`}
               placeholder={t`Word`}
@@ -261,15 +273,6 @@ export function BotLookPicker({
                 generateWord();
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="shrink-0"
-              disabled={!wordPreview || wordPreview === value}
-              onClick={generateWord}
-            >
-              <Trans>Apply</Trans>
-            </Button>
           </div>
         </div>
 
@@ -368,6 +371,12 @@ export function AvatarStudioPopover({
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  function closeStudio() {
+    if (pendingLook && pendingLook !== value) onChange(pendingLook);
+    setPendingLook(null);
+    setOpen(false);
+  }
+
   function restoreDefaultAvatar() {
     const next = defaultBotAvatarValue(value);
     if (next !== value) onChange(next);
@@ -451,11 +460,11 @@ export function AvatarStudioPopover({
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          if (!next && pendingLook && pendingLook !== value) {
-            onChange(pendingLook);
+          if (next) {
+            setOpen(true);
+            return;
           }
-          setOpen(next);
-          if (!next) setPendingLook(null);
+          closeStudio();
         }}
       >
         <DialogContent
@@ -474,7 +483,7 @@ export function AvatarStudioPopover({
               variant="ghost"
               size="icon-sm"
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={closeStudio}
               className="rounded-full text-muted-foreground"
               aria-label={t`Close`}
             >
@@ -570,7 +579,7 @@ export function AvatarStudioPopover({
           </Tabs>
 
           <DialogFooter className="border-border sm:justify-end">
-            <Button variant="secondary" size="sm" type="button" onClick={() => setOpen(false)}>
+            <Button variant="secondary" size="sm" type="button" onClick={closeStudio}>
               <Check size={14} />
               <Trans>Done</Trans>
             </Button>

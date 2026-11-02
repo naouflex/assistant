@@ -1,5 +1,5 @@
 import type { NavLink } from "@atlas/contracts";
-import { IOS_APP_STORE_URL } from "@atlas/contracts";
+import { ANDROID_APK_URL } from "@atlas/contracts";
 import {
   AppMarkStack,
   Button,
@@ -94,7 +94,7 @@ export function SidebarFooter({
   const update = useSidebarUpdate();
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const [mobileAppOpen, setMobileAppOpen] = useState(false);
-  const mobileAppUrl = IOS_APP_STORE_URL;
+  const mobileAppUrl = ANDROID_APK_URL;
   const pillRef = useRef<HTMLButtonElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const [markCount, setMarkCount] = useState(3);
@@ -298,10 +298,13 @@ export function SidebarFooter({
             target="_blank"
             rel="noreferrer"
             data-testid="mobile-app-qr"
-            className="flex justify-center"
+            className="flex flex-col items-center gap-3"
           >
             <span className="rounded-lg bg-white p-3">
               <QrMark value={mobileAppUrl} testId="mobile-app-qr-mark" />
+            </span>
+            <span className="text-center text-[13px] text-muted-foreground">
+              <Trans>Download the Android APK</Trans>
             </span>
           </a>
         </DialogContent>

@@ -16,9 +16,11 @@ export const CLIENT_KINDS = ["web", "mobile"] as const;
 export type ClientKind = (typeof CLIENT_KINDS)[number];
 export type MinimumClientBuilds = Partial<Record<ClientKind, string>>;
 
+/** Legacy Rakazo listing; Atlas is not on this App Store app. Product UI must not link here. */
 export const IOS_APP_STORE_URL = "https://apps.apple.com/app/rakazo/id6801531099";
 export const ANDROID_APK_URL =
   "https://github.com/naouflex/assistant/releases/download/android/atlas.apk";
+export const MOBILE_RELEASES_URL = "https://github.com/naouflex/assistant/releases";
 
 const BUILD_ID = /^\d{14}$/;
 

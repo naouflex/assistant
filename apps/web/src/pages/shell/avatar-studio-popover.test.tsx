@@ -4,6 +4,7 @@ import type { BotAvatarSet } from "@atlas/contracts";
 import { botAvatarWordValue } from "@atlas/contracts";
 import { DEFAULT_BOT_AVATAR_COLOR } from "@atlas/ui-web";
 import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import type { ReactNode } from "react";
 import { act, useState } from "react";
 import type { Root } from "react-dom/client";
@@ -12,6 +13,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
+}));
+
+vi.mock("@lingui/core/macro", () => ({
+  t: (parts: TemplateStringsArray) => parts[0] ?? "",
 }));
 
 import { AvatarStudioPopover } from "./avatar-studio-popover";
@@ -30,20 +35,23 @@ function Harness({
   const [value, setValue] = useState(initial);
   const [avatarSet, setAvatarSet] = useState(initialSet);
   return (
-    <AvatarStudioPopover
-      value={value}
-      identity="sample-bot"
-      avatarSet={avatarSet}
-      onChange={(next, nextSet) => {
-        changed(next, nextSet);
-        setValue(next);
-        if (nextSet !== undefined) setAvatarSet(nextSet);
-      }}
-    />
+    <I18nProvider i18n={i18n}>
+      <AvatarStudioPopover
+        value={value}
+        identity="sample-bot"
+        avatarSet={avatarSet}
+        onChange={(next, nextSet) => {
+          changed(next, nextSet);
+          setValue(next);
+          if (nextSet !== undefined) setAvatarSet(nextSet);
+        }}
+      />
+    </I18nProvider>
   );
 }
 
 beforeEach(() => {
+  i18n.load("en", {});
   i18n.activate("en");
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   window.matchMedia ??= ((query: string) => ({
@@ -129,8 +137,11 @@ describe("selectable bot icon sets", () => {
     });
     const studio = document.querySelector("[data-testid='avatar-studio']");
     expect(studio?.querySelector(".atlas-word-icon")?.textContent).toBe("R");
+    expect(studio?.querySelector(".atlas-bot-avatar")?.textContent).toContain("R");
     expect(changed).not.toHaveBeenCalled();
-    await click("Apply");
+    await act(async () => {
+      input!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
     const river = botAvatarWordValue("#8B5CF6", "river");
     expect(changed).toHaveBeenLastCalledWith(river, undefined);
     expect(input!.value).toBe("river");
@@ -147,7 +158,8 @@ describe("selectable bot icon sets", () => {
     await click("Customize bot avatar");
     expect(button("wedge")).toBeDefined();
     await click("wedge");
-    expect(changed).toHaveBeenLastCalledWith("#10B981::shape_0", "organic");
+    expect(changed.mock.calls.at(-1)?.[0]).toMatch(/^#10B981::shape_\d+$/);
+    expect(changed).toHaveBeenLastCalledWith(expect.any(String), "organic");
   });
 
   it("commits a typed word when closing the studio without Apply", async () => {

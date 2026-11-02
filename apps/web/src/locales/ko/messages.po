@@ -947,6 +947,10 @@ msgstr "Atlas"
 msgid "Atlas credits"
 msgstr ""
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Atlas uses the logo below. Shapes and word icons switch to Original."
+msgstr ""
+
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
 msgid "atlas-shared and IDs starting with bot- are reserved for Atlas."
 msgstr ""
@@ -2118,6 +2122,10 @@ msgstr "파일을 불러오지 못했습니다."
 msgid "Could not load voice settings"
 msgstr "음성 설정을 불러오지 못했습니다."
 
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "Could not load voices for that speech model"
+msgstr ""
+
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "로그아웃하지 못했습니다. 다시 시도해 주세요."
@@ -2824,9 +2832,17 @@ msgstr "{0} 다운로드"
 msgid "Download {name}"
 msgstr "{name} 다운로드"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Download Atlas for Android"
+msgstr ""
+
 #: src/components/markdown-copy.tsx
 msgid "Download CSV"
 msgstr "CSV 다운로드"
+
+#: src/components/SidebarFooter.tsx
+msgid "Download the Android APK"
+msgstr ""
 
 #: src/components/DesktopUpdates.tsx
 msgid "Downloading…"
@@ -2887,6 +2903,10 @@ msgstr "이메일 인증이 필요합니다"
 #: src/pages/shell/bot-panel.tsx
 msgid "Enable {0}"
 msgstr "{0} 활성화"
+
+#: src/components/call/CallCard.tsx
+msgid "Ending call"
+msgstr ""
 
 #: src/pages/BillingSettingsPanel.tsx
 msgid "Ends {day}"
@@ -3073,6 +3093,22 @@ msgstr "실패했습니다."
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Failure handling"
 msgstr "실패했을 때 처리"
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast tier"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast tier off: standard queue"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast tier on: higher-priority responses when available"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Fields that mark a change"
@@ -3422,10 +3458,6 @@ msgstr "입력"
 msgid "Inputs"
 msgstr "입력값"
 
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Install Atlas and sign in"
-msgstr ""
-
 #: src/components/ComputerDeviceSettings.tsx
 msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr ""
@@ -3704,6 +3736,10 @@ msgstr ""
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Loading voice providers…"
 msgstr "음성 서비스를 불러오는 중…"
+
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "Loading voices…"
+msgstr ""
 
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/components/integrations/skills-dialog.tsx
@@ -4783,6 +4819,10 @@ msgstr "모델 목록에서 모델을 선택하세요."
 msgid "Pick a model from the list or enter a model id served by this endpoint."
 msgstr "목록에서 모델을 선택하거나 이 엔드포인트가 제공하는 모델 ID를 입력하세요."
 
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "Pick a preset or paste a Fish voice id."
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Pick a tool to check"
 msgstr "확인할 도구 선택"
@@ -5678,6 +5718,10 @@ msgstr "모양"
 msgid "Shape {0}"
 msgstr ""
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Shape from a word"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Share of prompt tokens served from the model's cache"
 msgstr ""
@@ -5912,6 +5956,10 @@ msgstr "음성 모델"
 #: src/lib/user-error.ts
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO를 일시적으로 사용할 수 없습니다. 다시 시도하세요."
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Standard"
+msgstr ""
 
 #: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6154,6 +6202,10 @@ msgstr "화면 링크가 만료되었습니다."
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "The selected memory provider is not available in this build."
 msgstr "선택한 기억 서비스는 현재 빌드에서 사용할 수 없습니다."
+
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "The server did not return a voice list. Enter a voice id your speech server accepts."
+msgstr ""
 
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Their own model is cleared. You can pick one again in each bot."
@@ -6819,6 +6871,10 @@ msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"
+msgstr ""
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Word"
 msgstr ""
 
 #: src/components/SignupSurvey.tsx

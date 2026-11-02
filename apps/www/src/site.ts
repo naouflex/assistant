@@ -8,7 +8,6 @@ export const PLUGIN_SUBMISSIONS_URL = `${APP_URL}/api/v1/plugin-submissions`;
 export const CATALOG_URL =
   "https://atlas-public.fsn1.your-objectstorage.com/integrations/catalog.json";
 export const GITHUB_URL = "https://github.com/naouflex/assistant";
-export const IOS_APP_URL = "https://apps.apple.com/app/rakazo/id6801531099";
 export const ANDROID_APK_URL = "https://github.com/naouflex/assistant/releases/download/android/atlas.apk";
 export const GITHUB_API_REPO = "https://api.github.com/repos/naouflex/assistant";
 export const DOCS_URL = "https://github.com/naouflex/assistant/blob/main/docs/self-host.md";

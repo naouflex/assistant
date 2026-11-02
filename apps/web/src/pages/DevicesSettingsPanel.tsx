@@ -1,4 +1,4 @@
-import { IOS_APP_STORE_URL } from "@atlas/contracts";
+import { ANDROID_APK_URL } from "@atlas/contracts";
 import type { LocalServerStatus } from "@atlas/contracts";
 import { Button } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -213,15 +213,15 @@ export function DevicesSettingsPanel() {
       <SettingsGroup title={<Trans>Phone</Trans>} data-testid="devices-phone">
         <div className="flex justify-center px-4 py-4">
           <a
-            href={IOS_APP_STORE_URL}
+            href={ANDROID_APK_URL}
             data-testid="devices-apk-qr"
             className="flex flex-col items-center gap-3"
           >
             <span className="rounded-lg bg-white p-3">
-              <QrMark value={IOS_APP_STORE_URL} testId="devices-apk-qr-mark" />
+              <QrMark value={ANDROID_APK_URL} testId="devices-apk-qr-mark" />
             </span>
             <span className="text-[14px] text-foreground">
-              <Trans>Install Atlas and sign in</Trans>
+              <Trans>Download Atlas for Android</Trans>
             </span>
           </a>
         </div>

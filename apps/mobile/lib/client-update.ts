@@ -3,7 +3,7 @@ import {
   buildIdAt,
   CLIENT_BUILD_HEADER,
   formatClientBuild,
-  IOS_APP_STORE_URL,
+  MOBILE_RELEASES_URL,
 } from "@atlas/contracts";
 import * as Updates from "expo-updates";
 import type { AppStateStatus } from "react-native";
@@ -52,7 +52,7 @@ export async function applyRequiredUpdate(): Promise<void> {
   } catch {
     // An unreachable update server falls through to the store.
   }
-  await Linking.openURL(Platform.OS === "ios" ? IOS_APP_STORE_URL : ANDROID_APK_URL).catch(
+  await Linking.openURL(Platform.OS === "ios" ? MOBILE_RELEASES_URL : ANDROID_APK_URL).catch(
     () => undefined,
   );
 }

@@ -73,13 +73,14 @@ export function CreateBotDialog({
     if (!trimmed || submitting) return;
     setError(null);
     setSubmitting(true);
-    const parsedLook = parseBotAvatar(look.value);
+    const chosenColor = pendingLook ?? look.value;
+    const parsedLook = parseBotAvatar(chosenColor);
     const organic =
       avatarSet === "organic" && parsedLook.shapeIndex === undefined && !parsedLook.word;
     try {
       await onCreate({
         name: trimmed,
-        color: look.value,
+        color: chosenColor,
         ...(avatarSet === "atlas" ? { id: previewId } : {}),
         avatarSet,
         ...(organic ? { avatarFamily: organicAvatarFamily(look.identity) } : {}),

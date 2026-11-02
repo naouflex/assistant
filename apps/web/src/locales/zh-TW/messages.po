@@ -948,6 +948,10 @@ msgstr "Atlas"
 msgid "Atlas credits"
 msgstr "Atlas 額度"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Atlas uses the logo below. Shapes and word icons switch to Original."
+msgstr ""
+
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
 msgid "atlas-shared and IDs starting with bot- are reserved for Atlas."
 msgstr "atlas-shared 與以 bot- 開頭的 ID 保留給 Atlas 使用。"
@@ -2119,6 +2123,10 @@ msgstr "無法載入此檔案。"
 msgid "Could not load voice settings"
 msgstr "無法載入語音設定"
 
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "Could not load voices for that speech model"
+msgstr ""
+
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "無法登出，請再試一次。"
@@ -2825,9 +2833,17 @@ msgstr "下載 {0}"
 msgid "Download {name}"
 msgstr "下載 {name}"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Download Atlas for Android"
+msgstr ""
+
 #: src/components/markdown-copy.tsx
 msgid "Download CSV"
 msgstr "下載 CSV"
+
+#: src/components/SidebarFooter.tsx
+msgid "Download the Android APK"
+msgstr ""
 
 #: src/components/DesktopUpdates.tsx
 msgid "Downloading…"
@@ -2888,6 +2904,10 @@ msgstr "需要驗證電子信箱"
 #: src/pages/shell/bot-panel.tsx
 msgid "Enable {0}"
 msgstr "啟用 {0}"
+
+#: src/components/call/CallCard.tsx
+msgid "Ending call"
+msgstr ""
 
 #: src/pages/BillingSettingsPanel.tsx
 msgid "Ends {day}"
@@ -3074,6 +3094,22 @@ msgstr "失敗。"
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Failure handling"
 msgstr "失敗處理"
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast tier"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast tier off: standard queue"
+msgstr ""
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Fast tier on: higher-priority responses when available"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Fields that mark a change"
@@ -3423,10 +3459,6 @@ msgstr "輸入"
 msgid "Inputs"
 msgstr "輸入"
 
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Install Atlas and sign in"
-msgstr ""
-
 #: src/components/ComputerDeviceSettings.tsx
 msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr ""
@@ -3705,6 +3737,10 @@ msgstr ""
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Loading voice providers…"
 msgstr "正在載入語音供應商…"
+
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "Loading voices…"
+msgstr ""
 
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/components/integrations/skills-dialog.tsx
@@ -4784,6 +4820,10 @@ msgstr "請從目錄中選擇模型。"
 msgid "Pick a model from the list or enter a model id served by this endpoint."
 msgstr "請從清單中選擇模型，或輸入此端點提供的模型 ID。"
 
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "Pick a preset or paste a Fish voice id."
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Pick a tool to check"
 msgstr "選擇要檢查的工具"
@@ -5679,6 +5719,10 @@ msgstr "形狀"
 msgid "Shape {0}"
 msgstr "形狀 {0}"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Shape from a word"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Share of prompt tokens served from the model's cache"
 msgstr ""
@@ -5913,6 +5957,10 @@ msgstr "語音模型"
 #: src/lib/user-error.ts
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO 暫時不可用，請重試。"
+
+#: src/pages/shell/composer-model-controls.tsx
+msgid "Standard"
+msgstr ""
 
 #: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6155,6 +6203,10 @@ msgstr "螢幕連結已過期。"
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "The selected memory provider is not available in this build."
 msgstr "所選記憶供應商在此版本中不可用。"
+
+#: src/pages/VoiceSettingsOverlay.tsx
+msgid "The server did not return a voice list. Enter a voice id your speech server accepts."
+msgstr ""
 
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Their own model is cleared. You can pick one again in each bot."
@@ -6821,6 +6873,10 @@ msgstr ""
 #: src/lib/ticket-status.ts
 msgid "Won't do"
 msgstr "不處理"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Word"
+msgstr ""
 
 #: src/components/SignupSurvey.tsx
 msgid "Work"

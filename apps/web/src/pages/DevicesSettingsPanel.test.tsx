@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { IOS_APP_STORE_URL } from "@atlas/contracts";
+import { ANDROID_APK_URL } from "@atlas/contracts";
 import type { ComponentProps, ReactNode } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -85,7 +85,7 @@ it("lists the server, local models, computers, and phone", async () => {
   expect(host.querySelector('[data-testid="devices-model-load-qwen"]')).not.toBeNull();
   expect(host.querySelector('[data-testid="computer-devices"]')?.textContent).toBe("computers");
   const qr = host.querySelector('[data-testid="devices-apk-qr"]');
-  expect(qr?.getAttribute("href")).toBe(IOS_APP_STORE_URL);
+  expect(qr?.getAttribute("href")).toBe(ANDROID_APK_URL);
   expect(qr?.textContent).toContain("Install Atlas and sign in");
   await vi.waitFor(() => {
     expect(host.querySelector('[data-testid="devices-apk-qr-mark"] path')?.getAttribute("d")).toBeTruthy();

@@ -161,7 +161,7 @@ it("omits Board when unavailable", async () => {
   );
 });
 
-it("shows the App Store code from a phone too", async () => {
+it("shows the Android APK code from a phone too", async () => {
   vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Android");
   await render();
   const mobile = [...document.querySelectorAll("button")].find(
@@ -169,7 +169,7 @@ it("shows the App Store code from a phone too", async () => {
   )!;
   await act(async () => mobile.click());
   const qr = document.querySelector<HTMLAnchorElement>('[data-testid="mobile-app-qr"]')!;
-  expect(qr.href).toBe("https://apps.apple.com/app/rakazo/id6801531099");
+  expect(qr.href).toBe("https://github.com/naouflex/assistant/releases/download/android/atlas.apk");
   await vi.waitFor(() => {
     expect(
       document.querySelector('[data-testid="mobile-app-qr-mark"] path')?.getAttribute("d"),
@@ -177,14 +177,14 @@ it("shows the App Store code from a phone too", async () => {
   });
 });
 
-it("shows the App Store code from a computer", async () => {
+it("shows the Android APK code from a computer", async () => {
   await render();
   const mobile = [...document.querySelectorAll("button")].find(
     (button) => button.textContent === "Get the mobile app",
   )!;
   await act(async () => mobile.click());
   expect(document.querySelector<HTMLAnchorElement>('[data-testid="mobile-app-qr"]')?.href).toBe(
-    "https://apps.apple.com/app/rakazo/id6801531099",
+    "https://github.com/naouflex/assistant/releases/download/android/atlas.apk",
   );
 });
 
