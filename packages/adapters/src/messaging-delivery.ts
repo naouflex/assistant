@@ -8,7 +8,7 @@ import type {
 } from "@atlas/adapter-kit";
 import { messagingDeliverJob, runContinueJob } from "@atlas/adapter-kit";
 import type { MessageBlock } from "@atlas/contracts";
-import { botMessageHopExhausted, nextBotMessageHop } from "@atlas/core";
+import { botMessageHopExhausted, displayName, nextBotMessageHop } from "@atlas/core";
 import type { PrismaClient, ThreadEvents } from "@atlas/db";
 import {
   appendEventInTransaction,
@@ -166,7 +166,10 @@ async function mirrorChannelRun(
     where: { id: identity.userId },
     select: { name: true },
   });
-  const firstName = owner?.name.trim().split(/\s+/)[0] || "Owner";
+  const firstName =
+    displayName(owner?.name, "")
+      .split(/\s+/)[0]
+      ?.trim() || "Owner";
   const fromLabel = `${firstName}'s agent`;
 
   const replies = await deps.prisma.message.findMany({

@@ -1782,9 +1782,10 @@ describe("dictationSupportsInterimBargeIn", () => {
     expect(dictationSupportsInterimBargeIn(true)).toBe(false);
   });
 
-  it("follows Web Speech availability on desktop", () => {
+  it("is false on desktop when cloud transcription is configured", () => {
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Windows NT 10.0)", language: "en-US" });
-    expect(dictationSupportsInterimBargeIn(true)).toBe(webSpeechAvailable());
+    expect(dictationSupportsInterimBargeIn(true)).toBe(false);
+    expect(dictationSupportsInterimBargeIn(false)).toBe(webSpeechAvailable());
   });
 });
 

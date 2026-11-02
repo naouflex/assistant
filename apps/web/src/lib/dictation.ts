@@ -54,6 +54,8 @@ export function webSpeechAvailable(): boolean {
 
 /** True when dictation can stream partial text so the caller can talk over bot speech. */
 export function dictationSupportsInterimBargeIn(transcribeOpt?: boolean): boolean {
+  // Cloud transcription on a call uses a recorder; an open mic during TTS picks up the reply.
+  if (transcribeOpt === true) return false;
   const transcribe = Boolean(transcribeOpt);
   if (
     (prefersServerDictation() && transcribeOpt !== false) ||
@@ -263,7 +265,8 @@ export class Dictation {
     // microphone open goes to the server even before the voice status has loaded.
     if (
       (prefersServerDictation() && opts.transcribe !== false) ||
-      (desktopBridge()?.speech && transcribe)
+      (desktopBridge()?.speech && transcribe) ||
+      (opts.mode === "endpoint" && transcribe)
     ) {
       await this.listenRecorder(mine, opts.mode, opts.endpointMs ?? ENDPOINT_SILENCE_MS, spaceId);
       return;

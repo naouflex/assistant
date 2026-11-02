@@ -11,8 +11,10 @@ import {
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
   OPENAI_COMPATIBLE_PROVIDER_ID,
+  isOpenRouterFishTtsModel,
+  isOpenRouterPlaceholderVoiceId,
   OPENROUTER_VOICE_PROVIDER_ID,
-  openRouterFallbackVoices,
+  openRouterVoicesForPicker,
 } from "@atlas/contracts";
 import { fetchFresh } from "@atlas/core/query";
 import {
@@ -164,7 +166,12 @@ export function VoiceSettingsOverlay({
         (listed) => {
           if (request !== voicesRequest.current) return;
           setVoiceList({ provider: nextProvider, voices: listed });
-          if (!keep("voiceId") && !activeVoice && listed[0]) setVoiceId(listed[0].id);
+          if (!keep("voiceId") && listed.length) {
+            const id = listed.some((voice) => voice.id === activeVoice)
+              ? activeVoice
+              : listed[0]!.id;
+            setVoiceId(id);
+          }
         },
         (err: unknown) => {
           if (request === voicesRequest.current) throw err;
@@ -173,6 +180,22 @@ export function VoiceSettingsOverlay({
       .finally(() => {
         if (request === voicesRequest.current) setVoicesLoading(false);
       });
+  }
+
+  function openRouterModelsMatchCredential(): boolean {
+    if (!credential || !openRouter) return true;
+    const savedTts = credential.ttsModel.trim() || DEFAULT_OPENROUTER_TTS_MODEL;
+    const savedStt = credential.sttModel.trim() || DEFAULT_OPENROUTER_STT_MODEL;
+    const nextTts = ttsModel.trim() || savedTts;
+    const nextStt = sttModel.trim() || savedStt;
+    return nextTts === savedTts && nextStt === savedStt;
+  }
+
+  async function saveOpenRouterModelsIfChanged() {
+    if (!credential || !openRouter || pending !== null || openRouterModelsMatchCredential()) {
+      return;
+    }
+    await connectKey();
   }
 
   async function reloadVoicesForSpeechModel() {
@@ -191,7 +214,11 @@ export function VoiceSettingsOverlay({
       );
       if (request !== voicesRequest.current) return;
       setVoiceList({ provider: selected.id, voices: listed });
-      if (listed[0]) setVoiceId(listed[0].id);
+      if (listed.length) {
+        const id = listed.some((voice) => voice.id === voiceId) ? voiceId : listed[0]!.id;
+        setVoiceId(id);
+      }
+      await saveOpenRouterModelsIfChanged();
     } catch (err) {
       if (request === voicesRequest.current) {
         setError(errorText(err, t`Could not load voices for that speech model`));
@@ -262,14 +289,31 @@ export function VoiceSettingsOverlay({
   const selfHosted = selected?.id === OPENAI_COMPATIBLE_PROVIDER_ID;
   const openRouter = selected?.id === OPENROUTER_VOICE_PROVIDER_ID;
   const choosesModels = selfHosted || openRouter;
+  const effectiveTtsModel =
+    ttsModel.trim() || (credential?.ttsModel ?? "").trim() || DEFAULT_OPENROUTER_TTS_MODEL;
+  const openRouterFish = openRouter && isOpenRouterFishTtsModel(effectiveTtsModel);
   const voiceOptions = useMemo(() => {
-    if (voices.length) return voices;
     if (openRouter && credential) {
-      return openRouterFallbackVoices(ttsModel || credential.ttsModel || "");
+      const picked = openRouterVoicesForPicker(effectiveTtsModel, voices);
+      const custom = voiceId.trim();
+      if (
+        custom &&
+        !isOpenRouterPlaceholderVoiceId(custom) &&
+        !picked.some((voice) => voice.id === custom)
+      ) {
+        return [...picked, { id: custom, label: custom }];
+      }
+      return picked;
     }
+    if (voices.length) return voices;
     if (voiceId) return [{ id: voiceId, label: voiceId }];
     return [];
-  }, [voices, voiceId, openRouter, credential, ttsModel]);
+  }, [voices, voiceId, openRouter, credential, effectiveTtsModel]);
+  const displayedVoiceId = useMemo(() => {
+    if (!voiceOptions.length) return voiceId;
+    if (voiceOptions.some((voice) => voice.id === voiceId)) return voiceId;
+    return voiceOptions[0]!.id;
+  }, [voiceId, voiceOptions]);
   // Connections are managed from the account; a Space can still connect one it lacks.
   const managesConnection = scope === "account" || !credential;
   const keyless = Boolean(selected?.keyless);
@@ -524,6 +568,9 @@ export function VoiceSettingsOverlay({
                         edited.current.add("sttModel");
                         setSttModel(event.target.value);
                       }}
+                      onBlur={() => {
+                        if (openRouter && credential) void saveOpenRouterModelsIfChanged();
+                      }}
                       placeholder={
                         openRouter ? DEFAULT_OPENROUTER_STT_MODEL : DEFAULT_COMPATIBLE_STT_MODEL
                       }
@@ -579,15 +626,19 @@ export function VoiceSettingsOverlay({
                     <Spinner aria-label={t`Loading voices…`} />
                   </p>
                 ) : null}
-                {selfHosted && !voices.length && !voicesLoading ? (
+                {(selfHosted || openRouterFish) && !voices.length && !voicesLoading ? (
                   <p className="mb-2 text-xs text-muted-foreground">
-                    <Trans>
-                      The server did not return a voice list. Enter a voice id your speech server
-                      accepts.
-                    </Trans>
+                    {openRouterFish ? (
+                      <Trans>Pick a preset or paste a Fish voice id.</Trans>
+                    ) : (
+                      <Trans>
+                        The server did not return a voice list. Enter a voice id your speech server
+                        accepts.
+                      </Trans>
+                    )}
                   </p>
                 ) : null}
-                {selfHosted ? (
+                {selfHosted || openRouterFish ? (
                   <>
                     <Input
                       id={voiceSelectId}
@@ -622,7 +673,7 @@ export function VoiceSettingsOverlay({
                   <NativeSelect
                     id={voiceSelectId}
                     className="w-full"
-                    value={voiceId}
+                    value={displayedVoiceId}
                     disabled={busy}
                     onChange={(event) => void chooseVoice(event.target.value)}
                   >

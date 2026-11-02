@@ -2,6 +2,11 @@ import type { MessageBlock } from "@atlas/contracts";
 import { identitySource, preserveIdentitySource } from "./identity-source.js";
 
 /** Deliberately narrow: complete tokens only, never substrings of prose or short handles. */
+/** Self-host bootstrap used this literal before the owner set a display name in settings. */
+export function isBootstrapPlaceholderName(name: string): boolean {
+  return name.trim().toLowerCase() === "account";
+}
+
 export function isOpaqueName(name: string): boolean {
   return (
     /^__[A-Za-z0-9_-]+__$/.test(name) ||
@@ -21,7 +26,8 @@ export function isOpaqueName(name: string): boolean {
 
 export function displayName(name: string | null | undefined, fallback: string): string {
   const trimmed = name?.trim() ?? "";
-  return trimmed && /[\p{L}\p{N}]/u.test(trimmed) && !isOpaqueName(trimmed) ? trimmed : fallback;
+  if (!trimmed || isBootstrapPlaceholderName(trimmed)) return fallback;
+  return /[\p{L}\p{N}]/u.test(trimmed) && !isOpaqueName(trimmed) ? trimmed : fallback;
 }
 
 export function accountDisplay(

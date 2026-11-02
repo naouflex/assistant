@@ -98,9 +98,21 @@ describe("OpenRouterVoiceProvider", () => {
         data: [{ id: "fish-audio/s2.1-pro-free:free", supported_voices: null }],
       }),
     );
-    await expect(provider.listVoices(fish, context)).resolves.toEqual([
-      { id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" },
-    ]);
+    await expect(provider.listVoices(fish, context)).resolves.toEqual(
+      expect.arrayContaining([
+        { id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" },
+        { id: "9a9cf47702da476aa4629e2506d4a857", label: "Hannah" },
+      ]),
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        data: [{ id: "fish-audio/s2.1-pro-free:free", supported_voices: ["default"] }],
+      }),
+    );
+    await expect(provider.listVoices(fish, context)).resolves.toEqual(
+      expect.arrayContaining([{ id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" }]),
+    );
   });
 
   it("speaks MP3 with the saved model and omits a default voice", async () => {

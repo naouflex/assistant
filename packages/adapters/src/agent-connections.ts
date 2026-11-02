@@ -5,6 +5,7 @@ import {
   botMessageHopExhausted,
   buildBotMessageWakePrompt,
   clampBotMessage,
+  displayName,
   nextBotMessageHop,
   sanitizeMessagingLabel,
 } from "@atlas/core";
@@ -113,7 +114,9 @@ async function requestConnection(
       })
     : null;
   const requesterFirst = sanitizeMessagingLabel(
-    requesterOwner?.name.trim().split(/\s+/)[0] || "Someone",
+    displayName(requesterOwner?.name, "")
+      .split(/\s+/)[0]
+      ?.trim() || "Someone",
   );
 
   const inviteKey = `connect:${sender.id}:${target.id}`;

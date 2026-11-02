@@ -11,7 +11,7 @@ const opaque = [
 ];
 
 describe("displayName", () => {
-  it.each([undefined, null, "", "  ", "__", "💬", ...opaque])(
+  it.each([undefined, null, "", "  ", "__", "💬", "Account", " account ", ...opaque])(
     "hides opaque or empty names: %s",
     (name) => {
       expect(displayName(name, "Bot")).toBe("Bot");
@@ -38,7 +38,7 @@ describe("displayName", () => {
 });
 
 describe("accountDisplay", () => {
-  it.each([undefined, null, "", "  ", "demo", email, ...opaque])(
+  it.each([undefined, null, "", "  ", "demo", "Account", email, ...opaque])(
     "uses email for an unusable account name: %s",
     (name) => {
       expect(accountDisplay({ name, email }, "You")).toEqual({

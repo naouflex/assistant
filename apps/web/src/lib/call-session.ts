@@ -60,7 +60,7 @@ const RUN_ACTIVE = ["running", "queued", "leased"];
  * ponytail: one fixed delay for every room and output device; make it adaptive only
  * if a measured tail actually outruns it.
  */
-export const ECHO_GUARD_MS = 600;
+export const ECHO_GUARD_MS = 900;
 /** Longest sign-out waits for pending hang-ups while the session still exists. */
 export const SIGN_OUT_HANG_UP_MS = 3_000;
 /**
@@ -183,6 +183,7 @@ export function startCall(call: {
     if (speech.status === "speaking") {
       bargedIn = false;
       set({ phase: "speaking", caption: speech.caption ?? "" });
+      if (speech.caption?.trim()) spokenMemory.remember(speech.caption);
       if (dictationSupportsInterimBargeIn(transcribe)) {
         void openMic();
       } else {

@@ -13,8 +13,10 @@ import {
   DEFAULT_OPENROUTER_FISH_VOICE_ID,
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
+  isOpenRouterFishTtsModel,
   OPENROUTER_DEFAULT_VOICE_ID,
   OPENROUTER_VOICE_PROVIDER_ID,
+  openRouterVoicesForPicker,
 } from "@atlas/contracts";
 import { openRouterReferer } from "./openrouter-usage.js";
 import {
@@ -47,15 +49,11 @@ const MAX_SERVER_DETAIL_LENGTH = 160;
  */
 export { DEFAULT_OPENROUTER_FISH_VOICE_ID, OPENROUTER_DEFAULT_VOICE_ID };
 
-function isFishOpenRouterTtsModel(modelId: string): boolean {
-  return modelId.startsWith("fish-audio/");
-}
-
 /** Voice field for /audio/speech, or undefined when the provider accepts omitting voice. */
 function openRouterSpeechVoice(voiceId: string, ttsModel: string): string | undefined {
   const voice = voiceId.trim();
   if (voice && voice !== OPENROUTER_DEFAULT_VOICE_ID) return voice;
-  if (isFishOpenRouterTtsModel(ttsModel)) return DEFAULT_OPENROUTER_FISH_VOICE_ID;
+  if (isOpenRouterFishTtsModel(ttsModel)) return DEFAULT_OPENROUTER_FISH_VOICE_ID;
   return undefined;
 }
 
@@ -215,11 +213,7 @@ function voicesForModel(body: unknown, modelId: string): VoiceInfo[] {
     )
     .slice(0, MAX_LISTED_VOICES)
     .map((id) => ({ id, label: id }));
-  if (listed.length) return listed;
-  if (isFishOpenRouterTtsModel(modelId)) {
-    return [{ id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" }];
-  }
-  return [{ id: OPENROUTER_DEFAULT_VOICE_ID, label: "Default" }];
+  return openRouterVoicesForPicker(modelId, listed);
 }
 
 export class OpenRouterVoiceProvider implements VoiceProvider {
