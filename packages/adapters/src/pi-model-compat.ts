@@ -1,8 +1,10 @@
 import { canonicalPiProviderId } from "@atlas/contracts";
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
+import { registerXaiComposerModel } from "./pi-xai-composer-model.js";
 
 /** Apply provider protocol capabilities before catalog and runtime selection. */
 export function applyPiModelCompatibility(models: MutableModels): MutableModels {
+  registerXaiComposerModel(models);
   const provider = models.getProvider?.("amazon-bedrock");
   if (provider) {
     const guardedId = "in.anthropic.claude-haiku-4-5-20251001-v1:0";

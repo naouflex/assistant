@@ -64,7 +64,7 @@ describe("worker error reporting configuration", () => {
 
 describe("bundled speech", () => {
   it.each(["docker-compose.prod.yml", "docker-compose.images.yml", "docker-compose.yml"])(
-    "does not run a Kokoro container from %s",
+    "does not bundle a speech container in %s",
     (file) => {
       const { services } = parse(
         readFileSync(path.resolve(import.meta.dirname, "../../compose", file), "utf8"),

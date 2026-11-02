@@ -458,9 +458,10 @@ function withLiveFields(entry: PiCatalogEntry, model: CodexCatalogModel): PiCata
   // An explicit account answer decides image input. An omitted list keeps the entry's own.
   const withImages =
     model.supportsImages === undefined ? entry : { ...entry, images: model.supportsImages };
-  return thinkingLevels
+  const withThinking = thinkingLevels
     ? { ...withImages, reasoning: true, thinkingLevels }
     : { ...withImages, reasoning: entry.reasoning || model.reasoningEfforts.length > 0 };
+  return model.supportsFastTier ? { ...withThinking, supportsFastTier: true } : withThinking;
 }
 
 function liveThinkingLevels(model: CodexCatalogModel): ThinkingLevel[] | undefined {

@@ -48,6 +48,7 @@ import {
   updateVoiceSpeechModel,
   voiceContext,
   voiceCredentialServer,
+  voiceListPlaintext,
   voiceProviderFor,
 } from "../voice.js";
 import type { RouterContext } from "./context.js";
@@ -367,8 +368,15 @@ export function accountRoutes(ctx: RouterContext) {
           ? await loadVoiceCredential(deps, context.actor, input.provider, input.scope)
           : await loadDefaultVoiceCredential(deps, context.actor, input.scope);
         if (!row) return [];
-        return (await voiceProviderFor(deps, context.actor, row.cred.provider)).listVoices(
+        const apiKey = await voiceListPlaintext(
+          deps,
+          context.actor,
+          row.cred.provider,
           row.apiKey,
+          input.ttsModel,
+        );
+        return (await voiceProviderFor(deps, context.actor, row.cred.provider)).listVoices(
+          apiKey,
           voiceContext(context.actor, context.signal),
         );
       }),

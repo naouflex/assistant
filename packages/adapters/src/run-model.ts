@@ -519,7 +519,12 @@ export async function resolveRunModel(
           userId: scope.userId,
           spaceId: scope.spaceId,
         },
-        select: { modelProvider: true, modelId: true, thinkingLevel: true },
+        select: {
+          modelProvider: true,
+          modelId: true,
+          thinkingLevel: true,
+          modelFastTier: true,
+        },
       })
     : null;
   const hasOverride = Boolean(override?.modelProvider && override.modelId);
@@ -550,7 +555,7 @@ export async function resolveRunModel(
       deployment: deps.deploymentModelConfigured ? resolveDeploymentModel() : null,
     },
   });
-  const { credential, thinkingLevel } = selected;
+  const { credential, thinkingLevel, modelFastTier } = selected;
   let { provider, id } = selected;
   if (!provider || !id) {
     const runtimeFallback = runtimeFallbackModel(deps.runtime);
@@ -587,6 +592,7 @@ export async function resolveRunModel(
     acceptsImages: resolved.acceptsImages,
     maxImagesPerPrompt: resolved.maxImagesPerPrompt,
     thinkingLevel: thinkingLevel ?? resolved.thinkingLevel ?? null,
+    modelFastTier: modelFastTier ?? false,
     oauth: resolved.oauth
       ? {
           credential: resolved.oauth,

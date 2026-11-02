@@ -58,7 +58,10 @@ export interface OpenAiCompatibleVoiceSecret {
 
 function modelIdOrDefault(value: string | undefined, fallback: string, label: string): string {
   const trimmed = value?.trim() ?? "";
-  if (!trimmed) return fallback;
+  if (!trimmed) {
+    if (!fallback) throw new Error(`Enter a ${label.toLowerCase()} model id.`);
+    return fallback;
+  }
   if (trimmed.length > MAX_MODEL_ID_LENGTH || !MODEL_ID_PATTERN.test(trimmed)) {
     throw new Error(`${label} model id is not valid.`);
   }
@@ -219,18 +222,6 @@ function voiceInfo(id: string, name?: string): VoiceInfo {
   };
 }
 
-/** Shown when the server has no voice list. af_heart first: it becomes the default. */
-const KOKORO_FALLBACK_VOICES = [
-  "af_heart",
-  "af_bella",
-  "af_nicole",
-  "am_michael",
-  "am_fenrir",
-  "bf_emma",
-  "bm_george",
-  "bm_fable",
-].map((id) => voiceInfo(id));
-
 /**
  * OpenAI has no voice list endpoint. Self-hosted servers answer GET /audio/voices in
  * one of these shapes: `{ data: [{ id, name }] }` (mlx-audio), `{ voices: [{ id, name }] }`
@@ -349,15 +340,14 @@ export class OpenAiCompatibleVoiceProvider implements VoiceProvider {
       );
       if (!res.ok) {
         await res.body?.cancel().catch(() => undefined);
-        return KOKORO_FALLBACK_VOICES;
+        return [];
       }
-      const voices = parseCompatibleVoiceList(await readVoiceJson(res));
-      return voices.length ? voices : KOKORO_FALLBACK_VOICES;
+      return parseCompatibleVoiceList(await readVoiceJson(res));
     } catch (error) {
       // A server that cannot list voices still speaks; a blocked address is a real error.
       if (context.signal.aborted || !(error instanceof Error) || !isNetworkError(error))
         throw error;
-      return KOKORO_FALLBACK_VOICES;
+      return [];
     }
   }
 

@@ -678,6 +678,79 @@ export const TOOL_CHOICE_DEFINITIONS: ToolChoiceCase[] = [
       maxCalls: { find_tool: 0 },
     },
   },
+  {
+    id: "show-svg-in-chat",
+    area: "shell",
+    kind: "guard",
+    purpose: "Write and attach a visual when asked to show it in chat.",
+    prompt: "Show me a blue circle as an SVG in this chat.",
+    expect: { order: ["write_file", "attach_file"], maxCalls: { find_tool: 0 } },
+  },
+  {
+    id: "grok-remember-digest",
+    area: "memory",
+    kind: "guard",
+    purpose: "Store a recurring preference with remember.",
+    prompt: "Remember for later: my weekday digest should land at 8:00.",
+    expect: { calls: [{ tool: "remember" }] },
+  },
+  {
+    id: "grok-shell-date",
+    area: "shell",
+    kind: "guard",
+    purpose: "Run a terminal command when asked for machine output.",
+    prompt: "Run date in the terminal and tell me the timezone the computer is using.",
+    expect: { calls: [{ tool: "shell", args: { command: "~date" } }] },
+  },
+  {
+    id: "grok-ping-file",
+    area: "shell",
+    kind: "guard",
+    purpose: "Create a file on the computer instead of instructing the user.",
+    prompt:
+      "On your computer, create workspace/chief/ping.txt containing exactly pong, then show me the file.",
+    expect: {
+      anyOf: [
+        { tool: "write_file", args: { path: "~ping.txt" } },
+        { tool: "shell", args: { command: "~ping.txt" } },
+      ],
+      maxCalls: { find_tool: 0 },
+    },
+  },
+  {
+    id: "grok-web-headlines",
+    area: "web",
+    kind: "guard",
+    purpose: "Search before listing current headlines.",
+    prompt:
+      "Search the web for today's top three technology headlines. For each one, give the headline, the source, and the link.",
+    expect: { anyOf: [{ tool: "web_search" }, { tool: "web_fetch" }] },
+  },
+  {
+    id: "persona-whoami",
+    area: "settings",
+    kind: "control",
+    purpose: "Answer whoami from profile without searching the web.",
+    bot: { instructions: "You are Chief, the owner's chief of staff." },
+    prompt: "Who are you? One short sentence.",
+    expect: { notCalls: ["web_search", "web_fetch"] },
+  },
+  {
+    id: "lazy-schedule-routine",
+    area: "lazy-tools",
+    kind: "guard",
+    purpose: "Find schedule_create for a recurring timed request.",
+    prompt: "Every weekday at 8:00 in my timezone, post my digest in this chat.",
+    expect: { order: ["find_tool", "schedule_create"] },
+  },
+  {
+    id: "lazy-browser-example",
+    area: "lazy-tools",
+    kind: "guard",
+    purpose: "Find browser_navigate for a simple page title check.",
+    prompt: "Open https://example.com in the browser, tell me the page title, and stop.",
+    expect: { order: ["find_tool", "browser_navigate"] },
+  },
 ];
 
 export const TOOL_CHOICE_CASES = TOOL_CHOICE_DEFINITIONS.map(toolChoiceEvalCase);

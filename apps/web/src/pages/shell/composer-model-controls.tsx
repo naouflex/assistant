@@ -10,18 +10,20 @@ import {
 import { Toggle } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { Brain } from "lucide-react";
+import { Brain, Zap } from "lucide-react";
 import { useId, useState } from "react";
 import { useSpaceQueries } from "../../lib/query";
 import { errorText } from "../../lib/user-error";
 import { ChatModelPicker } from "./chat-model-picker";
+import { modelSupportsFastTier } from "./composer-fast";
 import { thinkingIsOn, thinkingToggleLevels } from "./composer-thinking";
 import { useLocalModelStatus } from "./local-model-status";
 
 export type ComposerModelPatch = {
-  modelProvider: string | null;
-  modelId: string | null;
-  thinkingLevel: ThinkingLevel | null;
+  modelProvider?: string | null;
+  modelId?: string | null;
+  thinkingLevel?: ThinkingLevel | null;
+  modelFastTier?: boolean;
 };
 
 /**
@@ -88,6 +90,27 @@ export function ComposerModelControls({
     }
   }
 
+  const fastAvailable = modelSupportsFastTier(entry);
+  const fastToggle = fastAvailable ? (
+    <Toggle
+      size="sm"
+      variant="outline"
+      aria-label={t`Fast tier`}
+      title={
+        bot.modelFastTier
+          ? t`Fast tier on: higher-priority responses when available`
+          : t`Fast tier off: standard queue`
+      }
+      pressed={bot.modelFastTier}
+      disabled={saving}
+      onPressedChange={(on) => void save({ modelFastTier: on })}
+      className="h-7 gap-1 rounded-full px-2.5 text-xs"
+    >
+      <Zap size={13} strokeWidth={1.8} />
+      {bot.modelFastTier ? t`Fast` : t`Standard`}
+    </Toggle>
+  ) : null;
+
   const thinkingToggle = toggle ? (
     <Toggle
       size="sm"
@@ -98,8 +121,6 @@ export function ComposerModelControls({
       disabled={saving}
       onPressedChange={(on) =>
         void save({
-          modelProvider: bot.modelProvider ?? null,
-          modelId: bot.modelId ?? null,
           thinkingLevel: on ? toggle.on : toggle.off,
         })
       }
@@ -109,6 +130,14 @@ export function ComposerModelControls({
       {thinking ? t`Thinking` : t`No thinking`}
     </Toggle>
   ) : null;
+
+  const afterControl =
+    fastToggle || thinkingToggle ? (
+      <span className="flex items-center gap-1.5">
+        {fastToggle}
+        {thinkingToggle}
+      </span>
+    ) : null;
 
   return (
     <div
@@ -124,7 +153,7 @@ export function ComposerModelControls({
         onRefreshLocal={localStatus.hasLocal ? () => void localStatus.refresh() : undefined}
         refreshingLocal={localStatus.refreshing}
         value={selectedKey}
-        afterControl={thinkingToggle}
+        afterControl={afterControl}
         onChange={(key) => {
           const next = key ? parseModelOptionKey(key) : null;
           void save({
@@ -132,6 +161,7 @@ export function ComposerModelControls({
             modelId: next?.modelId ?? null,
             // A saved level may not exist on the next model; let it use its default.
             thinkingLevel: null,
+            modelFastTier: false,
           });
         }}
       />

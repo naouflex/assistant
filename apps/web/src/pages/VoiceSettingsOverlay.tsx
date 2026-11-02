@@ -7,11 +7,12 @@ import type {
 } from "@atlas/contracts";
 import {
   DEFAULT_COMPATIBLE_STT_MODEL,
-  DEFAULT_COMPATIBLE_TTS_MODEL,
+  SELF_HOSTED_TTS_MODEL_PLACEHOLDER,
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   OPENROUTER_VOICE_PROVIDER_ID,
+  openRouterFallbackVoices,
 } from "@atlas/contracts";
 import { fetchFresh } from "@atlas/core/query";
 import {
@@ -105,6 +106,7 @@ export function VoiceSettingsOverlay({
   const voicesRequest = useRef(0);
   const [loading, setLoading] = useState(!cached);
   const [pending, setPending] = useState<"connect" | "disconnect" | "voice" | "test" | null>(null);
+  const [voicesLoading, setVoicesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -145,10 +147,16 @@ export function VoiceSettingsOverlay({
     if (!keep("ttsModel")) setTtsModel(cred?.ttsModel ?? "");
     if (!keep("sttModel")) setSttModel(cred?.sttModel ?? "");
     if (!cred) return Promise.resolve();
+    const listModel = (keep("ttsModel") ? ttsModel : cred.ttsModel || ttsModel).trim();
+    setVoicesLoading(true);
     return queryClient
       .fetchQuery(
         queries.voice.voices.queryOptions({
-          input: { provider: nextProvider, scope },
+          input: {
+            provider: nextProvider,
+            scope,
+            ...(listModel ? { ttsModel: listModel } : {}),
+          },
           staleTime: 0,
         }),
       )
@@ -161,7 +169,36 @@ export function VoiceSettingsOverlay({
         (err: unknown) => {
           if (request === voicesRequest.current) throw err;
         },
+      )
+      .finally(() => {
+        if (request === voicesRequest.current) setVoicesLoading(false);
+      });
+  }
+
+  async function reloadVoicesForSpeechModel() {
+    if (!credential || !selected || !choosesModels) return;
+    const listModel = ttsModel.trim();
+    if (!listModel) return;
+    const request = ++voicesRequest.current;
+    setVoicesLoading(true);
+    setError(null);
+    try {
+      const listed = await queryClient.fetchQuery(
+        queries.voice.voices.queryOptions({
+          input: { provider: selected.id, scope, ttsModel: listModel },
+          staleTime: 0,
+        }),
       );
+      if (request !== voicesRequest.current) return;
+      setVoiceList({ provider: selected.id, voices: listed });
+      if (listed[0]) setVoiceId(listed[0].id);
+    } catch (err) {
+      if (request === voicesRequest.current) {
+        setError(errorText(err, t`Could not load voices for that speech model`));
+      }
+    } finally {
+      if (request === voicesRequest.current) setVoicesLoading(false);
+    }
   }
 
   /** After a change (every call but the one on open) it never reuses a read sent before it. */
@@ -221,21 +258,25 @@ export function VoiceSettingsOverlay({
   const hiddenSelfHosted =
     !catalog.some((entry) => entry.id === OPENAI_COMPATIBLE_PROVIDER_ID) &&
     credentials.some((entry) => entry.provider === OPENAI_COMPATIBLE_PROVIDER_ID);
-  const voiceOptions = useMemo(
-    () => (voices.length ? voices : voiceId ? [{ id: voiceId, label: voiceId }] : []),
-    [voices, voiceId],
-  );
 
   const selfHosted = selected?.id === OPENAI_COMPATIBLE_PROVIDER_ID;
   const openRouter = selected?.id === OPENROUTER_VOICE_PROVIDER_ID;
   const choosesModels = selfHosted || openRouter;
+  const voiceOptions = useMemo(() => {
+    if (voices.length) return voices;
+    if (openRouter && credential) {
+      return openRouterFallbackVoices(ttsModel || credential.ttsModel || "");
+    }
+    if (voiceId) return [{ id: voiceId, label: voiceId }];
+    return [];
+  }, [voices, voiceId, openRouter, credential, ttsModel]);
   // Connections are managed from the account; a Space can still connect one it lacks.
   const managesConnection = scope === "account" || !credential;
   const keyless = Boolean(selected?.keyless);
   const canConnect =
     keyless ||
     (selfHosted
-      ? Boolean(baseUrl.trim())
+      ? Boolean(baseUrl.trim()) && Boolean(ttsModel.trim())
       : openRouter
         ? Boolean(credential) || apiKey.trim().length >= 8
         : apiKey.trim().length >= 8);
@@ -461,8 +502,11 @@ export function VoiceSettingsOverlay({
                         edited.current.add("ttsModel");
                         setTtsModel(event.target.value);
                       }}
+                      onBlur={() => {
+                        if (credential) void reloadVoicesForSpeechModel();
+                      }}
                       placeholder={
-                        openRouter ? DEFAULT_OPENROUTER_TTS_MODEL : DEFAULT_COMPATIBLE_TTS_MODEL
+                        openRouter ? DEFAULT_OPENROUTER_TTS_MODEL : SELF_HOSTED_TTS_MODEL_PLACEHOLDER
                       }
                     />
                   </Field>
@@ -530,6 +574,19 @@ export function VoiceSettingsOverlay({
                 <FieldLabel htmlFor={voiceSelectId}>
                   <Trans>Voice</Trans>
                 </FieldLabel>
+                {voicesLoading ? (
+                  <p className="text-xs text-muted-foreground">
+                    <Spinner aria-label={t`Loading voices…`} />
+                  </p>
+                ) : null}
+                {selfHosted && !voices.length && !voicesLoading ? (
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    <Trans>
+                      The server did not return a voice list. Enter a voice id your speech server
+                      accepts.
+                    </Trans>
+                  </p>
+                ) : null}
                 {selfHosted ? (
                   <>
                     <Input

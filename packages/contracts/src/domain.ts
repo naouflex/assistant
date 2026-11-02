@@ -108,6 +108,7 @@ export const BotSchema = z.object({
   modelProvider: z.string().nullable(),
   modelId: z.string().nullable(),
   thinkingLevel: ThinkingLevelSchema.nullable(),
+  modelFastTier: z.boolean().default(false),
   teamChatAmbientEnabled: z.boolean(),
   teamChatRules: z.string(),
   crossSpaceCommunication: z.boolean().optional(),
@@ -402,6 +403,7 @@ export const UpdateBotInput = z
     modelProvider: z.string().trim().min(1).max(80).nullable().optional(),
     modelId: z.string().trim().min(1).max(200).nullable().optional(),
     thinkingLevel: ThinkingLevelSchema.nullable().optional(),
+    modelFastTier: z.boolean().optional(),
     teamChatAmbientEnabled: z.boolean().optional(),
     teamChatRules: z.string().max(TEAM_CHAT_RULES_MAX_LENGTH).optional(),
     crossSpaceCommunication: z.boolean().optional(),
@@ -1674,6 +1676,8 @@ export const ModelCatalogEntrySchema = z.object({
   catalogProbe: z.boolean().optional(),
   /** Listed by the provider's live models list but not in the bundled catalog. */
   live: z.literal(true).optional(),
+  /** Provider accepts a faster service tier (for example OpenAI Codex or xAI priority). */
+  supportsFastTier: z.boolean().optional(),
 });
 export type ModelCatalogEntry = z.infer<typeof ModelCatalogEntrySchema>;
 

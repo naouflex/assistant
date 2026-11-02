@@ -42,7 +42,12 @@ function credential(provider: string, defaultModel: string | null) {
   };
 }
 
-const bot = { modelProvider: "bot-provider", modelId: "bot-model", thinkingLevel: "high" };
+const bot = {
+  modelProvider: "bot-provider",
+  modelId: "bot-model",
+  thinkingLevel: "high",
+  modelFastTier: false,
+};
 
 describe("routine model pin", () => {
   const routine = {
@@ -71,7 +76,7 @@ describe("routine model pin", () => {
 
   it("runs a routine turn on the model pinned to its run", () => {
     const choice = runModelChoice({ modelPinned: true, ...routine }, bot);
-    expect(choice).toEqual(routine);
+    expect(choice).toEqual({ ...routine, modelFastTier: false });
     expect(
       selectConfiguredModel({
         main: null,
@@ -84,7 +89,10 @@ describe("routine model pin", () => {
 
   it("keeps a pinned run on its model after the routine is edited or deleted", () => {
     // The routine row is gone or changed; the run still carries what it fired with.
-    expect(runModelChoice({ modelPinned: true, ...routine }, bot)).toEqual(routine);
+    expect(runModelChoice({ modelPinned: true, ...routine }, bot)).toEqual({
+      ...routine,
+      modelFastTier: false,
+    });
   });
 
   it("falls back to the bot for a routine run without a pinned model", () => {

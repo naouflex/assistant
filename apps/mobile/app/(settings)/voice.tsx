@@ -1,7 +1,7 @@
 import type { VoiceCatalogEntry, VoiceCredential, VoiceInfo, VoiceStatus } from "@atlas/contracts";
 import {
   DEFAULT_COMPATIBLE_STT_MODEL,
-  DEFAULT_COMPATIBLE_TTS_MODEL,
+  SELF_HOSTED_TTS_MODEL_PLACEHOLDER,
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
   OPENAI_COMPATIBLE_PROVIDER_ID,
@@ -338,7 +338,7 @@ export default function VoiceSettings() {
   const canConnect =
     keyless ||
     (selfHosted
-      ? Boolean(baseUrl.trim())
+      ? Boolean(baseUrl.trim()) && Boolean(ttsModel.trim())
       : openRouter
         ? Boolean(credential) || apiKey.trim().length >= 8
         : apiKey.trim().length >= 8);
@@ -588,7 +588,7 @@ export default function VoiceSettings() {
                   value={ttsModel}
                   onChangeText={edit("ttsModel", setTtsModel)}
                   placeholder={
-                    openRouter ? DEFAULT_OPENROUTER_TTS_MODEL : DEFAULT_COMPATIBLE_TTS_MODEL
+                    openRouter ? DEFAULT_OPENROUTER_TTS_MODEL : SELF_HOSTED_TTS_MODEL_PLACEHOLDER
                   }
                   placeholderTextColor={native.tertiaryLabel}
                   style={styles.input}

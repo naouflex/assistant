@@ -349,11 +349,21 @@ describe("Pi model catalog", () => {
     const ids = (provider: string) =>
       catalog.filter((entry) => entry.provider === provider).map((entry) => entry.id);
     expect(ids("xai")).toContain("grok-4.6");
+    expect(ids("xai")).toContain("grok-composer-2.5-fast");
     expect(ids("opencode-go")).toContain("glm-5.3");
     const grok46 = catalog.find((entry) => entry.provider === "xai" && entry.id === "grok-4.6");
     expect(grok46).toMatchObject({
       reasoning: true,
       thinkingLevels: ["low", "medium", "high", "xhigh"],
+      supportsFastTier: true,
+    });
+    const composer = catalog.find(
+      (entry) => entry.provider === "xai" && entry.id === "grok-composer-2.5-fast",
+    );
+    expect(composer).toMatchObject({
+      label: "Composer 2.5 Fast",
+      reasoning: false,
+      signIn: "device-code",
     });
     const openAiCompatible = catalog.find((entry) => entry.provider === "openai-compatible");
     expect(openAiCompatible).toMatchObject({ id: "custom", placeholder: true });

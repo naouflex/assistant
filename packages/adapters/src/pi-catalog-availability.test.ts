@@ -6,7 +6,8 @@ import {
   OPENAI_CODEX_CHATGPT_SUBSCRIPTION_EXCLUDED_MODEL_IDS,
 } from "./pi-catalog-availability.js";
 import { listPiCatalog } from "./pi-models.js";
-import { CHATGPT_OAUTH_PROVIDER } from "./pi-oauth.js";
+import { XAI_COMPOSER_25_MODEL_ID } from "./pi-xai-composer-model.js";
+import { CHATGPT_OAUTH_PROVIDER, XAI_OAUTH_PROVIDER } from "./pi-oauth.js";
 
 describe("openai-codex catalog availability", () => {
   const spark = "gpt-5.3-codex-spark";
@@ -89,5 +90,32 @@ describe("openai-codex catalog availability", () => {
   it("does not treat corrupt stored credential JSON as an API key", () => {
     const corrupt = JSON.stringify({ kind: "oauth", credential: { type: "oauth" } });
     expect(() => modelCredentialAuthKindFromPlaintext(corrupt)).toThrow(/corrupt/);
+  });
+});
+
+describe("xai catalog availability", () => {
+  const composer = XAI_COMPOSER_25_MODEL_ID;
+
+  it("lists Composer 2.5 for SuperGrok sign-in but not for API keys", () => {
+    expect(catalogModelAvailableForAuth(XAI_OAUTH_PROVIDER, composer, "oauth", "both")).toBe(true);
+    expect(catalogModelAvailableForAuth(XAI_OAUTH_PROVIDER, composer, "api_key", "both")).toBe(
+      false,
+    );
+    const oauthCatalog = listAvailablePiCatalog({ [XAI_OAUTH_PROVIDER]: "oauth" });
+    expect(
+      oauthCatalog.some((entry) => entry.provider === XAI_OAUTH_PROVIDER && entry.id === composer),
+    ).toBe(true);
+    const apiKeyCatalog = listAvailablePiCatalog({ [XAI_OAUTH_PROVIDER]: "api_key" });
+    expect(
+      apiKeyCatalog.some((entry) => entry.provider === XAI_OAUTH_PROVIDER && entry.id === composer),
+    ).toBe(false);
+  });
+
+  it("hides Composer 2.5 while xai is disconnected", () => {
+    expect(
+      listAvailablePiCatalog().some(
+        (entry) => entry.provider === XAI_OAUTH_PROVIDER && entry.id === composer,
+      ),
+    ).toBe(false);
   });
 });

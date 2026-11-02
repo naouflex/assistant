@@ -24,7 +24,8 @@ const ctx = {
   signal: new AbortController().signal,
 };
 
-const keyless = serializeAsOwner({ baseUrl: "http://100.64.0.10:8810" });
+const TTS_MODEL = "local-tts";
+const keyless = serializeAsOwner({ baseUrl: "http://100.64.0.10:8810", ttsModel: TTS_MODEL });
 const keyed = serializeAsOwner({
   baseUrl: "http://192.168.1.20:8880/v1",
   apiKey: "local-test-key",
@@ -66,11 +67,14 @@ describe("serializeOpenAiCompatibleVoiceSecret", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("adds /v1 and fills the Kokoro and Whisper model defaults", () => {
+  it("adds /v1, requires a speech model, and fills the Whisper default", () => {
+    expect(() => serializeAsOwner({ baseUrl: "http://100.64.0.10:8810" })).toThrow(
+      /Enter a speech model id/,
+    );
     expect(parseOpenAiCompatibleVoiceSecret(keyless)).toEqual({
       kind: "openai_compatible",
       baseUrl: "http://100.64.0.10:8810/v1",
-      ttsModel: DEFAULT_COMPATIBLE_TTS_MODEL,
+      ttsModel: TTS_MODEL,
       sttModel: DEFAULT_COMPATIBLE_STT_MODEL,
     });
     expect(openAiCompatibleVoiceServer(keyed)).toEqual({
@@ -113,11 +117,14 @@ describe("serializeOpenAiCompatibleVoiceSecret", () => {
       ttsModel: "kokoro",
       sttModel: "whisper-1",
     });
-    const moved = parseOpenAiCompatibleVoiceSecret(
+    expect(() =>
       serializeAsOwner({ baseUrl: "http://192.168.1.21:8880" }, keyed),
+    ).toThrow(/Enter a speech model id/);
+    const moved = parseOpenAiCompatibleVoiceSecret(
+      serializeAsOwner({ baseUrl: "http://192.168.1.21:8880", ttsModel: "next-tts" }, keyed),
     );
     expect(moved.apiKey).toBeUndefined();
-    expect(moved.ttsModel).toBe(DEFAULT_COMPATIBLE_TTS_MODEL);
+    expect(moved.ttsModel).toBe("next-tts");
   });
 
   it("rejects a key that could break the Authorization header", () => {
@@ -222,7 +229,7 @@ describe("OpenAiCompatibleVoiceProvider", () => {
     expect(result).toEqual({ ok: false, message: "Checking the speech server failed (500)" });
   });
 
-  it("lists the server's voices and falls back to Kokoro voices without a list", async () => {
+  it("lists the server's voices and returns none when the server has no list", async () => {
     const listed = vi
       .fn()
       .mockResolvedValue(new Response('{"data":[{"id":"am_michael","name":"am_michael"}]}'));
@@ -231,15 +238,10 @@ describe("OpenAiCompatibleVoiceProvider", () => {
     ]);
     expect(calledInit(listed).redirect).toBe("error");
     expect(calledUrl(listed)).toBe(
-      `http://100.64.0.10:8810/v1/audio/voices?model=${encodeURIComponent(DEFAULT_COMPATIBLE_TTS_MODEL)}`,
+      `http://100.64.0.10:8810/v1/audio/voices?model=${encodeURIComponent(TTS_MODEL)}`,
     );
     const missing = vi.fn().mockResolvedValue(new Response("Not Found", { status: 404 }));
-    const fallback = await provider(missing).listVoices(keyless, ctx);
-    expect(fallback[0]).toEqual({
-      id: "af_heart",
-      label: "Heart",
-      description: "American English, female",
-    });
+    await expect(provider(missing).listVoices(keyless, ctx)).resolves.toEqual([]);
   });
 
   it("speaks MP3 with the saved model and the voice's Kokoro language", async () => {

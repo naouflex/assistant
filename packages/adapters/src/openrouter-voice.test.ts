@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
+  DEFAULT_OPENROUTER_FISH_VOICE_ID,
   OPENROUTER_DEFAULT_VOICE_ID,
   OpenRouterVoiceProvider,
   parseOpenRouterVoiceSecret,
@@ -98,7 +99,7 @@ describe("OpenRouterVoiceProvider", () => {
       }),
     );
     await expect(provider.listVoices(fish, context)).resolves.toEqual([
-      { id: OPENROUTER_DEFAULT_VOICE_ID, label: "Default" },
+      { id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" },
     ]);
   });
 
@@ -131,6 +132,7 @@ describe("OpenRouterVoiceProvider", () => {
       model: "fish-audio/s2.1-pro-free:free",
       input: "Hello",
       response_format: "mp3",
+      voice: DEFAULT_OPENROUTER_FISH_VOICE_ID,
     });
   });
 

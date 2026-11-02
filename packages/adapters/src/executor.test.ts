@@ -1732,7 +1732,7 @@ describe("dockerComputerToolInstruction", () => {
 describe("voiceCallInstruction", () => {
   it("preserves live-call guidance when end_call is offered", () => {
     expect(voiceCallInstruction()).toBe(
-      "You are on a live voice call. Reply in one to three short spoken sentences. No markdown, lists, links, or option cards; do not use ask_user unless you truly cannot proceed. Answer directly from what you already know when you can; use tools or subagents only when the answer requires them. If the user asks to end the call or hang up, or the conversation is finished, call end_call with a short title and a one-sentence farewell instead of saying goodbye in text, then do any remaining work as a normal chat reply.",
+      "You are on a live voice call. Speak in one to three short sentences: no markdown, lists, links, or option cards. When they want something looked up, run, saved, scheduled, or remembered, call the tool in this turn first, then say what you found or did. Use web_search for current facts not already in this conversation; do not guess. Do not describe steps you have not taken or say you will do it later. Use ask_user only when you truly cannot proceed. If the user asks to end the call or hang up, or the conversation is finished, call end_call with a short title and a one-sentence farewell instead of saying goodbye in text, then do any remaining work as a normal chat reply.",
     );
     expect(voiceCallInstruction(new Set())).toBe(VOICE_CALL_INSTRUCTION);
     expect(voiceCallInstruction(new Set(["shell"]))).toBe(VOICE_CALL_INSTRUCTION);
@@ -1740,7 +1740,8 @@ describe("voiceCallInstruction", () => {
 
   it("keeps spoken guidance without prescribing an unavailable hang-up tool", () => {
     const instruction = voiceCallInstruction(new Set(["end_call"]));
-    expect(instruction).toContain("Reply in one to three short spoken sentences.");
+    expect(instruction).toContain("Speak in one to three short sentences");
+    expect(instruction).toContain("call the tool in this turn first");
     expect(instruction).not.toContain("end_call");
   });
 });

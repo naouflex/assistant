@@ -84,6 +84,7 @@ import {
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
 import { doTheJobNote } from "./do-the-job.js";
+import { voiceActionNote } from "./voice-action.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetRun } from "./fleet-tools.js";
 import { loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
@@ -865,6 +866,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               id: selectedModelId,
               credential: selected.credential,
               thinkingLevel: selected.thinkingLevel,
+              modelFastTier: selected.modelFastTier,
               resolved: await resolveModelKey(
                 deps,
                 run.userId,
@@ -903,6 +905,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           id: runModelId,
           credential,
           thinkingLevel,
+          modelFastTier,
           resolved,
         } = start;
         runSecrets.push(...resolved.redact);
@@ -1446,6 +1449,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 voiceCall: Boolean(voiceCall),
               })
             : undefined,
+          voiceCall &&
+          !callEndRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? voiceActionNote(taskPrompt, { voiceCall: true })
+            : undefined,
           run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
             ? wslPlaceNote(taskPrompt, {
                 userComputer,
@@ -1581,6 +1589,18 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           return true;
         };
 
+        const attachAfterWrite =
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging") &&
+          Boolean(
+            doTheJobNote(taskPrompt, {
+              toolsOffered:
+                tools.some((tool) => tool.name === "write_file") &&
+                tools.some((tool) => tool.name === "attach_file"),
+              voiceCall: Boolean(voiceCall),
+            }),
+          );
+
         try {
           if (checkpointLoadError) throw checkpointLoadError;
           const runtimeEvents = deps.runtime.run(
@@ -1667,6 +1687,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 maxTokens: resolved.maxTokens,
                 acceptsImages: resolved.acceptsImages,
                 maxImagesPerPrompt: resolved.maxImagesPerPrompt,
+                modelFastTier: modelFastTier ?? false,
                 thinkingLevel: localAnswerThinking({
                   provider: runModelProvider,
                   explicit: thinkingLevel ?? resolved.thinkingLevel ?? null,
@@ -1742,6 +1763,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               },
               script,
               allowSilentEmpty: allowSilentEmptyRun,
+              attachAfterWrite,
               emptyResponseText,
               executeTool: scripted
                 ? undefined

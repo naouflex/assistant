@@ -81,6 +81,14 @@ export function isDeferredTool(name: string, deferred?: boolean): boolean {
  * use_tool. ask_user and request_takeover stay listed because the runtime pauses on
  * their call names; message_user and end_call are answered by the runtime too.
  */
+/** Listed-tool descriptions for compact runs; full schemas stay, prose is shortened. */
+const COMPACT_LISTED_TOOL_DESCRIPTIONS: Readonly<Record<string, string>> = {
+  attach_file:
+    "Attach a workspace file to this chat (images, SVG, PDF, etc.). Call after write_file with the same path.",
+  write_file: "Write a UTF-8 file in your workspace.",
+  shell: "Run a shell command on your Linux computer. cwd defaults to your workspace.",
+};
+
 export const COMPACT_CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
   "ask_user",
   "message_user",
@@ -102,11 +110,14 @@ export const COMPACT_CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
 
 /** Marks every built-in outside the compact core as deferred; connector tools are unchanged. */
 export function compactToolSet(tools: readonly ConnectorTool[]): ConnectorTool[] {
-  return tools.map((tool) =>
-    BUILTIN_AGENT_TOOL_NAMES.has(tool.name) && !COMPACT_CORE_BUILTIN_TOOL_NAMES.has(tool.name)
-      ? { ...tool, deferred: true }
-      : tool,
-  );
+  return tools.map((tool) => {
+    const deferred =
+      BUILTIN_AGENT_TOOL_NAMES.has(tool.name) && !COMPACT_CORE_BUILTIN_TOOL_NAMES.has(tool.name);
+    const description = COMPACT_LISTED_TOOL_DESCRIPTIONS[tool.name] ?? tool.description;
+    return deferred || description !== tool.description
+      ? { ...tool, ...(deferred ? { deferred: true } : {}), description }
+      : tool;
+  });
 }
 
 /** Splits a run's offered tools into the ones listed to the model and the deferred built-ins. */

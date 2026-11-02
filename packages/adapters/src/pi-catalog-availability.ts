@@ -1,12 +1,16 @@
 import type { PiCatalogAuth, PiCatalogEntry } from "./pi-models.js";
 import { listPiCatalog } from "./pi-models.js";
 import type { StoredModelSecret } from "./pi-oauth.js";
-import { CHATGPT_OAUTH_PROVIDER, parseModelSecret } from "./pi-oauth.js";
+import { CHATGPT_OAUTH_PROVIDER, parseModelSecret, XAI_OAUTH_PROVIDER } from "./pi-oauth.js";
+import { XAI_COMPOSER_25_MODEL_ID } from "./pi-xai-composer-model.js";
 
 /** Codex models that ChatGPT Plus/Pro sign-in cannot call. API-key auth still can. */
 export const OPENAI_CODEX_CHATGPT_SUBSCRIPTION_EXCLUDED_MODEL_IDS = new Set([
   "gpt-5.3-codex-spark",
 ]);
+
+/** Grok Build models that only SuperGrok / X Premium OAuth can call. API keys cannot. */
+export const XAI_API_KEY_EXCLUDED_MODEL_IDS = new Set([XAI_COMPOSER_25_MODEL_ID]);
 
 export const UNAVAILABLE_MODEL_FOR_AUTH_MESSAGE =
   "This model is not available with your current sign-in. Choose another model in Settings.";
@@ -34,12 +38,21 @@ export function catalogModelAvailableForAuth(
   authKind: ModelCredentialAuthKind | "disconnected",
   providerAuth?: PiCatalogAuth,
 ): boolean {
-  if (provider !== CHATGPT_OAUTH_PROVIDER) return true;
-  const usesChatGptSubscription =
-    authKind === "oauth" ||
-    (authKind === "disconnected" && (providerAuth === "oauth" || providerAuth === "both"));
-  if (!usesChatGptSubscription) return true;
-  return !OPENAI_CODEX_CHATGPT_SUBSCRIPTION_EXCLUDED_MODEL_IDS.has(modelId);
+  if (provider === CHATGPT_OAUTH_PROVIDER) {
+    const usesChatGptSubscription =
+      authKind === "oauth" ||
+      (authKind === "disconnected" && (providerAuth === "oauth" || providerAuth === "both"));
+    if (!usesChatGptSubscription) return true;
+    return !OPENAI_CODEX_CHATGPT_SUBSCRIPTION_EXCLUDED_MODEL_IDS.has(modelId);
+  }
+  if (provider === XAI_OAUTH_PROVIDER) {
+    const usesApiKey =
+      authKind === "api_key" ||
+      (authKind === "disconnected" && (providerAuth === "api-key" || providerAuth === "both"));
+    if (!usesApiKey) return true;
+    return !XAI_API_KEY_EXCLUDED_MODEL_IDS.has(modelId);
+  }
+  return true;
 }
 
 /** Catalog entries the given provider credentials can actually call. */

@@ -10,8 +10,10 @@ import type {
   VoiceVerifyResult,
 } from "@atlas/adapter-kit";
 import {
+  DEFAULT_OPENROUTER_FISH_VOICE_ID,
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
+  OPENROUTER_DEFAULT_VOICE_ID,
   OPENROUTER_VOICE_PROVIDER_ID,
 } from "@atlas/contracts";
 import { openRouterReferer } from "./openrouter-usage.js";
@@ -39,10 +41,23 @@ const MODEL_ID_PATTERN = /^[\w.:/@+-]+$/;
 const API_KEY_PATTERN = /^[\x21-\x7e]+$/;
 const MAX_SERVER_DETAIL_LENGTH = 160;
 /**
- * A model that lists no voices still has to be selectable. The speech request omits
- * this id so OpenRouter can use that model's own default.
+ * A model that lists no voices still has to be selectable. For providers whose default
+ * is stable when omitted, speech omits this id. Fish Audio on OpenRouter does not: each
+ * request needs a voice id or the speaker drifts between utterances.
  */
-export const OPENROUTER_DEFAULT_VOICE_ID = "default";
+export { DEFAULT_OPENROUTER_FISH_VOICE_ID, OPENROUTER_DEFAULT_VOICE_ID };
+
+function isFishOpenRouterTtsModel(modelId: string): boolean {
+  return modelId.startsWith("fish-audio/");
+}
+
+/** Voice field for /audio/speech, or undefined when the provider accepts omitting voice. */
+function openRouterSpeechVoice(voiceId: string, ttsModel: string): string | undefined {
+  const voice = voiceId.trim();
+  if (voice && voice !== OPENROUTER_DEFAULT_VOICE_ID) return voice;
+  if (isFishOpenRouterTtsModel(ttsModel)) return DEFAULT_OPENROUTER_FISH_VOICE_ID;
+  return undefined;
+}
 
 /** What the encrypted voice secret holds for an OpenRouter key. */
 export interface OpenRouterVoiceSecret {
@@ -200,7 +215,11 @@ function voicesForModel(body: unknown, modelId: string): VoiceInfo[] {
     )
     .slice(0, MAX_LISTED_VOICES)
     .map((id) => ({ id, label: id }));
-  return listed.length ? listed : [{ id: OPENROUTER_DEFAULT_VOICE_ID, label: "Default" }];
+  if (listed.length) return listed;
+  if (isFishOpenRouterTtsModel(modelId)) {
+    return [{ id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" }];
+  }
+  return [{ id: OPENROUTER_DEFAULT_VOICE_ID, label: "Default" }];
 }
 
 export class OpenRouterVoiceProvider implements VoiceProvider {
@@ -250,21 +269,26 @@ export class OpenRouterVoiceProvider implements VoiceProvider {
 
   async listVoices(apiKey: string, context: AdapterContext): Promise<VoiceInfo[]> {
     const secret = parseOpenRouterVoiceSecret(apiKey);
-    const signal = voiceDeadline(context.signal, 15_000);
-    const res = await fetch(`${API}/models?output_modalities=speech`, {
-      headers: headers(secret.apiKey),
-      redirect: "error",
-      signal,
-    });
-    const body = await readVoiceJson(res);
-    if (!res.ok) throw providerError(res.status, "listing voices", body, secret.apiKey);
-    return voicesForModel(body, secret.ttsModel);
+    try {
+      const signal = voiceDeadline(context.signal, 15_000);
+      const res = await fetch(`${API}/models?output_modalities=speech`, {
+        headers: headers(secret.apiKey),
+        redirect: "error",
+        signal,
+      });
+      const body = await readVoiceJson(res);
+      if (!res.ok) throw providerError(res.status, "listing voices", body, secret.apiKey);
+      return voicesForModel(body, secret.ttsModel);
+    } catch (error) {
+      if (context.signal.aborted) throw error;
+      return voicesForModel({ data: [] }, secret.ttsModel);
+    }
   }
 
   async synthesize(request: VoiceSynthesizeRequest, context: AdapterContext): Promise<SpeechClip> {
     const secret = parseOpenRouterVoiceSecret(request.apiKey);
     const signal = voiceDeadline(request.signal ?? context.signal, 60_000);
-    const voice = request.voiceId.trim();
+    const voice = openRouterSpeechVoice(request.voiceId, secret.ttsModel);
     const res = await fetch(`${API}/audio/speech`, {
       method: "POST",
       headers: headers(secret.apiKey, { "content-type": "application/json" }),
@@ -273,8 +297,8 @@ export class OpenRouterVoiceProvider implements VoiceProvider {
         model: secret.ttsModel,
         input: request.text,
         response_format: "mp3",
-        // Models with no listed voice use the provider default. Sending "default" is rejected.
-        ...(voice && voice !== OPENROUTER_DEFAULT_VOICE_ID ? { voice } : {}),
+        // Sending the literal "default" is rejected; omit voice only when the provider allows it.
+        ...(voice ? { voice } : {}),
       }),
       signal,
     });

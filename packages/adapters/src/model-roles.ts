@@ -131,5 +131,7 @@ export function selectConfiguredModel(input: {
         ? null
         : (((bot?.thinkingLevel ?? mainThinking) as AgentRunRequest["model"]["thinkingLevel"]) ??
           null),
+    modelFastTier:
+      hasOverride && !useOverride ? false : Boolean(bot?.modelFastTier),
   };
 }

@@ -27,7 +27,12 @@ function credential(provider: string, defaultModel: string | null) {
 const scope = { userId: "user-1", spaceId: "space-1" };
 const spaceCredential = credential("space-provider", "space-model");
 const overrideCredential = credential("bot-provider", "stored-model");
-const bot = { modelProvider: "bot-provider", modelId: "bot-model", thinkingLevel: "high" };
+const bot = {
+  modelProvider: "bot-provider",
+  modelId: "bot-model",
+  thinkingLevel: "high",
+  modelFastTier: false,
+};
 const main: MemberMainModel = {
   provider: "space-provider",
   modelId: "space-model",
@@ -76,6 +81,7 @@ describe("configured model selection", () => {
         id: "bot-model",
         credential: overrideCredential,
         thinkingLevel: "high",
+        modelFastTier: false,
       },
     },
     {
@@ -86,6 +92,7 @@ describe("configured model selection", () => {
         id: "space-model",
         credential: spaceCredential,
         thinkingLevel: null,
+        modelFastTier: false,
       },
     },
     {
@@ -96,6 +103,7 @@ describe("configured model selection", () => {
         id: "space-model",
         credential: spaceCredential,
         thinkingLevel: "high",
+        modelFastTier: false,
       },
     },
     {
@@ -106,6 +114,7 @@ describe("configured model selection", () => {
         id: "space-model",
         credential: spaceCredential,
         thinkingLevel: "high",
+        modelFastTier: false,
       },
     },
     {
@@ -116,6 +125,7 @@ describe("configured model selection", () => {
         id: "settings-model",
         credential: null,
         thinkingLevel: null,
+        modelFastTier: false,
       },
     },
     {
@@ -126,12 +136,19 @@ describe("configured model selection", () => {
         id: "deployment-model",
         credential: null,
         thinkingLevel: null,
+        modelFastTier: false,
       },
     },
     {
       name: "leaves missing configuration for the caller's runtime fallback or failure path",
       input: { main: null, defaults: {} },
-      expected: { provider: undefined, id: null, credential: null, thinkingLevel: null },
+      expected: {
+        provider: undefined,
+        id: null,
+        credential: null,
+        thinkingLevel: null,
+        modelFastTier: false,
+      },
     },
     {
       name: "falls back to the deployment when the main model's connection is gone",
@@ -141,6 +158,7 @@ describe("configured model selection", () => {
         id: "settings-model",
         credential: null,
         thinkingLevel: null,
+        modelFastTier: false,
       },
     },
     {
@@ -154,6 +172,7 @@ describe("configured model selection", () => {
         id: "managed-model",
         credential: null,
         thinkingLevel: null,
+        modelFastTier: false,
       },
     },
     {
@@ -164,6 +183,7 @@ describe("configured model selection", () => {
         id: "space-model",
         credential: spaceCredential,
         thinkingLevel: "low",
+        modelFastTier: false,
       },
     },
     {
@@ -177,6 +197,7 @@ describe("configured model selection", () => {
         id: "space-model",
         credential: spaceCredential,
         thinkingLevel: "high",
+        modelFastTier: false,
       },
     },
     {
@@ -191,6 +212,7 @@ describe("configured model selection", () => {
         id: "other-model",
         credential: overrideCredential,
         thinkingLevel: null,
+        modelFastTier: false,
       },
     },
     {
@@ -205,6 +227,7 @@ describe("configured model selection", () => {
         id: "space-model",
         credential: spaceCredential,
         thinkingLevel: "xhigh",
+        modelFastTier: false,
       },
     },
   ])("$name", ({ input, expected }) => {

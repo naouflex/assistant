@@ -41,7 +41,7 @@ export function localVisionModelIds(): ReadonlySet<string> {
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:11434/v1";
 const DEFAULT_CONTEXT_WINDOW = 32_768;
-const DEFAULT_MAX_TOKENS = 4_096;
+const DEFAULT_MAX_TOKENS = 8_192;
 
 export function localBaseUrl(): string {
   const value = process.env.ATLAS_LOCAL_MODELS_URL?.trim() || DEFAULT_BASE_URL;

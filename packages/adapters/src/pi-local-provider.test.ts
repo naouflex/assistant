@@ -81,7 +81,7 @@ describe("local model provider", () => {
     delete process.env.ATLAS_LOCAL_MAX_TOKENS;
     let model = localProvider()?.getModels()[0];
     expect(model?.contextWindow).toBe(32_768);
-    expect(model?.maxTokens).toBe(4_096);
+    expect(model?.maxTokens).toBe(8_192);
 
     process.env.ATLAS_LOCAL_CONTEXT_WINDOW = "8192";
     process.env.ATLAS_LOCAL_MAX_TOKENS = "512";

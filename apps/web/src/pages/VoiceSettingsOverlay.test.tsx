@@ -265,12 +265,12 @@ it("connects a self-hosted speech server by URL without a key", async () => {
     });
 
     expect(labelledInput(container, "API key").placeholder).toBe("Optional");
-    expect(labelledInput(container, "Speech model").placeholder).toBe(
-      "mlx-community/Kokoro-82M-bf16",
-    );
+    expect(labelledInput(container, "Speech model").placeholder).toBe("your-tts-model");
     expect(connect()?.disabled).toBe(true);
 
     await type(labelledInput(container, "Server URL"), " http://100.64.0.10:8810 ");
+    expect(connect()?.disabled).toBe(true);
+    await type(labelledInput(container, "Speech model"), " local-tts ");
     expect(connect()?.disabled).toBe(false);
     await act(async () => {
       connect()?.click();
@@ -282,7 +282,7 @@ it("connects a self-hosted speech server by URL without a key", async () => {
       apiKey: "",
       voiceId: undefined,
       baseUrl: "http://100.64.0.10:8810",
-      ttsModel: undefined,
+      ttsModel: "local-tts",
       sttModel: undefined,
     });
   } finally {

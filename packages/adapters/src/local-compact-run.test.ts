@@ -77,7 +77,7 @@ describe("compact local runs", () => {
   it("keeps the house rules in a fraction of the full prompt", () => {
     const compact = join(compactUserTurnInstructions(parts));
     const full = join(userTurnInstructions(parts));
-    expect(compact).toContain("Answer first.");
+    expect(compact).toContain("call tools before you answer");
     expect(compact).toContain("sends wait for the owner's approval card");
     expect(compact).toContain("Never invent facts");
     expect(compact).toContain("untrusted");
@@ -98,6 +98,12 @@ describe("compact local runs", () => {
     expect(second).toBe(first);
     const now = formatCurrentTimeInstruction(new Date("2026-10-31T10:00:00Z"), "Europe/Paris");
     expect(first).not.toContain(now.slice(0, 30));
+  });
+
+  it("shortens listed file tool descriptions in compact runs", () => {
+    const attach = compactToolSet(ownerChat).find((tool) => tool.name === "attach_file");
+    expect(attach?.description).toContain("Call after write_file");
+    expect(attach?.description.length).toBeLessThan(200);
   });
 
   it("lists only the compact core and defers other built-ins behind find_tool", () => {

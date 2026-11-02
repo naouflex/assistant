@@ -779,6 +779,7 @@ export type ModelChoice = {
   modelProvider: string | null;
   modelId: string | null;
   thinkingLevel: string | null;
+  modelFastTier?: boolean | null;
 };
 
 /**
@@ -795,12 +796,14 @@ export function runModelChoice(
       modelProvider: run.modelProvider,
       modelId: run.modelId,
       thinkingLevel: run.thinkingLevel,
+      modelFastTier: bot.modelFastTier ?? false,
     };
   }
   return {
     modelProvider: bot.modelProvider,
     modelId: bot.modelId,
     thinkingLevel: bot.thinkingLevel,
+    modelFastTier: bot.modelFastTier ?? false,
   };
 }
 

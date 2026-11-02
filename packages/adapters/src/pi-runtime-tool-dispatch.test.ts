@@ -17,7 +17,8 @@ const fakeAgentState = vi.hoisted(() => ({
     | "nested-ask-pause"
     | "tools-then-empty-failure"
     | "tools-then-final-text"
-    | "search-nudge",
+    | "search-nudge"
+    | "attach-nudge",
   terminalMessage: undefined as
     | {
         role: "assistant";
@@ -103,6 +104,67 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
         });
         return;
       }
+      if (fakeAgentState.mode === "attach-nudge") {
+        const write = this.tools.find((tool) => tool.name === "write_file");
+        if (!write) throw new Error("write_file was not exposed");
+        const args = { path: "circle.svg", content: "<svg/>" };
+        this.emit({ type: "tool_execution_start", toolName: "write_file", args });
+        await write.execute("write-1", args);
+        this.emit({
+          type: "tool_execution_end",
+          toolCallId: "write-1",
+          toolName: "write_file",
+          isError: false,
+          result: { content: [{ type: "text", text: "ok" }], terminate: false },
+        });
+        this.emit({
+          type: "turn_end",
+          message: {
+            role: "assistant",
+            content: [
+              {
+                type: "toolCall",
+                id: "write-1",
+                name: "write_file",
+                arguments: args,
+              },
+            ],
+          },
+          toolResults: [{ toolCallId: "write-1", result: { ok: true } }],
+        });
+        if (
+          fakeAgentState.followUpMessages.some((message) =>
+            String((message as { content?: string }).content ?? "").includes("attach_file"),
+          )
+        ) {
+          const attach = this.tools.find((tool) => tool.name === "attach_file");
+          if (!attach) throw new Error("attach_file was not exposed");
+          const attachArgs = { path: "circle.svg" };
+          this.emit({ type: "tool_execution_start", toolName: "attach_file", args: attachArgs });
+          await attach.execute("attach-1", attachArgs);
+          this.emit({
+            type: "tool_execution_end",
+            toolCallId: "attach-1",
+            toolName: "attach_file",
+            isError: false,
+            result: { content: [{ type: "text", text: "attached" }], terminate: false },
+          });
+          this.emit({
+            type: "message_update",
+            assistantMessageEvent: { type: "text_delta", delta: "Attached the SVG." },
+          });
+          this.emit({
+            type: "turn_end",
+            message: {
+              role: "assistant",
+              content: [{ type: "text", text: "Attached the SVG." }],
+            },
+            toolResults: [],
+          });
+        }
+        return;
+      }
+
       if (fakeAgentState.mode === "search-nudge") {
         const invented = "I searched but found nothing.";
         this.emit({
@@ -474,6 +536,16 @@ const writeFileTool: ConnectorTool = {
       path: { type: "string" },
       content: { type: "string" },
     },
+  },
+};
+
+const attachFileTool: ConnectorTool = {
+  name: "attach_file",
+  description: "Attach a workspace file to this chat.",
+  inputSchema: {
+    type: "object",
+    properties: { path: { type: "string" } },
+    required: ["path"],
   },
 };
 
@@ -1210,6 +1282,46 @@ describe("Pi connector tool dispatch", () => {
     expect(events).not.toContainEqual({ type: "text", text: "I searched but found nothing." });
     expect(events).toContainEqual({ type: "text", text: "From the search." });
     expect(fakeAgentState.followUpMessages).toHaveLength(1);
+  });
+
+  it("nudges attach_file after write_file on show-in-chat turns", async () => {
+    fakeAgentState.mode = "attach-nudge";
+    const runtime = new PiAgentRuntime();
+    const events: unknown[] = [];
+
+    for await (const event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "attach-nudge",
+        prompt: "Show me a blue circle as an SVG in this chat.",
+        utterance: "Show me a blue circle as an SVG in this chat.",
+        instructions: "Use write_file then attach_file.",
+        history: [],
+        tools: [writeFileTool, attachFileTool],
+        attachAfterWrite: true,
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => ({ ok: true })),
+      },
+      {
+        operationId: "attach-nudge",
+        traceId: "attach-nudge",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      events.push(event);
+    }
+
+    expect(fakeAgentState.followUpMessages).toHaveLength(1);
+    expect(fakeAgentState.followUpMessages[0]).toEqual(
+      expect.objectContaining({
+        role: "user",
+        content: expect.stringContaining("attach_file"),
+      }),
+    );
+    expect(events).toContainEqual({ type: "text", text: "Attached the SVG." });
   });
 
   it("keeps a direct reply that does not need a web search", async () => {

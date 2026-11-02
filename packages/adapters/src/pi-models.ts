@@ -18,6 +18,7 @@ import {
   registerOpenAiCompatibleCatalog,
 } from "./pi-openai-compatible-provider.js";
 import { MODEL_CONNECT_TIMEOUT_MS } from "./pi-runtime-limits.js";
+import { staticCatalogSupportsFastTier } from "./pi-service-tier.js";
 
 export type PiCatalogAuth = "api-key" | "oauth" | "both";
 
@@ -41,6 +42,7 @@ export type PiCatalogEntry = {
   /** Provider models share one pinned HTTPS models-list base URL. */
   catalogProbe?: boolean;
   live?: true;
+  supportsFastTier?: boolean;
 };
 
 /**
@@ -324,6 +326,9 @@ function buildPiCatalog(): PiCatalogEntry[] {
           ? { placeholder: true }
           : { images: model.input.includes("image") }),
         ...(probeBaseUrl ? { catalogProbe: true } : {}),
+        ...(staticCatalogSupportsFastTier(provider.id, model.id)
+          ? { supportsFastTier: true }
+          : {}),
       });
     }
   }

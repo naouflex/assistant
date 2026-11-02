@@ -33,6 +33,7 @@ import type {
   Model,
 } from "@earendil-works/pi-ai";
 import { validateToolArguments } from "@earendil-works/pi-ai";
+import { ATTACH_AFTER_WRITE_PROMPT } from "./attach-after-write.js";
 import { needsWebLookup } from "./answer-quality.js";
 import { uncertainEffectResult } from "./approval-effect.js";
 import { automated, withAutomatedLabels } from "./automated-messages.js";
@@ -40,9 +41,11 @@ import { LOCAL_PAYLOAD_DUMP_ENV } from "./chat-completions-compat.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
 import { exactArithmetic } from "./exact-arithmetic.js";
 import { estimatePiImageTokens } from "./pi-image-context.js";
+import { runServiceTier } from "./pi-service-tier.js";
 import {
   assistantText,
   messageHasToolCall,
+  messageToolCallNames,
   modelFailure,
   providerFailureText,
   sanitizeError,
@@ -470,7 +473,11 @@ export class PiAgentRuntime implements AgentRuntime {
             fallbackAwareModelStream(
               fallbackState,
               ctx,
-              withAutomatedLabels({ ...options, fetch: this.modelFetch ?? options?.fetch }),
+              withAutomatedLabels({
+                ...options,
+                fetch: this.modelFetch ?? options?.fetch,
+                serviceTier: runServiceTier(request.model.modelFastTier),
+              }),
             ),
           getApiKey: hasBackups
             ? async () => activeStreamTarget.credentials?.accessToken ?? activeStreamTarget.apiKey
@@ -600,6 +607,9 @@ export class PiAgentRuntime implements AgentRuntime {
           request.tools.some((tool) => tool.name === "web_search") &&
           needsWebLookup(request.utterance ?? request.prompt);
         let silentToolContinuations = 0;
+        let writeFileSucceeded = false;
+        let attachFileCalled = false;
+        let attachNudged = false;
         // A reply cut off by a dropped connection continues in the same bubble: no turn break,
         // and a continuation that starts by repeating the end of the cut text loses that repeat.
         let joinCutReply: { tail: string; held: string; requested: boolean } | undefined;
@@ -639,6 +649,10 @@ export class PiAgentRuntime implements AgentRuntime {
               isError: event.isError,
               timestamp: Date.now(),
             });
+            if (!event.isError) {
+              if (event.toolName === "write_file") writeFileSucceeded = true;
+              if (event.toolName === "attach_file") attachFileCalled = true;
+            }
           }
           if (event.type === "message_end") {
             stopThinking();
@@ -710,6 +724,44 @@ export class PiAgentRuntime implements AgentRuntime {
               agent.followUp({
                 role: "user",
                 content: SEARCH_BEFORE_ANSWER_PROMPT,
+                timestamp: Date.now(),
+              });
+            }
+
+            const turnToolNames = messageToolCallNames(event.message);
+            if (
+              hasToolCalls &&
+              hasToolResults &&
+              turnToolNames.includes("write_file") &&
+              !event.toolResults.some(
+                (result) => "isError" in result && result.isError === true,
+              )
+            ) {
+              writeFileSucceeded = true;
+            }
+            if (
+              hasToolCalls &&
+              hasToolResults &&
+              turnToolNames.includes("attach_file") &&
+              !event.toolResults.some(
+                (result) => "isError" in result && result.isError === true,
+              )
+            ) {
+              attachFileCalled = true;
+            }
+            if (
+              request.attachAfterWrite &&
+              !attachNudged &&
+              writeFileSucceeded &&
+              !attachFileCalled &&
+              !host.pausePending &&
+              !providerFailureText(event.message) &&
+              (hasToolResults || messageText.trim() || streamed.slice(streamedBeforePendingFinal).trim())
+            ) {
+              attachNudged = true;
+              agent.followUp({
+                role: "user",
+                content: ATTACH_AFTER_WRITE_PROMPT,
                 timestamp: Date.now(),
               });
             }

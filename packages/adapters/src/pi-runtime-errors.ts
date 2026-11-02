@@ -35,6 +35,23 @@ export function messageHasToolCall(message: unknown): boolean {
   );
 }
 
+export function messageToolCallNames(message: unknown): string[] {
+  if (!message || typeof message !== "object" || !("content" in message)) return [];
+  const content = (message as { content?: unknown }).content;
+  if (!Array.isArray(content)) return [];
+  return content
+    .filter(
+      (part): part is { type: "toolCall"; name: string } =>
+        !!part &&
+        typeof part === "object" &&
+        "type" in part &&
+        part.type === "toolCall" &&
+        "name" in part &&
+        typeof (part as { name: unknown }).name === "string",
+    )
+    .map((part) => part.name);
+}
+
 /** Provider failure. Aborts stay on the existing cancel path. */
 export function providerFailureText(message: unknown): string | undefined {
   if (!message || typeof message !== "object") return undefined;

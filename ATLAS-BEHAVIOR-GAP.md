@@ -10,7 +10,7 @@ tokens on system guidance, so changes here trim or replace text instead of addin
 
 | Behavior | Status | Where | Notes |
 | --- | --- | --- | --- |
-| Answer first, briefly, warm plain sentences | Added (style clause) | `packages/adapters/src/run-instructions.ts` (`ATLAS_STYLE_GUIDANCE`) | One compact clause right after the bot's own instructions. |
+| Answer first, briefly, warm plain sentences | Added (style clause) | `packages/adapters/src/run-instructions.ts` (`ATLAS_STYLE_GUIDANCE`) | Questions answer first; do-it/run/show/fix use tools first. |
 | Labelled markdown links | Added (style clause) | same | Use `[label](url)`, never bare URLs. |
 | Never invent facts | Partial ? added | same; "Prefer tools over claiming you already did the work" already existed | Now explicit: say what you don't know. |
 | Background workers + milestone updates | Exists | `run_subagent`, `spawn_bot`, `message_bot`, ticket/background triggers; `packages/adapters/src/run-replies.ts` (`longWorkProgressGuidance`, `runReplyGuidance`) | message_user progress, capped at 500 chars. |
@@ -25,14 +25,12 @@ tokens on system guidance, so changes here trim or replace text instead of addin
 
 ## Still missing (estimates)
 
-- Trim the long `search_history` paragraph (~350 tokens). Postgres testkit and `executor.test.ts`
-  assert its exact phrases, so it needs eval reruns: ~0.5 day.
-- Max-tokens default from `RAKAZO_LOCAL_MAX_TOKENS` / `ATLAS_LOCAL_MAX_TOKENS`: needs a server-provided
-  default surfaced to web onboarding, web model settings and mobile (`DEFAULT_MODEL_MAX_TOKENS` in
-  `packages/core/src/domain.ts`): ~0.5 day.
+- Max-tokens default from connection UI still uses `DEFAULT_MODEL_MAX_TOKENS` (4096); local server
+  default is now 8192 via `ATLAS_LOCAL_MAX_TOKENS` in `.env.example` and `pi-local-provider.ts`.
 - First-class journal (dated entries, "what did I do last week" summary): ~1?2 days.
 - Paid-action detector (checkout and purchase tool names) on the mandatory gate: ~0.5 day.
-- Persona eval suite against qwen3.5:9b-text (brevity, link format, routine offers): ~1 day.
+- Persona eval suite against qwen3.5:9b-text with an LLM judge (brevity, link format): ~1 day; tool-choice
+  guards now include Grok-style actions and lazy-tool finds.
 
 ## Local speed (added)
 
@@ -43,3 +41,6 @@ tokens on system guidance, so changes here trim or replace text instead of addin
 - `max_tokens` is mirrored from `max_completion_tokens` for local and OpenAI-compatible servers;
   `ATLAS_LOCAL_DISABLE_THINKING=true` sends `think:false`, `reasoning_effort:"none"`, `chat_template_kwargs.enable_thinking:false`.
 - Not done: a per-connection thinking toggle in the UI (env only for now, ~0.5 day).
+- Compact local: `attachAfterWrite` runtime nudge after `write_file` (`attach-after-write.ts`,
+  `pi-runtime.ts`); shorter `attach_file` / `write_file` / `shell` tool blurbs; trimmed
+  `HISTORY_RETRIEVAL_GUIDANCE`; deduped `COMPACT_CORE_GUIDANCE`.

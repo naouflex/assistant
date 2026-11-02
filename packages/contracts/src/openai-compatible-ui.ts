@@ -60,8 +60,9 @@ export function normalizeOpenAiCompatibleBaseUrl(raw: string): string {
   return `${url.origin}${path}`;
 }
 
-/** Self-hosted voice defaults: Kokoro and Whisper as mlx-audio names them. */
-export const DEFAULT_COMPATIBLE_TTS_MODEL = "mlx-community/Kokoro-82M-bf16";
+/** Self-hosted transcription default for mlx-audio-style servers; speech model is set in Voice settings. */
+export const DEFAULT_COMPATIBLE_TTS_MODEL = "";
+export const SELF_HOSTED_TTS_MODEL_PLACEHOLDER = "your-tts-model";
 export const DEFAULT_COMPATIBLE_STT_MODEL = "mlx-community/whisper-large-v3-turbo-asr-fp16";
 
 /** OpenRouter voice. Speech and transcription are separate model ids on one key. */
@@ -69,6 +70,18 @@ export const OPENROUTER_VOICE_PROVIDER_ID = "openrouter";
 /** Fish Audio S2.1 Pro's free OpenRouter endpoint. It lists no voices of its own. */
 export const DEFAULT_OPENROUTER_TTS_MODEL = "fish-audio/s2.1-pro-free:free";
 export const DEFAULT_OPENROUTER_STT_MODEL = "openai/whisper-large-v3-turbo";
+/** Stable Fish voice on OpenRouter when the catalog returns `supported_voices: null`. */
+export const DEFAULT_OPENROUTER_FISH_VOICE_ID = "b347db033a6549378b48d00acb0d06cd";
+export const OPENROUTER_DEFAULT_VOICE_ID = "default";
+
+/** Picker fallback when the voices API fails or has not loaded yet. */
+export function openRouterFallbackVoices(ttsModel: string): { id: string; label: string }[] {
+  const model = ttsModel.trim() || DEFAULT_OPENROUTER_TTS_MODEL;
+  if (model.startsWith("fish-audio/")) {
+    return [{ id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" }];
+  }
+  return [{ id: OPENROUTER_DEFAULT_VOICE_ID, label: "Default" }];
+}
 
 /** Preferred default, explicit enabled id (preferred first), then a list-less legacy fallback.
  * Candidates must be in stable credential order, newest first.

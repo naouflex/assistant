@@ -245,6 +245,28 @@ export async function loadDefaultVoiceCredential(
   return loadVoiceCredential(deps, actor, undefined, scope);
 }
 
+/** Preview another speech model's voice list without saving the connection. */
+export async function voiceListPlaintext(
+  deps: VoiceDeps,
+  actor: Actor,
+  provider: string,
+  plaintext: string,
+  ttsModel?: string,
+): Promise<string> {
+  const trimmed = ttsModel?.trim();
+  if (!trimmed) return plaintext;
+  const allowPrivateEndpoint = await voiceMayUsePrivateEndpoint(deps, actor, provider);
+  if (provider === OPENROUTER_VOICE_PROVIDER_ID) {
+    return serializeOpenRouterVoiceSecret({ ttsModel: trimmed }, plaintext);
+  }
+  if (provider === OPENAI_COMPATIBLE_VOICE_PROVIDER_ID) {
+    return serializeOpenAiCompatibleVoiceSecret({ ttsModel: trimmed }, plaintext, {
+      allowPrivate: allowPrivateEndpoint,
+    });
+  }
+  return plaintext;
+}
+
 export async function loadVoiceCredential(
   deps: VoiceDeps,
   actor: Actor,

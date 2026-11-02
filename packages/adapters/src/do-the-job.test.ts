@@ -9,6 +9,9 @@ describe("do the job note", () => {
     "run the code and show me the svg",
     "i see the code not the logo",
     "Show me a blue circle as an SVG in this chat.",
+    "On your computer, create workspace/chief/ping.txt containing exactly pong.",
+    "Run date in the terminal and tell me the timezone.",
+    "fix it",
     "fais-le",
   ])("asks for the file on %j", (text) => {
     expect(asksToDoTheJob(text)).toBe(true);
