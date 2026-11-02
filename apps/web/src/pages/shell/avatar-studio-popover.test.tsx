@@ -3,6 +3,7 @@
 import type { BotAvatarSet } from "@atlas/contracts";
 import { botAvatarWordValue } from "@atlas/contracts";
 import { DEFAULT_BOT_AVATAR_COLOR } from "@atlas/ui-web";
+import { i18n } from "@lingui/core";
 import type { ReactNode } from "react";
 import { act, useState } from "react";
 import type { Root } from "react-dom/client";
@@ -43,6 +44,7 @@ function Harness({
 }
 
 beforeEach(() => {
+  i18n.activate("en");
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   window.matchMedia ??= ((query: string) => ({
     matches: false,
@@ -128,7 +130,7 @@ describe("selectable bot icon sets", () => {
     const studio = document.querySelector("[data-testid='avatar-studio']");
     expect(studio?.querySelector(".atlas-word-icon")?.textContent).toBe("R");
     expect(changed).not.toHaveBeenCalled();
-    await click("Generate");
+    await click("Apply");
     const river = botAvatarWordValue("#8B5CF6", "river");
     expect(changed).toHaveBeenLastCalledWith(river, undefined);
     expect(input!.value).toBe("river");
@@ -138,6 +140,29 @@ describe("selectable bot icon sets", () => {
     await click("wedge");
     expect(input!.value).toBe("");
     expect(document.querySelector("[data-testid='avatar-studio'] .atlas-word-icon")).toBeNull();
+  });
+
+  it("shows shapes on Atlas and switches to Original when one is picked", async () => {
+    await render("#10B981", "atlas");
+    await click("Customize bot avatar");
+    expect(button("wedge")).toBeDefined();
+    await click("wedge");
+    expect(changed).toHaveBeenLastCalledWith("#10B981::shape_0", "organic");
+  });
+
+  it("commits a typed word when closing the studio without Apply", async () => {
+    await render("#8B5CF6");
+    await click("Customize bot avatar");
+    const input = document.querySelector<HTMLInputElement>('[data-testid="avatar-word"]');
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setValue?.call(input, "anchor");
+      input!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(changed).not.toHaveBeenCalled();
+    await click("Close");
+    const anchor = botAvatarWordValue("#8B5CF6", "anchor");
+    expect(changed).toHaveBeenLastCalledWith(anchor, undefined);
   });
 
   it("applies a shipped custom picture from the bot tab", async () => {

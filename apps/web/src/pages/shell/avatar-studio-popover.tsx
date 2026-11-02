@@ -36,6 +36,24 @@ function avatarPictureKey(value: string): string {
   return "default";
 }
 
+/** Studio shapes and word icons render on the Original set, not the Atlas logo. */
+function studioPreviewAvatarSet(
+  value: string,
+  pendingLook: string | null | undefined,
+  avatarSet: BotAvatarSet,
+): BotAvatarSet {
+  const parsed = parseBotAvatar(pendingLook ?? value);
+  if (parsed.shapeIndex !== undefined || parsed.word) return "organic";
+  return avatarSet;
+}
+
+function avatarValueForIconSet(nextSet: BotAvatarSet, value: string): string {
+  if (nextSet === "organic") return value;
+  const parsed = parseBotAvatar(value);
+  if (parsed.isImage) return value;
+  return parsed.color || DEFAULT_BOT_AVATAR_COLOR;
+}
+
 function isPaleAvatarSwatch(color: string): boolean {
   const hex = color.replace("#", "");
   const full =
@@ -69,7 +87,7 @@ export function BotLookPicker({
   avatarSet?: BotAvatarSet;
   onAvatarSetChange?: (set: BotAvatarSet, value: string) => void;
   onChange: (value: string, identity?: string) => void;
-  /** The picture a typed word would save, before Generate commits it. */
+  /** The picture a typed word would save, before Apply commits it. */
   onPreviewChange?: (value: string | null) => void;
 }) {
   const parsed = parseBotAvatar(value);
@@ -99,12 +117,30 @@ export function BotLookPicker({
     setWordDraft(next);
   }
 
-  function selectColor(color: string) {
-    if (parsed.word) {
-      onChange(botAvatarWordValue(color, parsed.word) ?? color);
+  function commitLook(next: string, nextIdentity?: string) {
+    const parsedNext = parseBotAvatar(next);
+    if (parsedNext.isImage) {
+      onChange(next, nextIdentity);
       return;
     }
-    onChange(parsed.shapeIndex === undefined ? color : `${color}::shape_${parsed.shapeIndex}`);
+    const needsOriginal =
+      avatarSet !== "organic" &&
+      (parsedNext.shapeIndex !== undefined ||
+        parsedNext.word !== undefined ||
+        (nextIdentity !== undefined && parsedNext.shapeIndex === undefined && !parsedNext.word));
+    if (needsOriginal) {
+      onAvatarSetChange?.("organic", next);
+      return;
+    }
+    onChange(next, nextIdentity);
+  }
+
+  function selectColor(color: string) {
+    if (parsed.word) {
+      commitLook(botAvatarWordValue(color, parsed.word) ?? color);
+      return;
+    }
+    commitLook(parsed.shapeIndex === undefined ? color : `${color}::shape_${parsed.shapeIndex}`);
   }
 
   function generateWord() {
@@ -115,7 +151,7 @@ export function BotLookPicker({
     }
     setWordDraft(null);
     setDraftPicture(null);
-    if (wordPreview !== value) onChange(wordPreview);
+    if (wordPreview !== value) commitLook(wordPreview);
   }
 
   return (
@@ -123,7 +159,7 @@ export function BotLookPicker({
       <Tabs
         value={avatarSet}
         onValueChange={(next) =>
-          onAvatarSetChange?.(resolveBotAvatarSet(next), defaultBotAvatarValue(value))
+          onAvatarSetChange?.(resolveBotAvatarSet(next), avatarValueForIconSet(resolveBotAvatarSet(next), value))
         }
       >
         <TabsList className="w-full" aria-label={t`Icon set`}>
@@ -135,8 +171,12 @@ export function BotLookPicker({
           </TabsTrigger>
         </TabsList>
       </Tabs>
-      {avatarSet === "organic" ? (
-        <div>
+      {avatarSet === "atlas" ? (
+        <p className="text-[12px] text-muted-foreground">
+          <Trans>Atlas uses the logo below. Shapes and word icons switch to Original.</Trans>
+        </p>
+      ) : null}
+      <div>
           {organicIdentities ? null : (
             <div className="mb-2 flex items-center justify-between">
               <div className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
@@ -152,7 +192,7 @@ export function BotLookPicker({
                   setWordDraft(null);
                   setDraftPicture(null);
                   const next = defaultBotAvatarValue(value);
-                  if (next !== value) onChange(next);
+                  if (next !== value) commitLook(next);
                 }}
                 className={`px-3 py-1 text-xs font-medium transition-colors ${
                   isDefaultLook
@@ -177,7 +217,7 @@ export function BotLookPicker({
                 onClick={() => {
                   setWordDraft(null);
                   setDraftPicture(null);
-                  onChange(currentColor, organicIdentity);
+                  commitLook(currentColor, organicIdentity);
                 }}
               />
             ))}
@@ -190,7 +230,7 @@ export function BotLookPicker({
                 onClick={() => {
                   setWordDraft(null);
                   setDraftPicture(null);
-                  onChange(`${currentColor}::shape_${shapeIndex}`);
+                  commitLook(`${currentColor}::shape_${shapeIndex}`);
                 }}
               />
             ))}
@@ -206,9 +246,14 @@ export function BotLookPicker({
               className={`w-auto min-w-0 flex-1 ${wordIsPicture ? "ring-2 ring-primary" : ""}`}
               onChange={(event) => editWord(event.target.value)}
               onBlur={() => {
-                if (wordPreview) return;
-                setWordDraft(null);
-                setDraftPicture(null);
+                if (wordPreview && wordPreview !== value) {
+                  generateWord();
+                  return;
+                }
+                if (!wordPreview) {
+                  setWordDraft(null);
+                  setDraftPicture(null);
+                }
               }}
               onKeyDown={(event) => {
                 if (event.key !== "Enter") return;
@@ -220,14 +265,13 @@ export function BotLookPicker({
               type="button"
               variant="outline"
               className="shrink-0"
-              disabled={!wordPreview}
+              disabled={!wordPreview || wordPreview === value}
               onClick={generateWord}
             >
-              <Trans>Generate</Trans>
+              <Trans>Apply</Trans>
             </Button>
           </div>
         </div>
-      ) : null}
 
       <div className="border-t border-border pt-2">
         {organicIdentities ? null : (
@@ -277,7 +321,7 @@ export function BotLookPicker({
                   onClick={() => {
                     setWordDraft(null);
                     setDraftPicture(null);
-                    onChange(image.value);
+                    commitLook(image.value);
                   }}
                   aria-label={t`Custom ${image.id}`}
                   aria-pressed={selected}
@@ -407,6 +451,9 @@ export function AvatarStudioPopover({
       <Dialog
         open={open}
         onOpenChange={(next) => {
+          if (!next && pendingLook && pendingLook !== value) {
+            onChange(pendingLook);
+          }
           setOpen(next);
           if (!next) setPendingLook(null);
         }}
@@ -441,7 +488,7 @@ export function AvatarStudioPopover({
               identity={identity}
               size={78}
               status={status}
-              avatarSet={avatarSet}
+              avatarSet={studioPreviewAvatarSet(value, pendingLook, avatarSet)}
             />
           </div>
 

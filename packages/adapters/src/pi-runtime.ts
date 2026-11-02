@@ -108,6 +108,9 @@ export const SEARCH_BEFORE_ANSWER_PROMPT = automated(
 export const SILENT_TOOL_CONTINUATION_PROMPT = automated(
   "Your last turn ended right after a tool result, without a reply. Continue the original task from the latest tool result. If you need information or a decision from the user, ask them instead of guessing; otherwise use any remaining tools needed, then give the user the final answer.",
 );
+export const EMPTY_RESPONSE_RETRY_PROMPT = automated(
+  "Your last turn produced no reply text. Answer the user now in one or two sentences.",
+);
 // Sent after a reply was cut off by a dropped connection; the cut text is the previous turn.
 export const CUT_REPLY_CONTINUATION_PROMPT = automated(
   "Your previous reply was cut off by a connection error. Continue exactly where it stopped, mid-word if needed, without repeating anything.",
@@ -610,6 +613,7 @@ export class PiAgentRuntime implements AgentRuntime {
         let writeFileSucceeded = false;
         let attachFileCalled = false;
         let attachNudged = false;
+        let emptyResponseRetried = false;
         // A reply cut off by a dropped connection continues in the same bubble: no turn break,
         // and a continuation that starts by repeating the end of the cut text loses that repeat.
         let joinCutReply: { tail: string; held: string; requested: boolean } | undefined;
@@ -724,6 +728,25 @@ export class PiAgentRuntime implements AgentRuntime {
               agent.followUp({
                 role: "user",
                 content: SEARCH_BEFORE_ANSWER_PROMPT,
+                timestamp: Date.now(),
+              });
+            }
+            if (
+              !emptyResponseRetried &&
+              !request.allowSilentEmpty &&
+              toolCalls === 0 &&
+              !hasToolCalls &&
+              !hasToolResults &&
+              !messageText.trim() &&
+              !streamed.trim() &&
+              !toolWorkPendingFinal &&
+              !host.pausePending &&
+              !providerFailureText(event.message)
+            ) {
+              emptyResponseRetried = true;
+              agent.followUp({
+                role: "user",
+                content: EMPTY_RESPONSE_RETRY_PROMPT,
                 timestamp: Date.now(),
               });
             }
@@ -1136,17 +1159,57 @@ export class PiAgentRuntime implements AgentRuntime {
             throw new ModelOutputError(MISSING_TOOL_FINAL_RESPONSE_ERROR);
           }
         } else if (!streamed.trim() && !host.pausePending) {
-          streamed = "";
-          const lastMessage = agent.state.messages.at(-1);
-          const fallback = lastMessage?.role === "assistant" ? assistantText(lastMessage) : "";
-          if (fallback.trim()) {
-            queue.push({ type: "text", text: fallback });
-            streamed = fallback;
-          } else if (toolWorkPendingFinal && !request.allowSilentEmpty) {
-            throw new ModelOutputError(MISSING_TOOL_FINAL_RESPONSE_ERROR);
-          } else if (toolCalls === 0 && !request.allowSilentEmpty) {
-            streamed = request.emptyResponseText?.trim() || "No response. Try again.";
-            queue.push({ type: "text", text: streamed });
+          if (
+            !emptyResponseRetried &&
+            toolCalls === 0 &&
+            !request.allowSilentEmpty
+          ) {
+            emptyResponseRetried = true;
+            agent.followUp({
+              role: "user",
+              content: EMPTY_RESPONSE_RETRY_PROMPT,
+              timestamp: Date.now(),
+            });
+            await agent.continue();
+            await agent.waitForIdle();
+            releaseJoin();
+            const retryTerminal = agent.state.messages.at(-1);
+            if (
+              retryTerminal?.role === "assistant" &&
+              !messageHasToolCall(retryTerminal)
+            ) {
+              const completedText = assistantText(retryTerminal);
+              const terminalText =
+                joinDropped && completedText.startsWith(joinDropped)
+                  ? completedText.slice(joinDropped.length)
+                  : completedText;
+              const sincePendingFinal = streamed.slice(streamedBeforePendingFinal);
+              if (terminalText.trim() && !sincePendingFinal.includes(terminalText)) {
+                const missing =
+                  sincePendingFinal && terminalText.startsWith(sincePendingFinal)
+                    ? terminalText.slice(sincePendingFinal.length)
+                    : terminalText;
+                if (missing) {
+                  queue.push({ type: "text", text: missing });
+                  streamed += missing;
+                  toolWorkPendingFinal = false;
+                }
+              }
+            }
+          }
+          if (!streamed.trim()) {
+            streamed = "";
+            const lastMessage = agent.state.messages.at(-1);
+            const fallback = lastMessage?.role === "assistant" ? assistantText(lastMessage) : "";
+            if (fallback.trim()) {
+              queue.push({ type: "text", text: fallback });
+              streamed = fallback;
+            } else if (toolWorkPendingFinal && !request.allowSilentEmpty) {
+              throw new ModelOutputError(MISSING_TOOL_FINAL_RESPONSE_ERROR);
+            } else if (toolCalls === 0 && !request.allowSilentEmpty) {
+              streamed = request.emptyResponseText?.trim() || "No response. Try again.";
+              queue.push({ type: "text", text: streamed });
+            }
           }
         }
         queue.push(streamed.trim() ? { type: "done", text: streamed } : { type: "done" });

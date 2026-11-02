@@ -13,6 +13,7 @@ import type { Prisma } from "@atlas/db";
 import {
   AnswerTooLongError,
   appendEventInTransaction,
+  cancelActiveCallTurnRuns,
   createExternalConversationRepos,
   createThreadMessageInTransaction,
   IsolationError,
@@ -67,7 +68,7 @@ export function callMarkerClientNonce(callId: string): string {
 
 /** The card is closed by a marker; the run that follows finishes whatever the call left open. */
 const HANG_UP_PROMPT =
-  "The voice call just ended because the user hung up. First call end_call with a short title for the call (leave farewell empty). Then, if anything the user asked for during the call is still unfinished, complete it now as a normal chat reply with full formatting. If nothing is pending, reply with one short sentence.";
+  "The voice call just ended because the user hung up. Call end_call with a short title (leave farewell empty). Do not repeat what you already said on the call. If something they asked for is still unfinished, finish it in one chat reply; otherwise one short sentence.";
 
 /** A send with routines that already has runs saved under its nonce. */
 class SavedSubmission extends Error {}
@@ -552,6 +553,21 @@ export function threadsRoutes(ctx: RouterContext) {
         ];
         const committed = await deps.prisma
           .$transaction(async (tx) => {
+            const cancelledTurns = await cancelActiveCallTurnRuns(tx, {
+              threadId,
+              botId,
+              callId: input.callId,
+            });
+            for (const run of cancelledTurns) {
+              await appendEventInTransaction(tx, {
+                spaceId: context.actor.spaceId,
+                threadId,
+                botId: run.botId,
+                type: "run.cancelled",
+                runId: run.id,
+                payload: {},
+              });
+            }
             // A late provider hang-up is harmless when the call never produced a
             // user utterance; do not create a phantom marker or follow-up run.
             const userUtterance = await tx.message.findFirst({
@@ -617,16 +633,25 @@ export function threadsRoutes(ctx: RouterContext) {
                 messageId: message.id,
               },
             });
-            return { runId: run.id, eventSeq: ended.seq };
+            return {
+              runId: run.id,
+              eventSeq: ended.seq,
+              cancelledRunIds: cancelledTurns.map((turn) => turn.id),
+            };
           })
           .catch((error) => {
             if (!isUniqueViolation(error)) throw error;
             return null;
           });
         if (!committed) return { ok: true as const };
-        await deps.events.notify(threadId, committed.eventSeq).catch((error) => {
-          getLogger().error("call end realtime notification", error);
-        });
+        await Promise.all([
+          ...committed.cancelledRunIds.map((runId) =>
+            deps.jobs.cancel(runJobKey(runId)).catch(() => undefined),
+          ),
+          deps.events.notify(threadId, committed.eventSeq).catch((error) => {
+            getLogger().error("call end realtime notification", error);
+          }),
+        ]);
         // The queued run is durable; a missed wake is repaired by the reconciler.
         await deps.jobs.enqueue(runContinueJob(committed.runId)).catch((error) => {
           getLogger().error("call end enqueue", error);

@@ -111,7 +111,10 @@ describe("OpenRouterVoiceProvider", () => {
       }),
     );
     await expect(provider.listVoices(fish, context)).resolves.toEqual(
-      expect.arrayContaining([{ id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" }]),
+      expect.arrayContaining([
+        { id: DEFAULT_OPENROUTER_FISH_VOICE_ID, label: "Selene" },
+        { id: "9a9cf47702da476aa4629e2506d4a857", label: "Hannah" },
+      ]),
     );
   });
 

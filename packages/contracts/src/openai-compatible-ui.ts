@@ -123,8 +123,14 @@ export function openRouterVoicesForPicker(
 ): { id: string; label: string }[] {
   const model = ttsModel.trim() || DEFAULT_OPENROUTER_TTS_MODEL;
   const usable = listed.filter((voice) => !isOpenRouterPlaceholderVoiceId(voice.id));
+  if (isOpenRouterFishTtsModel(model)) {
+    const catalog = openRouterFishCatalogVoices();
+    if (!usable.length) return catalog;
+    const merged = new Map(catalog.map((voice) => [voice.id, voice]));
+    for (const voice of usable) merged.set(voice.id, voice);
+    return [...merged.values()];
+  }
   if (usable.length) return [...usable];
-  if (isOpenRouterFishTtsModel(model)) return openRouterFishCatalogVoices();
   return [{ id: OPENROUTER_DEFAULT_VOICE_ID, label: "Default" }];
 }
 

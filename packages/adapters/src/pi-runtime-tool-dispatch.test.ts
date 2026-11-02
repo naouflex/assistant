@@ -6,6 +6,7 @@ const fakeAgentState = vi.hoisted(() => ({
   mode: "dispatch" as
     | "dispatch"
     | "empty"
+    | "empty-retry"
     | "answer-then-stop"
     | "two-boundaries"
     | "silent-continuation"
@@ -202,7 +203,11 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
         }
         return;
       }
-      if (fakeAgentState.mode === "empty" || fakeAgentState.mode === "two-boundaries") {
+      if (
+        fakeAgentState.mode === "empty" ||
+        fakeAgentState.mode === "empty-retry" ||
+        fakeAgentState.mode === "two-boundaries"
+      ) {
         await this.prepareNextTurnWithContext?.({ context: { messages: [] } });
         if (fakeAgentState.mode === "two-boundaries") {
           await this.prepareNextTurnWithContext?.({
@@ -463,6 +468,32 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
     }
 
     async waitForIdle() {}
+
+    async continue() {
+      if (fakeAgentState.mode !== "empty-retry") return;
+      const retried = fakeAgentState.followUpMessages.some((message) =>
+        String((message as { content?: string }).content ?? "").includes("no reply text"),
+      );
+      if (!retried) return;
+      const text = "Recovered reply.";
+      this.emit({
+        type: "message_update",
+        assistantMessageEvent: { type: "text_delta", delta: text },
+      });
+      this.emit({
+        type: "message_end",
+        message: { role: "assistant", content: [{ type: "text", text }] },
+      });
+      this.emit({
+        type: "turn_end",
+        message: { role: "assistant", content: [{ type: "text", text }] },
+        toolResults: [],
+      });
+      this.state.messages.push({
+        role: "assistant",
+        content: [{ type: "text", text }],
+      });
+    }
 
     steer(message: unknown) {
       fakeAgentState.steeredMessages.push(message);
@@ -1987,6 +2018,13 @@ describe("Pi connector tool dispatch", () => {
       events.push(event);
     }
 
+    expect(fakeAgentState.followUpMessages).toHaveLength(1);
+    expect(fakeAgentState.followUpMessages[0]).toEqual(
+      expect.objectContaining({
+        role: "user",
+        content: expect.stringContaining("no reply text"),
+      }),
+    );
     expect(events).toContainEqual({
       type: "text",
       text: "No response. Try again.",
@@ -1995,6 +2033,42 @@ describe("Pi connector tool dispatch", () => {
       type: "done",
       text: "No response. Try again.",
     });
+  });
+
+  it("retries once internally when the model returns nothing, then answers", async () => {
+    fakeAgentState.mode = "empty-retry";
+    const runtime = new PiAgentRuntime();
+    const events: unknown[] = [];
+
+    for await (const event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "user-empty-retry",
+        prompt: "hello",
+        instructions: "Reply to the user.",
+        history: [],
+        tools: [],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => ({ ok: true })),
+      },
+      {
+        operationId: "user-empty-retry",
+        traceId: "user-empty-retry",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      events.push(event);
+    }
+
+    expect(events).not.toContainEqual({
+      type: "text",
+      text: "No response. Try again.",
+    });
+    expect(events).toContainEqual({ type: "text", text: "Recovered reply." });
+    expect(events.at(-1)).toEqual({ type: "done", text: "Recovered reply." });
   });
 
   it("surfaces a contextual peer fallback when that run produces nothing", async () => {

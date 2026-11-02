@@ -8561,6 +8561,8 @@ describe("threads.endCall", () => {
       message: {
         findUnique: vi.fn().mockResolvedValue(null),
         findFirst: vi.fn().mockResolvedValue(userSpoke ? { id: "utterance-1" } : null),
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         create: vi.fn(async ({ data }: { data: { blocks: unknown; clientNonce?: string } }) => {
           if (duplicateMarker) throw Object.assign(new Error("unique"), { code: "P2002" });
           created.push({ blocks: data.blocks, clientNonce: data.clientNonce });
@@ -8568,11 +8570,19 @@ describe("threads.endCall", () => {
         }),
       },
       event: vi.fn(),
-      task: { create: vi.fn().mockResolvedValue({ id: "task-1" }) },
+      task: {
+        create: vi.fn().mockResolvedValue({ id: "task-1" }),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
       run: {
         create: vi.fn().mockResolvedValue({ id: "run-1" }),
         findUnique: vi.fn().mockResolvedValue({ status: "queued", startedAt: null }),
+        findMany: vi.fn().mockResolvedValue([]),
+        updateManyAndReturn: vi.fn().mockResolvedValue([]),
       },
+      attempt: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      externalEffect: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      secret: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     };
     tx.event = {
       create: vi.fn(async ({ data }: { data: { type: string; payload: never } }) => {
@@ -8592,10 +8602,11 @@ describe("threads.endCall", () => {
       $transaction: vi.fn(async (run: (client: typeof tx) => unknown) => run(tx)),
     } as unknown as PrismaClient;
     const enqueue = vi.fn().mockResolvedValue(undefined);
+    const cancel = vi.fn().mockResolvedValue(undefined);
     const deps = {
       prisma,
       events: { notify: vi.fn().mockResolvedValue(undefined) },
-      jobs: { enqueue },
+      jobs: { enqueue, cancel },
       env: { sandboxProvider: "fake", phoneCallsEnabled: true },
     } as unknown as RouterDeps;
     const actor = {
@@ -8610,6 +8621,7 @@ describe("threads.endCall", () => {
       created,
       events,
       enqueue,
+      cancel,
       call: (extra: Record<string, unknown> = {}) =>
         handle(
           handler,

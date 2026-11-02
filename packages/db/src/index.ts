@@ -11,6 +11,7 @@ export * from "./bot-instructions.js";
 export * from "./bot-move.js";
 export * from "./bot-update.js";
 export * from "./cancel-runs.js";
+export * from "./cancel-call-runs.js";
 export * from "./client.js";
 export * from "./computer-runs.js";
 export * from "./computers.js";
