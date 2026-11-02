@@ -75,6 +75,14 @@ describe("BotAvatar", () => {
     expect(maya).not.toEqual(github);
   });
 
+  it("draws an anchor when the word is anchor", () => {
+    const value = botAvatarWordValue("#8B5CF6", "anchor")!;
+    const html = renderToString(<BotAvatar color={value} identity="maya" size={32} />);
+    expect(html).toContain("M12 6v16");
+    expect(html).toContain('class="atlas-word-icon');
+    expect(html).not.toContain("atlas-organic-avatar-eyes");
+  });
+
   it("draws a word as its own body instead of the logo", () => {
     const value = botAvatarWordValue("#8B5CF6", "river")!;
     const html = renderToString(
