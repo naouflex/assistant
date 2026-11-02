@@ -52,6 +52,8 @@ interface EntryInfo {
 
 export interface RemoteDesktop {
   readonly sandboxId: string;
+  /** Present when the provider refuses public screen traffic without it. */
+  readonly trafficAccessToken?: string;
   setTimeout(timeoutMs: number): Promise<void>;
   getHost(port: number): string;
   commands: {
@@ -347,10 +349,32 @@ export class RemoteDesktopSandboxProvider implements SandboxProvider {
     request: ScreenRequest,
     context: AdapterContext,
   ): Promise<ScreenSession> {
-    return this.desktops.connectScreen(computer, request, context);
+    return this.protectE2BTraffic(
+      computer,
+      await this.desktops.connectScreen(computer, request, context),
+    );
   }
   async connectTerminal(computer: ComputerRef, request: TerminalRequest, context: AdapterContext) {
-    return this.desktops.connectTerminal(computer, request, context);
+    return this.protectE2BTraffic(
+      computer,
+      await this.desktops.connectTerminal(computer, request, context),
+    );
+  }
+
+  /** The browser never sees this. The screen proxy adds it when it dials a private E2B host. */
+  private async protectE2BTraffic<
+    T extends { url: string | null; headers?: Record<string, string> },
+  >(
+    computer: ComputerRef,
+    session: T,
+  ): Promise<T> {
+    if (this.config.id !== "e2b" || !session.url) return session;
+    const token = (await this.box(computer)).trafficAccessToken?.trim();
+    if (!token) return session;
+    return {
+      ...session,
+      headers: { ...session.headers, "e2b-traffic-access-token": token },
+    };
   }
   async setScreenControl(
     computer: ComputerRef,

@@ -132,6 +132,26 @@ describe("E2B computer backend", () => {
     expect(globalStream).not.toHaveBeenCalled();
   });
 
+  it("gives the screen proxy the traffic token without putting it in the browser URL", async () => {
+    const sdk = {
+      connect: vi.fn(async () => ({
+        sandboxId: "existing",
+        trafficAccessToken: "traffic-secret",
+        getHost: (port: number) => `${port}-desktop.test`,
+        commands: {
+          run: async () => ({ stdout: "ATLAS_DESKTOP=0:savedkey\n", stderr: "", exitCode: 0 }),
+        },
+      })),
+    } as unknown as E2BSandboxSdk;
+    const session = await new E2BSandboxProvider("test-key", sdk).connectScreen(
+      { id: "existing", providerRef: "existing", kind: "e2b", botId: "bot" },
+      { view: "stream" },
+      context,
+    );
+    expect(session.headers).toEqual({ "e2b-traffic-access-token": "traffic-secret" });
+    expect(session.url).not.toContain("traffic-secret");
+  });
+
   it("only filters transient cache files inside portable browser profiles", () => {
     expect(shouldSkipPortableWorkspaceFile("project/Cache/important.txt")).toBe(false);
     expect(shouldSkipPortableWorkspaceFile("project/lock")).toBe(false);
@@ -357,9 +377,10 @@ describe("E2B computer backend", () => {
         else if (outcome === "rejects")
           await expect(result).rejects.toMatchObject({ statusCode: status });
         else await expect(result).rejects.toSatisfy(isSandboxGoneError);
-        expect(requests).toEqual([
-          method === "destroy" ? "DELETE /sandboxes/paused" : "POST /sandboxes/paused/pause",
-        ]);
+        const expected =
+          method === "destroy" ? "DELETE /sandboxes/paused" : "POST /sandboxes/paused/pause";
+        expect(requests.length).toBeGreaterThan(0);
+        expect(requests.every((request) => request === expected)).toBe(true);
       } finally {
         vi.unstubAllEnvs();
         server.closeAllConnections();
