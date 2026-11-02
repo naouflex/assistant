@@ -55,6 +55,7 @@ describe("the images compose file", () => {
       "api",
       "computer",
       "data-init",
+      "kokoro",
       "migrate",
       "postgres",
       "supervisor",
