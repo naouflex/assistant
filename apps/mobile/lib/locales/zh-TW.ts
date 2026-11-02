@@ -1,4 +1,23 @@
 export const ZH_TW_MESSAGES: Record<string, string> = {
+  "Phone control": "手機控制",
+  Accessibility: "無障礙",
+  Allowed: "已允許",
+  "Bots lose access to this phone until you turn Phone control on again.":
+    "在你重新開啟手機控制之前，機器人將無法存取這支手機。",
+  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
+    "開啟後，你的機器人可以查看和控制這支手機並在上面執行指令。每個操作都會被記錄。",
+  "Not connected": "未連線",
+  Off: "關閉",
+  On: "開啟",
+  "Remove this phone": "移除這支手機",
+  "Remove this phone?": "移除這支手機？",
+  "Screenshots need Android 11 or newer.": "螢幕截圖需要 Android 11 或更新版本。",
+  "Turn off after": "自動關閉時間",
+  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
+    "在無障礙設定中開啟 Atlas phone control，讓機器人可以查看和點按螢幕。",
+  "{count} min": "{count} 分鐘",
+  "The server did not pair this phone.": "伺服器未配對這支手機。",
+  "Phone control needs the Android app.": "手機控制需要 Android App。",
   "How other bots see it": "其他機器人如何瞭解它",
   "Share to": "分享到",
   "{count} files": "{count} 個檔案",

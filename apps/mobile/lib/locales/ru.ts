@@ -1,4 +1,23 @@
 export const RU_MESSAGES: Record<string, string> = {
+  "Phone control": "Управление телефоном",
+  Accessibility: "Специальные возможности",
+  Allowed: "Разрешено",
+  "Bots lose access to this phone until you turn Phone control on again.":
+    "Боты потеряют доступ к этому телефону, пока вы снова не включите управление телефоном.",
+  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
+    "Пока это включено, ваши боты могут видеть этот телефон, управлять им и выполнять на нём команды. Каждое действие записывается.",
+  "Not connected": "Нет подключения",
+  Off: "Выкл.",
+  On: "Вкл.",
+  "Remove this phone": "Удалить этот телефон",
+  "Remove this phone?": "Удалить этот телефон?",
+  "Screenshots need Android 11 or newer.": "Для снимков экрана нужен Android 11 или новее.",
+  "Turn off after": "Выключать через",
+  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
+    "Включите Atlas phone control в настройках специальных возможностей, чтобы боты могли видеть экран и нажимать на него.",
+  "{count} min": "{count} мин",
+  "The server did not pair this phone.": "Сервер не подключил этот телефон.",
+  "Phone control needs the Android app.": "Для управления телефоном нужно приложение для Android.",
   "How other bots see it": "Как его видят другие боты",
   "Share to": "Отправить в",
   "{count} files": "Файлов: {count}",

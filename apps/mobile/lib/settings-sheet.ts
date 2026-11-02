@@ -17,6 +17,7 @@ const settingsScreens = new Set([
   "messaging",
   "language",
   "models",
+  "phone-control",
   "plugin",
   "signup-survey",
   "skill",

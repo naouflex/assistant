@@ -1,4 +1,23 @@
 export const NL_MESSAGES: Record<string, string> = {
+  "Phone control": "Telefoonbediening",
+  Accessibility: "Toegankelijkheid",
+  Allowed: "Toegestaan",
+  "Bots lose access to this phone until you turn Phone control on again.":
+    "Bots verliezen de toegang tot deze telefoon tot je Telefoonbediening weer aanzet.",
+  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
+    "Zolang dit aan staat, kunnen je bots deze telefoon zien en bedienen en er opdrachten op uitvoeren. Elke actie wordt vastgelegd.",
+  "Not connected": "Niet verbonden",
+  Off: "Uit",
+  On: "Aan",
+  "Remove this phone": "Deze telefoon verwijderen",
+  "Remove this phone?": "Deze telefoon verwijderen?",
+  "Screenshots need Android 11 or newer.": "Schermafbeeldingen vereisen Android 11 of nieuwer.",
+  "Turn off after": "Uitzetten na",
+  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
+    "Zet Atlas phone control aan in de Toegankelijkheidsinstellingen zodat bots het scherm kunnen zien en tikken.",
+  "{count} min": "{count} min",
+  "The server did not pair this phone.": "De server heeft deze telefoon niet gekoppeld.",
+  "Phone control needs the Android app.": "Telefoonbediening vereist de Android-app.",
   "How other bots see it": "Hoe andere bots deze zien",
   "Share to": "Delen met",
   "{count} files": "{count} bestanden",

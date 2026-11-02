@@ -1,4 +1,23 @@
 export const DE_MESSAGES: Record<string, string> = {
+  "Phone control": "Telefonsteuerung",
+  Accessibility: "Bedienungshilfen",
+  Allowed: "Erlaubt",
+  "Bots lose access to this phone until you turn Phone control on again.":
+    "Bots verlieren den Zugriff auf dieses Telefon, bis du die Telefonsteuerung wieder einschaltest.",
+  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
+    "Solange dies aktiviert ist, können deine Bots dieses Telefon sehen, steuern und Befehle darauf ausführen. Jede Aktion wird protokolliert.",
+  "Not connected": "Nicht verbunden",
+  Off: "Aus",
+  On: "Ein",
+  "Remove this phone": "Dieses Telefon entfernen",
+  "Remove this phone?": "Dieses Telefon entfernen?",
+  "Screenshots need Android 11 or newer.": "Bildschirmfotos erfordern Android 11 oder neuer.",
+  "Turn off after": "Ausschalten nach",
+  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
+    "Aktiviere „Atlas phone control“ in den Bedienungshilfen, damit Bots den Bildschirm sehen und tippen können.",
+  "{count} min": "{count} Min.",
+  "The server did not pair this phone.": "Der Server hat dieses Telefon nicht gekoppelt.",
+  "Phone control needs the Android app.": "Die Telefonsteuerung erfordert die Android-App.",
   "How other bots see it": "So sehen andere Bots ihn",
   "Share to": "Teilen mit",
   "{count} files": "{count} Dateien",
