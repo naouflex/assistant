@@ -24,6 +24,7 @@ import {
   createAuditLogReconciler,
   createBackgroundJobHandlers,
   createCloudAgentConnection,
+  createComputerHealthSweeper,
   createConnectorStack,
   createDeadJobPruner,
   createIdleComputerSweeper,
@@ -369,6 +370,7 @@ async function main() {
     reconcileAuditLog: createAuditLogReconciler(prisma, auditLogConfig()),
     reconcileHomeStorage: homeStorageSweeper(home),
     reconcileIdleComputers: createIdleComputerSweeper({ prisma, jobs }),
+    reconcileComputerHealth: createComputerHealthSweeper({ prisma, jobs, notifications }),
     reconcileDeadJobs: inMemoryJobs ? undefined : createDeadJobPruner(pool),
   });
   let stopHealth: (() => Promise<void>) | undefined;
