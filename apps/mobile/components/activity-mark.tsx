@@ -1,5 +1,5 @@
 import type { BotAvatarSet } from "@atlas/contracts";
-import { avatarPhotoDot } from "@atlas/core";
+import { avatarPhotoDot, formatWorkingLine, workingElapsedLabel } from "@atlas/core";
 import { MAX_FONT_SCALE, typeScale } from "@atlas/ui-tokens";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
@@ -32,6 +32,8 @@ export type ActivityMarkBot = {
 export const MARK_SIZE = 28;
 /** The mark row's height, with room for a tap's hop, and how long it takes to open. */
 export const ROW_HEIGHT = 40;
+/** Extra height when the work's subject sits on a second line. */
+const DETAIL_ROW_EXTRA = 16;
 export const ROW_MS = 260;
 /** The row opens quickly and slows into place. */
 const ROW_EASING = Easing.out(Easing.cubic);
@@ -65,13 +67,15 @@ export function ActivityMark({
   // A covered screen or a backgrounded app neither cycles members nor pulses dots.
   const onScreen = useAvatarOnScreen();
   const [index, setIndex] = useState(0);
-  const height = useSharedValue(reducedMotion ? ROW_HEIGHT : 0);
+  const line = label ? formatWorkingLine(label) : undefined;
+  const openHeight = line?.detail ? ROW_HEIGHT + DETAIL_ROW_EXTRA : ROW_HEIGHT;
+  const height = useSharedValue(reducedMotion ? openHeight : 0);
   const scale = useSharedValue(reducedMotion ? 1 : 0);
   const [arrived, setArrived] = useState(reducedMotion);
 
   useEffect(() => {
-    height.value = withTiming(ROW_HEIGHT, { duration: ROW_MS, easing: ROW_EASING });
-  }, [height]);
+    height.value = withTiming(openHeight, { duration: ROW_MS, easing: ROW_EASING });
+  }, [height, openHeight]);
   useEffect(() => {
     if (arrived || !atBottom) return;
     setArrived(true);
@@ -116,16 +120,61 @@ export function ActivityMark({
           )}
         </Animated.View>
       </Animated.View>
-      {label ? (
-        <Text
-          numberOfLines={1}
-          maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ flexShrink: 1, color: tokens.mutedForeground, ...typeScale.secondary }}
-        >
-          {label}
-        </Text>
+      {line?.action ? (
+        <View style={{ flex: 1, minWidth: 0, justifyContent: "center", gap: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+              style={{ flexShrink: 1, color: tokens.foreground, ...typeScale.secondary }}
+            >
+              {line.action}
+            </Text>
+            <WorkingElapsed key={`${line.action}\0${line.detail ?? ""}`} />
+          </View>
+          {line.detail ? (
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+              style={{
+                color: tokens.mutedForeground,
+                ...typeScale.caption,
+                ...(line.code ? { fontFamily: "monospace" } : null),
+              }}
+            >
+              {line.detail}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
     </Animated.View>
+  );
+}
+
+/** How long this step has been running. Remounting (a new step) starts the count over. */
+function WorkingElapsed() {
+  const tokens = useMobileTokens();
+  const [startedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(startedAt);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const elapsed = workingElapsedLabel(now - startedAt);
+  if (!elapsed) return null;
+  return (
+    <Text
+      maxFontSizeMultiplier={MAX_FONT_SCALE}
+      style={{
+        flexShrink: 0,
+        color: tokens.mutedForeground,
+        ...typeScale.caption,
+        fontVariant: ["tabular-nums"],
+      }}
+    >
+      {elapsed}
+    </Text>
   );
 }
 

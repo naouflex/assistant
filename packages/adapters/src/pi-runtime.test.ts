@@ -32,8 +32,8 @@ describe("describeToolActivity", () => {
   });
 
   it("names MCP server and remote tool", () => {
-    expect(describeToolActivity("mcp__brex__list_expenses", {})).toBe("Using brex: list_expenses");
-    expect(describeToolActivity("mcp__demo-oauth__greet", {})).toBe("Using demo-oauth: greet");
+    expect(describeToolActivity("mcp__brex__list_expenses", {})).toBe("Using brex: List expenses");
+    expect(describeToolActivity("mcp__demo-oauth__greet", {})).toBe("Using demo-oauth: Greet");
   });
 
   it("truncates long details and collapses whitespace", () => {
@@ -80,6 +80,6 @@ describe("describeToolActivity", () => {
   });
 
   it("falls back to the tool name", () => {
-    expect(describeToolActivity("destination_write", undefined)).toBe("Using destination_write");
+    expect(describeToolActivity("destination_write", undefined)).toBe("Using Destination write");
   });
 });
