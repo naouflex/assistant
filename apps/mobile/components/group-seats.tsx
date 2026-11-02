@@ -161,28 +161,35 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
       number,
       number,
     ];
-    const center = SHIPPED_BOT_AVATAR_CENTER;
+    const { inkY, eyeCenterX, eyeCenterY } = parsed.shapeFace;
     const eyeScale = units / 120;
     const eyeW = 7 * eyeScale;
     const eyeH = 24 * eyeScale;
     const eyeOffsetX = 10.5 * eyeScale;
+    const eyeY = eyeCenterY + inkY;
     return {
       box: [x, y, units],
-      outline: (paint) => <Path d={parsed.shapePath} {...paint} />,
+      outline: (paint) => (
+        <G translateY={inkY}>
+          <Path d={parsed.shapePath} {...paint} />
+        </G>
+      ),
       face: (
         <>
-          <Path d={parsed.shapePath} fill={parsed.color} />
+          <G translateY={inkY}>
+            <Path d={parsed.shapePath} fill={parsed.color} />
+          </G>
           <G fill={botEyeColor}>
             <Rect
-              x={center - eyeOffsetX - eyeW / 2}
-              y={center - 8 - eyeH / 2}
+              x={eyeCenterX - eyeOffsetX - eyeW / 2}
+              y={eyeY - eyeH / 2}
               width={eyeW}
               height={eyeH}
               rx={eyeW / 2}
             />
             <Rect
-              x={center + eyeOffsetX - eyeW / 2}
-              y={center - 8 - eyeH / 2}
+              x={eyeCenterX + eyeOffsetX - eyeW / 2}
+              y={eyeY - eyeH / 2}
               width={eyeW}
               height={eyeH}
               rx={eyeW / 2}

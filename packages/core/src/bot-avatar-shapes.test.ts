@@ -1,8 +1,11 @@
 import { BOT_AVATAR_SHAPE_COUNT } from "@atlas/contracts";
 import { describe, expect, it } from "vitest";
 import {
+  SHIPPED_BOT_AVATAR_SHAPE_FACE,
   SHIPPED_BOT_AVATAR_SHAPE_KEYS,
   SHIPPED_BOT_AVATAR_SHAPES,
+  shippedBotAvatarShapeFace,
+  shippedBotAvatarShapeInkY,
   shippedBotAvatarShapePath,
 } from "./bot-avatar-shapes.js";
 
@@ -11,10 +14,14 @@ describe("shipped bot avatar shapes", () => {
     expect(SHIPPED_BOT_AVATAR_SHAPE_KEYS).toHaveLength(BOT_AVATAR_SHAPE_COUNT);
     expect(shippedBotAvatarShapePath(3)).toBe(SHIPPED_BOT_AVATAR_SHAPES.tablet);
     expect(shippedBotAvatarShapePath(3)).not.toBe(shippedBotAvatarShapePath(0));
-    expect(shippedBotAvatarShapePath(12)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sun);
-    expect(shippedBotAvatarShapePath(22)).toBe(shippedBotAvatarShapePath(0));
+    expect(shippedBotAvatarShapePath(14)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sun);
+    expect(shippedBotAvatarShapePath(24)).toBe(shippedBotAvatarShapePath(0));
     expect(shippedBotAvatarShapePath(11)).toBe(SHIPPED_BOT_AVATAR_SHAPES.gem);
-    expect(shippedBotAvatarShapePath(21)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sparkle);
+    expect(shippedBotAvatarShapePath(23)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sparkle);
+    expect(shippedBotAvatarShapeFace(12).eyeCenterY).toBe(
+      SHIPPED_BOT_AVATAR_SHAPE_FACE.penis!.eyeCenterY,
+    );
+    expect(shippedBotAvatarShapeInkY(18)).toBe(SHIPPED_BOT_AVATAR_SHAPE_FACE.crown!.inkY);
   });
 
   it("emits path geometry only", () => {

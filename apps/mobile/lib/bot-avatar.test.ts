@@ -1,4 +1,8 @@
-import { resolvePersonaColorDef, shippedBotAvatarShapePath } from "@atlas/core";
+import {
+  resolvePersonaColorDef,
+  shippedBotAvatarShapeFace,
+  shippedBotAvatarShapePath,
+} from "@atlas/core";
 import { describe, expect, it } from "vitest";
 import { mobileBotAvatarPresentation } from "./bot-avatar.js";
 
@@ -10,6 +14,7 @@ describe("mobile bot avatar presentation", () => {
       color: "#8B5CF6",
       shapeIndex: 3,
       shapePath: shippedBotAvatarShapePath(3),
+      shapeFace: shippedBotAvatarShapeFace(3),
       eyeColor: resolvePersonaColorDef("preview", "#8B5CF6").eyeColor,
     });
     expect(presented.kind === "shape" && presented.shapePath).not.toBe(

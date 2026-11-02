@@ -1,6 +1,16 @@
 export const SHIPPED_BOT_AVATAR_VIEWBOX = "-15 -15 259 259";
 export const SHIPPED_BOT_AVATAR_CENTER = 114.2705;
 
+/** Default pill-eye vertical center in the shape viewBox (matches organic −8 nudge). */
+export const SHIPPED_BOT_AVATAR_DEFAULT_EYE_CENTER_Y = SHIPPED_BOT_AVATAR_CENTER - 8;
+
+export type ShippedBotAvatarShapeFace = {
+  /** Nudge filled body down (positive = down). Eyes use the same shift. */
+  inkY: number;
+  eyeCenterX: number;
+  eyeCenterY: number;
+};
+
 export const SHIPPED_BOT_AVATAR_SHAPES: Record<string, string> = {
   blob: "M228.541 114.228C228.541 130.133 225.184 145.994 218.738 160.534C212.674 174.217 203.904 186.669 193.065 196.988C155.933 232.34 99.497 238.596 55.5255 212.24C45.097 205.99 35.6851 198.072 27.7451 188.866C19.1926 178.953 12.3686 167.569 7.65781 155.351C2.60712 142.264 0 128.257 0 114.228C0 98.3219 3.35751 82.4611 9.80315 67.9215C15.8672 54.2382 24.6377 41.7862 35.4767 31.4668C72.6081 -3.88483 129.044 -10.1413 173.016 16.2153C183.444 22.4653 192.856 30.3829 200.796 39.5896C209.349 49.5018 216.173 60.8859 220.883 73.1037C225.934 86.1906 228.541 100.198 228.541 114.228Z",
   pebble:
@@ -22,6 +32,10 @@ export const SHIPPED_BOT_AVATAR_SHAPES: Record<string, string> = {
   barrel:
     "M114.27 18 C168 18 206 58 206 114.27 C206 170 168 210 114.27 210 C60 210 22 170 22 114.27 C22 58 60 18 114.27 18 Z",
   gem: "M114.27 12 L192 62 L192 166 L114.27 216 L36.54 166 L36.54 62 Z",
+  penis:
+    "M84 160 L84 70 A30 30 0 0 1 144 70 L144 160 A35 35 0 1 1 180 200 A70 70 0 0 1 48 200 A35 35 0 1 1 84 160 Z",
+  vagina:
+    "M114.27 25 C160 50 185 110 165 170 C145 210 125 210 114.27 210 C103.5 210 83.5 210 63.5 170 C43.5 110 68.5 50 114.27 25 Z",
   sun: "M114.27 14 L138 78 L195 43 L150 90 L214 114 L150 138 L195 185 L138 150 L114.27 214 L90 150 L33 185 L78 138 L14 114 L78 90 L33 43 L90 78 Z",
   moon: "M154 24 A95 95 0 1 1 54 184 A110 110 0 0 0 154 24 Z",
   rocket:
@@ -49,6 +63,8 @@ export const SHIPPED_BOT_AVATAR_SHAPE_KEYS = [
   "shield",
   "barrel",
   "gem",
+  "penis",
+  "vagina",
   "sun",
   "moon",
   "rocket",
@@ -61,13 +77,54 @@ export const SHIPPED_BOT_AVATAR_SHAPE_KEYS = [
   "sparkle",
 ] as const;
 
+type ShapeKey = (typeof SHIPPED_BOT_AVATAR_SHAPE_KEYS)[number];
+
+const DEFAULT_SHAPE_FACE: ShippedBotAvatarShapeFace = {
+  inkY: 0,
+  eyeCenterX: SHIPPED_BOT_AVATAR_CENTER,
+  eyeCenterY: SHIPPED_BOT_AVATAR_DEFAULT_EYE_CENTER_Y,
+};
+
+/** Per-shape ink nudge and eye placement in viewBox units. */
+export const SHIPPED_BOT_AVATAR_SHAPE_FACE: Partial<
+  Record<ShapeKey, Partial<ShippedBotAvatarShapeFace>>
+> = {
+  wedge: { inkY: 8, eyeCenterY: 122 },
+  teardrop: { eyeCenterY: 108 },
+  cloud: { eyeCenterY: 98 },
+  diamond: { eyeCenterY: 102 },
+  gem: { inkY: 6, eyeCenterY: 102 },
+  penis: { eyeCenterY: 102 },
+  vagina: { eyeCenterY: 72 },
+  sun: { inkY: 4, eyeCenterY: 100 },
+  moon: { inkY: 6, eyeCenterY: 102 },
+  rocket: { inkY: 8, eyeCenterY: 96 },
+  lightning: { inkY: 6, eyeCenterY: 96 },
+  crown: { inkY: 10, eyeCenterY: 118 },
+  ghost: { inkY: 8, eyeCenterY: 112 },
+  flame: { inkY: 10, eyeCenterY: 88 },
+  bell: { inkY: 12, eyeCenterY: 92 },
+  eye: { eyeCenterY: 106 },
+};
+
 const FALLBACK_SHAPE_PATH = SHIPPED_BOT_AVATAR_SHAPES.hex ?? "";
 
-export function shippedBotAvatarShapePath(shapeIndex: number): string {
+function normalizeShippedBotAvatarShapeIndex(shapeIndex: number): number {
   const count = SHIPPED_BOT_AVATAR_SHAPE_KEYS.length;
-  const normalized = Number.isFinite(shapeIndex)
-    ? ((Math.trunc(shapeIndex) % count) + count) % count
-    : 0;
-  const key = SHIPPED_BOT_AVATAR_SHAPE_KEYS[normalized] ?? "hex";
+  return Number.isFinite(shapeIndex) ? ((Math.trunc(shapeIndex) % count) + count) % count : 0;
+}
+
+export function shippedBotAvatarShapeFace(shapeIndex: number): ShippedBotAvatarShapeFace {
+  const key = SHIPPED_BOT_AVATAR_SHAPE_KEYS[normalizeShippedBotAvatarShapeIndex(shapeIndex)] ?? "hex";
+  const overrides = SHIPPED_BOT_AVATAR_SHAPE_FACE[key] ?? {};
+  return { ...DEFAULT_SHAPE_FACE, ...overrides };
+}
+
+export function shippedBotAvatarShapeInkY(shapeIndex: number): number {
+  return shippedBotAvatarShapeFace(shapeIndex).inkY;
+}
+
+export function shippedBotAvatarShapePath(shapeIndex: number): string {
+  const key = SHIPPED_BOT_AVATAR_SHAPE_KEYS[normalizeShippedBotAvatarShapeIndex(shapeIndex)] ?? "hex";
   return SHIPPED_BOT_AVATAR_SHAPES[key] ?? FALLBACK_SHAPE_PATH;
 }

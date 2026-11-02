@@ -1,6 +1,6 @@
 import type { BotAvatarSet } from "@atlas/contracts";
 import { parseBotAvatarValue } from "@atlas/contracts";
-import type { AvatarMotionMode, LogoAvatarActivity } from "@atlas/core";
+import type { AvatarMotionMode, LogoAvatarActivity, ShippedBotAvatarShapeFace } from "@atlas/core";
 import {
   AVATAR_LID_CLOSE,
   AVATAR_MOTION_UNITS,
@@ -312,6 +312,7 @@ function LegacyBotAvatar({
       <ShippedShapeAvatar
         color={parsed.color}
         shapePath={parsed.shapePath}
+        shapeFace={parsed.shapeFace}
         size={size}
         life={life}
         bodyStyle={bodyStyle}
@@ -388,22 +389,25 @@ type BodyStyle = ReturnType<typeof useAnimatedStyle>;
 function ShippedShapeAvatar({
   color,
   shapePath,
+  shapeFace,
   size,
   life,
   bodyStyle,
 }: {
   color: string;
   shapePath: string;
+  shapeFace: ShippedBotAvatarShapeFace;
   size: number;
   life: AvatarLife;
   bodyStyle: BodyStyle;
 }) {
-  const center = SHIPPED_BOT_AVATAR_CENTER;
+  const { inkY, eyeCenterX, eyeCenterY } = shapeFace;
   // Same 7×24 pills as OrganicAvatar, scaled into the shape view box.
   const eyeScale = SHAPE_UNITS / 120;
   const eyeW = 7 * eyeScale;
   const eyeH = 24 * eyeScale;
   const eyeOffsetX = 10.5 * eyeScale;
+  const eyeY = eyeCenterY + inkY;
   const eyeProps = (x: number) => () => {
     "worklet";
     const state = eyeState(life);
@@ -411,16 +415,18 @@ function ShippedShapeAvatar({
     const height = state.hidden ? 0 : eyeH * state.lid;
     return {
       x: x + state.x * motionScale,
-      y: center - 8 - height / 2 + state.y * motionScale,
+      y: eyeY - height / 2 + state.y * motionScale,
       height,
     };
   };
-  const leftEye = useAnimatedProps(eyeProps(center - eyeOffsetX - eyeW / 2));
-  const rightEye = useAnimatedProps(eyeProps(center + eyeOffsetX - eyeW / 2));
+  const leftEye = useAnimatedProps(eyeProps(eyeCenterX - eyeOffsetX - eyeW / 2));
+  const rightEye = useAnimatedProps(eyeProps(eyeCenterX + eyeOffsetX - eyeW / 2));
   return (
     <Animated.View style={[{ width: size, height: size }, bodyStyle]}>
       <Svg width={size} height={size} viewBox={SHIPPED_BOT_AVATAR_VIEWBOX}>
-        <Path d={shapePath} fill={color} />
+        <G translateY={inkY}>
+          <Path d={shapePath} fill={color} />
+        </G>
         <G>
           <AnimatedRect animatedProps={leftEye} width={eyeW} rx={eyeW / 2} fill={botEyeColor} />
           <AnimatedRect animatedProps={rightEye} width={eyeW} rx={eyeW / 2} fill={botEyeColor} />

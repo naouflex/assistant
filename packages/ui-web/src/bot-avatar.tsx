@@ -19,6 +19,7 @@ import {
   SHIPPED_BOT_AVATAR_SHAPES,
   SHIPPED_BOT_AVATAR_VIEWBOX,
   shippedBotAvatarGoggles,
+  shippedBotAvatarShapeFace,
   shippedBotAvatarShapePath,
 } from "@atlas/core";
 import { tokens } from "@atlas/ui-tokens";
@@ -233,7 +234,10 @@ function ShippedShapeAvatar({
 }) {
   const seed = avatarIdentitySeed(identity || color.hex || DEFAULT_BOT_AVATAR_COLOR);
   const path = shippedBotAvatarShapePath(shapeIndex);
+  const face = shippedBotAvatarShapeFace(shapeIndex);
   const pale = contrastRatio(color.hex, "#FFFFFF") < 1.15;
+  const shapeShift =
+    face.inkY === 0 ? undefined : `translate(0 ${face.inkY})`;
 
   return (
     <div
@@ -295,19 +299,23 @@ function ShippedShapeAvatar({
             <stop offset="100%" stopColor={color.dark} />
           </linearGradient>
         </defs>
-        {(["idle", "working"] as const).map((mode) => (
-          <path
-            key={mode}
-            className={`atlas-organic-avatar-body atlas-organic-avatar-body-${mode}`}
-            d={path}
-            fill={`url(#bot-ink-${id})`}
-            stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
-            strokeWidth={pale ? 6 : undefined}
-            style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
-          />
-        ))}
+        <g transform={shapeShift}>
+          {(["idle", "working"] as const).map((mode) => (
+            <path
+              key={mode}
+              className={`atlas-organic-avatar-body atlas-organic-avatar-body-${mode}`}
+              d={path}
+              fill={`url(#bot-ink-${id})`}
+              stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
+              strokeWidth={pale ? 6 : undefined}
+              style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
+            />
+          ))}
+        </g>
         {/* Same pill eyes as OrganicAvatar, scaled into the shape viewBox. */}
-        <g transform={`rotate(${(seed % 9) - 4} ${CENTER} ${CENTER})`}>
+        <g
+          transform={`rotate(${(seed % 9) - 4} ${face.eyeCenterX} ${face.eyeCenterY})${shapeShift ? ` ${shapeShift}` : ""}`}
+        >
           {(["idle", "working"] as const).map((mode) => (
             <g
               key={mode}
@@ -315,15 +323,15 @@ function ShippedShapeAvatar({
               fill={pale ? "#141414" : tokens.background}
             >
               <rect
-                x={CENTER - SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
-                y={CENTER - SHAPE_EYE_H / 2 - 8}
+                x={face.eyeCenterX - SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
+                y={face.eyeCenterY - SHAPE_EYE_H / 2}
                 width={SHAPE_EYE_W}
                 height={SHAPE_EYE_H}
                 rx={SHAPE_EYE_W / 2}
               />
               <rect
-                x={CENTER + SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
-                y={CENTER - SHAPE_EYE_H / 2 - 8}
+                x={face.eyeCenterX + SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
+                y={face.eyeCenterY - SHAPE_EYE_H / 2}
                 width={SHAPE_EYE_W}
                 height={SHAPE_EYE_H}
                 rx={SHAPE_EYE_W / 2}
