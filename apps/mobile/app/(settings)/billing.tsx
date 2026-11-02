@@ -4,10 +4,10 @@ import {
   MODEL_CREDIT_AMOUNTS,
   ModelCreditAmountSchema,
 } from "@atlas/contracts";
-import { MenuView } from "@expo/ui/community/menu";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, AppState, ScrollView, Share, StyleSheet } from "react-native";
+import { MenuView } from "../../components/app-menu";
 import { SettingsGroup, SettingsRow, useStackedSettings } from "../../components/settings-group";
 import { rpc } from "../../lib/api";
 import { currentPlan, openBillingPage, planEndsAt } from "../../lib/billing";

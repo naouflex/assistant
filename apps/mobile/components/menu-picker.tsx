@@ -1,9 +1,9 @@
-import { MenuView } from "@expo/ui/community/menu";
 import type { ReactElement } from "react";
 import { cloneElement, useState } from "react";
 import type { ViewProps } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { native, useMobileTokens, useResolvedAppearance, useThemedStyles } from "../lib/native";
+import { MenuView } from "./app-menu";
 import { NativeSymbol } from "./native-symbol";
 import { Chevron } from "./row-accessories";
 

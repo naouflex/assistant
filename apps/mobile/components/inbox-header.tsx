@@ -1,4 +1,3 @@
-import { MenuView } from "@expo/ui/community/menu";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
@@ -9,6 +8,7 @@ import { createMenuActions, isCreateAction } from "../lib/create-chooser";
 import { useI18n } from "../lib/i18n";
 import { useThemedStyles } from "../lib/native";
 import { AppMark } from "./app-mark";
+import { MenuView } from "./app-menu";
 import { CREATE_MENU_GAP, createHomeStyles } from "./home-styles";
 import { NativeSymbol } from "./native-symbol";
 

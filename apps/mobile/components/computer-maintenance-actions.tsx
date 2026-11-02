@@ -1,5 +1,4 @@
 import type { ComputerStatus } from "@atlas/contracts";
-import { MenuView } from "@expo/ui/community/menu";
 import type { NativeStackNavigationOptions } from "expo-router";
 import { useNavigation } from "expo-router";
 import { useLayoutEffect, useState } from "react";
@@ -10,6 +9,7 @@ import { useI18n } from "../lib/i18n";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 import { iosAtLeast } from "../lib/native-controls";
 import { errorText } from "../lib/user-error";
+import { MenuView } from "./app-menu";
 import { NativeSymbol } from "./native-symbol";
 
 type Action = "stop" | "recover" | "reset" | "update";

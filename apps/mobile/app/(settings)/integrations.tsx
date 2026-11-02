@@ -26,7 +26,6 @@ import {
   newClientId,
   OTHER_PLUGINS,
 } from "@atlas/core";
-import { MenuView } from "@expo/ui/community/menu";
 import type { NativeStackNavigationOptions } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -44,6 +43,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MenuView } from "../../components/app-menu";
 import { ConnectorIcon } from "../../components/connector-icon";
 import { MenuPicker } from "../../components/menu-picker";
 import { NativeActionButton } from "../../components/native-action-button";
