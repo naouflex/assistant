@@ -502,6 +502,16 @@ export const appContract = {
       .output(BotSchema),
     setComputer: oc.input(z.object({ botId: Id, mode: ComputerModeSchema })).output(BotSchema),
     archive: oc.input(botId).output(z.object({ ok: z.literal(true) })),
+    move: oc.input(z.object({ botId: Id, spaceId: Id })).output(
+      z.object({
+        ok: z.literal(true),
+        botIds: z.array(Id),
+        droppedMcpServers: z.number().int(),
+      }),
+    ),
+    setParent: oc
+      .input(z.object({ botId: Id, parentBotId: Id.nullable() }))
+      .output(z.object({ ok: z.literal(true) })),
     restore: oc.input(botId).output(z.object({ ok: z.literal(true) })),
     remove: oc
       .input(z.object({ botId: Id, deleteMemories: z.boolean().default(false) }))
