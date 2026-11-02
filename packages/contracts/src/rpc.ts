@@ -473,6 +473,18 @@ export const appContract = {
       .output(BotSchema),
     setComputer: oc.input(z.object({ botId: Id, mode: ComputerModeSchema })).output(BotSchema),
     archive: oc.input(botId).output(z.object({ ok: z.literal(true) })),
+    /** Moves the bot, and the bots under it, to another of the caller's spaces. */
+    move: oc.input(z.object({ botId: Id, spaceId: Id })).output(
+      z.object({
+        ok: z.literal(true),
+        botIds: z.array(Id),
+        droppedMcpServers: z.number().int(),
+      }),
+    ),
+    /** Sets or clears the bot's parent in its space. */
+    setParent: oc
+      .input(z.object({ botId: Id, parentBotId: Id.nullable() }))
+      .output(z.object({ ok: z.literal(true) })),
     restore: oc.input(botId).output(z.object({ ok: z.literal(true) })),
     remove: oc
       .input(z.object({ botId: Id, deleteMemories: z.boolean().default(false) }))
@@ -750,7 +762,9 @@ export const appContract = {
       .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
       .output(MemoryDreamSchema),
     acceptProposal: oc.input(z.object({ proposalId: Id })).output(MemoryDocumentSchema),
-    rejectProposal: oc.input(z.object({ proposalId: Id })).output(z.object({ ok: z.literal(true) })),
+    rejectProposal: oc
+      .input(z.object({ proposalId: Id }))
+      .output(z.object({ ok: z.literal(true) })),
   },
   routines: {
     listForMentions: oc

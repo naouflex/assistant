@@ -92,6 +92,7 @@ export const DELEGATION_TOOL_NAMES = new Set<string>([
   "spawn_bot",
   "archive_bot",
   "delete_bot",
+  "move_bot",
   "handoff_to_bot",
   "message_bot",
   ...FLEET_TOOL_NAMES,
@@ -1656,6 +1657,24 @@ export const builtinAgentTools: ConnectorTool[] = [
         },
       },
       required: ["confirm_name"],
+    },
+  },
+  {
+    name: "move_bot",
+    description:
+      "Move a bot of this space, with its chat, memory, skills, routines and child bots, to another space of this user; or change which bot is its parent. Identify the bot by bot_id or bot_name (exact). Pass exactly one of space_id/space_name, parent_bot_id/parent_bot_name, or clear_parent: true. The bot must be idle. Needs the owner's approval.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        bot_id: { type: "string" },
+        bot_name: { type: "string" },
+        space_id: { type: "string" },
+        space_name: { type: "string", description: "Exact name of the target space." },
+        parent_bot_id: { type: "string" },
+        parent_bot_name: { type: "string" },
+        clear_parent: { type: "boolean", description: "Make it a top-level bot." },
+      },
+      additionalProperties: false,
     },
   },
   {

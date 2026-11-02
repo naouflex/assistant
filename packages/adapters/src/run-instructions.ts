@@ -449,6 +449,11 @@ export function userTurnInstructions(parts: {
       "archive_bot",
       "archive_bot safely archives another bot in this space. Use it when the user asks to remove that bot or when it is finished and unused. The user can restore it or permanently delete it later. confirm_name must exactly match its name.",
     ),
+    offeredBuiltinClause(
+      parts.disabledBuiltinTools,
+      "move_bot",
+      "move_bot moves a bot to another space or changes its parent bot, after the owner approves.",
+    ),
     fleetClause(parts.offeredFleetTools),
     parts.pluginLine,
     parts.agentSkillsLine,

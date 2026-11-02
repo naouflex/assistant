@@ -12,6 +12,7 @@ import {
 import { getLogger } from "@atlas/logging";
 import { uncertainEffectResult } from "./approval-effect.js";
 import { archiveSpawnedBot, spawnBot } from "./child-bots.js";
+import { moveFleetBot } from "./fleet-move.js";
 import {
   createChildRoutine,
   createFleetGroup,
@@ -350,6 +351,11 @@ export const fleetTools: ToolHandlers = {
       ...(settings.data.voiceId !== undefined ? { voice: settings.data.voiceId ?? "default" } : {}),
       ...(argumentGiven(instructions) ? { instructions: "updated" } : {}),
     });
+  },
+  async move_bot(ctx, call) {
+    const { deps } = ctx;
+    const { args } = call;
+    return call.finish(await moveFleetBot(deps, ctx.fleetRun, args, ctx.context.signal));
   },
   archive_bot: archiveBot,
   delete_bot: archiveBot,

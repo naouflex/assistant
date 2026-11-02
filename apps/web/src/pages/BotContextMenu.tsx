@@ -10,6 +10,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import {
   Archive,
+  ArrowRightLeft,
   Bell,
   BellDot,
   Check,
@@ -17,6 +18,7 @@ import {
   Eraser,
   Folder,
   FolderPlus,
+  GitBranch,
   Pencil,
   Pin,
   Trash2,
@@ -38,6 +40,11 @@ export function BotContextMenu({
   onClear,
   onArchive,
   onDelete,
+  spaces,
+  onMoveToSpace,
+  parents,
+  parentBotId,
+  onSetParent,
 }: {
   bot: ChatMenuTarget;
   onClose: () => void;
@@ -52,6 +59,13 @@ export function BotContextMenu({
   onClear: () => void;
   onArchive: () => void;
   onDelete: () => void;
+  /** Other spaces the bot can move to; omitted for groups. */
+  spaces?: Array<{ id: string; name: string }>;
+  onMoveToSpace?: (spaceId: string) => void;
+  /** Bots that may become its parent; omitted for groups. */
+  parents?: Array<{ id: string; name: string }>;
+  parentBotId?: string | null;
+  onSetParent?: (parentBotId: string | null) => void;
 }) {
   const { t } = useLingui();
 
@@ -95,6 +109,41 @@ export function BotContextMenu({
           ) : null}
         </ContextMenuSubContent>
       </ContextMenuSub>
+      {spaces?.length && onMoveToSpace ? (
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <ArrowRightLeft />
+            {t`Move to space`}
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="max-h-[min(420px,calc(100vh-16px))] min-w-[180px] overflow-y-auto">
+            {spaces.map((space) => (
+              <ContextMenuItem key={space.id} onClick={() => onMoveToSpace(space.id)}>
+                <span dir="auto">{space.name}</span>
+              </ContextMenuItem>
+            ))}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+      ) : null}
+      {parents && onSetParent ? (
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <GitBranch />
+            {t`Change parent`}
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="max-h-[min(420px,calc(100vh-16px))] min-w-[180px] overflow-y-auto">
+            <ContextMenuItem onClick={() => onSetParent(null)}>
+              {t`None`}
+              {!parentBotId ? <Check className="ms-auto" /> : null}
+            </ContextMenuItem>
+            {parents.map((parent) => (
+              <ContextMenuItem key={parent.id} onClick={() => onSetParent(parent.id)}>
+                <span dir="auto">{parent.name}</span>
+                {parentBotId === parent.id ? <Check className="ms-auto" /> : null}
+              </ContextMenuItem>
+            ))}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+      ) : null}
       <ContextMenuItem onClick={onToggleUnread}>
         {bot.unread ? <BellDot /> : <Bell />}
         {bot.unread ? t`Mark as Read` : t`Mark as Unread`}

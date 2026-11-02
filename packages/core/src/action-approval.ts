@@ -48,6 +48,7 @@ const APPROVAL_REQUIRED_BUILTIN_TOOLS = new Set([
   "create_group",
   "update_group",
   "create_child_routine",
+  "move_bot",
 ]);
 const EXPLICIT_APPROVAL_BUILTIN_TOOLS = new Set([
   "respond_agent_connection",

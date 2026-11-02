@@ -13,6 +13,7 @@ export * from "./billing-emulator.js";
 export * from "./boat-sandbox.js";
 export * from "./bot-avatar.js";
 export * from "./bot-messages.js";
+export * from "./bot-move.js";
 export {
   forgetBotSecret,
   getBotSecretMetadata,

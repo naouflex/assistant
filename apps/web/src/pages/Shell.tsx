@@ -782,6 +782,7 @@ function SpaceShell() {
       <ChatContextMenu
         rpc={rpc}
         bot={contextBot}
+        bots={bots}
         group={contextGroup}
         sections={botSections}
         spaceId={bootstrapMe?.spaceId}
