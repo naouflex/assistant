@@ -1,11 +1,11 @@
 import type { BotSecretMetadata, VaultRevealed } from "@atlas/contracts";
 import { isIdentityConfirmationRequired } from "@atlas/contracts";
-import { MenuView } from "@expo/ui/community/menu";
 import * as Clipboard from "expo-clipboard";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MenuView } from "../../components/app-menu";
 import { useIdentityConfirmation } from "../../components/confirm-identity";
 import { LoadFailure } from "../../components/load-failure";
 import { SettingsGroup, SettingsRow } from "../../components/settings-group";

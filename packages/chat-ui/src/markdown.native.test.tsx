@@ -172,7 +172,15 @@ vi.mock("react-native", async () => {
       "backgroundColor",
     ]),
     TextInput: mockComponent("rn-text-input"),
-    Image: mockComponent("rn-image"),
+    Image: Object.assign(mockComponent("rn-image", ["width", "height"]), {
+      getSize: (
+        _uri: string,
+        success?: (width: number, height: number) => void,
+        _failure?: () => void,
+      ) => {
+        success?.(800, 2000);
+      },
+    }),
     Animated: {
       View: mockComponent("rn-animated-view"),
       createAnimatedComponent: (component: unknown) => component,
@@ -336,6 +344,9 @@ describe("native markdown tables", () => {
     expect(notes).toBeLessThan(400);
     expect(html.match(/data-font-weight="500"/g)).toHaveLength(3);
     expect(html).toContain('data-flex-shrink="0"');
+    // The library's cell style is `flex: 1`. Left in place, Android gives every column
+    // a zero basis and the text wraps one character at a time.
+    expect(html).not.toContain('data-flex="1"');
   });
 
   it("keeps an offscreen column from stretching the row, and lets it back in when scrolled", async () => {
@@ -1021,7 +1032,7 @@ describe("native markdown images", () => {
   it("shows a remote image as a placeholder that loads it in place on tap", async () => {
     const markdown = '![chart](https://images.example.test/tap.png?d=secret "Q3 revenue")';
     const html = renderToStaticMarkup(<ChatMarkdown>{markdown}</ChatMarkdown>);
-    expect(html).not.toContain("<rn-stub");
+    expect(html).not.toContain("markdown-picture");
     expect(html).toContain('data-accessibility-role="button"');
     expect(html).toContain('accessibilityLabel="chart, images.example.test"');
     expect(html).toContain('accessibilityHint="Q3 revenue"');
@@ -1036,11 +1047,15 @@ describe("native markdown images", () => {
     await act(async () => {
       root.render(<ChatMarkdown>{markdown}</ChatMarkdown>);
     });
-    expect(container.querySelector("rn-stub")).toBeNull();
+    expect(
+      container.querySelector("[testID='markdown-picture'], [testid='markdown-picture']"),
+    ).toBeNull();
     await act(async () => {
       container.querySelector<HTMLElement>("[data-accessibility-role='button']")?.click();
     });
-    expect(container.querySelector("rn-stub")).not.toBeNull();
+    expect(
+      container.querySelector("[testID='markdown-picture'], [testid='markdown-picture']"),
+    ).not.toBeNull();
     expect(container.querySelector("[data-accessibility-role='button']")).toBeNull();
     expect(linking.openURL).not.toHaveBeenCalled();
     await act(async () => {
@@ -1049,7 +1064,9 @@ describe("native markdown images", () => {
     container.remove();
 
     // The reader's choice holds for the session, so a remounted bubble keeps the image.
-    expect(renderToStaticMarkup(<ChatMarkdown>{markdown}</ChatMarkdown>)).toContain("<rn-stub");
+    expect(renderToStaticMarkup(<ChatMarkdown>{markdown}</ChatMarkdown>)).toContain(
+      "markdown-picture",
+    );
   });
 
   it("shows a placeholder when a tapped image is replaced with another url", async () => {
@@ -1075,12 +1092,16 @@ describe("native markdown images", () => {
     await act(async () => {
       container.querySelector<HTMLElement>("[data-accessibility-role='button']")?.click();
     });
-    expect(container.querySelector("rn-stub")).not.toBeNull();
+    expect(
+      container.querySelector("[testID='markdown-picture'], [testid='markdown-picture']"),
+    ).not.toBeNull();
 
     await act(async () => {
       render("https://images.example.test/native-second.png");
     });
-    expect(container.querySelector("rn-stub")).toBeNull();
+    expect(
+      container.querySelector("[testID='markdown-picture'], [testid='markdown-picture']"),
+    ).toBeNull();
     expect(container.querySelector("[data-accessibility-role='button']")).not.toBeNull();
 
     await act(async () => {
@@ -1099,7 +1120,7 @@ describe("native markdown images", () => {
         </ChatMarkdown>
       </RemoteImagesContext.Provider>,
     );
-    expect(html.match(/<rn-stub/g)).toHaveLength(2);
+    expect(html.match(/markdown-picture/g)).toHaveLength(2);
     expect(html).toContain('data-accessibility-role="link"');
     expect(html).not.toContain('data-accessibility-role="button"');
   });
@@ -1110,7 +1131,7 @@ describe("native markdown images", () => {
         {"![logo](/api/v1/p.gif) ![](example.test/p.gif) [x](javascript:alert(1))"}
       </ChatMarkdown>,
     );
-    expect(html).not.toContain("<rn-stub");
+    expect(html).not.toContain("markdown-picture");
     expect(html).not.toContain("data-accessibility-role");
     expect(html).not.toContain("data-text-decoration-line");
     expect(html).not.toContain("javascript:");
@@ -1123,7 +1144,7 @@ describe("native markdown images", () => {
     const markdown =
       "See [![build](https://badge.example.test/tap-linked.svg)](https://ci.example.test/tap-linked) now";
     const html = renderToStaticMarkup(<ChatMarkdown>{markdown}</ChatMarkdown>);
-    expect(html).not.toContain("<rn-stub");
+    expect(html).not.toContain("markdown-picture");
     expect(html).not.toContain("tap-linked.svg");
     const holder = document.createElement("div");
     holder.innerHTML = html;
@@ -1147,7 +1168,9 @@ describe("native markdown images", () => {
     await act(async () => {
       root.render(<ChatMarkdown>{markdown}</ChatMarkdown>);
     });
-    expect(container.querySelector("rn-stub")).toBeNull();
+    expect(
+      container.querySelector("[testID='markdown-picture'], [testid='markdown-picture']"),
+    ).toBeNull();
 
     const liveLink = container.querySelector<HTMLElement>("[data-accessibility-role='link']");
     await act(async () => {
@@ -1160,7 +1183,9 @@ describe("native markdown images", () => {
     await vi.waitFor(() => {
       expect(linking.openURL).toHaveBeenCalledWith("https://ci.example.test/tap-linked");
     });
-    expect(container.querySelector("rn-stub")).toBeNull();
+    expect(
+      container.querySelector("[testID='markdown-picture'], [testid='markdown-picture']"),
+    ).toBeNull();
 
     linking.openURL.mockClear();
     const liveButton = container.querySelector<HTMLElement>("[data-accessibility-role='button']");
@@ -1168,7 +1193,9 @@ describe("native markdown images", () => {
     await act(async () => {
       liveButton?.click();
     });
-    const image = container.querySelector("rn-stub");
+    const image = container.querySelector(
+      "[testID='markdown-picture'], [testid='markdown-picture']",
+    );
     expect(image).not.toBeNull();
     expect(image?.closest("[data-accessibility-role='link']")).not.toBeNull();
     expect(container.querySelector("[data-accessibility-role='button']")).toBeNull();
@@ -1190,7 +1217,7 @@ describe("native markdown images", () => {
         </ChatMarkdown>
       </RemoteImagesContext.Provider>,
     );
-    expect(html).not.toContain("<rn-stub");
+    expect(html).not.toContain("markdown-picture");
     expect(html).not.toContain("example.test");
     expect(html).not.toContain("javascript:");
     expect(html).toContain(`data-color="${darkTokens.foreground}">Open</rn-text>`);
@@ -1205,7 +1232,7 @@ describe("native markdown images", () => {
         }
       </ChatMarkdown>,
     );
-    expect(html).not.toContain("<rn-stub");
+    expect(html).not.toContain("markdown-picture");
     expect(html).not.toContain("<rn-pressable");
     expect(html).not.toContain("data-accessibility-role");
     expect(html).not.toContain("data-text-decoration-line");
@@ -1244,9 +1271,32 @@ describe("native markdown images", () => {
     const html = renderToStaticMarkup(
       <ChatMarkdown>{"![dot](data:image/png;base64,iVBORw0KGgo=)"}</ChatMarkdown>,
     );
-    // The image component is a stub under test; a link would mean it fell back.
-    expect(html).toContain("<rn-stub");
+    // A picture element means it rendered; a link would mean it fell back to text.
+    expect(html).toContain("markdown-picture");
     expect(html).not.toContain("data-accessibility-role");
+    expect(html).not.toContain('data-flex="1"');
+  });
+
+  it("fits a picture to the bubble and caps a tall one", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<ChatMarkdown>{"![shot](data:image/png;base64,iVBORw0KGgo=)"}</ChatMarkdown>);
+    });
+    await act(async () => {
+      tableEvents.onLayout?.({ nativeEvent: { layout: { width: 300, height: 40 } } });
+    });
+    // 800×2000 inside a 300pt bubble, capped at 360pt tall: 144×360.
+    const html = container.innerHTML;
+    expect(html).toContain('data-width="144"');
+    expect(html).toContain('data-height="360"');
+    expect(html).not.toContain('data-flex="1"');
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
   });
 });
 

@@ -38,7 +38,10 @@ vi.mock("react-native-svg", () => {
     G: element("G"),
     Image: element("Image"),
     Mask: element("Mask"),
+    Line: element("Line"),
     Path: element("Path"),
+    Polygon: element("Polygon"),
+    Polyline: element("Polyline"),
     Rect: element("Rect"),
     Text: element("Text"),
   };

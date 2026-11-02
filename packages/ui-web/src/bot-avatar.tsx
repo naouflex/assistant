@@ -1,9 +1,10 @@
 import type { BotAvatarSet } from "@atlas/contracts";
 import { parseBotAvatarValue } from "@atlas/contracts";
-import type { BotColorDef, LogoAvatarActivity } from "@atlas/core";
+import type { AvatarWordIconNode, BotColorDef, LogoAvatarActivity } from "@atlas/core";
 import {
   ACTIVE_RUN_STATUSES,
   avatarIdentitySeed,
+  avatarWordIcon,
   avatarWordShapePath,
   BOT_AVATAR_COLORS,
   BOT_COLOR_LIST,
@@ -153,12 +154,22 @@ export const BotAvatar = memo(function BotAvatar({
   }
 
   if (parsed.word) {
+    const icon = avatarWordIcon(parsed.word);
     return (
       <div
         className={cn("atlas-bot-avatar relative inline-flex shrink-0", className)}
         style={{ width: size, height: size }}
       >
-        <OrganicAvatar color={colorDef.hex} word={parsed.word} size={size} isWorking={isWorking} />
+        {icon ? (
+          <WordIcon color={colorDef.hex} nodes={icon} size={size} isWorking={isWorking} />
+        ) : (
+          <OrganicAvatar
+            color={colorDef.hex}
+            word={parsed.word}
+            size={size}
+            isWorking={isWorking}
+          />
+        )}
         {isWorking ? <WorkingRing size={size} /> : null}
       </div>
     );
@@ -352,6 +363,65 @@ function WorkingRing({ size }: { size: number }) {
         strokeLinecap="round"
         strokeDasharray="45 80"
       />
+    </svg>
+  );
+}
+
+function WordIcon({
+  color,
+  nodes,
+  size,
+  isWorking,
+}: {
+  color: string;
+  nodes: readonly AvatarWordIconNode[];
+  size: number;
+  isWorking: boolean;
+}) {
+  const ink = contrastRatio(color, "#FFFFFF") < 1.15 ? "#141414" : color;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="atlas-word-icon overflow-visible select-none"
+      fill="none"
+      stroke={ink}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      data-working={isWorking}
+      style={{ width: size, height: size, flex: "none" }}
+    >
+      {nodes.map((node, index) => {
+        const key = `${node[0]}-${index}`;
+        switch (node[0]) {
+          case "path":
+            return <path key={key} d={node[1]} />;
+          case "circle":
+            return <circle key={key} cx={node[1]} cy={node[2]} r={node[3]} />;
+          case "ellipse":
+            return <ellipse key={key} cx={node[1]} cy={node[2]} rx={node[3]} ry={node[4]} />;
+          case "line":
+            return <line key={key} x1={node[1]} y1={node[2]} x2={node[3]} y2={node[4]} />;
+          case "rect":
+            return (
+              <rect
+                key={key}
+                x={node[1]}
+                y={node[2]}
+                width={node[3]}
+                height={node[4]}
+                rx={node[5]}
+              />
+            );
+          case "polyline":
+            return <polyline key={key} points={node[1]} />;
+          case "polygon":
+            return <polygon key={key} points={node[1]} />;
+          default:
+            return null;
+        }
+      })}
     </svg>
   );
 }

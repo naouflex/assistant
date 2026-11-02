@@ -22,9 +22,13 @@ const CAPPED = Symbol.for("atlas.cappedText");
 export function capTextScaling(reactNative: typeof ReactNative = require("react-native")) {
   const { Text, TextInput } = reactNative;
   if (CAPPED in Text) return;
+  // Android draws extra padding inside each line and clips chat text, menus and table cells.
+  const androidText =
+    reactNative.Platform?.OS === "android" ? { includeFontPadding: false as const } : null;
   const CappedText = Object.assign(
     (props: TextProps) =>
       createElement(Text, {
+        ...androidText,
         ...props,
         maxFontSizeMultiplier: props.maxFontSizeMultiplier ?? MAX_FONT_SCALE,
       }),
@@ -33,6 +37,7 @@ export function capTextScaling(reactNative: typeof ReactNative = require("react-
   const CappedTextInput = Object.assign(
     (props: TextInputProps) =>
       createElement(TextInput, {
+        ...androidText,
         ...props,
         maxFontSizeMultiplier: props.maxFontSizeMultiplier ?? MAX_FONT_SCALE,
       }),

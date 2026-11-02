@@ -1,10 +1,10 @@
 import { typeScale } from "@atlas/ui-tokens";
-import { MenuView } from "@expo/ui/community/menu";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import type { MobileBot, MobileGroup } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { native, useResolvedAppearance } from "../lib/native";
 import { useSideInsets } from "../lib/side-insets";
+import { MenuView } from "./app-menu";
 import { NativeSymbol } from "./native-symbol";
 import { Chevron } from "./row-accessories";
 

@@ -37,6 +37,7 @@ import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
 import { useI18n } from "../lib/i18n";
 import { mobileLogoAvatarActivity } from "../lib/logo-avatar-activity";
 import { useMobileTokens } from "../lib/native";
+import { AvatarWordIcon } from "./avatar-word-icon";
 import { LogoAvatar } from "./logo-avatar";
 import { NativeSymbol } from "./native-symbol";
 
@@ -303,6 +304,12 @@ function LegacyBotAvatar({
         style={{ width: size, height: size }}
         resizeMode="contain"
       />
+    ) : parsed.kind === "word" && parsed.icon ? (
+      <Animated.View style={[{ width: size, height: size }, bodyStyle]}>
+        <Svg width={size} height={size} viewBox="0 0 24 24">
+          <AvatarWordIcon nodes={parsed.icon} color={parsed.color} />
+        </Svg>
+      </Animated.View>
     ) : parsed.kind === "word" ? (
       <OrganicAvatar
         color={parsed.color}

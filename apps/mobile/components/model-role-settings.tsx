@@ -21,7 +21,6 @@ import {
 } from "@atlas/contracts";
 import { createModelRoleSettings, modelRoleListPatch } from "@atlas/core";
 import type { MenuAction } from "@expo/ui/community/menu";
-import { MenuView } from "@expo/ui/community/menu";
 import type { Href } from "expo-router";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
@@ -33,6 +32,7 @@ import { useI18n } from "../lib/i18n";
 import type { ModelPickerRequest } from "../lib/model-picker-selection";
 import { native, useResolvedAppearance, useThemedStyles } from "../lib/native";
 import { thinkingLevelLabel } from "../lib/thinking-level";
+import { MenuView } from "./app-menu";
 import { SettingsGroup, SettingsRow } from "./settings-group";
 
 export type ConnectableProvider = { id: string; name: string; baseUrl?: string };

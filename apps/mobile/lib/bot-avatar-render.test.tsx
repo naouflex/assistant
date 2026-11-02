@@ -120,9 +120,13 @@ vi.mock("react-native-svg", () => {
       );
   return {
     default: element("svg"),
+    Circle: element("circle"),
     Ellipse: element("ellipse"),
     G: element("g"),
+    Line: element("line"),
     Path: element("path"),
+    Polygon: element("polygon"),
+    Polyline: element("polyline"),
     Rect: element("rect"),
     Defs: element("defs"),
     ClipPath: element("clipPath"),
@@ -317,6 +321,12 @@ describe("BotAvatar", () => {
     const view = render("data:image/png;base64,abc");
     expect(view.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,abc");
     expect(bodies(view)).toEqual([]);
+  });
+
+  it("draws an anchor when the word is anchor", () => {
+    const view = render(botAvatarWordValue("#8B5CF6", "anchor")!);
+    expect(bodies(view).some((path) => path?.includes("M12 6v16"))).toBe(true);
+    expect(view.querySelectorAll("rect")).toHaveLength(0);
   });
 
   it("draws a shape generated from a word", () => {

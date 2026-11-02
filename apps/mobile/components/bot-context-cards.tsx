@@ -14,6 +14,7 @@ export function BotContextCards({ botId }: { botId: string }) {
   const tokens = useMobileTokens();
   const [work, setWork] = useState<ScratchpadItem[]>([]);
   const [docs, setDocs] = useState<MemoryDocument[]>([]);
+  const [memoryReady, setMemoryReady] = useState(false);
   const [proposals, setProposals] = useState<MemoryProposal[]>([]);
   const [dream, setDream] = useState<MemoryDream | null>(null);
   const [reviewId, setReviewId] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export function BotContextCards({ botId }: { botId: string }) {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let current = true;
+    setMemoryReady(false);
     void rpc("scratchpad/list", { botId })
       .then((items) => {
         if (current) setWork(items);
@@ -33,7 +35,9 @@ export function BotContextCards({ botId }: { botId: string }) {
       });
     void rpc("memory/list", { botId, scope: "bot" })
       .then((documents) => {
-        if (current) setDocs(documents.filter((doc) => !isEmptyBotMemory(doc)));
+        if (!current) return;
+        setDocs(documents.filter((doc) => !isEmptyBotMemory(doc)));
+        setMemoryReady(true);
       })
       .catch((err) => {
         if (current) setError(errorText(err));
@@ -162,7 +166,7 @@ export function BotContextCards({ botId }: { botId: string }) {
           </View>
         </View>
       ) : null}
-      {docs.length || proposals.length ? (
+      {memoryReady || proposals.length || reviewing ? (
         <View style={{ marginTop: 24 }}>
           <Text accessibilityRole="header" style={[heading, { marginBottom: 8 }]}>
             {t("Memory")}

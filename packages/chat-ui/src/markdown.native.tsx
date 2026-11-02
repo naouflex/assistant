@@ -7,13 +7,12 @@ import type {
 } from "@ronradtke/react-native-markdown-display";
 import Markdown, {
   createMarkdownIt,
-  FitImage,
   renderRules as libraryRenderRules,
   MarkdownStream,
 } from "@ronradtke/react-native-markdown-display";
 import { Highlight, themes } from "prism-react-renderer";
 import type { ComponentType, ReactNode } from "react";
-import { createContext, memo, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -147,6 +146,9 @@ function markdownStyles(palette: ColorTokens) {
     body: {
       color: palette.foreground,
       ...typeScale.body,
+      // Android adds extra padding inside the line box and clips the glyphs when the
+      // line height is tight.
+      includeFontPadding: false,
       width: "100%",
       minWidth: 0,
       flexShrink: 1,
@@ -187,6 +189,7 @@ function markdownStyles(palette: ColorTokens) {
     link: {
       color: palette.link,
       textDecorationLine: "underline",
+      // The library's own link style pulls the next line up by 4pt and overlaps it.
       marginBottom: 0,
     },
     // Inline code is set in the monospaced font alone, without a chip around it.
@@ -211,14 +214,17 @@ function markdownStyles(palette: ColorTokens) {
     fence: {
       backgroundColor: palette.secondary,
       borderColor: palette.border,
+      overflow: "hidden",
       ...codeBox,
+    },
+    fence_header: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "transparent",
+      borderBottomColor: palette.border,
     },
     fence_code: {
       backgroundColor: "transparent",
-    },
-    fence_header: {
-      backgroundColor: "transparent",
-      borderBottomColor: palette.border,
     },
     fence_token: codeText,
     fence_language_label: {
@@ -230,6 +236,7 @@ function markdownStyles(palette: ColorTokens) {
       color: palette.mutedForeground,
       borderLeftColor: palette.faintForeground,
       borderLeftWidth: 3,
+      paddingLeft: 10,
       gap: BLOCK_GAP,
     },
     bullet_list_icon: {
@@ -239,7 +246,11 @@ function markdownStyles(palette: ColorTokens) {
       borderColor: palette.input,
       borderWidth: StyleSheet.hairlineWidth,
     },
+    // The library's row and cell styles set `flex: 1`. On Android that basis wins over
+    // the column width and squeezes every cell to a few characters.
     tr: {
+      flexDirection: "row",
+      alignItems: "stretch",
       borderColor: palette.input,
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
@@ -247,10 +258,27 @@ function markdownStyles(palette: ColorTokens) {
       ...typeScale.caption,
       color: palette.foreground,
       fontWeight: fontWeight.medium,
+      includeFontPadding: false,
+      padding: TABLE_CELL_PADDING,
+      flexGrow: 0,
+      flexShrink: 0,
     },
     td: {
       ...typeScale.caption,
       color: palette.mutedForeground,
+      includeFontPadding: false,
+      padding: TABLE_CELL_PADDING,
+      flexGrow: 0,
+      flexShrink: 0,
+    },
+    // A linked picture must not grow on a zero basis, or it collapses inside the bubble.
+    blocklink: {
+      width: "100%",
+      maxWidth: "100%",
+    },
+    image: {
+      width: "100%",
+      maxWidth: "100%",
     },
     bullet_list: {
       gap: BLOCK_GAP,
@@ -546,7 +574,9 @@ function columnContributesHeight(
   const start = columnOffset(widths, index);
   const width = widths[index] ?? 0;
   if (width <= 0) return false;
-  if (viewportWidth <= 0) return start === 0;
+  // Before the bubble reports a width, keep every column at full height. Clipping now
+  // leaves only the first column readable and cuts the rest down to one line.
+  if (viewportWidth <= 0) return true;
   const overlap = Math.min(start + width, scrollX + viewportWidth) - Math.max(start, scrollX);
   return overlap > TABLE_VISIBLE_EDGE;
 }
@@ -1006,6 +1036,74 @@ function listItemRule(
 
 // Keep links as Text so they stay inside textgroup; Pressable (a View) is laid out
 // outside the text flow and collapses the bubble height, overlapping later messages.
+const MARKDOWN_PICTURE_MAX_HEIGHT = 360;
+
+/** Scale a picture down so it fits the bubble, and never scale a small one up. */
+function fittedPictureSize(natural: { width: number; height: number }, maxWidth: number) {
+  if (natural.width <= 0 || natural.height <= 0 || maxWidth <= 0) return null;
+  const scale = Math.min(maxWidth / natural.width, MARKDOWN_PICTURE_MAX_HEIGHT / natural.height, 1);
+  return {
+    width: Math.max(1, Math.round(natural.width * scale)),
+    height: Math.max(1, Math.round(natural.height * scale)),
+  };
+}
+
+/**
+ * A chat picture at its own aspect ratio. The markdown image view grows with `flex: 1`
+ * and reports a height of 0 until a remote measurement arrives, so pictures either
+ * vanish or stretch over the next message.
+ */
+function MarkdownPicture({ src, alt }: { src: string; alt?: string }) {
+  const [frameWidth, setFrameWidth] = useState(0);
+  const [natural, setNatural] = useState<{ width: number; height: number } | null>(null);
+  const rememberSize = useCallback((width: number, height: number) => {
+    if (width <= 0 || height <= 0) return;
+    setNatural((current) =>
+      current?.width === width && current.height === height ? current : { width, height },
+    );
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setNatural(null);
+    Image.getSize(
+      src,
+      (width, height) => {
+        if (!cancelled) rememberSize(width, height);
+      },
+      () => undefined,
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [rememberSize, src]);
+  const fitted = natural ? fittedPictureSize(natural, frameWidth) : null;
+  return (
+    <View
+      testID="markdown-picture"
+      collapsable={false}
+      style={layout.pictureFrame}
+      onLayout={(event) => {
+        const next = Math.round(event.nativeEvent.layout.width);
+        setFrameWidth((current) => (current === next ? current : next));
+      }}
+    >
+      <View style={fitted ? [layout.pictureClip, fitted] : layout.picturePending}>
+        <Image
+          accessible={Boolean(alt)}
+          accessibilityLabel={alt}
+          resizeMode="contain"
+          source={{ uri: src }}
+          style={layout.pictureFill}
+          onLoad={(event) => {
+            const { width, height } = event.nativeEvent.source;
+            rememberSize(width, height);
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
 const renderRules: RenderRules = {
   list_item: listItemRule,
   fence: (node, _children, _parents, styleMap, _onCopyCode, colorScheme) => {
@@ -1087,17 +1185,7 @@ const renderRules: RenderRules = {
     const src = node.attributes.src ?? "";
     const alt = node.attributes.alt;
     if (inlineMarkdownImageSrc(src)) {
-      return (
-        <FitImage
-          key={node.key}
-          // Embedded data has nothing to load; the spinner would stay over the image.
-          indicator={false}
-          style={styleMap._VIEW_SAFE_image}
-          source={{ uri: src }}
-          accessible={Boolean(alt)}
-          accessibilityLabel={alt}
-        />
-      );
+      return <MarkdownPicture key={node.key} src={src} alt={alt} />;
     }
     const linkParent = enclosingLink(parents);
     const linkOpens = Boolean(linkParent && sanitizeMarkdownUrl(linkParent.attributes.href ?? ""));
@@ -1222,15 +1310,7 @@ function LinkedRemoteImage({
   if (remoteImageRenders(image.href, loadRemote, false)) {
     return (
       <NativeLink block href={href} style={styleMap.blocklink}>
-        <View style={styleMap.image}>
-          <FitImage
-            indicator
-            style={styleMap._VIEW_SAFE_image}
-            source={{ uri: image.href }}
-            accessible={Boolean(alt)}
-            accessibilityLabel={alt}
-          />
-        </View>
+        <MarkdownPicture src={image.href} alt={alt} />
       </NativeLink>
     );
   }
@@ -1275,15 +1355,7 @@ export function RemoteMarkdownImage({
   // Bumping this redraws after a tap. Whether the image shows is read from the current URL.
   const [, setRevision] = useState(0);
   if (remoteImageRenders(image.href, loadRemote, rejectedLink)) {
-    return (
-      <FitImage
-        indicator
-        style={styleMap._VIEW_SAFE_image}
-        source={{ uri: image.href }}
-        accessible={Boolean(alt)}
-        accessibilityLabel={alt}
-      />
-    );
+    return <MarkdownPicture src={image.href} alt={alt} />;
   }
   if (rejectedLink || insideLink) return <Text style={labelStyle}>{alt || image.host}</Text>;
   return (
@@ -1395,6 +1467,9 @@ export const ChatMarkdown = memo(function ChatMarkdown({
   const sharedProps = {
     colorScheme,
     markdownit: markdownParser,
+    // Library defaults (`flex: 1` on cells and pictures, a negative link margin,
+    // headings laid out as rows) survive a merge and break Android layout.
+    mergeStyle: false,
     style: styles,
     rules: renderRules,
     onLinkPress: (url: string) => {
@@ -1504,6 +1579,25 @@ const layout = StyleSheet.create({
     justifyContent: "center",
   },
   linkIcon: {
+    width: "100%",
+    height: "100%",
+  },
+  pictureFrame: {
+    width: "100%",
+    maxWidth: "100%",
+    alignItems: "flex-start",
+  },
+  pictureClip: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  picturePending: {
+    width: "100%",
+    height: 44,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  pictureFill: {
     width: "100%",
     height: "100%",
   },

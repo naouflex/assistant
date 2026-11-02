@@ -1,6 +1,5 @@
 import type { AccountSecurity, NotificationPreferences, UsageSummary } from "@atlas/contracts";
 import { accountDisplay, displayName } from "@atlas/core";
-import { MenuView } from "@expo/ui/community/menu";
 import * as Notifications from "expo-notifications";
 import type { Href } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -21,6 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppMark } from "../../components/app-mark";
+import { MenuView } from "../../components/app-menu";
 import { ApprovalModeRow, ApprovalRulesRow } from "../../components/approval-settings-rows";
 import { NameDialog } from "../../components/name-dialog";
 import { NativeActionButton } from "../../components/native-action-button";

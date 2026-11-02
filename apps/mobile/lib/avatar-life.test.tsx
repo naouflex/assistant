@@ -101,6 +101,7 @@ vi.mock("react-native", () => ({
   Pressable: ({ children, onPress }: { children?: ReactNode; onPress?: () => void }) =>
     createElement("button", { type: "button", onClick: onPress }, children),
   Image: () => null,
+  Text: ({ children }: { children?: ReactNode }) => createElement("span", null, children),
   AppState: { currentState: "active", addEventListener: () => ({ remove: () => undefined }) },
 }));
 vi.mock("../components/native-symbol", () => ({ NativeSymbol: () => null }));
@@ -168,13 +169,18 @@ describe("avatar motion on mobile", () => {
     expect(workingDot()).not.toBeNull();
   });
 
-  it("draws the working dot as a green disc ringed in the surface colour, sized for the avatar", () => {
+  it("draws the working dot in the bot's color, ringed in the surface colour, sized for the avatar", () => {
     render(<BotAvatar color={SHAPE} identity="bot-1" size={62} status="running" motion="lazy" />);
-    expect(workingDot()?.getAttribute("data-bg")).toBe("#3FA266");
+    expect(workingDot()?.getAttribute("data-bg")).toBe("#2A92FE");
     expect(workingDot()?.getAttribute("data-ring")).toBe("#FFF");
     expect(Number(workingDot()?.getAttribute("data-width"))).toBeCloseTo(12 + 2 * 62 * 0.046);
-    render(<BotAvatar color={SHAPE} identity="bot-1" size={28} status="running" />);
+    render(<BotAvatar color="#FF781C" identity="bot-1" size={28} status="running" />);
+    expect(workingDot()?.getAttribute("data-bg")).toBe("#FF781C");
     expect(Number(workingDot()?.getAttribute("data-width"))).toBeCloseTo(10 + 2 * 28 * 0.046);
+    render(
+      <BotAvatar color="data:image/png;base64,AAAA" identity="bot-p" size={28} status="running" />,
+    );
+    expect(workingDot()?.getAttribute("data-bg")).toBe("#3FA266");
   });
 
   it("rests a bot waiting on you: no motion, no working dot", () => {
@@ -360,6 +366,16 @@ describe("activity mark", () => {
     { id: "bot-b", color: "#FF781C", status: "running" },
   ];
   const grewIn = () => motion.springs.some(([, config]) => config === MARK_SPRING);
+
+  it("puts the work's subject on its own line", () => {
+    render(
+      <ActivityMark bots={bots.slice(0, 1)} atBottom label="Searching the web: injury news" />,
+    );
+    const text = container.textContent ?? "";
+    expect(text).toContain("Searching the web");
+    expect(text).toContain("injury news");
+    expect(text).not.toContain("Searching the web: injury news");
+  });
 
   it("opens its row and grows in only once the chat is at the newest message", () => {
     render(<ActivityMark bots={bots.slice(0, 1)} atBottom={false} />);

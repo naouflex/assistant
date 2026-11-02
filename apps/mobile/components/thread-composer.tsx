@@ -22,7 +22,6 @@ import {
 } from "@atlas/core";
 import { MAX_FONT_SCALE } from "@atlas/ui-tokens";
 import type { MenuAction } from "@expo/ui/community/menu";
-import { MenuView } from "@expo/ui/community/menu";
 import type { Ref } from "react";
 import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { ViewStyle } from "react-native";
@@ -41,6 +40,7 @@ import { readComposerDraft, writeComposerDraft } from "../lib/composer-draft";
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 import type { ComposerSnapshot } from "../lib/thread-feedback";
+import { MenuView } from "./app-menu";
 import { GlassSurface } from "./glass-surface";
 import { NativeSymbol } from "./native-symbol";
 
@@ -682,9 +682,7 @@ export function ThreadComposer({
                   ios="mic.fill"
                   android="mic"
                   size={15}
-                  color={
-                    dictate.listening ? tokens.destructiveForeground : tokens.mutedForeground
-                  }
+                  color={dictate.listening ? tokens.destructiveForeground : tokens.mutedForeground}
                 />
               </GlassSurface>
             </Pressable>

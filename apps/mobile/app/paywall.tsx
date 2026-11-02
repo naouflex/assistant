@@ -6,7 +6,6 @@ import {
   ModelCreditAmountSchema,
 } from "@atlas/contracts";
 import { botColors, botEyeColor, typeScale } from "@atlas/ui-tokens";
-import { MenuView } from "@expo/ui/community/menu";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { ComponentProps, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -23,6 +22,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MenuView } from "../components/app-menu";
 import { BotAvatar } from "../components/bot-avatar";
 import { GlassIconButton } from "../components/glass-icon-button";
 import { NativeActionButton } from "../components/native-action-button";

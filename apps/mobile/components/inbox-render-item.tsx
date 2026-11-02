@@ -1,5 +1,4 @@
 import type { SpaceBot, SpaceGroup } from "@atlas/contracts";
-import { MenuView } from "@expo/ui/community/menu";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
@@ -11,6 +10,7 @@ import type { InboxItem, InboxSpace } from "../lib/inbox-spaces";
 import { canDeleteInboxSpace, inboxItemKey } from "../lib/inbox-spaces";
 import { useThemedStyles } from "../lib/native";
 import type { useInboxChatActions } from "../lib/use-inbox-chat-actions";
+import { MenuView } from "./app-menu";
 import { createHomeStyles } from "./home-styles";
 import { ArchivedChatsRow, BotRow, GroupRow, PinnedTiles, SectionChevron } from "./inbox-rows";
 import { NativeSymbol } from "./native-symbol";

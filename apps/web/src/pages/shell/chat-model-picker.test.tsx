@@ -155,6 +155,24 @@ describe("ChatModelPicker", () => {
     expect(document.body.textContent).toContain("No matching models");
   });
 
+  it("opens the list wide enough for a long model name to wrap", () => {
+    const list = choices(11);
+    list[1] = {
+      ...list[1]!,
+      label: "anthropic/claude-sonnet-4-5-20250929 (OpenRouter)",
+      title: "anthropic/claude-sonnet-4-5-20250929",
+    };
+    render(list, "");
+    act(() => container.querySelector<HTMLButtonElement>("button#model")!.click());
+    const popup = document.querySelector("[data-slot=popover-content]");
+    expect(popup?.className).toContain("min(40rem,var(--available-width))");
+    expect(popup?.className).not.toContain("w-(--anchor-width)");
+    const name = options()[1]?.querySelector("span");
+    expect(name?.textContent).toBe("anthropic/claude-sonnet-4-5-20250929");
+    expect(name?.className).toContain("break-words");
+    expect(name?.className).not.toContain("truncate");
+  });
+
   it("lets the popup flip vertically without switching axes", () => {
     render(choices(11), "");
     act(() => container.querySelector<HTMLButtonElement>("button#model")!.click());

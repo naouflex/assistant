@@ -354,6 +354,30 @@ services:
       postgres:
         condition: service_healthy
 
+  # Kokoro speaks for this stack. Containers use http://kokoro:8880/v1. The loopback
+  # port is for an API running on the host (pnpm dev). Speech model kokoro, voice
+  # af_heart, no key. Saving the address needs MCP_ALLOW_PRIVATE_ENDPOINT=true.
+  # A host URL is http://127.0.0.1:8880/v1. A container URL also needs
+  # ATLAS_OPENAI_COMPAT_PRIVATE_HOSTS=kokoro.
+  kokoro:
+    image: ${KOKORO_IMAGE:-ghcr.io/remsky/kokoro-fastapi-cpu:v0.9.2@sha256:cbcc28802fb5d1eaaba8b91e38b0e872a669e85831c513cf6a29c709cbe25405}
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 512
+    mem_limit: 1536m
+    ports:
+      - "127.0.0.1:8880:8880"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8880/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 3m
+
   api:
     build:
       context: ../..

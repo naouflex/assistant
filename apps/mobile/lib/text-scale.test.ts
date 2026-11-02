@@ -69,6 +69,21 @@ describe("capTextScaling", () => {
     });
   });
 
+  it("drops Android's extra font padding so lines are not clipped", () => {
+    const { reactNative } = fakeReactNative();
+    (reactNative as { Platform?: { OS: string } }).Platform = { OS: "android" };
+    capTextScaling(reactNative);
+    expect(rendered(reactNative.Text, { children: "Hello" }).props).toEqual({
+      children: "Hello",
+      includeFontPadding: false,
+      maxFontSizeMultiplier: MAX_FONT_SCALE,
+    });
+    expect(rendered(reactNative.TextInput, { placeholder: "Message" }).props).toMatchObject({
+      includeFontPadding: false,
+      placeholder: "Message",
+    });
+  });
+
   it("keeps refs and TextInput's statics, and caps only once", () => {
     const { reactNative, Text, TextInput } = fakeReactNative();
     capTextScaling(reactNative);

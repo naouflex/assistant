@@ -1,10 +1,10 @@
 import type { ActionApprovalRule } from "@atlas/contracts";
 import { humanizeToolName } from "@atlas/core";
-import { MenuView } from "@expo/ui/community/menu";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MenuView } from "../../components/app-menu";
 import { ApprovalRulePreviewForm } from "../../components/approval-rule-preview";
 import { LoadFailure } from "../../components/load-failure";
 import { SettingsGroup, SettingsRow } from "../../components/settings-group";

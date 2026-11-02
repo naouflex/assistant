@@ -105,7 +105,10 @@ export function MessageMenuHost() {
                 gap: 4,
                 padding: 8,
                 borderRadius: 28,
-                backgroundColor: tokens.card,
+                backgroundColor: tokens.popover,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: tokens.border,
+                elevation: 8,
               }}
             >
               {menu.reactions.map((reaction) => (
@@ -133,7 +136,14 @@ export function MessageMenuHost() {
             .map((group, groupIndex) => (
               <View
                 key={`${groupIndex}-${group[0]?.name}`}
-                style={{ borderRadius: 18, overflow: "hidden", backgroundColor: tokens.card }}
+                style={{
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  backgroundColor: tokens.popover,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: tokens.border,
+                  elevation: 8,
+                }}
               >
                 {group.map((item, index) => (
                   <Pressable
@@ -151,8 +161,10 @@ export function MessageMenuHost() {
                       borderTopColor: tokens.border,
                     })}
                   >
-                    <Ionicons name={item.icon} size={20} color={tokens.foreground} />
-                    <Text style={{ color: tokens.foreground, fontSize: 16 }}>{item.text}</Text>
+                    <Ionicons name={item.icon} size={20} color={tokens.popoverForeground} />
+                    <Text style={{ color: tokens.popoverForeground, fontSize: 16, flexShrink: 1 }}>
+                      {item.text}
+                    </Text>
                   </Pressable>
                 ))}
               </View>

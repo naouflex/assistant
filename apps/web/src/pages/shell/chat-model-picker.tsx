@@ -80,13 +80,17 @@ export function ChatModelPicker({
 
   if (choices.length <= MODEL_SEARCH_THRESHOLD) {
     return (
-      <div className={compact ? "flex items-center gap-2" : "mt-2 flex items-center gap-2"}>
+      <div
+        className={
+          compact ? "flex min-w-0 flex-1 items-center gap-2" : "mt-2 flex items-center gap-2"
+        }
+      >
         {imagesHint}
         <NativeSelect
           id={id}
           aria-label={ariaLabel}
           size={compact ? "sm" : undefined}
-          className={compact ? "max-w-[18rem] text-xs" : "w-full"}
+          className={compact ? "min-w-0 w-full max-w-lg flex-1" : "w-full"}
           aria-describedby={textOnly ? imagesHintId : undefined}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -116,7 +120,8 @@ export function ChatModelPicker({
         id={id}
         aria-label={ariaLabel}
         aria-describedby={textOnly ? imagesHintId : undefined}
-        className={`${compact ? "h-7 max-w-[18rem] text-xs" : "mt-2 h-8 w-full text-sm"} flex items-center justify-between gap-2 rounded-lg border border-input bg-transparent pr-2.5 pl-2.5 text-start text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50`}
+        title={selected?.label}
+        className={`${compact ? "h-7 min-w-0 w-full max-w-lg flex-1 text-sm" : "mt-2 h-8 w-full text-sm"} flex items-center justify-between gap-2 rounded-lg border border-input bg-transparent pr-2.5 pl-2.5 text-start text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50`}
       >
         <span className="min-w-0 truncate">{selected?.label}</span>
         <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
@@ -129,7 +134,7 @@ export function ChatModelPicker({
           align="start"
           side="bottom"
           collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }}
-          className="w-(--anchor-width) max-h-(--available-height) gap-0 overflow-hidden bg-popover p-0 opacity-100 animate-none! backdrop-filter-none"
+          className="w-[min(40rem,var(--available-width))] max-h-(--available-height) max-w-(--available-width) gap-0 overflow-hidden bg-popover p-0 opacity-100 animate-none! backdrop-filter-none"
         >
           <Command
             shouldFilter={false}
@@ -160,7 +165,7 @@ export function ChatModelPicker({
                         openChange(false);
                       }}
                     >
-                      <span className="min-w-0 flex-1 truncate">
+                      <span className="min-w-0 flex-1 whitespace-normal break-words">
                         {choice.title ?? choice.label}
                       </span>
                       {note(choice.key) ? (
@@ -186,7 +191,7 @@ export function ChatModelPicker({
   if (!refreshButton && !afterControl) return popover;
   return (
     <div
-      className={`flex min-w-0 items-center gap-2 ${afterControl ? "" : "[&>button:first-of-type]:min-w-0 [&>button:first-of-type]:flex-1"}`}
+      className={`flex min-w-0 items-center gap-2 ${compact ? "flex-1" : ""} ${afterControl ? "" : "[&>button:first-of-type]:min-w-0 [&>button:first-of-type]:flex-1"}`}
     >
       {popover}
       {afterControl}

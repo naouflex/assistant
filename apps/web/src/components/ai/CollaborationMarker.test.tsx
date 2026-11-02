@@ -36,5 +36,8 @@ describe("collaboration transcript markers", () => {
     expect(html).toContain('role="status"');
     expect(html).toContain('data-working="true"');
     expect(html).toContain("atlas-organic-avatar-body-working");
+    expect(html).toContain("Searching the web");
+    expect(html).toContain("injury news");
+    expect(html).not.toContain("Searching the web: injury news");
   });
 });

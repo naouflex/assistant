@@ -111,7 +111,10 @@ export function ComposerModelControls({
   ) : null;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 text-xs" data-testid="composer-model-controls">
+    <div
+      className="flex min-w-0 flex-1 items-center gap-2 text-xs"
+      data-testid="composer-model-controls"
+    >
       <ChatModelPicker
         id={id}
         compact

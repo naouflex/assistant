@@ -20,6 +20,7 @@ import {
   groupSeatsWidth,
 } from "../lib/group-seats";
 import { native, useResolvedAppearance } from "../lib/native";
+import { AvatarWordIcon } from "./avatar-word-icon";
 
 type SeatMember = { botId?: string; name?: string; color: string };
 
@@ -189,6 +190,13 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
           </G>
         </>
       ),
+    };
+  }
+  if (parsed.kind === "word" && parsed.icon) {
+    return {
+      box: [0, 0, 24],
+      outline: (paint) => <Circle cx={12} cy={12} r={11} {...paint} />,
+      face: <AvatarWordIcon nodes={parsed.icon} color={parsed.color} />,
     };
   }
   const color = parsed.kind === "color" || parsed.kind === "word" ? parsed.color : member.color;

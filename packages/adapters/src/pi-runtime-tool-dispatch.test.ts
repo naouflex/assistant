@@ -1060,7 +1060,7 @@ describe("Pi connector tool dispatch", () => {
 
     expect(events).toContainEqual({
       type: "progress",
-      text: "Using destination_write",
+      text: "Using Destination write",
       activity: true,
     });
     expect(events).not.toContainEqual({
@@ -1260,7 +1260,8 @@ describe("Pi connector tool dispatch", () => {
         botId: "b",
         threadId: "t",
         runId: "calculate-product",
-        prompt: "Current time: 2026-11-01.\n\nCompute 17 times 23 with the shell and reply with only the number.",
+        prompt:
+          "Current time: 2026-11-01.\n\nCompute 17 times 23 with the shell and reply with only the number.",
         utterance: "Compute 17 times 23 with the shell and reply with only the number.",
         instructions: "Answer.",
         history: [],
