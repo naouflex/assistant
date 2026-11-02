@@ -5,13 +5,13 @@ everything on your own computer.
 
 ## Install
 
-Download it from [rakazo.com](https://rakazo.com). The Linux AppImage needs FUSE 2.
+Download it from [atlas.naoufel.io](https://atlas.naoufel.io). The Linux AppImage needs FUSE 2.
 
 ## Choose a server
 
 The first time it opens, the app asks which server to use:
 
-- **Atlas Cloud**: sign in to your rakazo.com account.
+- **Atlas Cloud**: sign in to your atlas.naoufel.io account.
 - **This computer**: run your own Atlas locally in Docker. If Docker isn't installed, the app links
   to Docker Desktop, OrbStack and Docker Engine. Everything, including your bots' computers, then
   runs on your machine.

@@ -16,11 +16,17 @@ export const CLIENT_KINDS = ["web", "mobile"] as const;
 export type ClientKind = (typeof CLIENT_KINDS)[number];
 export type MinimumClientBuilds = Partial<Record<ClientKind, string>>;
 
-/** Legacy Rakazo listing; Atlas is not on this App Store app. Product UI must not link here. */
-export const IOS_APP_STORE_URL = "https://apps.apple.com/app/rakazo/id6801531099";
+export const ATLAS_PUBLIC_ORIGIN = "https://atlas.naoufel.io";
+export const GITHUB_REPO_URL = "https://github.com/naouflex/assistant";
 export const ANDROID_APK_URL =
   "https://github.com/naouflex/assistant/releases/download/android/atlas.apk";
-export const MOBILE_RELEASES_URL = "https://github.com/naouflex/assistant/releases";
+export const MOBILE_RELEASES_URL = `${GITHUB_REPO_URL}/releases`;
+
+/** Markdown docs served from the public site or mirrored on GitHub. */
+export function atlasPublicDoc(path: string): string {
+  const normalized = path.replace(/^\//, "");
+  return `${ATLAS_PUBLIC_ORIGIN}/${normalized}`;
+}
 
 const BUILD_ID = /^\d{14}$/;
 

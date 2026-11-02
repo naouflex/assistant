@@ -1,6 +1,7 @@
 import type { BillingStatus } from "@atlas/contracts";
 import {
   AI_PRIVACY_URL,
+  ATLAS_PUBLIC_ORIGIN,
   DEFAULT_MONTHLY_CREDIT_AMOUNT,
   MODEL_CREDIT_AMOUNTS,
   ModelCreditAmountSchema,
@@ -47,7 +48,7 @@ import { errorText } from "../lib/user-error";
 type Amount = (typeof MODEL_CREDIT_AMOUNTS)[number];
 type SymbolName = ComponentProps<typeof NativeSymbol>["android"];
 
-const TERMS_URL = "https://rakazo.com/terms/";
+const TERMS_URL = `${ATLAS_PUBLIC_ORIGIN}/terms/`;
 
 // Bots carry the app's only colour, so the paywall's colour is a small crew of them.
 const CREW = [

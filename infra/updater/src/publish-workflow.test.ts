@@ -128,17 +128,13 @@ describe("server image publish workflow", () => {
     expect(publish).toBeGreaterThan(depotScan);
   });
 
-  it("publishes main from ci.yml so the production deploy waits for its image", () => {
+  it("publishes main from ci.yml for GHCR image tags", () => {
     expect(workflow.on.push?.branches).toBeUndefined();
     expect(workflow.on).toHaveProperty("workflow_call");
     const publish = ci.jobs["publish-server-image"];
     expect(publish?.uses).toBe("./.github/workflows/publish-server-image.yml");
     expect(publish?.if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/main'");
-    expect(ci.jobs["deploy-production"]?.needs).toEqual([
-      "checks",
-      "test-integration",
-      "publish-server-image",
-    ]);
+    expect(ci.jobs["deploy-production"]).toBeUndefined();
   });
 
   it("lets main revisions validate independently and retains pending release work", () => {
@@ -149,7 +145,6 @@ describe("server image publish workflow", () => {
       expect(concurrency["cancel-in-progress"]).toBe("${{ github.event_name == 'pull_request' }}");
     }
     for (const job of [
-      ci.jobs["deploy-production"],
       ci.jobs["publish-mobile-update"],
       workflow.jobs["build-depot"],
       workflow.jobs.publish,

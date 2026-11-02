@@ -1,9 +1,9 @@
 export const SITE_NAME = "Atlas";
-export const SITE_URL = "https://rakazo.com";
+export const SITE_URL = "https://atlas.naoufel.io";
 export const SITE_DESCRIPTION =
   "Atlas is an open source Grok Bot alternative for persistent AI teammates that do real work. Your keys, your model, your machine.";
 
-export const APP_URL = "https://app.rakazo.com";
+export const APP_URL = "https://atlas.naoufel.io";
 export const PLUGIN_SUBMISSIONS_URL = `${APP_URL}/api/v1/plugin-submissions`;
 export const CATALOG_URL =
   "https://atlas-public.fsn1.your-objectstorage.com/integrations/catalog.json";

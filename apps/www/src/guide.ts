@@ -84,7 +84,7 @@ export const SELF_HOST_FAQS: readonly FaqItem[] = [
   {
     question: "Is hosted Atlas available?",
     answer:
-      "Yes. Atlas Cloud is in beta at app.rakazo.com. Self-hosting is available too.",
+      "Yes. Atlas Cloud is in beta at atlas.naoufel.io. Self-hosting is available too.",
   },
   {
     question: "How does this compare with OpenClaw?",

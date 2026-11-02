@@ -10,7 +10,7 @@ sources:
   - label: "Atlas self-hosting guide"
     href: "https://github.com/naouflex/assistant/blob/main/docs/self-host.md"
   - label: "Self-hosted AI agent"
-    href: "https://rakazo.com/self-hosted-ai-agent/"
+    href: "https://atlas.naoufel.io/self-hosted-ai-agent/"
   - label: "Self-host secrets checklist"
     href: "https://github.com/naouflex/assistant/blob/main/docs/self-host-secrets.md"
 related:

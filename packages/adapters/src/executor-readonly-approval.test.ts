@@ -2198,13 +2198,13 @@ describe("outbound destinations", () => {
     f.setCalls([
       {
         name: "web_fetch",
-        args: { url: "https://rakazo.com/docs/routines.md" },
+        args: { url: "https://atlas.naoufel.io/docs/routines.md" },
         executionId: "call-1",
       },
-      { name: "web_fetch", args: { url: "https://rakazo.com/?q=secret" }, executionId: "call-2" },
+      { name: "web_fetch", args: { url: "https://atlas.naoufel.io/?q=secret" }, executionId: "call-2" },
     ]);
     await f.run();
-    expect(f.fetchedUrls).toEqual(["https://rakazo.com/docs/routines.md"]);
+    expect(f.fetchedUrls).toEqual(["https://atlas.naoufel.io/docs/routines.md"]);
     expect(isApprovalPausedResult(f.results[1])).toBe(true);
   });
 

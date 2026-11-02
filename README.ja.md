@@ -270,13 +270,13 @@ pnpm test:e2e
 
 ## Atlas と他製品の比較
 
-- [Grok Bot](https://rakazo.com/grok-bot-alternative/)
-- [Muse](https://rakazo.com/muse-alternative/)
-- [Dots](https://rakazo.com/dots-alternative/)
-- [Instinct](https://rakazo.com/instinct-alternative/)
-- [OpenClaw](https://rakazo.com/openclaw-alternative/)
-- [Hermes Agent](https://rakazo.com/hermes-alternative/)
-- [すべての比較](https://rakazo.com/alternatives/)
+- [Grok Bot](https://atlas.naoufel.io/grok-bot-alternative/)
+- [Muse](https://atlas.naoufel.io/muse-alternative/)
+- [Dots](https://atlas.naoufel.io/dots-alternative/)
+- [Instinct](https://atlas.naoufel.io/instinct-alternative/)
+- [OpenClaw](https://atlas.naoufel.io/openclaw-alternative/)
+- [Hermes Agent](https://atlas.naoufel.io/hermes-alternative/)
+- [すべての比較](https://atlas.naoufel.io/alternatives/)
 
 ## コントリビュート
 

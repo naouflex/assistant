@@ -1,7 +1,7 @@
 # Hello world plugin
 
 A minimal Atlas plugin: a manifest and one skill. Copy this folder to start your own, then read
-[Build a plugin](https://rakazo.com/docs/build-a-plugin/).
+[Build a plugin](https://atlas.naoufel.io/docs/build-a-plugin/).
 
 For hosted tools, start with the [MCP server example](../mcp-server/README.md).
 

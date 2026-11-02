@@ -1,15 +1,15 @@
 /** @jsxRuntime automatic */
 import type { TransactionalEmail } from "@atlas/adapter-kit";
-import { ANDROID_APK_URL } from "@atlas/contracts";
+import { ANDROID_APK_URL, MOBILE_RELEASES_URL } from "@atlas/contracts";
 import { displayName } from "@atlas/core";
 import { Link, Text } from "react-email";
 import { linkStyle, message } from "./email.js";
 
 const APPS = [
   ["Android", ANDROID_APK_URL],
-  ["Mac", "https://rakazo.com/api/download?platform=mac"],
-  ["Windows", "https://rakazo.com/api/download?platform=windows"],
-  ["Linux", "https://rakazo.com/api/download?platform=linux"],
+  ["Mac", MOBILE_RELEASES_URL],
+  ["Windows", MOBILE_RELEASES_URL],
+  ["Linux", MOBILE_RELEASES_URL],
 ] as const;
 
 export function welcomeEmail(

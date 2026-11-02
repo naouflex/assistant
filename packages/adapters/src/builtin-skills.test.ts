@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { atlasPublicDoc } from "@atlas/contracts";
 import { describe, expect, it } from "vitest";
 import { ATLAS_DOCS_URLS, BUILTIN_AGENT_SKILLS } from "./builtin-skills.js";
 
@@ -14,9 +15,11 @@ describe("Atlas skill", () => {
     expect(urls).toEqual(ATLAS_DOCS_URLS);
     for (const url of urls) {
       const slug =
-        url === "https://rakazo.com/docs.md"
+        url === atlasPublicDoc("docs.md")
           ? publishedSlugs[0]
-          : /^https:\/\/rakazo\.com\/docs\/([\w-]+)\.md$/.exec(url)?.[1];
+          : new RegExp(`^${atlasPublicDoc("docs/").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([\\w-]+)\\.md$`).exec(
+              url,
+            )?.[1];
       expect(publishedSlugs, url).toContain(slug);
       expect(existsSync(repoFile(`docs/${slug}.md`)), url).toBe(true);
     }

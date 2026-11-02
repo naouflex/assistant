@@ -265,8 +265,7 @@ jobs:
       # Skipped inside the called workflow so the required "Web E2E / Web E2E" check still reports.
       skip: ${{ needs.changes.outputs.e2e != 'true' }}
 
-  # Publishes sha-<commit> and edge alongside the checks, so the production deploy pulls the
-  # image this run built instead of building on the production host.
+  # Publishes sha-<commit> and edge alongside the checks for self-hosted pulls from GHCR.
   publish-server-image:
     name: Publish server images
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -524,51 +523,3 @@ jobs:
           fi
           check_current_main
           eas update --platform all --channel production --environment production --skip-bundler --input-dir dist --upload-source-maps --message "$GITHUB_SHA" --non-interactive
-
-  deploy-production:
-    if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      vars.PRODUCTION_DEPLOY_ENABLED == 'true'
-    # The host pulls the image published for this commit; it builds only if that pull fails.
-    # Only checks that catch a broken server gate the deploy; lint, E2E, and Docker drills report on their own.
-    needs: [checks, test-integration, publish-server-image]
-    runs-on: ubuntu-latest
-    # Matches infra/compose/deploy-main.sh's own limits, including a fallback build and rollback.
-    timeout-minutes: 45
-    concurrency:
-      group: production
-      cancel-in-progress: false
-      queue: max
-    environment:
-      name: production
-      url: https://app.rakazo.com
-    steps:
-      - name: Configure production SSH identity
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
-        run: |
-          test -n "$SSH_PRIVATE_KEY"
-          test -n "$SSH_KNOWN_HOSTS"
-          install -d -m 700 "$HOME/.ssh"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/atlas-production"
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/atlas-production" "$HOME/.ssh/known_hosts"
-          ssh-keygen -y -f "$HOME/.ssh/atlas-production" >/dev/null
-
-      - name: Deploy successful main revision
-        env:
-          SSH_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
-          SSH_USER: ${{ secrets.PRODUCTION_SSH_USER }}
-        run: |
-          test -n "$SSH_HOST"
-          test -n "$SSH_USER"
-          ssh -F /dev/null \
-            -i "$HOME/.ssh/atlas-production" \
-            -o BatchMode=yes \
-            -o ConnectTimeout=15 \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
-            "$SSH_USER@$SSH_HOST" "deploy-main $GITHUB_SHA"

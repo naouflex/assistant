@@ -207,7 +207,7 @@ relying party is that origin's host, so existing passkeys keep working only whil
 stays on the same domain. They are off when password sign-in is disabled for SSO-only
 deployments. On web, a browser offers them where it has a platform authenticator. The macOS
 desktop app uses the system passkey sheet, which only serves the domain the release is
-associated with (`app.rakazo.com`), so it hides passkeys for other servers.
+associated with (`atlas.naoufel.io`), so it hides passkeys for other servers.
 
 Native apps can use a domain's passkeys only when the domain vouches for them and the app was
 built for that domain (the app's associated domain comes from `EXPO_PUBLIC_API_URL` at build

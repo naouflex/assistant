@@ -3,6 +3,3 @@ contact_links:
   - name: Security vulnerabilities
     url: https://github.com/naouflex/assistant/security/advisories/new
     about: Report security issues privately through GitHub security advisories — do not open a public issue.
-  - name: Upstream project
-    url: https://github.com/elie222/rakazo
-    about: Atlas is derived from Rakazo by elie222.

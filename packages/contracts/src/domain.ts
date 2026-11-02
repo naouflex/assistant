@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { ATLAS_PUBLIC_ORIGIN } from "./client-build.js";
 import { AGENT_SECRET_NAME_PATTERN } from "./agent-secret-name.js";
 import { BotAvatarSetSchema, BotAvatarValueSchema } from "./bot-avatar.js";
 import { DisabledBuiltinToolsSchema } from "./builtin-tools.js";
@@ -900,7 +901,7 @@ export const PluginMarketplaceCatalogSchema = z.object({
 export type PluginMarketplaceCatalog = z.infer<typeof PluginMarketplaceCatalogSchema>;
 
 export const PLUGIN_SUBMISSIONS_PATH = "/api/v1/plugin-submissions";
-export const SUBMIT_PLUGIN_URL = "https://rakazo.com/plugins/submit/";
+export const SUBMIT_PLUGIN_URL = `${ATLAS_PUBLIC_ORIGIN}/plugins/submit/`;
 
 const HttpsUrlSchema = z
   .string()
