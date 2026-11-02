@@ -1405,6 +1405,12 @@ model Computer {
   /// When a damaged system last made Atlas stop and start the computer by itself. Tried once
   /// until a later save shows the computer works again.
   autoRecoveredAt         DateTime?
+  /// Automatic recoveries tried since the computer last ran; the health sweep stops at its cap.
+  healthRecoveryAttempts  Int                      @default(0)
+  healthRecoveryAt        DateTime?
+  /// When the owner was told the computer could not recover by itself.
+  healthAlertedAt         DateTime?
+  healthEvents            ComputerHealthEvent[]
   /// The machine at `providerRef` came from a start whose restore never finished, so it holds no
   /// full copy of the saved home: nothing is saved from it, and the next start restores it.
   restorePending          Boolean                  @default(false)
@@ -1437,7 +1443,24 @@ model Computer {
   updates                 ComputerUpdate[]
 
   @@index([spaceId, scope])
+  @@index([state, healthRecoveryAt])
   @@map("computers")
+}
+
+/// One automatic recovery the health sweep tried, kept for support.
+model ComputerHealthEvent {
+  id         String   @id @default(cuid())
+  computerId String
+  computer   Computer @relation(fields: [computerId], references: [id], onDelete: Cascade)
+  spaceId    String
+  attempt    Int
+  /// queued | busy | failed | alerted
+  outcome    String
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([computerId, createdAt])
+  @@map("computer_health_events")
 }
 
 /// One stretch a computer ran at its provider, from `computers.runningSince` until it stopped,
@@ -1570,6 +1593,7 @@ model NotificationPreference {
   finish   Boolean @default(true)
   help     Boolean @default(true)
   takeover Boolean @default(true)
+  computer Boolean @default(true)
 
   @@unique([spaceId, userId])
   @@map("notification_preferences")
