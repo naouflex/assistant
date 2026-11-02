@@ -1,12 +1,11 @@
 import type { Bot, BotAvatarSet, ComputerMode, ThinkingLevel } from "@atlas/contracts";
 import {
-  AVATAR_WORD_MAX_LENGTH,
   BOT_AVATAR_SHAPE_COUNT,
   BOT_COLORS,
   BOT_DESCRIPTION_MAX_LENGTH,
   BOT_INSTRUCTIONS_MAX_LENGTH,
   BOT_NAME_MAX_LENGTH,
-  normalizeAvatarWord,
+  parseBotAvatarValue,
   resolveBotAvatarSet,
 } from "@atlas/contracts";
 import {
@@ -48,11 +47,9 @@ import { rpc } from "../lib/api";
 import {
   avatarColor,
   avatarShape,
-  avatarWord,
   isAvatarPhoto,
   withAvatarColor,
   withAvatarShape,
-  withAvatarWord,
 } from "../lib/bot-avatar-edit";
 import { deviceVoices, setVoiceForBot, voiceForBot, voiceLabel } from "../lib/bot-voices";
 import { chatModelPickerChoices } from "../lib/chat-model";
@@ -86,7 +83,6 @@ export default function BotSettingsScreen() {
   const [computerMode, setComputerMode] = useState<ComputerMode>("team");
   const [avatarSet, setAvatarSet] = useState<BotAvatarSet>("organic");
   const [avatarOpen, setAvatarOpen] = useState(false);
-  const [wordDraft, setWordDraft] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(focus === "model" || pickedModel !== undefined);
   const [modelKey, setModelKey] = useState("");
   const [thinkingLevel, setThinkingLevel] = useState("");
@@ -488,19 +484,6 @@ export default function BotSettingsScreen() {
     voiceRowContent
   );
 
-  function applyWord() {
-    const next = withAvatarWord(color, wordDraft);
-    if (!next) {
-      setWordDraft(avatarWord(color) ?? "");
-      return;
-    }
-    setAvatarSet("organic");
-    setColor(next);
-    setWordDraft(avatarWord(next) ?? "");
-  }
-  const draftedWord = normalizeAvatarWord(wordDraft);
-  const draftingWord = draftedWord !== null && draftedWord !== avatarWord(color);
-
   return (
     <>
       <Stack.Screen options={glassHeaderOptions(t("Chat settings"))} />
@@ -518,10 +501,7 @@ export default function BotSettingsScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("Edit avatar")}
-              onPress={() => {
-                setWordDraft(avatarWord(color) ?? "");
-                setAvatarOpen(true);
-              }}
+              onPress={() => setAvatarOpen(true)}
               style={{ padding: 4 }}
             >
               <BotAvatar
@@ -852,11 +832,7 @@ export default function BotSettingsScreen() {
             {bot && !isAvatarPhoto(color) ? (
               <View style={{ alignItems: "center" }}>
                 <BotAvatar
-                  color={
-                    normalizeAvatarWord(wordDraft)
-                      ? (withAvatarWord(color, wordDraft) ?? color)
-                      : color
-                  }
+                  color={color}
                   avatarSet={avatarSet}
                   identity={bot.id}
                   size={72}
@@ -883,7 +859,6 @@ export default function BotSettingsScreen() {
               ]}
               value={avatarSet}
               onChange={(next) => {
-                setWordDraft("");
                 setAvatarSet(resolveBotAvatarSet(next));
                 setColor((current) => avatarColor(current));
               }}
@@ -932,13 +907,9 @@ export default function BotSettingsScreen() {
                     accessibilityLabel={t("Default")}
                     accessibilityState={{
                       checked:
-                        !draftingWord &&
-                        avatarSet === "organic" &&
-                        avatarShape(color) === null &&
-                        !avatarWord(color),
+                        avatarSet === "organic" && parseBotAvatarValue(color).kind === "color",
                     }}
                     onPress={() => {
-                      setWordDraft("");
                       setAvatarSet("organic");
                       setColor((current) => avatarColor(current));
                     }}
@@ -947,10 +918,7 @@ export default function BotSettingsScreen() {
                       borderRadius: 14,
                       borderWidth: 2,
                       borderColor:
-                        !draftingWord &&
-                        avatarSet === "organic" &&
-                        avatarShape(color) === null &&
-                        !avatarWord(color)
+                        avatarSet === "organic" && parseBotAvatarValue(color).kind === "color"
                           ? tokens.foreground
                           : "transparent",
                     }}
@@ -963,10 +931,9 @@ export default function BotSettingsScreen() {
                       accessibilityRole="radio"
                       accessibilityLabel={t("Shape {number}", { number: shape + 1 })}
                       accessibilityState={{
-                        checked: !draftingWord && avatarShape(color) === shape,
+                        checked: avatarShape(color) === shape,
                       }}
                       onPress={() => {
-                        setWordDraft("");
                         setAvatarSet("organic");
                         setColor((current) => withAvatarShape(current, shape));
                       }}
@@ -975,9 +942,7 @@ export default function BotSettingsScreen() {
                         borderRadius: 14,
                         borderWidth: 2,
                         borderColor:
-                          !draftingWord && avatarShape(color) === shape
-                            ? tokens.foreground
-                            : "transparent",
+                          avatarShape(color) === shape ? tokens.foreground : "transparent",
                       }}
                     >
                       <BotAvatar
@@ -988,40 +953,6 @@ export default function BotSettingsScreen() {
                     </Pressable>
                   ))}
                 </ScrollView>
-                <View style={{ flexDirection: "row", gap: 8, alignItems: "center", marginTop: 8 }}>
-                  <TextInput
-                    accessibilityLabel={t("Shape from a word")}
-                    placeholder={t("Word")}
-                    placeholderTextColor={tokens.mutedForeground}
-                    value={wordDraft}
-                    maxLength={AVATAR_WORD_MAX_LENGTH}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onChangeText={setWordDraft}
-                    onEndEditing={() => {
-                      if (normalizeAvatarWord(wordDraft)) return;
-                      setWordDraft(avatarWord(color) ?? "");
-                    }}
-                    onSubmitEditing={applyWord}
-                    style={{
-                      flex: 1,
-                      flexShrink: 1,
-                      minWidth: 0,
-                      minHeight: 44,
-                      borderRadius: 12,
-                      paddingHorizontal: 12,
-                      backgroundColor: native.fill,
-                      color: tokens.foreground,
-                      fontSize: 16,
-                    }}
-                  />
-                  <NativeActionButton
-                    label={t("Generate")}
-                    prominence="quiet"
-                    disabled={!normalizeAvatarWord(wordDraft)}
-                    onPress={applyWord}
-                  />
-                </View>
               </>
             ) : null}
           </ScrollView>

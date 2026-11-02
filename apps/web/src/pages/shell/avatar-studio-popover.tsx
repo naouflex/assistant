@@ -1,5 +1,5 @@
 import type { BotAvatarSet } from "@atlas/contracts";
-import { AVATAR_WORD_MAX_LENGTH, botAvatarWordValue, resolveBotAvatarSet } from "@atlas/contracts";
+import { resolveBotAvatarSet } from "@atlas/contracts";
 import { SHIPPED_BOT_AVATAR_IMAGES, SHIPPED_BOT_AVATAR_SHAPE_KEYS } from "@atlas/core";
 import {
   BOT_AVATAR_COLORS,
@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
   defaultBotAvatarValue,
-  Input,
   parseBotAvatar,
   Tabs,
   TabsContent,
@@ -25,25 +24,15 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Check, Pencil, Upload, X } from "lucide-react";
 import type { ClipboardEvent, DragEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
-/** Near-white swatches need a harder edge so they stay clickable on light popovers. */
-function avatarPictureKey(value: string): string {
-  const parsed = parseBotAvatar(value);
-  if (parsed.isImage) return "image";
-  if (parsed.word) return `word:${parsed.word}`;
-  if (parsed.shapeIndex !== undefined) return `shape:${parsed.shapeIndex}`;
-  return "default";
-}
-
-/** Studio shapes and word icons render on the Original set, not the Atlas logo. */
+/** Studio shapes render on the Original set, not the Atlas logo. */
 function studioPreviewAvatarSet(
   value: string,
-  pendingLook: string | null | undefined,
   avatarSet: BotAvatarSet,
 ): BotAvatarSet {
-  const parsed = parseBotAvatar(pendingLook ?? value);
-  if (parsed.shapeIndex !== undefined || parsed.word) return "organic";
+  const parsed = parseBotAvatar(value);
+  if (parsed.shapeIndex !== undefined) return "organic";
   return avatarSet;
 }
 
@@ -79,7 +68,6 @@ export function BotLookPicker({
   avatarSet = "organic",
   onAvatarSetChange,
   onChange,
-  onPreviewChange,
 }: {
   value: string;
   identity?: string;
@@ -87,36 +75,10 @@ export function BotLookPicker({
   avatarSet?: BotAvatarSet;
   onAvatarSetChange?: (set: BotAvatarSet, value: string) => void;
   onChange: (value: string, identity?: string) => void;
-  /** The picture a typed word would save, before Apply commits it. */
-  onPreviewChange?: (value: string | null) => void;
 }) {
   const parsed = parseBotAvatar(value);
   const currentColor = parsed.color || DEFAULT_BOT_AVATAR_COLOR;
-  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined && !parsed.word;
-  const picture = avatarPictureKey(value);
-  const [wordDraft, setWordDraft] = useState<string | null>(null);
-  const [draftPicture, setDraftPicture] = useState<string | null>(null);
-  const draftStale = wordDraft !== null && draftPicture !== picture;
-  if (draftStale) {
-    setWordDraft(null);
-    setDraftPicture(null);
-  }
-  const wordShown = draftStale ? (parsed.word ?? "") : (wordDraft ?? parsed.word ?? "");
-  const wordPreview = botAvatarWordValue(currentColor, wordShown);
-  const wordIsPicture = Boolean(parsed.word) && wordDraft === null;
-  const pending =
-    !draftStale && wordPreview && (wordPreview !== value || wordDraft !== null) ? wordPreview : null;
-
-  useEffect(() => {
-    onPreviewChange?.(pending);
-  }, [onPreviewChange, pending]);
-
-  useEffect(() => () => onPreviewChange?.(null), [onPreviewChange]);
-
-  function editWord(next: string) {
-    setDraftPicture(picture);
-    setWordDraft(next);
-  }
+  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined;
 
   function commitLook(next: string, nextIdentity?: string) {
     const parsedNext = parseBotAvatar(next);
@@ -127,8 +89,7 @@ export function BotLookPicker({
     const needsOriginal =
       avatarSet !== "organic" &&
       (parsedNext.shapeIndex !== undefined ||
-        parsedNext.word !== undefined ||
-        (nextIdentity !== undefined && parsedNext.shapeIndex === undefined && !parsedNext.word));
+        (nextIdentity !== undefined && parsedNext.shapeIndex === undefined));
     if (needsOriginal) {
       onAvatarSetChange?.("organic", next);
       return;
@@ -137,22 +98,7 @@ export function BotLookPicker({
   }
 
   function selectColor(color: string) {
-    if (parsed.word) {
-      commitLook(botAvatarWordValue(color, parsed.word) ?? color);
-      return;
-    }
     commitLook(parsed.shapeIndex === undefined ? color : `${color}::shape_${parsed.shapeIndex}`);
-  }
-
-  function generateWord() {
-    if (!wordPreview) {
-      setWordDraft(null);
-      setDraftPicture(null);
-      return;
-    }
-    setWordDraft(null);
-    setDraftPicture(null);
-    if (wordPreview !== value) commitLook(wordPreview);
   }
 
   return (
@@ -174,107 +120,59 @@ export function BotLookPicker({
       </Tabs>
       {avatarSet === "atlas" ? (
         <p className="text-[12px] text-muted-foreground">
-          <Trans>Atlas uses the logo below. Shapes and word icons switch to Original.</Trans>
+          <Trans>Atlas uses the logo below. Studio shapes switch to Original.</Trans>
         </p>
       ) : null}
       <div>
-          {organicIdentities ? null : (
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-                <Trans>Shape</Trans>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                data-testid="avatar-studio-default"
-                aria-pressed={isDefaultLook}
-                onClick={() => {
-                  setWordDraft(null);
-                  setDraftPicture(null);
-                  const next = defaultBotAvatarValue(value);
-                  if (next !== value) commitLook(next);
-                }}
-                className={`px-3 py-1 text-xs font-medium transition-colors ${
-                  isDefaultLook
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Trans>Default</Trans>
-              </Button>
+        {organicIdentities ? null : (
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              <Trans>Shape</Trans>
             </div>
-          )}
-          <div
-            className={`grid place-items-center gap-2 ${organicIdentities ? "grid-cols-4 sm:grid-cols-8 sm:gap-1" : "grid-cols-4"}`}
-          >
-            {organicIdentities?.map((organicIdentity, index) => (
-              <BotShapePreview
-                key={organicIdentity}
-                identity={organicIdentity}
-                label={t`Shape ${index + 1}`}
-                color={currentColor}
-                selected={isDefaultLook && identity === organicIdentity}
-                onClick={() => {
-                  setWordDraft(null);
-                  setDraftPicture(null);
-                  commitLook(currentColor, organicIdentity);
-                }}
-              />
-            ))}
-            {SHIPPED_BOT_AVATAR_SHAPE_KEYS.map((key, shapeIndex) => (
-              <BotShapePreview
-                key={key}
-                shapeIndex={shapeIndex}
-                color={currentColor}
-                selected={!parsed.isImage && parsed.shapeIndex === shapeIndex}
-                onClick={() => {
-                  setWordDraft(null);
-                  setDraftPicture(null);
-                  commitLook(`${currentColor}::shape_${shapeIndex}`);
-                }}
-              />
-            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              data-testid="avatar-studio-default"
+              aria-pressed={isDefaultLook}
+              onClick={() => {
+                const next = defaultBotAvatarValue(value);
+                if (next !== value) commitLook(next);
+              }}
+              className={`px-3 py-1 text-xs font-medium transition-colors ${
+                isDefaultLook
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Trans>Default</Trans>
+            </Button>
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            {wordPreview ? (
-              <BotAvatar
-                color={wordPreview}
-                identity={identity ?? "preview"}
-                size={40}
-                avatarSet="organic"
-                className="shrink-0"
-              />
-            ) : (
-              <span className="size-10 shrink-0" aria-hidden="true" />
-            )}
-            <Input
-              aria-label={t`Shape from a word`}
-              placeholder={t`Word`}
-              value={wordShown}
-              maxLength={AVATAR_WORD_MAX_LENGTH}
-              data-testid="avatar-word"
-              data-selected={wordIsPicture ? "true" : "false"}
-              className={`w-auto min-w-0 flex-1 ${wordIsPicture ? "ring-2 ring-primary" : ""}`}
-              onChange={(event) => editWord(event.target.value)}
-              onBlur={() => {
-                if (wordPreview && wordPreview !== value) {
-                  generateWord();
-                  return;
-                }
-                if (!wordPreview) {
-                  setWordDraft(null);
-                  setDraftPicture(null);
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter") return;
-                event.preventDefault();
-                generateWord();
-              }}
+        )}
+        <div
+          className={`grid place-items-center gap-2 ${organicIdentities ? "grid-cols-4 sm:grid-cols-6 sm:gap-1" : "grid-cols-4 sm:grid-cols-6"}`}
+        >
+          {organicIdentities?.map((organicIdentity, index) => (
+            <BotShapePreview
+              key={organicIdentity}
+              identity={organicIdentity}
+              label={t`Shape ${index + 1}`}
+              color={currentColor}
+              selected={isDefaultLook && identity === organicIdentity}
+              onClick={() => commitLook(currentColor, organicIdentity)}
             />
-          </div>
+          ))}
+          {SHIPPED_BOT_AVATAR_SHAPE_KEYS.map((key, shapeIndex) => (
+            <BotShapePreview
+              key={key}
+              shapeIndex={shapeIndex}
+              color={currentColor}
+              selected={!parsed.isImage && parsed.shapeIndex === shapeIndex}
+              onClick={() => commitLook(`${currentColor}::shape_${shapeIndex}`)}
+            />
+          ))}
         </div>
+      </div>
 
       <div className="border-t border-border pt-2">
         {organicIdentities ? null : (
@@ -321,11 +219,7 @@ export function BotLookPicker({
                 <button
                   key={image.id}
                   type="button"
-                  onClick={() => {
-                    setWordDraft(null);
-                    setDraftPicture(null);
-                    commitLook(image.value);
-                  }}
+                  onClick={() => commitLook(image.value)}
                   aria-label={t`Custom ${image.id}`}
                   aria-pressed={selected}
                   data-testid={`avatar-studio-custom-${image.id}`}
@@ -366,14 +260,11 @@ export function AvatarStudioPopover({
   disabled = false,
 }: AvatarStudioPopoverProps) {
   const [open, setOpen] = useState(false);
-  const [pendingLook, setPendingLook] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"bot" | "upload">("bot");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function closeStudio() {
-    if (pendingLook && pendingLook !== value) onChange(pendingLook);
-    setPendingLook(null);
     setOpen(false);
   }
 
@@ -493,11 +384,11 @@ export function AvatarStudioPopover({
 
           <div className="flex flex-col items-center justify-center py-2">
             <BotAvatar
-              color={pendingLook ?? value}
+              color={value}
               identity={identity}
               size={78}
               status={status}
-              avatarSet={studioPreviewAvatarSet(value, pendingLook, avatarSet)}
+              avatarSet={studioPreviewAvatarSet(value, avatarSet)}
             />
           </div>
 
@@ -532,7 +423,6 @@ export function AvatarStudioPopover({
                 value={value}
                 identity={identity}
                 avatarSet={avatarSet}
-                onPreviewChange={setPendingLook}
                 onChange={(next) => onChange(next)}
                 onAvatarSetChange={(set, next) => onChange(next, set)}
               />

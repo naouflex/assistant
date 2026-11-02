@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 
 import type { BotAvatarSet } from "@atlas/contracts";
-import { botAvatarWordValue } from "@atlas/contracts";
 import { DEFAULT_BOT_AVATAR_COLOR } from "@atlas/ui-web";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
@@ -16,7 +15,8 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@lingui/core/macro", () => ({
-  t: (parts: TemplateStringsArray) => parts[0] ?? "",
+  t: (parts: TemplateStringsArray, ...values: unknown[]) =>
+    parts.reduce((text, part, index) => `${text}${index > 0 ? values[index - 1] : ""}${part}`, ""),
 }));
 
 import { AvatarStudioPopover } from "./avatar-studio-popover";
@@ -125,34 +125,6 @@ describe("selectable bot icon sets", () => {
     expect(changed).toHaveBeenLastCalledWith("#10B981", "atlas");
   });
 
-  it("generates a shape from a word and keeps it when the color changes", async () => {
-    await render("#8B5CF6");
-    await click("Customize bot avatar");
-    const input = document.querySelector<HTMLInputElement>('[data-testid="avatar-word"]');
-    expect(input).not.toBeNull();
-    await act(async () => {
-      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      setValue?.call(input, "River");
-      input!.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    const studio = document.querySelector("[data-testid='avatar-studio']");
-    expect(studio?.querySelector(".atlas-word-icon")?.textContent).toBe("R");
-    expect(studio?.querySelector(".atlas-bot-avatar")?.textContent).toContain("R");
-    expect(changed).not.toHaveBeenCalled();
-    await act(async () => {
-      input!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    });
-    const river = botAvatarWordValue("#8B5CF6", "river");
-    expect(changed).toHaveBeenLastCalledWith(river, undefined);
-    expect(input!.value).toBe("river");
-    expect(input!.dataset.selected).toBe("true");
-    await click("Color #10B981");
-    expect(changed).toHaveBeenLastCalledWith(botAvatarWordValue("#10B981", "river"), undefined);
-    await click("wedge");
-    expect(input!.value).toBe("");
-    expect(document.querySelector("[data-testid='avatar-studio'] .atlas-word-icon")).toBeNull();
-  });
-
   it("shows shapes on Atlas and switches to Original when one is picked", async () => {
     await render("#10B981", "atlas");
     await click("Customize bot avatar");
@@ -162,19 +134,10 @@ describe("selectable bot icon sets", () => {
     expect(changed).toHaveBeenLastCalledWith(expect.any(String), "organic");
   });
 
-  it("commits a typed word when closing the studio without Apply", async () => {
+  it("does not offer a word field", async () => {
     await render("#8B5CF6");
     await click("Customize bot avatar");
-    const input = document.querySelector<HTMLInputElement>('[data-testid="avatar-word"]');
-    await act(async () => {
-      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      setValue?.call(input, "anchor");
-      input!.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    expect(changed).not.toHaveBeenCalled();
-    await click("Close");
-    const anchor = botAvatarWordValue("#8B5CF6", "anchor");
-    expect(changed).toHaveBeenLastCalledWith(anchor, undefined);
+    expect(document.querySelector('[data-testid="avatar-word"]')).toBeNull();
   });
 
   it("applies a shipped custom picture from the bot tab", async () => {

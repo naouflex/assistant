@@ -7,11 +7,12 @@ import {
 } from "./bot-avatar-shapes.js";
 
 describe("shipped bot avatar shapes", () => {
-  it("keeps the same eight shapes the parser encodes", () => {
+  it("keeps the same shapes the parser encodes", () => {
     expect(SHIPPED_BOT_AVATAR_SHAPE_KEYS).toHaveLength(BOT_AVATAR_SHAPE_COUNT);
     expect(shippedBotAvatarShapePath(3)).toBe(SHIPPED_BOT_AVATAR_SHAPES.tablet);
     expect(shippedBotAvatarShapePath(3)).not.toBe(shippedBotAvatarShapePath(0));
-    expect(shippedBotAvatarShapePath(11)).toBe(shippedBotAvatarShapePath(3));
+    expect(shippedBotAvatarShapePath(12)).toBe(shippedBotAvatarShapePath(0));
+    expect(shippedBotAvatarShapePath(11)).toBe(SHIPPED_BOT_AVATAR_SHAPES.gem);
   });
 
   it("emits path geometry only", () => {
