@@ -28,6 +28,7 @@ class AtlasPhoneAccessibilityService : AccessibilityService() {
 
   override fun onServiceConnected() {
     instance = this
+    PhoneControlWake.resume(this)
   }
 
   override fun onUnbind(intent: Intent?): Boolean {
