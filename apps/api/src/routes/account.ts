@@ -53,7 +53,12 @@ import {
 import type { RouterContext } from "./context.js";
 import { meDto } from "./shared.js";
 
-const NOTIFICATION_PREFERENCE_SELECT = { finish: true, help: true, takeover: true, computer: true } as const;
+const NOTIFICATION_PREFERENCE_SELECT = {
+  finish: true,
+  help: true,
+  takeover: true,
+  computer: true,
+} as const;
 
 export function accountRoutes(ctx: RouterContext) {
   const { deps, os, authed } = ctx;

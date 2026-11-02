@@ -637,6 +637,11 @@ export const JA_MESSAGES: Record<string, string> = {
   "Live working status": "作業状況をライブ表示",
   More: "その他",
   "Needs attention": "要対応",
+  "Computer problems": "コンピューターの問題",
+  "Takeover requests": "引き継ぎの依頼",
+  "Questions and approvals": "質問と承認",
+  "Finished work": "完了した作業",
+  "Push notifications": "プッシュ通知",
   "Notification settings": "通知設定",
   "Get notified when this Bot finishes or needs input":
     "このボットが完了したときや入力が必要なときに通知を受け取る",

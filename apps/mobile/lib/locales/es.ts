@@ -614,6 +614,11 @@ export const ES_MESSAGES: Record<string, string> = {
   "Live working status": "Estado del trabajo en vivo",
   More: "Más",
   "Needs attention": "Requiere atención",
+  "Computer problems": "Problemas del ordenador",
+  "Takeover requests": "Solicitudes de control",
+  "Questions and approvals": "Preguntas y aprobaciones",
+  "Finished work": "Trabajo terminado",
+  "Push notifications": "Notificaciones push",
   "Notification settings": "Configuración de notificaciones",
   "Get notified when this Bot finishes or needs input":
     "Recibe un aviso cuando este bot termine o necesite una respuesta",

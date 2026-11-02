@@ -661,7 +661,10 @@ export default function Account() {
         </SettingsGroup>
 
         {pushPreferences ? (
-          <SettingsGroup accessibilityLabel={t("Push notifications")} label={t("Push notifications")}>
+          <SettingsGroup
+            accessibilityLabel={t("Push notifications")}
+            label={t("Push notifications")}
+          >
             <SettingsSwitch
               label={t("Finished work")}
               value={pushPreferences.finish}

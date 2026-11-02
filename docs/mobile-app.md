@@ -39,6 +39,20 @@ server uses. Review or withdraw it later in **AI data sharing** in Settings.
 Bots notify you when they finish or need input, controlled per bot with
 **When it finishes or needs input** in its settings.
 
+**Push notifications** in Settings turns each kind on or off for the current space: finished work,
+questions and approvals, takeover requests and computer problems. A computer problem notice is sent
+when a broken computer could not restart by itself after three tries.
+
+Push setup for a self-hosted build:
+
+1. Create a Firebase project, add an Android app with the app's package name, and download
+   `google-services.json`. Keep it out of git; pass it to EAS as the `GOOGLE_SERVICES_JSON` file secret.
+2. In Firebase, create a service account key for FCM V1 and upload it under the Expo project's
+   credentials (Android, FCM V1).
+3. Set the EAS `projectId` in the app config so devices get Expo push tokens.
+4. Build the APK with `eas build -p android --profile preview` and install it.
+5. Set `EXPO_ACCESS_TOKEN` on the API and worker only if enhanced push security is on.
+
 On Android, **Notifications** in Settings also lets you choose which kinds you get, including a live
 working status while a bot runs.
 
