@@ -1,4 +1,4 @@
-import { BOT_COLOR_LIST, contrastRatio, seededLogoAvatarColor } from "@atlas/core";
+import { BOT_COLOR_LIST, contrastRatio, LOGO_SNOW_PATH, seededLogoAvatarColor } from "@atlas/core";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BotAvatar } from "./bot-avatar.js";
@@ -21,9 +21,8 @@ describe("logo-derived avatar prototype", () => {
     expect(html).toContain('data-vector-body="true"');
     expect(html).not.toContain("<image");
     expect(html).not.toContain("<filter");
-    // The two light windows contain vector gradients only, never an image or baked eyes.
-    expect([...html.matchAll(/<mask\b/g)]).toHaveLength(2);
-    expect(html).toContain("mask-type:luminance");
+    expect(html).toContain(LOGO_SNOW_PATH);
+    expect([...html.matchAll(/logo-avatar-eye-lid/g)]).toHaveLength(2);
     expect(html).not.toContain("orange-bot.png");
     expect(html).toContain("logo-avatar-gaze");
     expect(html).toContain('role="img"');

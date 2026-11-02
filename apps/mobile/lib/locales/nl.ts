@@ -649,6 +649,11 @@ export const NL_MESSAGES: Record<string, string> = {
   "Live working status": "Live werkstatus",
   More: "Meer",
   "Needs attention": "Heeft aandacht nodig",
+  "Computer problems": "Computerproblemen",
+  "Takeover requests": "Overnameverzoeken",
+  "Questions and approvals": "Vragen en goedkeuringen",
+  "Finished work": "Afgerond werk",
+  "Push notifications": "Pushmeldingen",
   "Notification settings": "Meldingsinstellingen",
   "Get notified when this Bot finishes or needs input":
     "Ontvang een melding wanneer deze bot klaar is of invoer nodig heeft",
@@ -1216,6 +1221,12 @@ export const NL_MESSAGES: Record<string, string> = {
   "1 free month earned": "1 gratis maand verdiend",
   "{count} free months earned": "{count} gratis maanden verdiend",
   "Submit a plugin": "Plugin indienen",
+  "Review recent runs": "Recente runs bekijken",
+  "Reviewing recent runs": "Recente runs worden bekeken",
+  "Proposed notes": "Voorgestelde notities",
+  Accept: "Accepteren",
+  Reject: "Afwijzen",
+  "Nothing to change": "Niets te wijzigen",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

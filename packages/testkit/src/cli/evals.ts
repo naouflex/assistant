@@ -8,6 +8,12 @@ import type { AgentRunRequest } from "@atlas/adapter-kit";
 import { ModelConnectInputSchema } from "@atlas/contracts";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
+import {
+  ANSWER_EVAL_CASES,
+  ANSWER_FIXTURE_VERSION,
+  ANSWER_JUDGE_CALIBRATION,
+  ANSWER_JUDGE_VERSION,
+} from "../evals/answers.js";
 import { EVAL_CASES, HISTORY_EVAL_CASES } from "../evals/cases.js";
 import { HISTORY_FIXTURE_VERSION } from "../evals/history-fixtures.js";
 import type { DiagnosticToolObservation, HistoryDiagnostic } from "../evals/history-observer.js";
@@ -73,10 +79,13 @@ async function main() {
     product: { cases: EVAL_CASES, fixtureVersion: "product-v1" },
     history: { cases: HISTORY_EVAL_CASES, fixtureVersion: HISTORY_FIXTURE_VERSION },
     silence: { cases: SILENCE_EVAL_CASES, fixtureVersion: SILENCE_FIXTURE_VERSION },
+    answers: { cases: ANSWER_EVAL_CASES, fixtureVersion: ANSWER_FIXTURE_VERSION },
     "tool-choice": { cases: TOOL_CHOICE_CASES, fixtureVersion: TOOL_CHOICE_FIXTURE_VERSION },
   };
   if (!Object.hasOwn(suites, values.suite!))
-    throw new Error("Unknown suite; use product, history, silence, tool-choice, or approval");
+    throw new Error(
+      "Unknown suite; use product, history, silence, answers, tool-choice, or approval",
+    );
   const suite = suites[values.suite as keyof typeof suites];
   const extraCases = values["cases-file"] ? loadToolChoiceCases(values["cases-file"]) : [];
   const cases = [...suite.cases, ...extraCases];
@@ -283,10 +292,20 @@ async function main() {
         "A valid judge pricing file with explicit rates is required; no inference was scheduled",
       );
     }
+    const judgePack =
+      values.suite === "answers"
+        ? { version: ANSWER_JUDGE_VERSION, calibration: ANSWER_JUDGE_CALIBRATION }
+        : values.suite === "silence"
+          ? { version: SILENCE_JUDGE_VERSION, calibration: SILENCE_JUDGE_CALIBRATION }
+          : null;
+    if (!judgePack)
+      return notRun(
+        "Semantic cases in this suite have no calibration set; no inference was scheduled",
+      );
     report.judge = {
       model: judgeConnection.modelId!,
       provider: judgeConnection.provider,
-      rubricVersion: SILENCE_JUDGE_VERSION,
+      rubricVersion: judgePack.version,
       pricing: judgePricing,
       calibration: [],
       modelCalls: 0,
@@ -337,7 +356,7 @@ async function main() {
       }
     };
     try {
-      for (const anchor of SILENCE_JUDGE_CALIBRATION) {
+      for (const anchor of judgePack.calibration) {
         const verdict = await judge(anchor.input, AbortSignal.timeout(60_000));
         report.judge.calibration.push({
           expected: anchor.pass,

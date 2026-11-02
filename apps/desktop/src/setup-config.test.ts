@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ATLAS_CLOUD_URL,
+  DEFAULT_EXISTING_SERVER_URL,
   DEFAULT_LOCAL_WEB_URL,
   desktopStackImageTag,
   isAtlasHealth,
@@ -137,15 +138,18 @@ describe("saved setup", () => {
     });
   });
 
-  it("saves Atlas Cloud as an existing server under the exact origin setup matches", () => {
-    // The setup window recognizes a saved Cloud choice by comparing against this constant.
-    expect(normalizeServerUrl(ATLAS_CLOUD_URL)).toBe(ATLAS_CLOUD_URL);
-    expect(parseSetupInput({ mode: "existing", serverUrl: ATLAS_CLOUD_URL })).toEqual({
-      mode: "existing",
-      serverUrl: ATLAS_CLOUD_URL,
-    });
-    expect(parseSetupInput({ mode: "new", serverUrl: ATLAS_CLOUD_URL })).toBeNull();
-    expect(servesBundledRenderer(ATLAS_CLOUD_URL, false)).toBe(false);
+  it("leaves Atlas Cloud unset until a hosted origin exists", () => {
+    expect(ATLAS_CLOUD_URL).toBe("");
+    expect(normalizeServerUrl(ATLAS_CLOUD_URL)).toBeNull();
+    expect(parseSetupInput({ mode: "existing", serverUrl: ATLAS_CLOUD_URL })).toBeNull();
+  });
+
+  it("prefills existing setup on the day-to-day local Atlas origin", () => {
+    expect(DEFAULT_EXISTING_SERVER_URL).toBe("http://127.0.0.1:5173");
+    expect(normalizeServerUrl(DEFAULT_EXISTING_SERVER_URL)).toBe(DEFAULT_EXISTING_SERVER_URL);
+    expect(
+      parseSetupInput({ mode: "existing", serverUrl: DEFAULT_EXISTING_SERVER_URL }),
+    ).toEqual({ mode: "existing", serverUrl: DEFAULT_EXISTING_SERVER_URL });
   });
 });
 

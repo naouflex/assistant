@@ -1,9 +1,12 @@
 import type { NavLink } from "@atlas/contracts";
-import { ANDROID_APK_URL, IOS_APP_STORE_URL } from "@atlas/contracts";
+import { IOS_APP_STORE_URL } from "@atlas/contracts";
 import {
   AppMarkStack,
   Button,
   buttonVariants,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -15,6 +18,7 @@ import {
   Download,
   FolderOpen,
   Gauge,
+  LayoutGrid,
   Link2,
   LogOut,
   Plug,
@@ -28,6 +32,7 @@ import {
 import { useLayoutEffect, useRef, useState } from "react";
 import { useSidebarUpdate } from "./DesktopUpdates";
 import { IconTooltip } from "./IconTooltip";
+import { QrMark } from "./QrCode";
 
 type Props = {
   mini?: boolean;
@@ -46,6 +51,8 @@ type Props = {
   onArtifacts: () => void;
   /** Opens the list of every bot's routines. */
   onRoutines?: () => void;
+  /** Opens the floor of agent desks. */
+  onCubicle?: () => void;
   onSettings: () => void;
   onUsage: () => void;
   onInvite?: () => void;
@@ -75,6 +82,7 @@ export function SidebarFooter({
   onLink,
   onArtifacts,
   onRoutines,
+  onCubicle,
   onSettings,
   onUsage,
   onInvite,
@@ -85,6 +93,8 @@ export function SidebarFooter({
   const { t } = useLingui();
   const update = useSidebarUpdate();
   const [failedImage, setFailedImage] = useState<string | null>(null);
+  const [mobileAppOpen, setMobileAppOpen] = useState(false);
+  const mobileAppUrl = IOS_APP_STORE_URL;
   const pillRef = useRef<HTMLButtonElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const [markCount, setMarkCount] = useState(3);
@@ -193,6 +203,16 @@ export function SidebarFooter({
                 <Trans>Routines</Trans>
               </Button>
             ) : null}
+            {onCubicle ? (
+              <Button
+                variant="ghost"
+                className="h-9 w-full justify-start gap-2.5 font-normal"
+                onClick={onCubicle}
+              >
+                <LayoutGrid className="text-muted-foreground" strokeWidth={1.75} />
+                <Trans>Cubicle</Trans>
+              </Button>
+            ) : null}
             {onBoard ? (
               <Button
                 variant="ghost"
@@ -223,15 +243,14 @@ export function SidebarFooter({
               <Trans>Usage</Trans>
             </Button>
             <div className="my-1 border-t border-border" />
-            <a
-              className={`${buttonVariants({ variant: "ghost" })} h-9 w-full justify-start gap-2.5 font-normal`}
-              href={/Android/i.test(navigator.userAgent) ? ANDROID_APK_URL : IOS_APP_STORE_URL}
-              target="_blank"
-              rel="noreferrer"
+            <Button
+              variant="ghost"
+              className="h-9 w-full justify-start gap-2.5 font-normal"
+              onClick={() => setMobileAppOpen(true)}
             >
               <Smartphone className="text-muted-foreground" strokeWidth={1.75} />
               <Trans>Get the mobile app</Trans>
-            </a>
+            </Button>
             {onInvite ? (
               <Button
                 variant="ghost"
@@ -269,6 +288,24 @@ export function SidebarFooter({
           </PopoverContent>
         ) : null}
       </Popover>
+      <Dialog open={mobileAppOpen} onOpenChange={setMobileAppOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogTitle>
+            <Trans>Get the mobile app</Trans>
+          </DialogTitle>
+          <a
+            href={mobileAppUrl}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="mobile-app-qr"
+            className="flex justify-center"
+          >
+            <span className="rounded-lg bg-white p-3">
+              <QrMark value={mobileAppUrl} testId="mobile-app-qr-mark" />
+            </span>
+          </a>
+        </DialogContent>
+      </Dialog>
       {!mini ? (
         <Button
           variant="outline"

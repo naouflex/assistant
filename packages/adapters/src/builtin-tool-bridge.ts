@@ -39,6 +39,7 @@ export const CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
   "connect_app",
   "run_subagent",
   "skill_read",
+  "read_memory",
   "update_bot",
   "update_preferences",
   "remember",
@@ -87,6 +88,7 @@ export const COMPACT_CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
   "end_call",
   "web_search",
   "web_fetch",
+  "read_memory",
   "remember",
   "save_memory",
   "recall_memory",
@@ -94,6 +96,7 @@ export const COMPACT_CORE_BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
   "user_computer_shell",
   "read_file",
   "write_file",
+  "attach_file",
   "list_files",
 ]);
 

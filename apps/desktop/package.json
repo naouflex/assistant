@@ -21,6 +21,7 @@
   "dependencies": {
     "@atlas/contracts": "workspace:*",
     "@atlas/logging": "workspace:*",
+    "@koromix/koffi-win32-x64": "3.3.4",
     "@sentry/electron": "8.3.0",
     "electron-updater": "6.8.11",
     "koffi": "3.3.4"

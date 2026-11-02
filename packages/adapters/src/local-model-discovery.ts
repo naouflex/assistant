@@ -24,7 +24,10 @@ export type DiscoveredLocalModel = {
 };
 
 type Env = Record<string, string | undefined>;
-type Fetch = (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
+type Fetch = (
+  url: string,
+  init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal },
+) => Promise<Response>;
 
 function trimBase(url: string): string {
   return url.trim().replace(/\/+$/, "");
@@ -137,6 +140,8 @@ export async function discoverLocalModels(
 /** Above this a model file no longer fits an 8 GB GPU with room for its context, so it spills to the CPU. */
 export const LARGE_LOCAL_MODEL_BYTES = 7 * 1024 ** 3;
 
+export type LocalModelLoadState = "loaded" | "loading" | "unloaded";
+
 export type LocalModelStatus = {
   id: string;
   aliases: string[];
@@ -148,6 +153,8 @@ export type LocalModelStatus = {
   contextWindow: number | null;
   /** Too big for an 8 GB GPU: it runs partly on the CPU and replies slowly. */
   large: boolean;
+  /** In memory, coming up, or only on disk. Null when the server does not say. */
+  loadState: LocalModelLoadState | null;
 };
 
 export type LocalServerStatus = {
@@ -158,6 +165,12 @@ export type LocalServerStatus = {
   contextWindow: number | null;
   models: LocalModelStatus[];
 };
+
+function loadStateOf(value: unknown): LocalModelLoadState | null {
+  if (value === "loaded" || value === "loading" || value === "unloaded") return value;
+  if (value === "sleeping" || value === "failed") return "unloaded";
+  return null;
+}
 
 function positiveInt(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value > 0
@@ -197,12 +210,13 @@ export async function scanServerStatus(
     ?.default_generation_settings;
   const serverContext = positiveInt(settings?.n_ctx);
   const tagModels = records((tags as { models?: unknown } | undefined)?.models);
-  const loaded = new Map(
+  const running = new Map(
     records((ps as { models?: unknown } | undefined)?.models).map((entry) => [
       String(entry.name ?? entry.model ?? ""),
       positiveInt(entry.context_length),
     ]),
   );
+  const ollamaSaysLoaded = ps !== undefined;
   const models: LocalModelStatus[] = [];
   const kind: LocalServerStatus["kind"] = serverContext
     ? "llama-server"
@@ -224,8 +238,9 @@ export async function scanServerStatus(
         aliases: [],
         sizeBytes,
         parameterSize,
-        contextWindow: loaded.get(id) ?? null,
+        contextWindow: running.get(id) ?? null,
         large: isLarge(sizeBytes, parameterSize),
+        loadState: ollamaSaysLoaded ? (running.has(id) ? "loaded" : "unloaded") : null,
       });
     }
   } else {
@@ -234,6 +249,7 @@ export async function scanServerStatus(
       const meta = entry.meta as Record<string, unknown> | undefined;
       const sizeBytes = positiveInt(meta?.size);
       const parameterSize = billions(positiveInt(meta?.n_params));
+      const status = entry.status as { value?: unknown } | undefined;
       models.push({
         id: entry.id.trim(),
         aliases: strings(entry.aliases).filter((alias) => alias !== entry.id),
@@ -241,6 +257,7 @@ export async function scanServerStatus(
         parameterSize,
         contextWindow: positiveInt(meta?.n_ctx) ?? serverContext,
         large: isLarge(sizeBytes, parameterSize),
+        loadState: loadStateOf(status?.value),
       });
     }
   }
@@ -251,6 +268,26 @@ export async function scanServerStatus(
     contextWindow: serverContext,
     models: models.slice(0, MAX_DISCOVERED_MODELS),
   };
+}
+
+/** Ask a configured local server to load one model. Other routers unload the previous one. */
+export async function loadLocalModel(
+  baseUrl: string,
+  modelId: string,
+  env: Env = process.env,
+  fetchImpl: Fetch = fetch,
+): Promise<void> {
+  const origin = trimBase(baseUrl).replace(/\/v1$/, "");
+  const allowed = localDiscoveryUrls(env).map((url) => trimBase(url).replace(/\/v1$/, ""));
+  if (!origin || !allowed.includes(origin)) {
+    throw new Error("That server is not a configured local model server");
+  }
+  const response = await fetchImpl(`${origin}/models/load`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ model: modelId }),
+  });
+  if (!response.ok) throw new Error("Could not load that model");
 }
 
 /** Status of every scanned server, in scan order. */

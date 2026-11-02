@@ -33,7 +33,7 @@ describe("agent memory context", () => {
     expect(result!.indexOf("user fact")).toBeLessThan(result!.indexOf("bot fact"));
   });
 
-  it("caps the complete memory block without splitting UTF-8 characters", async () => {
+  it("caps the index without splitting UTF-8 characters", async () => {
     const read = vi.fn(async ({ scope }: { scope: "bot" | "user" }) =>
       snapshot(
         scope === "bot"
@@ -41,7 +41,7 @@ describe("agent memory context", () => {
               document(
                 "new",
                 "new.md",
-                `old fact\n${"🙂".repeat(200)}\nrecent fact`,
+                `${"🙂".repeat(80)}\nrecent fact`,
                 1,
                 "2026-08-15T12:00:00.000Z",
               ),
@@ -50,18 +50,18 @@ describe("agent memory context", () => {
       ),
     );
 
-    const result = await loadAgentMemoryContext(storeWith(read), "bot-1", context, 300);
+    const result = await loadAgentMemoryContext(storeWith(read), "bot-1", context, 330);
 
-    expect(Buffer.byteLength(result ?? "", "utf8")).toBeLessThanOrEqual(300);
+    expect(Buffer.byteLength(result ?? "", "utf8")).toBeLessThanOrEqual(330);
     expect(result).toContain("## bot: new.md");
+    expect(result).toContain("🙂");
+    expect(result).not.toContain("recent fact");
     expect(result).not.toContain("old.md");
-    expect(result).not.toContain("old fact");
-    expect(result).toContain("recent fact");
     expect(result).not.toContain("�");
     expect(result?.endsWith("</durable_memory>")).toBe(true);
   });
 
-  it("keeps shared memory and the recent bot tail within the existing budget", async () => {
+  it("indexes the opening line of shared and bot notes", async () => {
     const read = vi.fn(async ({ scope }: { scope: "bot" | "user" }) =>
       snapshot(
         scope === "bot"
@@ -82,8 +82,9 @@ describe("agent memory context", () => {
 
     expect(Buffer.byteLength(result ?? "", "utf8")).toBeLessThanOrEqual(32 * 1024);
     expect(result).toContain("shared fact");
-    expect(result).toContain("recent fact");
-    expect(result).not.toContain("old fact");
+    expect(result).toContain("old fact");
+    expect(result).not.toContain("recent fact");
+    expect(result).not.toContain("🙂");
     expect(result).not.toContain("�");
   });
 

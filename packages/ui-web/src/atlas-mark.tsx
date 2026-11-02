@@ -1,0 +1,90 @@
+import { useId } from "react";
+import { cn } from "./lib/utils.js";
+
+/** Atlas mountain mark. Uses `currentColor` so sidebar chrome can follow ink. */
+export function AtlasMark({
+  className,
+  size = 28,
+  title = "Atlas",
+}: {
+  className?: string;
+  size?: number;
+  /** Empty string marks the SVG decorative when a nearby wordmark carries the name. */
+  title?: string;
+}) {
+  // React useId includes ":" which breaks url(#…) mask references in Chromium.
+  const maskId = `atlas-mark-${useId().replaceAll(":", "")}`;
+  const labeled = title.trim() !== "";
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1024 1024"
+      width={size}
+      height={size}
+      role={labeled ? "img" : "presentation"}
+      aria-label={labeled ? title : undefined}
+      aria-hidden={labeled ? undefined : true}
+      className={cn("shrink-0 text-foreground", className)}
+      data-testid="atlas-mark"
+    >
+      <mask id={maskId}>
+        <g transform="scale(2)">
+          <path
+            fill="#FFFFFF"
+            d="M63.92 447.43C52.36 447.43 41.7 441.18 36.06 431.08C30.42 420.99 30.67 408.63 36.73 398.78C102.85 291.28 168.97 183.77 235.08 76.26C239.55 69 247.47 64.57 256 64.57C264.53 64.57 272.45 69 276.92 76.26C343.03 183.77 409.15 291.28 475.27 398.78C481.33 408.63 481.58 420.99 475.94 431.08C470.3 441.18 459.64 447.43 448.08 447.43C320.03 447.43 191.97 447.43 63.92 447.43Z"
+          />
+          <path
+            fill="#000000"
+            d="M171.82 211.21C197.68 169.16 223.54 127.11 249.4 85.07C250.81 82.77 253.31 81.38 256 81.38C258.69 81.38 261.19 82.77 262.6 85.07C288.46 127.11 314.32 169.16 340.18 211.21C331.76 211.21 323.34 206.04 314.92 202.02C306.51 198 298.09 187.08 289.67 187.08C284.06 187.08 278.45 183.38 272.84 187.85C267.22 192.32 261.61 213.89 256 213.89C250.39 213.89 244.78 204.89 239.16 200.1C233.55 195.32 227.94 185.17 222.33 185.17C213.91 185.17 205.49 195.76 197.08 200.1C188.66 204.44 180.24 211.21 171.82 211.21Z"
+          />
+          <ellipse
+            cx="283.33"
+            cy="275.53"
+            rx="12.24"
+            ry="28.65"
+            transform="rotate(-34 283.33 275.53)"
+            fill="#000000"
+          />
+          <ellipse
+            cx="339.33"
+            cy="262.13"
+            rx="8.8"
+            ry="27.68"
+            transform="rotate(-34 339.33 262.13)"
+            fill="#000000"
+          />
+        </g>
+      </mask>
+      <rect width="1024" height="1024" fill="currentColor" mask={`url(#${maskId})`} />
+    </svg>
+  );
+}
+
+/** Mark plus lowercase wordmark for sidebar chrome. Mini sidebars keep the mark alone. */
+export function AtlasLockup({
+  className,
+  size = 28,
+  mini = false,
+}: {
+  className?: string;
+  size?: number;
+  mini?: boolean;
+}) {
+  return (
+    <div
+      className={cn("flex items-center gap-2 text-foreground", className)}
+      data-testid="atlas-lockup"
+    >
+      <AtlasMark size={size} title={mini ? "Atlas" : ""} />
+      {mini ? null : (
+        <span
+          className="font-mono text-[22px] font-medium lowercase leading-none tracking-[-0.04em] text-foreground"
+          aria-hidden="true"
+        >
+          [atlas]
+        </span>
+      )}
+      {mini ? null : <span className="sr-only">Atlas</span>}
+    </div>
+  );
+}

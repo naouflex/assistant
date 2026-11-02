@@ -13,6 +13,11 @@ const memoryApi = vi.hoisted(() => ({
   list: vi.fn(async () => []),
   remove: vi.fn(),
   update: vi.fn(),
+  proposals: vi.fn(async () => []),
+  dream: vi.fn(async () => null),
+  startDream: vi.fn(),
+  acceptProposal: vi.fn(),
+  rejectProposal: vi.fn(),
 }));
 // One space, so no "Available in" choice appears.
 vi.mock("../components/integrations/space-availability", () => ({

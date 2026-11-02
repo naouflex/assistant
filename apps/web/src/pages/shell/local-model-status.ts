@@ -15,6 +15,8 @@ export type LocalModelFacts = {
   atlasContextWindow: number | null;
   /** Too big for an 8 GB GPU. */
   large: boolean;
+  /** In GPU memory, or only available. Null when the server does not say. */
+  loadState: "loaded" | "loading" | "unloaded" | null;
 };
 
 /** What the servers say about one local model, or null when no server lists it. */
@@ -33,6 +35,7 @@ export function localModelFacts(
         contextWindow: model.contextWindow,
         atlasContextWindow: status.contextWindow,
         large: model.large,
+        loadState: model.loadState,
       };
   }
   return {
@@ -40,6 +43,7 @@ export function localModelFacts(
     contextWindow: null,
     atlasContextWindow: status.contextWindow,
     large: false,
+    loadState: null,
   };
 }
 
@@ -84,6 +88,9 @@ export function useLocalModelStatus(choices: readonly ChatModelChoice[]) {
         );
       }
       if (facts.large) parts.push(t`slow on 8 GB GPU`);
+      if (facts.loadState === "loaded") parts.push(t`loaded`);
+      else if (facts.loadState === "loading") parts.push(t`loading`);
+      else if (facts.loadState === "unloaded") parts.push(t`not loaded`);
       out.set(choice.key, parts.length ? parts.join(" \u00b7 ") : t`online`);
     }
     return out;

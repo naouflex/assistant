@@ -43,7 +43,7 @@ describe("window chrome", () => {
     expect(windowChromeKind(desktop("darwin"))).toBe("darwin");
   });
 
-  it("leaves the native Windows frame to Electron when advertised", () => {
+  it("leaves Windows caption overlay to Electron when advertised", () => {
     expect(windowChromeKind({ ...desktop("win32"), nativeWindowFrame: true })).toBe("spacer");
   });
 

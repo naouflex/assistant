@@ -614,6 +614,11 @@ export const ES_MESSAGES: Record<string, string> = {
   "Live working status": "Estado del trabajo en vivo",
   More: "Más",
   "Needs attention": "Requiere atención",
+  "Computer problems": "Problemas del ordenador",
+  "Takeover requests": "Solicitudes de control",
+  "Questions and approvals": "Preguntas y aprobaciones",
+  "Finished work": "Trabajo terminado",
+  "Push notifications": "Notificaciones push",
   "Notification settings": "Configuración de notificaciones",
   "Get notified when this Bot finishes or needs input":
     "Recibe un aviso cuando este bot termine o necesite una respuesta",
@@ -1165,6 +1170,12 @@ export const ES_MESSAGES: Record<string, string> = {
   "Use email code": "Usar código por correo",
   "Use password": "Usar contraseña",
   "{count} messages with {peer}": "{count} mensajes con {peer}",
+  "Review recent runs": "Revisar ejecuciones recientes",
+  "Reviewing recent runs": "Revisando ejecuciones recientes",
+  "Proposed notes": "Notas propuestas",
+  Accept: "Aceptar",
+  Reject: "Rechazar",
+  "Nothing to change": "Nada que cambiar",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

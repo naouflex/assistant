@@ -13,6 +13,7 @@ export * from "./billing-emulator.js";
 export * from "./boat-sandbox.js";
 export * from "./bot-avatar.js";
 export * from "./bot-messages.js";
+export * from "./bot-move.js";
 export {
   forgetBotSecret,
   getBotSecretMetadata,
@@ -46,6 +47,7 @@ export * from "./composio-connector.js";
 export * from "./composio-fake.js";
 export * from "./computer-browser.js";
 export * from "./computer-control.js";
+export * from "./computer-health.js";
 export * from "./computer-idle.js";
 export * from "./computer-lifecycle.js";
 export * from "./computer-screens.js";
@@ -116,6 +118,7 @@ export * from "./model-roles.js";
 export * from "./model-selection.js";
 export * from "./model-vision.js";
 export * from "./none-sandbox.js";
+export * from "./notification-preferences.js";
 export * from "./novita-sandbox.js";
 export * from "./novita-template.js";
 export * from "./openai-compatible-url.js";

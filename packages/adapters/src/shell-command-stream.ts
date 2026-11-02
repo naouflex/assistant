@@ -1,3 +1,4 @@
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type { ProcessEvent } from "@atlas/adapter-kit";
 import { redactSecrets } from "@atlas/core";
 import { redactShellStreams } from "./agent-environment.js";
@@ -172,6 +173,9 @@ export async function observeShellCommand(
         if (stdout.length > 0 || stderr.length > 0) armIdle();
       }
     } catch (error) {
+      // A service that is not listening is not a command result. Keep the class so the run
+      // stops instead of asking the model to explain the failure.
+      if (error instanceof SandboxUnreachableError) throw error;
       // Providers may include command environment values in errors. Never expose the raw
       // error or its cause to runtime tool handling or a background completion observer.
       throw new Error(

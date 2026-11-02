@@ -9,6 +9,7 @@ const APPROVAL_EXEMPT_TOOLS = new Set([
   "list_files",
   "read_file",
   "read_history",
+  "read_memory",
   "search_history",
   "write_file",
   "shell",
@@ -53,6 +54,7 @@ const EXPLICIT_APPROVAL_BUILTIN_TOOLS = new Set([
   "create_space",
   "set_child_instructions",
   "set_child_bot_model",
+  "move_bot",
 ]);
 
 const UNATTENDED_SAFE_BUILTIN_TOOLS = new Set([
@@ -64,6 +66,7 @@ const UNATTENDED_SAFE_BUILTIN_TOOLS = new Set([
   "list_secrets",
   "purchase_status",
   "read_file",
+  "read_memory",
   "recall_memory",
   "request_takeover",
   "run_subagent",
@@ -265,6 +268,7 @@ const OWN_STATE_RESULT_TOOLS = new Set([
   "list_secrets",
   "message_user",
   "read_history",
+  "read_memory",
   "recall_memory",
   "remember",
   "render_plot",

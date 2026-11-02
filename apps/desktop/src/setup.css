@@ -44,6 +44,14 @@ html[data-platform="darwin"] .titlebar {
   padding-left: 88px;
 }
 
+/* Native caption buttons overlay the top-right; keep Quit clear of them. */
+html[data-platform="win32"] .titlebar {
+  padding-right: max(
+    14px,
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+  );
+}
+
 .titlebar-name {
   font-size: 12px;
   letter-spacing: 0.08em;

@@ -830,10 +830,14 @@ class AccountImporter implements ArchiveSink {
     await rm(space.messagesPath, { force: true });
     for (const [threadId, lastSeq] of space.threadSeqs) {
       if (lastSeq < 0) continue;
-      await this.deps.prisma.thread.update({
-        where: { id: threadId },
-        data: { nextMessageSeq: lastSeq + 1, lastReadSeq: lastSeq, unread: false },
-      });
+      // Imported history must not pull the counter behind messages already in the thread.
+      await this.deps.prisma.$executeRaw`
+        UPDATE threads
+        SET "nextMessageSeq" = GREATEST("nextMessageSeq", ${lastSeq + 1}),
+            "lastReadSeq" = GREATEST("lastReadSeq", ${lastSeq}),
+            unread = false
+        WHERE id = ${threadId}
+      `;
     }
   }
 

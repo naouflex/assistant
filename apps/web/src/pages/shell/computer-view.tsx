@@ -16,10 +16,15 @@ export function computerPlaceholder(
   state: ComputerStatus["state"] | undefined,
   booting: boolean,
   label: string,
+  autoRecovery?: ComputerStatus["autoRecovery"],
 ) {
   if (state === "booting" || booting) return t`Booting live desktop…`;
   if (state === "running") return label;
   if (state === "suspended") return t`Computer is asleep. Open it to wake.`;
+  if (state === "error" && autoRecovery === "trying")
+    return t`Computer stopped working. Restarting it…`;
+  if (state === "error" && autoRecovery === "gave_up")
+    return t`Computer could not restart by itself. Restart it to try again.`;
   if (state === "error") return t`Computer failed to boot`;
   return t`Computer is stopped`;
 }

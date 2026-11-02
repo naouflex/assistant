@@ -1,4 +1,4 @@
-import { ACTIVE_RUN_STATUSES } from "@atlas/core";
+import { ACTIVE_RUN_STATUSES, SHIPPED_BOT_AVATAR_IMAGES } from "@atlas/core";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -32,7 +32,7 @@ describe("BotAvatar", () => {
   // Button sizes any SVG without a size class, which beats width/height attributes but not inline styles.
   it("sizes the shape with an inline style so icon sizing in a button cannot shrink it", () => {
     const html = renderToString(<BotAvatar color="#8B5CF6::shape_0" size={26} />);
-    const shape = html.match(/<svg[^>]*transition-transform[^>]*>/)?.[0];
+    const shape = html.match(/<svg[^>]*atlas-shape-avatar[^>]*>/)?.[0];
     expect(shape).toMatch(/style="[^"]*width:26px;height:26px/);
   });
 
@@ -45,6 +45,27 @@ describe("BotAvatar", () => {
   it("keeps working attribute false when idle", () => {
     const html = renderToString(<BotAvatar color="#F59E0B" status="idle" />);
     expect(html).toContain('data-working="false"');
+    expect(html).not.toContain("atlas-bot-avatar-ring");
+  });
+
+  it("circles a working organic avatar with the same status ring as a photo", () => {
+    const html = renderToString(<BotAvatar color="#3B82F6" identity="maya" status="running" />);
+    expect(html).toContain("atlas-organic-avatar");
+    expect(html).toContain("atlas-bot-avatar-ring-working");
+    expect(html).toContain("stroke-status-working");
+  });
+
+  it("circles a working Atlas logo with the same status ring", () => {
+    const working = renderToString(
+      <BotAvatar color="#10B981" identity="chief" avatarSet="atlas" status="running" />,
+    );
+    expect(working).toContain("atlas-logo-avatar");
+    expect(working).toContain("atlas-bot-avatar-ring-working");
+    expect(working).toContain("stroke-status-working");
+    const idle = renderToString(
+      <BotAvatar color="#10B981" identity="chief" avatarSet="atlas" status="idle" />,
+    );
+    expect(idle).not.toContain("atlas-bot-avatar-ring");
   });
 
   it("renders distinct shapes for distinct bot identities", () => {
@@ -120,12 +141,13 @@ describe("BotAvatar", () => {
     expect(html).not.toContain("evil.example");
   });
 
-  it("honors reduced-motion for the working mascot pulse class", () => {
+  it("marks a working studio shape so organic CSS can drive its motion", () => {
     const html = renderToString(
       <BotAvatar color="#8B5CF6::shape_0" identity="maya" size={32} status="running" />,
     );
-    expect(html).toContain("animate-pulse");
-    expect(html).toContain("motion-reduce:animate-none");
+    expect(html).toContain('data-working="true"');
+    expect(html).toContain("atlas-organic-avatar-body-working");
+    expect(html).toContain("atlas-organic-avatar-eyes-working");
   });
 
   it("restores a plain color that renders the organic body instead of a pinned shape", () => {
@@ -151,7 +173,8 @@ describe("BotAvatar", () => {
     expect(restored).toContain("atlas-organic-avatar");
     expect(restored).not.toContain("bot-character-eyes");
     expect(shaped).toContain("bot-character-eyes");
-    expect(shaped).not.toContain("atlas-organic-avatar");
+    expect(shaped).toContain("atlas-organic-avatar");
+    expect(shaped).toContain("atlas-shape-avatar");
   });
 
   it("exposes shape picker name and pressed state", () => {
@@ -177,18 +200,32 @@ describe("BotAvatar", () => {
     expect(html).not.toContain("atlas-bot-avatar-visor");
   });
 
-  it("keeps uploaded images", () => {
+  it("keeps uploaded images without shape-eye overlays", () => {
     const html = renderToString(<BotAvatar color="data:image/png;base64,abc" identity="maya" />);
     expect(html).toContain("<img");
-    expect(html).not.toContain("atlas-organic-avatar");
+    expect(html).toContain("atlas-bot-avatar-picture");
+    expect(html).not.toContain("atlas-bot-avatar-picture-eyes");
+    expect(html).not.toContain("atlas-bot-avatar-picture-goggles");
   });
 
-  it("keeps an encoded studio shape", () => {
+  it("animates shipped portrait goggles instead of shape eyes", () => {
+    const punk = SHIPPED_BOT_AVATAR_IMAGES.find((image) => image.id === "beach-punk")!;
+    const html = renderToString(<BotAvatar color={punk.value} identity="maya" />);
+    expect(html).toContain("atlas-bot-avatar-picture-goggles");
+    expect(html).toContain(punk.goggles);
+    expect(html).not.toContain("atlas-bot-avatar-picture-eyes");
+  });
+
+  it("keeps an encoded studio shape and animates it like organic", () => {
     const html = renderToString(
       <BotAvatar color={`${DEFAULT_BOT_AVATAR_COLOR}::shape_3`} identity="maya" />,
     );
     expect(html).toContain("bot-character-eyes");
-    expect(html).not.toContain("atlas-organic-avatar");
+    expect(html).toContain("atlas-organic-avatar");
+    expect(html).toContain('data-eye-pattern="');
+    expect(html).toContain('data-shape-family="');
+    expect(html).toContain("<rect");
+    expect(html).not.toContain("<ellipse");
   });
 
   it("fills the organic body with the resolved palette hex when the custom color is invalid", () => {

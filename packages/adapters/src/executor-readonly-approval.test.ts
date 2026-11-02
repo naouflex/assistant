@@ -266,6 +266,7 @@ function fixture({
   let outsideSteering = false;
   let offeredTools: string[] = [];
   let instructions = "";
+  const proposals: Array<Record<string, unknown>> = [];
   const prisma = {
     user: { findUnique: vi.fn(async () => null) },
     run: {
@@ -424,6 +425,23 @@ function fixture({
     steeringMessage: {
       findFirst: vi.fn(async (_query: unknown) => (outsideSteering ? { id: "steer-1" } : null)),
     },
+    memoryProposal: {
+      findFirst: vi.fn(async (query: { where: { path?: string; content?: string } }) => {
+        return (
+          proposals.find(
+            (proposal) =>
+              proposal.path === query.where.path &&
+              proposal.content === query.where.content &&
+              proposal.status === "pending",
+          ) ?? null
+        );
+      }),
+      create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+        const proposal = { id: `proposal-${proposals.length + 1}`, ...data };
+        proposals.push(proposal);
+        return proposal;
+      }),
+    },
     externalEffect,
   };
   const transactionalPrisma = Object.assign(prisma, {
@@ -570,6 +588,7 @@ function fixture({
     results,
     execute,
     commit,
+    proposals,
     sharedMemoryState,
     pauseRunForInput,
     enqueue,
@@ -668,6 +687,7 @@ describe("disabled builtins", () => {
     await f.run();
     expect(f.results).toEqual([{ error: "This tool is disabled for this bot." }]);
     expect(f.commit).not.toHaveBeenCalled();
+    expect(f.proposals).toEqual([]);
     expect(f.execute).not.toHaveBeenCalled();
     expect(f.effects).toEqual([]);
   });
@@ -693,7 +713,7 @@ describe("connector read-only metadata and approval enforcement", () => {
     },
   );
 
-  it("writes shared memory directly, including when an always-allow rule exists", async () => {
+  it("proposes shared memory without writing it, including when an always-allow rule exists", async () => {
     const args = { path: " MEMORY.md ", content: "Printing: all print jobs go to Clyde." };
     const f = fixture({
       name: "save_shared_memory",
@@ -705,21 +725,24 @@ describe("connector read-only metadata and approval enforcement", () => {
     await f.run();
     expect(f.pauseRunForInput).not.toHaveBeenCalled();
     expect(reviewMock).not.toHaveBeenCalled();
-    expect(f.commit).toHaveBeenCalledOnce();
-    expect(f.commit).toHaveBeenCalledWith(
+    expect(f.commit).not.toHaveBeenCalled();
+    expect(f.proposals).toEqual([
       expect.objectContaining({
         scope: "user",
         path: "MEMORY.md",
         content: args.content,
-        expectedRevision: 0,
+        baseRevision: 0,
+        source: "bot",
+        status: "pending",
+        spaceId: "space-1",
+        userId: "user-1",
       }),
-      expect.objectContaining({ spaceId: "space-1", userId: "user-1" }),
-    );
-    expect(f.commit.mock.calls[0]![0]).not.toHaveProperty("botId");
-    expect(f.results.at(-1)).toEqual({ ok: true, path: "MEMORY.md", revision: 1 });
+    ]);
+    expect(f.proposals[0]).not.toHaveProperty("botId");
+    expect(f.results.at(-1)).toEqual({ ok: true, pending: true, path: "MEMORY.md" });
   });
 
-  it("replaces an existing shared document at the revision it just read", async () => {
+  it("records the revision it read and leaves the current note in place", async () => {
     const f = fixture({
       name: "save_shared_memory",
       builtin: true,
@@ -728,14 +751,15 @@ describe("connector read-only metadata and approval enforcement", () => {
     f.setCalls([{ args: { path: "MEMORY.md", content: "New rule" }, executionId: "call-1" }]);
     await f.run();
     expect(f.pauseRunForInput).not.toHaveBeenCalled();
-    expect(f.commit).toHaveBeenCalledWith(
-      expect.objectContaining({ content: "New rule", expectedRevision: 1 }),
-      expect.anything(),
+    expect(f.commit).not.toHaveBeenCalled();
+    expect(f.sharedMemoryState.content).toBe("Old rule");
+    expect(f.proposals[0]).toEqual(
+      expect.objectContaining({ content: "New rule", baseRevision: 1 }),
     );
-    expect(f.results.at(-1)).toEqual({ ok: true, path: "MEMORY.md", revision: 2 });
+    expect(f.results.at(-1)).toEqual({ ok: true, pending: true, path: "MEMORY.md" });
   });
 
-  it("does not overwrite shared memory that changed after it was read", async () => {
+  it("still proposes when the note changes after it is read", async () => {
     const f = fixture({
       name: "save_shared_memory",
       builtin: true,
@@ -744,12 +768,10 @@ describe("connector read-only metadata and approval enforcement", () => {
     });
     f.setCalls([{ args: { path: "MEMORY.md", content: "New rule" }, executionId: "call-1" }]);
     await f.run();
-    expect(f.commit).toHaveBeenCalledWith(
-      expect.objectContaining({ expectedRevision: 1 }),
-      expect.anything(),
-    );
+    expect(f.commit).not.toHaveBeenCalled();
     expect(f.sharedMemoryState.content).toBe("Someone else edited");
-    expect(f.results.at(-1)).toEqual({ error: MEMORY_REVISION_CONFLICT_ERROR });
+    expect(f.proposals[0]).toEqual(expect.objectContaining({ baseRevision: 1 }));
+    expect(f.results.at(-1)).toEqual({ ok: true, pending: true, path: "MEMORY.md" });
   });
 
   it("rejects shared memory content over the size limit", async () => {
@@ -3073,16 +3095,18 @@ describe("user computer screen control", () => {
       ],
     });
 
-  it("is offered only with a connected Mac", async () => {
-    const mac = fixture({ ...ownRun, userDevices: devices().gateway });
-    await mac.run();
-    expect(mac.offeredTools()).toEqual(
-      expect.arrayContaining(["user_computer_observe", "user_computer_act"]),
-    );
-    const windows = fixture({ ...ownRun, userDevices: devices("win32").gateway });
-    await windows.run();
-    expect(windows.offeredTools()).toContain("user_computer_shell");
-    expect(windows.offeredTools()).not.toContain("user_computer_observe");
+  it("is offered with a connected desktop", async () => {
+    for (const platform of ["darwin", "win32", "linux"]) {
+      const desktop = fixture({ ...ownRun, userDevices: devices(platform).gateway });
+      await desktop.run();
+      expect(desktop.offeredTools()).toEqual(
+        expect.arrayContaining(["user_computer_observe", "user_computer_act"]),
+      );
+    }
+    const phone = fixture({ ...ownRun, userDevices: devices("android").gateway });
+    await phone.run();
+    expect(phone.offeredTools()).toContain("user_computer_shell");
+    expect(phone.offeredTools()).not.toContain("user_computer_observe");
     const disabled = fixture({
       ...ownRun,
       userDevices: devices().gateway,

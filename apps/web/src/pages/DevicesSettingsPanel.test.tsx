@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { IOS_APP_STORE_URL } from "@atlas/contracts";
 import type { ComponentProps, ReactNode } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -24,7 +25,6 @@ vi.mock("../components/ComputerDeviceSettings", () => ({
     <div data-testid="computer-devices">{alwaysShow ? "computers" : null}</div>
   ),
 }));
-vi.mock("../lib/desktop", () => ({ desktopBridge: () => null }));
 vi.mock("../lib/query", () => ({
   useSpaceQueries: () => ({
     models: {
@@ -48,7 +48,7 @@ vi.mock("@tanstack/react-query", () => ({
           kind: "llama-server",
           reachable: true,
           contextWindow: 16384,
-          models: [{ id: "qwen", aliases: [], sizeBytes: null, parameterSize: null, contextWindow: 16384, large: false }],
+          models: [{ id: "qwen", aliases: [], sizeBytes: null, parameterSize: null, contextWindow: 16384, large: false, loadState: "unloaded" }],
         },
       ],
     },
@@ -80,11 +80,14 @@ it("lists the server, local models, computers, and phone", async () => {
   expect(host.querySelector('[data-testid="devices-settings"]')).not.toBeNull();
   expect(host.querySelector('[data-testid="devices-server"]')?.textContent).toContain("Online");
   expect(host.querySelector('[data-testid="devices-models"]')?.textContent).toContain("127.0.0.1:11436");
+  expect(host.querySelector('[data-testid="devices-models"]')?.textContent).toContain("qwen");
+  expect(host.querySelector('[data-testid="devices-models"]')?.textContent).toContain("Not loaded");
+  expect(host.querySelector('[data-testid="devices-model-load-qwen"]')).not.toBeNull();
   expect(host.querySelector('[data-testid="computer-devices"]')?.textContent).toBe("computers");
-  expect(host.querySelector('[data-testid="devices-phone"]')?.textContent).toContain(
-    "Install the Atlas APK",
-  );
-  expect(host.querySelector('[data-testid="devices-phone"]')?.textContent).toContain(
-    "Push needs Expo token",
-  );
+  const qr = host.querySelector('[data-testid="devices-apk-qr"]');
+  expect(qr?.getAttribute("href")).toBe(IOS_APP_STORE_URL);
+  expect(qr?.textContent).toContain("Install Atlas and sign in");
+  await vi.waitFor(() => {
+    expect(host.querySelector('[data-testid="devices-apk-qr-mark"] path')?.getAttribute("d")).toBeTruthy();
+  });
 });

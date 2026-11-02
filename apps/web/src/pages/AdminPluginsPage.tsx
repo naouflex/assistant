@@ -16,7 +16,7 @@ export function AdminPluginsPage() {
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background text-foreground">
       <WindowChrome />
-      <header className="flex items-center gap-3 border-b px-4 py-3">
+      <header className="desktop-caption-end flex items-center gap-3 border-b px-4 py-3">
         <Link
           to="/app"
           className={buttonVariants({ variant: "ghost", size: "icon" })}

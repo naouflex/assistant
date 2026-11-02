@@ -9,18 +9,35 @@ export function warmWindowTtlMs(value: string | undefined) {
     : DEFAULT_WARM_WINDOW_TTL_MS;
 }
 
+/** Matches sidebar header height so Windows caption buttons sit in the content chrome. */
+export const WINDOWS_TITLE_BAR_OVERLAY_HEIGHT = 40;
+
 function windowChrome(platform: NodeJS.Platform) {
   const mac = platform === "darwin";
+  const win = platform === "win32";
+  // Keep in sync with webDarkTokens.background from @atlas/ui-tokens (asserted in tests).
+  // Do not import that package here: desktop packs compiled JS only and ui-tokens is a
+  // TypeScript source / devDependency.
+  const backgroundColor = "#161616";
   return {
-    // Keep in sync with webDarkTokens.background from @atlas/ui-tokens (asserted in tests).
-    // Do not import that package here: desktop packs compiled JS only and ui-tokens is a
-    // TypeScript source / devDependency.
-    backgroundColor: "#161616",
+    backgroundColor,
     show: true,
     autoHideMenuBar: true,
-    frame: mac || platform === "win32",
-    titleBarStyle: mac ? ("hiddenInset" as const) : undefined,
+    // macOS: hiddenInset traffic lights. Windows: hidden title bar + native caption overlay
+    // (no separate title strip). Linux: frameless with in-app controls.
+    frame: mac || win,
+    titleBarStyle: mac ? ("hiddenInset" as const) : win ? ("hidden" as const) : undefined,
     trafficLightPosition: mac ? { x: 16, y: 16 } : undefined,
+    ...(win
+      ? {
+          titleBarOverlay: {
+            color: backgroundColor,
+            // Muted ink on the dark startup chrome (web --muted-foreground on dark).
+            symbolColor: "#A8A8A8",
+            height: WINDOWS_TITLE_BAR_OVERLAY_HEIGHT,
+          },
+        }
+      : {}),
   };
 }
 

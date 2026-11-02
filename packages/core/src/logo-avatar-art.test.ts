@@ -1,10 +1,10 @@
 import { expect, it } from "vitest";
-import { LOGO_BODY_PATH } from "./logo-avatar-art.js";
+import { LOGO_BODY_PATH, LOGO_SNOW_PATH } from "./logo-avatar-art.js";
 
 type Point = [number, number];
 type Segment = [Point, Point, Point, Point];
 
-it("keeps the body contour smooth through cubic joins and across its crown", () => {
+it("keeps the mountain contour tangent-smooth and the peak a broad dome", () => {
   const numbers = (part: string) => [...part.matchAll(/-?\d+(?:\.\d+)?/g)].map(([n]) => Number(n));
   const point = (values: number[], offset = 0): Point => [
     values[offset] ?? NaN,
@@ -18,29 +18,31 @@ it("keeps the body contour smooth through cubic joins and across its crown", () 
     return points;
   });
   expect(segments.length).toBeLessThanOrEqual(12);
+  expect(LOGO_SNOW_PATH.startsWith("M")).toBe(true);
   for (const [index, segment] of segments.entries()) {
     for (const p of segment) expect(p.every(Number.isFinite)).toBe(true);
-    const previous = segments[index - 1];
+    const previous = segments[(index + segments.length - 1) % segments.length];
     if (!previous) continue;
-    const [, b, c, d] = previous;
-    const [e, f, g] = segment;
-    for (const axis of [0, 1] as const) {
-      // Rounding path coordinates must not create visible kinks.
-      expect(Math.abs(3 * (d[axis] - c[axis]) - 3 * (f[axis] - e[axis]))).toBeLessThan(0.01);
-      expect(
-        Math.abs(6 * (d[axis] - 2 * c[axis] + b[axis]) - 6 * (g[axis] - 2 * f[axis] + e[axis])),
-      ).toBeLessThan(0.025);
-    }
+    const [, , c, d] = previous;
+    const [e, f] = segment;
+    const incoming = [d[0] - c[0], d[1] - c[1]] as const;
+    const outgoing = [f[0] - e[0], f[1] - e[1]] as const;
+    const incomingLen = Math.hypot(incoming[0], incoming[1]);
+    const outgoingLen = Math.hypot(outgoing[0], outgoing[1]);
+    expect(incomingLen).toBeGreaterThan(0);
+    expect(outgoingLen).toBeGreaterThan(0);
+    const alignment =
+      (incoming[0] * outgoing[0] + incoming[1] * outgoing[1]) / (incomingLen * outgoingLen);
+    // Rounding the cubics must not leave a visible corner.
+    expect(alignment).toBeGreaterThan(0.999);
   }
-  for (const [a, b, c, d] of segments)
+  // The dome is the only part of the contour that sits entirely in the crown.
+  // The straight sides run down from it, so a y cutoff would include them too.
+  const crown = segments.filter((segment) => segment.every((p) => p[1] < 8));
+  expect(crown.length).toBeGreaterThan(0);
+  for (const [a, b, c, d] of crown)
     for (let step = 0; step <= 50; step++) {
       const t = step / 50;
-      const y =
-        (1 - t) ** 3 * a[1] +
-        3 * (1 - t) ** 2 * t * b[1] +
-        3 * (1 - t) * t ** 2 * c[1] +
-        t ** 3 * d[1];
-      if (y >= 12) continue;
       const velocity = (i: 0 | 1) =>
         3 * (1 - t) ** 2 * (b[i] - a[i]) +
         6 * (1 - t) * t * (c[i] - b[i]) +
@@ -50,8 +52,8 @@ it("keeps the body contour smooth through cubic joins and across its crown", () 
       const curvature =
         (velocity(0) * acceleration(1) - velocity(1) * acceleration(0)) /
         Math.hypot(velocity(0), velocity(1)) ** 3;
-      // The logo has a broad, convex dome rather than a pointed cap.
-      expect(curvature).toBeGreaterThan(0);
-      expect(curvature).toBeLessThan(0.08);
+      // The agreed peak is a short dome, not a point and not a flat top.
+      expect(curvature).toBeGreaterThan(0.12);
+      expect(curvature).toBeLessThan(0.26);
     }
 });

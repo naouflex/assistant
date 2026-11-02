@@ -7,6 +7,7 @@ import {
   forgetBotSecret,
   hasActiveComputerControl,
   listBotSecretMetadata,
+  moveBot,
   normalizeSecretDestination,
   pageUrlOrigin,
   revealBotSecret,
@@ -21,6 +22,7 @@ import { BotSecretAuth, resolveBotAvatarSet } from "@atlas/contracts";
 import { ACTIVE_RUN_STATUSES, displayName } from "@atlas/core";
 import type { Prisma } from "@atlas/db";
 import {
+  BotMoveError,
   BotSectionNameConflictError,
   botProfileLabelsChanged,
   ComputerLimitError,
@@ -32,6 +34,7 @@ import {
   recordSecurityEvent,
   restoreBotUnderComputerQuota,
   SpaceDeletionInProgressError,
+  setBotParent,
   settingsTarget,
 } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
@@ -510,6 +513,38 @@ export function botsRoutes(ctx: RouterContext) {
           bot,
           computerContext(context.actor, bot.id, "archive"),
         );
+        return { ok: true as const };
+      }),
+      move: authed.bots.move.handler(async ({ context, input }) => {
+        try {
+          const result = await moveBot(
+            { prisma: deps.prisma, artifacts: deps.artifacts },
+            { userId: context.actor.userId, botId: input.botId, targetSpaceId: input.spaceId },
+          );
+          return {
+            ok: true as const,
+            botIds: result.botIds,
+            droppedMcpServers: result.droppedMcpServers,
+          };
+        } catch (error) {
+          if (error instanceof BotMoveError)
+            throw new ORPCError("BAD_REQUEST", { message: error.message });
+          throw error;
+        }
+      }),
+      setParent: authed.bots.setParent.handler(async ({ context, input }) => {
+        const bot = await repos.getBot(context.actor, input.botId);
+        try {
+          await setBotParent(deps.prisma, {
+            userId: context.actor.userId,
+            botId: bot.id,
+            parentBotId: input.parentBotId,
+          });
+        } catch (error) {
+          if (error instanceof BotMoveError)
+            throw new ORPCError("BAD_REQUEST", { message: error.message });
+          throw error;
+        }
         return { ok: true as const };
       }),
       restore: authed.bots.restore.handler(async ({ context, input }) => {

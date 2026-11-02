@@ -1,6 +1,25 @@
 import type { AgentUsage, ModelUsageLookup } from "@atlas/adapter-kit";
 import { z } from "zod";
 
+/**
+ * OpenRouter identifies an app by this URL. rakazo.com is the upstream app, so sending it
+ * keeps this fork listed as Rakazo no matter what display name is attached.
+ */
+export function openRouterReferer(origin = process.env.WEB_ORIGIN): string | undefined {
+  const trimmed = origin?.trim();
+  if (!trimmed) return undefined;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== "https:") return undefined;
+  const host = url.hostname.toLowerCase();
+  if (host === "rakazo.com" || host.endsWith(".rakazo.com")) return undefined;
+  return url.origin;
+}
+
 /** Attribution is restricted to OpenRouter inference endpoints, never compatible/custom hosts. */
 export function openRouterInferenceFetch(fetcher: typeof fetch, userId?: string): typeof fetch {
   return async (input, init) => {
@@ -17,8 +36,10 @@ export function openRouterInferenceFetch(fetcher: typeof fetch, userId?: string)
           ? input.headers
           : undefined,
     );
-    headers.set("HTTP-Referer", "https://rakazo.com");
+    const referer = openRouterReferer();
+    if (referer) headers.set("HTTP-Referer", referer);
     headers.set("X-OpenRouter-Title", "Atlas");
+    headers.set("X-Title", "Atlas");
     const body = init?.body ?? (input instanceof Request ? await input.clone().text() : undefined);
     if (typeof body !== "string") throw new Error("OpenRouter inference requires a JSON body");
     const payload = JSON.parse(body);

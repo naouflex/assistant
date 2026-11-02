@@ -1,4 +1,5 @@
 export { AppMarkStack } from "./app-mark-stack.js";
+export { AtlasLockup, AtlasMark } from "./atlas-mark.js";
 export {
   BOT_AVATAR_COLORS,
   BOT_MASCOT_SHAPES,

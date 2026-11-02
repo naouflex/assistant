@@ -14,8 +14,10 @@ describe("associatedPasskeyRpIds", () => {
   const resourcesPath = "/Applications/Atlas.app/Contents/Resources";
   const profile = "/Applications/Atlas.app/Contents/embedded.provisionprofile";
 
-  it("is the hosted server's domain", () => {
-    expect(PASSKEY_RP_ID).toBe(new URL(ATLAS_CLOUD_URL).hostname);
+  it("is the hosted server's domain when cloud is configured, else localhost", () => {
+    expect(PASSKEY_RP_ID).toBe(
+      ATLAS_CLOUD_URL ? new URL(ATLAS_CLOUD_URL).hostname : "localhost",
+    );
   });
 
   it("lists the hosted domain only for a packaged macOS app with an embedded profile", () => {

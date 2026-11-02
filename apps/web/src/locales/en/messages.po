@@ -430,6 +430,10 @@ msgstr "{title}, saved as {savedAs}"
 msgid "{toolCount, plural, one {# tool} other {# tools}}"
 msgstr "{toolCount, plural, one {# tool} other {# tools}}"
 
+#: src/pages/Cubicle.tsx
+msgid "{waiting} need you"
+msgstr "{waiting} need you"
+
 #. placeholder {0}: mention.name
 #: src/pages/shell/composer.tsx
 msgid "@{0}"
@@ -438,6 +442,10 @@ msgstr "@{0}"
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "1 model"
 msgstr "1 model"
+
+#: src/pages/Cubicle.tsx
+msgid "1 needs you"
+msgstr "1 needs you"
 
 #: src/components/integrations/space-availability.tsx
 msgid "1 space"
@@ -464,6 +472,10 @@ msgstr "A subscription credential is stored securely."
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "About {label}"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr "Accept"
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
@@ -1121,6 +1133,7 @@ msgid "Both"
 msgstr "Both"
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Routines.tsx
 msgid "Bots"
 msgstr "Bots"
@@ -1253,6 +1266,10 @@ msgstr "Change {title}"
 #: src/pages/shell/composer-error.tsx
 msgid "Change model"
 msgstr "Change model"
+
+#: src/pages/BotContextMenu.tsx
+msgid "Change parent"
+msgstr "Change parent"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Change password"
@@ -1555,6 +1572,10 @@ msgid "Computer"
 msgstr "Computer"
 
 #: src/pages/shell/computer-view.tsx
+msgid "Computer could not restart by itself. Restart it to try again."
+msgstr "Computer could not restart by itself. Restart it to try again."
+
+#: src/pages/shell/computer-view.tsx
 #: src/pages/shell/use-computer.tsx
 msgid "Computer failed to boot"
 msgstr "Computer failed to boot"
@@ -1575,6 +1596,10 @@ msgstr "Computer is asleep. Open it to wake."
 #: src/pages/shell/computer-view.tsx
 msgid "Computer is stopped"
 msgstr "Computer is stopped"
+
+#: src/pages/shell/computer-view.tsx
+msgid "Computer stopped working. Restarting it…"
+msgstr "Computer stopped working. Restarting it…"
 
 #: src/components/ComputerDeviceSettings.tsx
 #: src/pages/AccountSettingsOverlay.tsx
@@ -1838,6 +1863,11 @@ msgstr "Could not change"
 msgid "Could not change password"
 msgstr "Could not change password"
 
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not change the parent."
+msgstr "Could not change the parent."
+
 #: src/components/integrations/space-availability.tsx
 msgid "Could not change where this is available"
 msgstr "Could not change where this is available"
@@ -2016,6 +2046,10 @@ msgstr "Could not load"
 msgid "Could not load activity"
 msgstr "Could not load activity"
 
+#: src/pages/Cubicle.tsx
+msgid "Could not load agents"
+msgstr "Could not load agents"
+
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Could not load approval rules"
 msgstr "Could not load approval rules"
@@ -2087,6 +2121,11 @@ msgstr "Could not load voice settings"
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "Could not log out. Try again."
+
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not move this bot."
+msgstr "Could not move this bot."
 
 #: src/components/ModelCredits.tsx
 #: src/pages/BillingSettingsPanel.tsx
@@ -2184,6 +2223,10 @@ msgstr "Could not reset password"
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
 msgstr "Could not resume this routine"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
+msgstr "Could not review recent runs"
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Could not revoke connection"
@@ -2429,6 +2472,11 @@ msgstr "Cron"
 msgid "Cron expression"
 msgstr "Cron expression"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Cubicle.tsx
+msgid "Cubicle"
+msgstr "Cubicle"
+
 #: src/components/ApprovalRulePreview.tsx
 msgid "Current"
 msgstr "Current"
@@ -2437,6 +2485,15 @@ msgstr "Current"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
 msgstr "Current password"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom"
+msgstr "Custom"
+
+#. placeholder {0}: image.id
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom {0}"
+msgstr "Custom {0}"
 
 #: src/components/VaultSettings.tsx
 msgid "Custom header"
@@ -2908,8 +2965,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "Every {n} hours at :{minute}"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "Every bot in this space reads these notes and keeps them up to date."
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr "Every bot reads these notes. A change waits until you accept it."
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -2994,6 +3051,7 @@ msgstr "Extra high"
 msgid "failed"
 msgstr "failed"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/components/SubagentCard.tsx
 #: src/pages/ActivityList.tsx
 msgid "Failed"
@@ -3364,17 +3422,25 @@ msgstr "Input"
 msgid "Inputs"
 msgstr "Inputs"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Install Atlas and sign in"
+msgstr "Install Atlas and sign in"
+
 #: src/components/ComputerDeviceSettings.tsx
 msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Install the Atlas APK and sign in"
-msgstr "Install the Atlas APK and sign in"
-
 #: src/components/SidebarFooter.tsx
 msgid "Install update"
 msgstr "Install update"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing model"
+msgstr "Installing model"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing runtime"
+msgstr "Installing runtime"
 
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
@@ -3457,6 +3523,10 @@ msgstr "Isolated preview — no access to your account"
 #: src/pages/shell/shell-dialogs.tsx
 msgid "Its bots and groups are kept and leave the section."
 msgstr "Its bots and groups are kept and leave the section."
+
+#: src/pages/shell/dialogs.tsx
+msgid "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+msgstr "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
 
 #: src/pages/shell/dialogs.tsx
 msgid "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
@@ -3562,6 +3632,10 @@ msgstr "Listening…"
 msgid "llama.cpp"
 msgstr "llama.cpp"
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Load"
+msgstr "Load"
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "Load earlier messages"
@@ -3578,9 +3652,29 @@ msgstr "Load older runs"
 msgid "Load web images automatically"
 msgstr "Load web images automatically"
 
+#: src/pages/shell/local-model-status.ts
+msgid "loaded"
+msgstr "loaded"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loaded"
+msgstr "Loaded"
+
+#: src/pages/shell/local-model-status.ts
+msgid "loading"
+msgstr "loading"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loading"
+msgstr "Loading"
+
 #: src/pages/ActivityList.tsx
 msgid "Loading activity…"
 msgstr "Loading activity…"
+
+#: src/pages/Cubicle.tsx
+msgid "Loading agents"
+msgstr "Loading agents"
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Loading integrations…"
@@ -3635,6 +3729,10 @@ msgstr "Local access lets bots run commands without asking. Avoid it on shared o
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local computer access requires the latest desktop app."
 msgstr "Local computer access requires the latest desktop app."
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Local model"
+msgstr "Local model"
 
 #: src/components/ModelCredits.tsx
 #: src/components/SidebarFooter.tsx
@@ -3992,6 +4090,14 @@ msgstr "More apps"
 msgid "More computer actions"
 msgstr "More computer actions"
 
+#: src/pages/shell/dialogs.tsx
+msgid "Move"
+msgstr "Move"
+
+#: src/pages/shell/dialogs.tsx
+msgid "Move {botName} to {spaceName}?"
+msgstr "Move {botName} to {spaceName}?"
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move down"
 msgstr "Move down"
@@ -4004,9 +4110,24 @@ msgstr "Move them to your shared memory."
 msgid "Move to"
 msgstr "Move to"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Move to space"
+msgstr "Move to space"
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "Move up"
+
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr "Moved {0} to {1}"
+
+#. placeholder {0}: bot.name
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Moved {0} to {name}"
+msgstr "Moved {0} to {name}"
 
 #: src/components/call/CallCard.tsx
 msgid "Mute"
@@ -4146,6 +4267,10 @@ msgstr "Next run"
 msgid "Next settings sections"
 msgstr "Next settings sections"
 
+#: src/pages/Cubicle.tsx
+msgid "No agents"
+msgstr "No agents"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "No apps match your search."
 msgstr "No apps match your search."
@@ -4265,6 +4390,10 @@ msgstr "No tickets yet"
 msgid "No trigger"
 msgstr "No trigger"
 
+#: src/pages/BotContextMenu.tsx
+msgid "None"
+msgstr "None"
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr "Normal"
@@ -4294,6 +4423,14 @@ msgstr "Not in Atlas's catalog"
 msgid "Not in the plugin catalog"
 msgstr "Not in the plugin catalog"
 
+#: src/pages/shell/local-model-status.ts
+msgid "not loaded"
+msgstr "not loaded"
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Not loaded"
+msgstr "Not loaded"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"
 msgstr "Not now"
@@ -4314,6 +4451,10 @@ msgstr "Not working"
 #: src/pages/KnowledgeSection.tsx
 msgid "Nothing remembered yet"
 msgstr "Nothing remembered yet"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr "Nothing to change"
 
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
@@ -4354,6 +4495,7 @@ msgid "offline"
 msgstr "offline"
 
 #: src/components/ComputerDeviceSettings.tsx
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
 msgstr "Offline"
@@ -4397,6 +4539,7 @@ msgstr "One-time purchase. Credits do not expire."
 msgid "online"
 msgstr "online"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Online"
 msgstr "Online"
@@ -4733,6 +4876,10 @@ msgstr "Productivity"
 msgid "Program: {name}"
 msgstr "Program: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr "Proposed notes"
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr "Protected input"
@@ -4750,10 +4897,6 @@ msgstr "Providers"
 #: src/components/CloudAgentCard.tsx
 msgid "Pull request"
 msgstr "Pull request"
-
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Push needs Expo token"
-msgstr "Push needs Expo token"
 
 #: src/pages/ActivityList.tsx
 msgid "Queued"
@@ -4905,6 +5048,7 @@ msgstr "Refreshing…"
 msgid "Registration is closed"
 msgstr "Registration is closed"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr "Reject"
@@ -5169,6 +5313,14 @@ msgstr "Return to call with {0}"
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "Review provider settings and test again."
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr "Review recent runs"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr "Reviewing recent runs"
 
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Revoke"
@@ -5761,6 +5913,7 @@ msgstr "Speech model"
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO is temporarily unavailable. Try again."
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
 msgid "Start"
 msgstr "Start"
@@ -5774,6 +5927,7 @@ msgstr "Start {trialDays}-day free trial"
 msgid "Start recording"
 msgstr "Start recording"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/ActivityList.tsx
 msgid "Starting"
 msgstr "Starting"
@@ -5794,6 +5948,7 @@ msgstr "Status"
 msgid "Steps"
 msgstr "Steps"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6124,6 +6279,10 @@ msgstr "This model's context window is too small. Choose another model."
 msgid "This month"
 msgstr "This month"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr "This note changed."
+
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
 msgstr "This permanently deletes your account and data."
@@ -6281,6 +6440,7 @@ msgid "Trusted sites"
 msgstr "Trusted sites"
 
 #: src/pages/ActivityList.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Onboarding.tsx
 msgid "Try again"
 msgstr "Try again"
@@ -6653,6 +6813,10 @@ msgstr "When to use"
 msgid "Where should bots run?"
 msgstr "Where should bots run?"
 
+#: src/components/LocalModelHostSettings.tsx
+msgid "Windows only"
+msgstr "Windows only"
+
 #: src/lib/ticket-status.ts
 msgid "Won't do"
 msgstr "Won't do"
@@ -6764,6 +6928,3 @@ msgstr "Your voice provider is out of credit."
 #: src/lib/user-error.ts
 msgid "Your voice provider key was rejected."
 msgstr "Your voice provider key was rejected."
-
-msgid "Local model"
-msgstr "Local model"

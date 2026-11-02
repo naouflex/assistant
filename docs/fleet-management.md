@@ -41,10 +41,13 @@ message it answers came from you in the app.
   with `list_fleet`.
 - `set_child_bot_model`: sets or clears a child bot's model and thinking level.
 - `create_child_routine`: schedules a prompt for a child bot.
+- `move_bot`: moves a bot of this space to another of your spaces (`space_id` or `space_name`), or
+  changes its parent (`parent_bot_id`, `parent_bot_name` or `clear_parent: true`). See
+  [Moving a bot](#moving-a-bot).
 
 ## Approval
 
-In Ask and Auto, `set_child_instructions` and `set_child_bot_model` always show an approval card.
+In Ask and Auto, `set_child_instructions`, `set_child_bot_model` and `move_bot` always show an approval card.
 Auto-review and "Always allow" do not skip it, and the card offers allow or deny only.
 `create_group`, `update_group` and `create_child_routine` follow the space's approval mode like any
 other action. Never ask runs all of them. The card lists what
@@ -69,7 +72,8 @@ the bot has to ask again.
 - Read, request or change secrets. Instructions, profile fields and routine names and prompts that
   contain a credential are refused.
 - Edit a bot it did not create. It can only change a section or pin on any of your bots.
-- Move a bot between spaces. Every tool works inside the space and account of the run.
+- Move a bot between spaces without your approval, or move itself. Every other tool works inside the
+  space and account of the run.
 - Remove itself from the group it is running in.
 
 ## Limits
@@ -91,3 +95,25 @@ bot's thread.
 
 Routines a bot creates for a child are managed by you in the child's **Routines** screen. A bot
 cannot list or cancel them.
+
+## Moving a bot
+
+You can move a bot from its menu (**Move to space**, **Change parent**) or let a bot do it with
+`move_bot` after you approve the card. A move to another space:
+
+- Takes the bot and all its descendants. The moved bot becomes top-level in the new space; its
+  descendants keep their parents.
+- Re-encrypts its conversation, events, memory and memory history with the new space's key, in one
+  transaction. If anything fails, nothing moves.
+- Moves its homes, skills, routines, tasks, scratchpad, memory proposals and dreams, bot secrets,
+  browser profiles and files.
+- Switches it to the new space's team computer. A dedicated computer stays in the old space, stopped,
+  and is never deleted.
+- Takes it out of its section and unpins it.
+- Unlinks its MCP servers, which belong to the old space. Reconnect them in the new space.
+
+A move is refused while the bot or a descendant is working, is in a group, or is connected to a
+messaging channel. Usage, audit history and purchases stay with the old space.
+
+Changing the parent works only inside one space and refuses a loop. Archiving a bot takes it out of
+its section and removes sections that become empty.

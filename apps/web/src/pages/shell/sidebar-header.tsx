@@ -1,5 +1,5 @@
 import type { Bot } from "@atlas/contracts";
-import { Button, Popover, PopoverContent, PopoverTrigger } from "@atlas/ui-web";
+import { AtlasLockup, Button, Popover, PopoverContent, PopoverTrigger } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
 import { Bell, PanelLeftClose, PanelLeftOpen, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -66,7 +66,10 @@ export function SidebarHeader({
     <div
       className={`app-drag flex items-center ${mini ? `flex-col gap-2 px-0 pb-2 ${hasWindowChrome ? "pt-4" : "pt-2"}` : "justify-between px-[18px] pb-3 pt-4"}`}
     >
-      {!mini || hasWindowChrome ? <WindowChrome /> : null}
+      <div className={`flex items-center ${mini ? "flex-col gap-2" : "gap-3"}`}>
+        {hasWindowChrome ? <WindowChrome /> : null}
+        <AtlasLockup mini={mini} size={mini ? 22 : 28} className="app-no-drag" />
+      </div>
       <div className={`relative flex items-center ${mini ? "flex-col gap-0.5" : "gap-2.5"}`}>
         {onSearch ? (
           <IconTooltip label={t`Search`}>

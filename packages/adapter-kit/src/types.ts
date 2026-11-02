@@ -528,6 +528,11 @@ export interface AgentRunRequest {
   routineId?: string | null;
   sourceMessageId?: string | null;
   prompt: string;
+  /**
+   * The user's own words, without the dated turn notes added around them.
+   * Arithmetic is read from this so a timestamp is not treated as a sum.
+   */
+  utterance?: string;
   instructions: string;
   history: Array<{
     id?: string;
@@ -614,7 +619,13 @@ export interface AgentUsage {
   usageSource?: string | null;
 }
 
-export type UsageOperationKind = "answer" | "setup" | "retrieval" | "subagent" | "compaction";
+export type UsageOperationKind =
+  | "answer"
+  | "setup"
+  | "retrieval"
+  | "subagent"
+  | "compaction"
+  | "dream";
 
 export interface ModelCallObserver {
   beforeCall(call: {
@@ -753,6 +764,8 @@ export interface BackgroundJobPayloads {
   /** The bot's call rang out: mark it missed if nobody answered. */
   "call.expire": { threadId: string; callId: string };
   "history.compact": { threadId: string };
+  /** One opt-in review of a space's memory. Failures stay on the dream row. */
+  "memory.dream": { dreamId: string };
   "messaging.deliver": { runId?: string };
   "messaging.credential-cleanup": { installationId: string; ref: string };
   /** Reconcile durable remote-agent intent; scope is loaded from the database. */
@@ -819,7 +832,7 @@ export interface ArtifactPut {
 }
 
 export interface NotificationMessage {
-  kind: "completion" | "failure" | "help" | "takeover";
+  kind: "completion" | "failure" | "help" | "takeover" | "computer";
   title: string;
   body: string;
   botId: string;

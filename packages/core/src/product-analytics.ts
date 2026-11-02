@@ -10,6 +10,7 @@ export function analyticsScreen(pathname: string): AnalyticsScreen | undefined {
   )
     return "artifacts";
   if (pathname === "/app/board") return "board";
+  if (pathname === "/app/cubicle") return "cubicle";
   if (/^\/app\/(?:g\/)?[^/]+$/.test(pathname) || ["/thread", "/group-thread"].includes(pathname))
     return "chat";
   if (pathname === "/computer") return "computer";

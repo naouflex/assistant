@@ -317,6 +317,10 @@ export async function archiveBot(
   ]);
   const runIds = activeRuns.map((run) => run.id);
   const now = new Date();
+  const section = await deps.prisma.bot.findUnique({
+    where: { id: bot.id },
+    select: { sectionId: true },
+  });
   await deps.prisma.$transaction(async (tx) => {
     await tx.run.updateMany({
       where: { id: { in: runIds } },
@@ -346,8 +350,9 @@ export async function archiveBot(
     }
     await tx.bot.update({
       where: { id: bot.id },
-      data: { archivedAt: bot.archivedAt ?? now, pinned: false },
+      data: { archivedAt: bot.archivedAt ?? now, pinned: false, sectionId: null },
     });
+    if (section?.sectionId) await removeEmptySection(tx, section.sectionId, bot.spaceId);
   });
   await Promise.allSettled([
     ...activeRuns.map((run) => deps.jobs.cancel(runJobKey(run.id))),
@@ -370,6 +375,19 @@ export async function archiveBot(
     });
     await recordComputerRunEnd(deps.prisma, currentDedicated, "stopped");
   }
+}
+
+/** Drops a section that no longer holds a bot or a group, so archiving leaves no empty heading. */
+async function removeEmptySection(
+  tx: Pick<PrismaClient, "bot" | "chatGroup" | "botSection">,
+  sectionId: string,
+  spaceId: string,
+) {
+  const [bots, groups] = await Promise.all([
+    tx.bot.count({ where: { sectionId } }),
+    tx.chatGroup.count({ where: { sectionId } }),
+  ]);
+  if (!bots && !groups) await tx.botSection.deleteMany({ where: { id: sectionId, spaceId } });
 }
 
 export async function destroyBot(

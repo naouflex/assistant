@@ -6,7 +6,7 @@ export function WelcomePage() {
   const navigate = useNavigate();
   return (
     <div className="flex min-h-full flex-col bg-background" data-atlas-surface="welcome">
-      <div className="app-drag flex gap-2 px-5 py-[18px]">
+      <div className="app-drag desktop-caption-end flex gap-2 px-5 py-[18px]">
         <WindowChrome />
       </div>
       <main className="flex flex-1 flex-col items-center justify-center gap-11 px-5 pb-[90px]">

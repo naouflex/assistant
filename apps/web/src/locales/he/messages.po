@@ -430,6 +430,10 @@ msgstr "{title}, יישמר בשם {savedAs}"
 msgid "{toolCount, plural, one {# tool} other {# tools}}"
 msgstr "{toolCount, plural, one {# כלי} other {# כלים}}"
 
+#: src/pages/Cubicle.tsx
+msgid "{waiting} need you"
+msgstr ""
+
 #. placeholder {0}: mention.name
 #: src/pages/shell/composer.tsx
 msgid "@{0}"
@@ -437,6 +441,10 @@ msgstr "@{0}"
 
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "1 model"
+msgstr ""
+
+#: src/pages/Cubicle.tsx
+msgid "1 needs you"
 msgstr ""
 
 #: src/components/integrations/space-availability.tsx
@@ -464,6 +472,10 @@ msgstr "פרטי גישה של המנוי נשמרים בצורה מאובטחת
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "על {label}"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
@@ -1121,6 +1133,7 @@ msgid "Both"
 msgstr ""
 
 #: src/pages/Artifacts.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Routines.tsx
 msgid "Bots"
 msgstr "בוטים"
@@ -1253,6 +1266,10 @@ msgstr "שינוי {title}"
 #: src/pages/shell/composer-error.tsx
 msgid "Change model"
 msgstr "החלפת מודל"
+
+#: src/pages/BotContextMenu.tsx
+msgid "Change parent"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Change password"
@@ -1555,6 +1572,10 @@ msgid "Computer"
 msgstr "מחשב"
 
 #: src/pages/shell/computer-view.tsx
+msgid "Computer could not restart by itself. Restart it to try again."
+msgstr ""
+
+#: src/pages/shell/computer-view.tsx
 #: src/pages/shell/use-computer.tsx
 msgid "Computer failed to boot"
 msgstr "הפעלת המחשב נכשלה"
@@ -1575,6 +1596,10 @@ msgstr "המחשב במצב שינה. יש לפתוח אותו כדי להעיר
 #: src/pages/shell/computer-view.tsx
 msgid "Computer is stopped"
 msgstr "המחשב כבוי"
+
+#: src/pages/shell/computer-view.tsx
+msgid "Computer stopped working. Restarting it…"
+msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
 #: src/pages/AccountSettingsOverlay.tsx
@@ -1838,6 +1863,11 @@ msgstr ""
 msgid "Could not change password"
 msgstr "לא ניתן לשנות את הסיסמה"
 
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not change the parent."
+msgstr ""
+
 #: src/components/integrations/space-availability.tsx
 msgid "Could not change where this is available"
 msgstr ""
@@ -2016,6 +2046,10 @@ msgstr "לא ניתן לטעון"
 msgid "Could not load activity"
 msgstr "לא ניתן לטעון את הפעילות"
 
+#: src/pages/Cubicle.tsx
+msgid "Could not load agents"
+msgstr ""
+
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Could not load approval rules"
 msgstr "לא ניתן לטעון את כללי האישור"
@@ -2087,6 +2121,11 @@ msgstr "לא ניתן לטעון את הגדרות הקול"
 #: src/lib/sign-out.ts
 msgid "Could not log out. Try again."
 msgstr "לא ניתן להתנתק. יש לנסות שוב."
+
+#: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
+msgid "Could not move this bot."
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 #: src/pages/BillingSettingsPanel.tsx
@@ -2183,6 +2222,10 @@ msgstr "לא ניתן לאפס את הסיסמה"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2429,6 +2472,11 @@ msgstr "Cron"
 msgid "Cron expression"
 msgstr "ביטוי Cron"
 
+#: src/components/SidebarFooter.tsx
+#: src/pages/Cubicle.tsx
+msgid "Cubicle"
+msgstr ""
+
 #: src/components/ApprovalRulePreview.tsx
 msgid "Current"
 msgstr "נוכחי"
@@ -2437,6 +2485,15 @@ msgstr "נוכחי"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
 msgstr "סיסמה נוכחית"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom"
+msgstr ""
+
+#. placeholder {0}: image.id
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Custom {0}"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Custom header"
@@ -2908,8 +2965,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "כל {n} שעות בדקה {minute}"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "כל הבוטים במרחב הזה קוראים את ההערות האלה ומעדכנים אותן."
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -2994,6 +3051,7 @@ msgstr "גבוה מאוד"
 msgid "failed"
 msgstr "נכשל"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/components/SubagentCard.tsx
 #: src/pages/ActivityList.tsx
 msgid "Failed"
@@ -3364,17 +3422,25 @@ msgstr "קלט"
 msgid "Inputs"
 msgstr "קלטים"
 
-#: src/components/ComputerDeviceSettings.tsx
-msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Install Atlas and sign in"
 msgstr ""
 
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Install the Atlas APK and sign in"
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Install Atlas Desktop on Windows, sign in to this server, then allow bots to use it"
 msgstr ""
 
 #: src/components/SidebarFooter.tsx
 msgid "Install update"
 msgstr "התקנת עדכון"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing model"
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Installing runtime"
+msgstr ""
 
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
@@ -3457,6 +3523,10 @@ msgstr "תצוגה מקדימה מבודדת — ללא גישה לחשבון"
 #: src/pages/shell/shell-dialogs.tsx
 msgid "Its bots and groups are kept and leave the section."
 msgstr "הבוטים והקבוצות שבו יישמרו ויוצאו מהמקטע."
+
+#: src/pages/shell/dialogs.tsx
+msgid "Its connectors are unlinked, and a dedicated computer stays in this space. Bots under it move too."
+msgstr ""
 
 #: src/pages/shell/dialogs.tsx
 msgid "Its conversation, files, and routines will be permanently deleted. Bots it created stay in your list."
@@ -3562,6 +3632,10 @@ msgstr ""
 msgid "llama.cpp"
 msgstr ""
 
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Load"
+msgstr ""
+
 #: src/pages/shell/transcript.tsx
 msgid "Load earlier messages"
 msgstr "טעינת הודעות קודמות"
@@ -3578,9 +3652,29 @@ msgstr "טעינת הרצות ישנות יותר"
 msgid "Load web images automatically"
 msgstr "טעינה אוטומטית של תמונות מהרשת"
 
+#: src/pages/shell/local-model-status.ts
+msgid "loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loaded"
+msgstr ""
+
+#: src/pages/shell/local-model-status.ts
+msgid "loading"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Loading"
+msgstr ""
+
 #: src/pages/ActivityList.tsx
 msgid "Loading activity…"
 msgstr "טוען פעילות…"
+
+#: src/pages/Cubicle.tsx
+msgid "Loading agents"
+msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Loading integrations…"
@@ -3634,6 +3728,10 @@ msgstr "גישה מקומית מאפשרת לבוטים להריץ פקודות 
 
 #: src/pages/HostComputerPrompt.tsx
 msgid "Local computer access requires the latest desktop app."
+msgstr ""
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Local model"
 msgstr ""
 
 #: src/components/ModelCredits.tsx
@@ -3992,6 +4090,14 @@ msgstr ""
 msgid "More computer actions"
 msgstr "פעולות נוספות במחשב"
 
+#: src/pages/shell/dialogs.tsx
+msgid "Move"
+msgstr ""
+
+#: src/pages/shell/dialogs.tsx
+msgid "Move {botName} to {spaceName}?"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move down"
 msgstr "הזזה למטה"
@@ -4004,9 +4110,24 @@ msgstr "אפשר להעביר אותם לזיכרון המשותף."
 msgid "Move to"
 msgstr "העברה אל"
 
+#: src/pages/BotContextMenu.tsx
+msgid "Move to space"
+msgstr ""
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "Move up"
 msgstr "הזזה למעלה"
+
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
+#. placeholder {0}: bot.name
+#: src/pages/shell/chat-context-menu.tsx
+msgid "Moved {0} to {name}"
+msgstr ""
 
 #: src/components/call/CallCard.tsx
 msgid "Mute"
@@ -4146,6 +4267,10 @@ msgstr ""
 msgid "Next settings sections"
 msgstr ""
 
+#: src/pages/Cubicle.tsx
+msgid "No agents"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx
 msgid "No apps match your search."
 msgstr "אין אפליקציות שתואמות לחיפוש."
@@ -4265,6 +4390,10 @@ msgstr "עדיין אין כרטיסים"
 msgid "No trigger"
 msgstr "ללא טריגר"
 
+#: src/pages/BotContextMenu.tsx
+msgid "None"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr "רגיל"
@@ -4294,6 +4423,14 @@ msgstr "לא בקטלוג של Atlas"
 msgid "Not in the plugin catalog"
 msgstr "לא נמצא בקטלוג התוספים"
 
+#: src/pages/shell/local-model-status.ts
+msgid "not loaded"
+msgstr ""
+
+#: src/pages/DevicesSettingsPanel.tsx
+msgid "Not loaded"
+msgstr ""
+
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"
 msgstr "לא עכשיו"
@@ -4314,6 +4451,10 @@ msgstr "לא עובד"
 #: src/pages/KnowledgeSection.tsx
 msgid "Nothing remembered yet"
 msgstr "עדיין אין זיכרונות"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
 
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
@@ -4354,6 +4495,7 @@ msgid "offline"
 msgstr ""
 
 #: src/components/ComputerDeviceSettings.tsx
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Offline"
 msgstr ""
@@ -4397,6 +4539,7 @@ msgstr ""
 msgid "online"
 msgstr ""
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "Online"
 msgstr ""
@@ -4733,6 +4876,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "תוכנה: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr "קלט מוגן"
@@ -4750,10 +4897,6 @@ msgstr "ספקים"
 #: src/components/CloudAgentCard.tsx
 msgid "Pull request"
 msgstr "Pull request"
-
-#: src/pages/DevicesSettingsPanel.tsx
-msgid "Push needs Expo token"
-msgstr ""
 
 #: src/pages/ActivityList.tsx
 msgid "Queued"
@@ -4905,6 +5048,7 @@ msgstr "מרענן…"
 msgid "Registration is closed"
 msgstr "ההרשמה סגורה"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5169,6 +5313,14 @@ msgstr ""
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "יש לבדוק את הגדרות הספק ולבדוק שוב."
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Revoke"
@@ -5761,6 +5913,7 @@ msgstr "מודל דיבור"
 msgid "SSO is temporarily unavailable. Try again."
 msgstr "SSO אינו זמין כרגע. אפשר לנסות שוב."
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/shell/computer-overlay.tsx
 msgid "Start"
 msgstr ""
@@ -5774,6 +5927,7 @@ msgstr "התחלת תקופת ניסיון חינם של {trialDays} ימים"
 msgid "Start recording"
 msgstr "התחלת הקלטה"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/ActivityList.tsx
 msgid "Starting"
 msgstr "מתחיל"
@@ -5794,6 +5948,7 @@ msgstr "סטטוס"
 msgid "Steps"
 msgstr "שלבים"
 
+#: src/components/LocalModelHostSettings.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
@@ -6124,6 +6279,10 @@ msgstr "חלון ההקשר של המודל הזה קטן מדי. יש לבחו�
 msgid "This month"
 msgstr "החודש"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
 msgstr "פעולה זו מוחקת לצמיתות את החשבון ואת הנתונים."
@@ -6281,6 +6440,7 @@ msgid "Trusted sites"
 msgstr "אתרים מהימנים"
 
 #: src/pages/ActivityList.tsx
+#: src/pages/Cubicle.tsx
 #: src/pages/Onboarding.tsx
 msgid "Try again"
 msgstr "לנסות שוב"
@@ -6652,6 +6812,10 @@ msgstr "מתי להשתמש"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "איפה הבוטים ירוצו?"
+
+#: src/components/LocalModelHostSettings.tsx
+msgid "Windows only"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

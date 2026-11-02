@@ -654,6 +654,11 @@ export const DE_MESSAGES: Record<string, string> = {
   "Live working status": "Live-Arbeitsstatus",
   More: "Mehr",
   "Needs attention": "Aufmerksamkeit erforderlich",
+  "Computer problems": "Computerprobleme",
+  "Takeover requests": "Übernahmeanfragen",
+  "Questions and approvals": "Fragen und Freigaben",
+  "Finished work": "Erledigte Arbeit",
+  "Push notifications": "Push-Benachrichtigungen",
   "Notification settings": "Benachrichtigungseinstellungen",
   Notifications: "Benachrichtigungen",
   "Questions, approvals, takeover": "Fragen, Freigaben, Übernahme",
@@ -1223,6 +1228,12 @@ export const DE_MESSAGES: Record<string, string> = {
   "1 free month earned": "1 Gratismonat verdient",
   "{count} free months earned": "{count} Gratismonate verdient",
   "Submit a plugin": "Plugin einreichen",
+  "Review recent runs": "Letzte Ausführungen prüfen",
+  "Reviewing recent runs": "Letzte Ausführungen werden geprüft",
+  "Proposed notes": "Vorgeschlagene Notizen",
+  Accept: "Annehmen",
+  Reject: "Ablehnen",
+  "Nothing to change": "Nichts zu ändern",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

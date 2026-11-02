@@ -1,4 +1,8 @@
-import { COMPUTER_ALLOWANCE_USED_ERROR, COMPUTER_RATE_LIMIT_ERROR } from "@atlas/contracts";
+import {
+  COMPUTER_ALLOWANCE_USED_ERROR,
+  COMPUTER_RATE_LIMIT_ERROR,
+  COMPUTER_UNREACHABLE_ERROR,
+} from "@atlas/contracts";
 
 /** The sandbox provider refused the request because an account rate limit or quota was hit. */
 export class SandboxRateLimitError extends Error {
@@ -29,6 +33,18 @@ export class SandboxUnresponsiveError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "SandboxUnresponsiveError";
+  }
+}
+
+/**
+ * The computer service refused the connection or could not be resolved. The run records this
+ * and stops: repeating the same call does not bring a stopped service back.
+ */
+export class SandboxUnreachableError extends Error {
+  readonly code = "SANDBOX_UNREACHABLE";
+  constructor(options?: { cause?: unknown }) {
+    super(COMPUTER_UNREACHABLE_ERROR, options);
+    this.name = "SandboxUnreachableError";
   }
 }
 

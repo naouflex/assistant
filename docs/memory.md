@@ -16,10 +16,18 @@ be downloaded or deleted.
 ## Shared memory
 
 Some things every bot should know, such as your name, your company, or how you like reports
-written. Those go in **Shared memory**: every bot in the [space](./spaces.md) reads these notes and
-keeps them up to date.
+written. Those go in **Shared memory**. Every bot in the [space](./spaces.md) reads these notes.
+A change waits until you accept it.
 
-Find it in **Settings → Memory**.
+Find it in **Settings → Memory**. A bot can still add to its own notes while it works. Shared notes
+change only when you accept a proposal.
+
+## Review recent runs
+
+From a bot's **Memory**, or from **Shared memory**, choose **Review recent runs**. Atlas reads that
+memory and recent finished runs, then proposes replacements. Nothing changes until you accept one.
+A bot review only sees that bot. A shared review only proposes shared notes. Memory never crosses
+spaces.
 
 ## Memory providers
 

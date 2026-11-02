@@ -165,19 +165,102 @@
   }
 }
 
+@keyframes atlas-picture-idle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  35% {
+    transform: translateY(-2.5%) rotate(-1.5deg) scale(1.03);
+  }
+  70% {
+    transform: translateY(1.5%) rotate(1.2deg) scale(0.99);
+  }
+}
+
+/* Busy face: Working buzz bob. */
+@keyframes atlas-picture-working {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateY(-4%) scale(1.06);
+    filter: brightness(1.1);
+  }
+}
+
+/* Idle: Current — soft goggle size pulse over baked glasses (scale ≥ 1). */
+@keyframes atlas-picture-goggles-idle {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1);
+  }
+  18% {
+    transform: scale(1.12);
+  }
+  24% {
+    transform: scale(1);
+  }
+  58% {
+    transform: scale(1.06);
+  }
+  72% {
+    transform: scale(1);
+  }
+}
+
+/* Busy: Working buzz — faster, bigger pulse with a little tilt. */
+@keyframes atlas-picture-goggles-working {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+  25% {
+    transform: scale(1.14) rotate(-2deg);
+    filter: brightness(1.1);
+  }
+  50% {
+    transform: scale(1.05) rotate(2deg);
+    filter: brightness(1.05);
+  }
+  75% {
+    transform: scale(1.12) rotate(-1deg);
+    filter: brightness(1.08);
+  }
+}
+
 .atlas-bot-avatar-picture {
-  box-shadow: 0 2px 5px rgb(0 0 0 / 0.5);
+  /* Free sprite — no circular plate/clip. Soft drop only. */
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.45));
+}
+
+.atlas-bot-avatar-picture-face {
+  transform-origin: 50% 65%;
+  animation: atlas-picture-idle 3.4s ease-in-out infinite;
+}
+
+.atlas-bot-avatar-picture-goggles {
+  transform-origin: 50% 40%;
+  animation: atlas-picture-goggles-idle 3.4s ease-in-out infinite;
 }
 
 .atlas-bot-avatar-ring-working {
+  opacity: 1;
   filter: drop-shadow(0 0 4px var(--status-working));
 }
 
-.atlas-bot-avatar[data-working="true"] .atlas-bot-avatar-picture {
-  animation: atlas-avatar-breathe 1.6s ease-in-out infinite;
-  box-shadow:
-    0 0 0 2px var(--status-working),
-    0 0 10px color-mix(in srgb, var(--status-working) 60%, transparent);
+.atlas-bot-avatar[data-working="true"] .atlas-bot-avatar-picture-face {
+  animation: atlas-picture-working 1.2s ease-in-out infinite;
+}
+
+.atlas-bot-avatar[data-working="true"] .atlas-bot-avatar-picture-goggles {
+  animation: atlas-picture-goggles-working 1.2s ease-in-out infinite;
 }
 
 .atlas-organic-avatar-body {
@@ -582,7 +665,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .atlas-bot-avatar-ring,
-  .atlas-bot-avatar[data-working="true"] .atlas-bot-avatar-picture {
+  .atlas-bot-avatar-picture-face,
+  .atlas-bot-avatar-picture-goggles,
+  .atlas-bot-avatar[data-working="true"] .atlas-bot-avatar-picture-face,
+  .atlas-bot-avatar[data-working="true"] .atlas-bot-avatar-picture-goggles {
     animation: none;
     transition: none;
   }

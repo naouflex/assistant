@@ -32,8 +32,12 @@ import { createBadgeHandler } from "./badge.js";
 import { openBrowserAuth } from "./browser-auth.js";
 import { DOCKER_INSTALL_LINKS, isDesktopSetupLink, runDocker } from "./docker-cli.js";
 import { prepareHostComputer } from "./host-computer.js";
+import {
+  createDesktopHostScreen,
+  screenDriverInstaller,
+  screenDriverRelease,
+} from "./host-screen.js";
 import { createLocalModelHost } from "./local-model-host.js";
-import { createDesktopHostScreen, screenDriverInstaller } from "./host-screen.js";
 import { saveLocalComputerHost } from "./local-settings.js";
 import {
   LocalStackController,
@@ -64,6 +68,7 @@ import { installServerHeaders } from "./server-request-headers.js";
 import { installSessionPermissions } from "./session-permissions.js";
 import {
   ATLAS_CLOUD_URL,
+  DEFAULT_EXISTING_SERVER_URL,
   DEFAULT_LOCAL_WEB_URL,
   desktopStackImageTag,
   isAtlasHealth,
@@ -1191,22 +1196,29 @@ app.whenReady().then(async () => {
       if (!win.isDestroyed()) win.webContents.send("desktop.localModel.change", state);
     }
   });
-  hostScreen = createDesktopHostScreen({
-    platform: process.platform,
-    driver: screenDriverInstaller({
-      dir: path.join(userDataDir, "screen-driver", "bin"),
-      fetch: (url) => net.fetch(url),
-    }),
-    home: path.join(userDataDir, "screen-driver", "home"),
-    permissions: {
-      isTrustedAccessibilityClient: (prompt) =>
-        systemPreferences.isTrustedAccessibilityClient(prompt),
-      getMediaAccessStatus: (type) => systemPreferences.getMediaAccessStatus(type),
-      requestScreenCapture: () =>
-        desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: 0, height: 0 } }),
-    },
-    locked: () => powerMonitor.getSystemIdleState(1) === "locked",
-  });
+  const screenRelease = screenDriverRelease(process.platform, process.arch);
+  hostScreen = screenRelease
+    ? createDesktopHostScreen({
+        platform: process.platform,
+        driver: screenDriverInstaller({
+          dir: path.join(userDataDir, "screen-driver", "bin"),
+          fetch: (url) => net.fetch(url),
+          release: screenRelease,
+        }),
+        home: path.join(userDataDir, "screen-driver", "home"),
+        permissions: {
+          isTrustedAccessibilityClient: (prompt) =>
+            systemPreferences.isTrustedAccessibilityClient(prompt),
+          getMediaAccessStatus: (type) => systemPreferences.getMediaAccessStatus(type),
+          requestScreenCapture: () =>
+            desktopCapturer.getSources({
+              types: ["window"],
+              thumbnailSize: { width: 0, height: 0 },
+            }),
+        },
+        locked: () => powerMonitor.getSystemIdleState(1) === "locked",
+      })
+    : undefined;
   userDevices = createUserDeviceAccess({
     userDataDir,
     cipher: deviceTokenCipher(),
@@ -1477,7 +1489,8 @@ app.whenReady().then(async () => {
     if (!fromSetupWindow(event)) return null;
     return {
       defaultLocalUrl: localStack.webUrl(),
-      cloudUrl: ATLAS_CLOUD_URL,
+      defaultExistingUrl: DEFAULT_EXISTING_SERVER_URL,
+      cloudUrl: process.env.ATLAS_CLOUD_URL?.trim() || ATLAS_CLOUD_URL,
       saved: currentSetup,
       error: setupError ?? undefined,
     };
@@ -1618,7 +1631,21 @@ app.whenReady().then(async () => {
   });
 
   if (target.kind === "setup") {
-    showSetupWindow();
+    // First launch: if day-to-day local Atlas is already up, skip the setup form.
+    const auto = await probeServer(DEFAULT_EXISTING_SERVER_URL);
+    if (auto.ok && auto.url) {
+      const openSetup = { mode: "existing" as const, serverUrl: auto.url };
+      currentSetup = openSetup;
+      await writeSetup(userDataDir, openSetup);
+      if (await appOpener.open(openSetup.serverUrl)) {
+        commitPendingAppSwitch();
+        destroySetupWindow();
+      } else {
+        showSetupWindow();
+      }
+    } else {
+      showSetupWindow();
+    }
   } else if (target.source === "saved") {
     if (currentSetup?.mode === "new") {
       const managedUrl = managedLocalOpenUrl(target.url, localStack.webUrl());

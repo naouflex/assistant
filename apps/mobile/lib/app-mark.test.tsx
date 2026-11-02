@@ -24,8 +24,18 @@ vi.mock("react-native", () => {
     );
   }
 
-  function MockImage(props: { style?: { tintColor?: string } }) {
-    return createElement("img", { "data-tint": props.style?.tintColor });
+  function MockImage(props: {
+    style?: { tintColor?: string };
+    accessible?: boolean;
+    accessibilityElementsHidden?: boolean;
+    importantForAccessibility?: string;
+  }) {
+    return createElement("img", {
+      "data-tint": props.style?.tintColor,
+      "data-accessible": String(props.accessible),
+      "aria-hidden": props.accessibilityElementsHidden ? "true" : undefined,
+      "data-important": props.importantForAccessibility,
+    });
   }
 
   return {
@@ -37,6 +47,7 @@ vi.mock("react-native", () => {
 
 vi.mock("./native", () => ({
   native: { label: "label" },
+  useResolvedAppearance: () => "light",
   useThemedStyles: <T,>(factory: () => T) => factory(),
 }));
 
@@ -64,11 +75,11 @@ describe("AppMark", () => {
     act(() => {
       root?.render(<AppMark />);
     });
-    const mark = container?.querySelector("div");
+    const mark = container?.querySelector("img");
 
     expect(mark?.getAttribute("aria-hidden")).toBe("true");
     expect(mark?.dataset.accessible).toBe("false");
     expect(mark?.dataset.important).toBe("no-hide-descendants");
-    expect(container?.querySelector("img")?.dataset.tint).toBe("label");
+    expect(mark?.dataset.tint).toBe("label");
   });
 });

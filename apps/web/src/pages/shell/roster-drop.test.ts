@@ -1,6 +1,6 @@
 import { GROUP_MEMBER_MAX } from "@atlas/contracts";
 import { describe, expect, it } from "vitest";
-import { resolveRosterDrop } from "./roster-drop";
+import { isBotDescendant, resolveRosterDrop } from "./roster-drop";
 
 const bot = (id: string, sectionId: string | null, pinned = false) => ({
   id,
@@ -137,5 +137,93 @@ describe("resolveRosterDrop", () => {
         sameList: true,
       }),
     ).toBeNull();
+  });
+});
+
+describe("resolveRosterDrop nesting and spaces", () => {
+  const tree = [
+    { id: "a", parentBotId: null },
+    { id: "b", parentBotId: "a" },
+    { id: "c", parentBotId: "b" },
+    { id: "d", parentBotId: null },
+  ];
+  const nestOn = (id: string) => ({ kind: "bot" as const, chat: bot(id, "s1"), nest: true });
+
+  it("nests the dragged bot under the bot it is dropped on", () => {
+    expect(
+      resolveRosterDrop({
+        dragged: bot("d", "s2"),
+        target: nestOn("a"),
+        sameList: false,
+        bots: tree,
+      }),
+    ).toEqual({ action: "parent", parentBotId: "a" });
+  });
+
+  it("refuses nesting onto itself, its current parent, or a descendant", () => {
+    const a = { ...bot("a", "s1"), parentBotId: null };
+    const c = { ...bot("c", "s1"), parentBotId: "b" };
+    expect(
+      resolveRosterDrop({ dragged: a, target: nestOn("a"), sameList: true, bots: tree }),
+    ).toBeNull();
+    expect(
+      resolveRosterDrop({ dragged: c, target: nestOn("b"), sameList: true, bots: tree }),
+    ).toBeNull();
+    expect(
+      resolveRosterDrop({ dragged: a, target: nestOn("c"), sameList: true, bots: tree }),
+    ).toBeNull();
+  });
+
+  it("refuses nesting and space moves while the bot is working", () => {
+    const busy = { ...bot("d", "s1"), status: "running", spaceId: "sp1" };
+    expect(
+      resolveRosterDrop({ dragged: busy, target: nestOn("a"), sameList: true, bots: tree }),
+    ).toBeNull();
+    expect(
+      resolveRosterDrop({
+        dragged: busy,
+        target: { kind: "space", spaceId: "sp2", spaceName: "Two" },
+        sameList: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("moves to another space but not to its own", () => {
+    const idle = { ...bot("d", "s1"), status: "idle", spaceId: "sp1" };
+    expect(
+      resolveRosterDrop({
+        dragged: idle,
+        target: { kind: "space", spaceId: "sp2", spaceName: "Two" },
+        sameList: false,
+      }),
+    ).toEqual({ action: "space", spaceId: "sp2", spaceName: "Two" });
+    expect(
+      resolveRosterDrop({
+        dragged: idle,
+        target: { kind: "space", spaceId: "sp1", spaceName: "One" },
+        sameList: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("keeps edge drops reordering and moving sections", () => {
+    expect(
+      resolveRosterDrop({
+        dragged: bot("a", "s1"),
+        target: { kind: "bot", chat: bot("d", "s1") },
+        sameList: true,
+      }),
+    ).toEqual({ action: "reorder", targetBotId: "d" });
+  });
+});
+
+describe("isBotDescendant", () => {
+  it("walks the parent chain and survives cycles", () => {
+    const cyclic = [
+      { id: "x", parentBotId: "y" },
+      { id: "y", parentBotId: "x" },
+    ];
+    expect(isBotDescendant(cyclic, "x", "z")).toBe(false);
+    expect(isBotDescendant([{ id: "b", parentBotId: "a" }], "b", "a")).toBe(true);
   });
 });

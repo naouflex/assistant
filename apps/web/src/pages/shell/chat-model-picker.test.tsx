@@ -202,4 +202,60 @@ describe("ChatModelPicker", () => {
     render(choices(3), "");
     expect(container.querySelector('[data-testid="refresh-local-models"]')).toBeNull();
   });
+
+  it("places a control after the selector and before the image mark and refresh button", () => {
+    const list = choices(2).map((choice, index) =>
+      index === 1 ? { ...choice, images: false } : choice,
+    );
+    const refresh = vi.fn();
+    act(() =>
+      root.render(
+        <ChatModelPicker
+          id="model"
+          compact
+          choices={list}
+          value="openrouter::vendor/model-1"
+          onChange={onChange}
+          onRefreshLocal={refresh}
+          afterControl={<span data-testid="after-control">Thinking</span>}
+        />,
+      ),
+    );
+    expect(follows("select", '[data-testid="after-control"]')).toBe(true);
+    expect(follows('[data-testid="after-control"]', '[title="Can\'t read images"]')).toBe(true);
+    expect(follows('[title="Can\'t read images"]', '[data-testid="refresh-local-models"]')).toBe(
+      true,
+    );
+
+    const long = choices(11).map((choice) =>
+      choice.modelId === "vendor/model-3" ? { ...choice, images: false } : choice,
+    );
+    act(() =>
+      root.render(
+        <ChatModelPicker
+          id="model"
+          compact
+          choices={long}
+          value="openrouter::vendor/model-3"
+          onChange={onChange}
+          onRefreshLocal={refresh}
+          afterControl={<span data-testid="after-control">Thinking</span>}
+        />,
+      ),
+    );
+    const trigger = container.querySelector("button#model")!;
+    expect(trigger.querySelector('[title="Can\'t read images"]')).toBeNull();
+    expect(follows("button#model", '[data-testid="after-control"]')).toBe(true);
+    expect(follows('[data-testid="after-control"]', '[title="Can\'t read images"]')).toBe(true);
+    expect(follows('[title="Can\'t read images"]', '[data-testid="refresh-local-models"]')).toBe(
+      true,
+    );
+  });
 });
+
+function follows(earlier: string, later: string) {
+  const before = document.querySelector(earlier);
+  const after = document.querySelector(later);
+  if (!before || !after) return false;
+  return Boolean(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING);
+}

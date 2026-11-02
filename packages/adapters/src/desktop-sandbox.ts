@@ -38,6 +38,7 @@ import {
 } from "./computer-support.js";
 import type { NativeProcessTree } from "./desktop-process-tree.js";
 import { spawnOwnedCommand } from "./desktop-process-tree.js";
+import { ProcessOutputDecoder } from "./process-output-text.js";
 import { isAllowedDesktopPath, normalizeDesktopWorkspacePath } from "./desktop-sandbox-paths.js";
 import {
   createExclusiveChildViaDirectoryFdWin32,
@@ -951,16 +952,16 @@ async function* streamLocalCommand(
   );
   timeout.unref?.();
   signal.addEventListener("abort", abort, { once: true });
-  child.stdout?.setEncoding("utf8");
-  child.stdout?.on("data", (data: string) => {
+  const stdoutText = new ProcessOutputDecoder();
+  const stderrText = new ProcessOutputDecoder();
+  const emitText = (stream: "stdout" | "stderr", chunk: Buffer | string) => {
     if (settled) return;
-    push({ type: "stdout", data });
-  });
-  child.stderr?.setEncoding("utf8");
-  child.stderr?.on("data", (data: string) => {
-    if (settled) return;
-    push({ type: "stderr", data });
-  });
+    const decoder = stream === "stdout" ? stdoutText : stderrText;
+    const data = decoder.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    if (data) push({ type: stream, data });
+  };
+  child.stdout?.on("data", (chunk: Buffer | string) => emitText("stdout", chunk));
+  child.stderr?.on("data", (chunk: Buffer | string) => emitText("stderr", chunk));
   child.on("error", (error) => {
     if (settled) return;
     if (argv[0] === "echo") {
@@ -972,6 +973,10 @@ async function* streamLocalCommand(
     }
   });
   child.on("close", (code, exitSignal) => {
+    const stdout = stdoutText.end();
+    const stderr = stderrText.end();
+    if (stdout) push({ type: "stdout", data: stdout });
+    if (stderr) push({ type: "stderr", data: stderr });
     finish(code ?? 1, exitSignal ? `command terminated by ${exitSignal}` : undefined);
   });
   if (signal.aborted) abort();

@@ -520,6 +520,7 @@ services:
     mem_limit: ${ATLAS_WORKER_MEMORY_LIMIT:-${RAKAZO_WORKER_MEMORY_LIMIT:-2g}}
     environment:
       <<: *app-environment
+      WEB_ORIGIN:
       GRAPHILE_WORKER_CONCURRENCY:
     volumes:
       - appdata:/data

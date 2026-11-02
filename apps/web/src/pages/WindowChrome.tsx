@@ -6,6 +6,8 @@ export function WindowChrome() {
   const desktop = desktopBridge();
   const kind = windowChromeKind(desktop);
   if (kind === "spacer") {
+    // Windows title-bar overlay has no left traffic lights; caption buttons sit top-right.
+    if (desktop?.nativeWindowFrame) return null;
     return <div className="h-3 w-[72px] shrink-0" aria-hidden="true" />;
   }
   if (kind === "darwin") {

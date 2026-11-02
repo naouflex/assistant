@@ -8,11 +8,14 @@ runs on Windows.
 
 1. Installs the official ggml-org Windows **CUDA 12.4** `llama-server` build into
    the app user data folder (`%LOCALAPPDATA%\Atlas\llama-host\runtime`).
-2. Obtains **Qwen3.5 4B MTP** by copying from WSL when present
-   (`\\wsl$\Ubuntu-24.04\home\…\llama-standalone\models\…`), otherwise downloads
-   from Hugging Face.
-3. Starts the server on port **11436** (override with `ATLAS_LOCAL_MODELS_PORT`)
+2. Obtains **Qwen3.5 4B MTP** (copied from WSL when that file is already there),
+   **Qwen3.5 9B**, **Qwen3.8 9B**, **Spark-X2.5 4B**, and **Spark-X2.6 4B**, downloading any that are
+   missing from Hugging Face.
+3. Starts the server on port **11436** (override with `ATLAS_LOCAL_MODELS_PORT`),
    bound to **0.0.0.0** so WSL can reach it (override with `ATLAS_LOCAL_MODELS_HOST`).
+   Qwen3.5 9B loads at startup and answers. Qwen3.5 4B stays in the catalog for
+   helper turns. Only one model is loaded at a time; if the 9B file is not
+   there yet, the server starts on the 4B.
 
 Controls live in **Settings → Devices → Local model** (Start / Stop).
 

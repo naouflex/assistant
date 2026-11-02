@@ -2,7 +2,9 @@ import path from "node:path";
 import { ATLAS_CLOUD_URL } from "./setup-config.js";
 
 /** The only relying party release builds are associated with (`webcredentials:` entitlement). */
-export const PASSKEY_RP_ID = new URL(ATLAS_CLOUD_URL).hostname;
+export const PASSKEY_RP_ID = ATLAS_CLOUD_URL
+  ? new URL(ATLAS_CLOUD_URL).hostname
+  : "localhost";
 
 /**
  * Relying parties whose passkeys this build can use through the system passkey sheet. The

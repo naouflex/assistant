@@ -1,3 +1,4 @@
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import { describe, expect, it } from "vitest";
 import { automated } from "./automated-messages.js";
 import { TOOL_RESULT_TEXT_LIMIT } from "./pi-runtime-limits.js";
@@ -23,6 +24,22 @@ describe("observeShellCommand", () => {
     expect((error as Error).message).toBe("Provider failed with [redacted]");
     expect((error as Error).stack).not.toContain(secret);
     expect((error as Error).cause).toBeUndefined();
+  });
+
+  it("keeps a down computer distinct from a failed command", async () => {
+    const error = new SandboxUnreachableError({
+      cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:7091"), {
+        code: "ECONNREFUSED",
+      }),
+    });
+    const caught = await observeShellCommand(
+      (async function* () {
+        throw error;
+      })(),
+      { secrets: [] },
+    ).catch((failure: unknown) => failure);
+
+    expect(caught).toBe(error);
   });
 
   it("returns a fast command only after it exits", async () => {

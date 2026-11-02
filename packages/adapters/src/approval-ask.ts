@@ -241,6 +241,14 @@ function describeApprovalAction(
     const name = args.confirm_name ?? args.confirmName;
     return name ? `${toolName.replace("_", " ")} (${String(name)})` : toolName.replace("_", " ");
   }
+  if (toolName === "move_bot") {
+    const name = args.bot_name ?? args.bot_id ?? "bot";
+    const to = args.space_name ?? args.space_id;
+    const parent = args.parent_bot_name ?? args.parent_bot_id;
+    if (to) return `Move ${String(name)} to space “${String(to)}”`;
+    if (parent) return `Make ${String(parent)} the parent of ${String(name)}`;
+    return `Make ${String(name)} a top-level bot`;
+  }
   if (toolName === "create_space") {
     const name = args.name ? String(args.name) : "Untitled";
     return `Create space “${name}”`;

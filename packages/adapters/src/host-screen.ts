@@ -67,6 +67,13 @@ export interface HostScreenActResult {
   observation?: HostScreenObservation;
 }
 
+/** Desktops that ship a screen driver. The desktop app still picks the build for its CPU. */
+const HOST_SCREEN_PLATFORMS = new Set(["darwin", "win32", "linux"]);
+
+export function hostScreenSupported(platform: string) {
+  return HOST_SCREEN_PLATFORMS.has(platform);
+}
+
 export type HostScreenScope = { botId: string; signal: AbortSignal };
 
 /**

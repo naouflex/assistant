@@ -637,6 +637,11 @@ export const JA_MESSAGES: Record<string, string> = {
   "Live working status": "作業状況をライブ表示",
   More: "その他",
   "Needs attention": "要対応",
+  "Computer problems": "コンピューターの問題",
+  "Takeover requests": "引き継ぎの依頼",
+  "Questions and approvals": "質問と承認",
+  "Finished work": "完了した作業",
+  "Push notifications": "プッシュ通知",
   "Notification settings": "通知設定",
   "Get notified when this Bot finishes or needs input":
     "このボットが完了したときや入力が必要なときに通知を受け取る",
@@ -1247,6 +1252,12 @@ export const JA_MESSAGES: Record<string, string> = {
   "1 free month earned": "1か月分の無料期間を獲得",
   "{count} free months earned": "{count}か月分の無料期間を獲得",
   "Submit a plugin": "プラグインを申請",
+  "Review recent runs": "最近の実行を確認",
+  "Reviewing recent runs": "最近の実行を確認中",
+  "Proposed notes": "提案されたメモリ",
+  Accept: "受け入れる",
+  Reject: "却下",
+  "Nothing to change": "変更はありません",
 };
 
 export const PEER_MESSAGE_FORMS = { other: "{peer}とのメッセージ{count}件" };

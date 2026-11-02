@@ -555,6 +555,11 @@ export const RU_MESSAGES: Record<string, string> = {
   "Move to": "Переместить в",
   Name: "Имя",
   "Needs attention": "Требует внимания",
+  "Computer problems": "Проблемы с компьютером",
+  "Takeover requests": "Запросы на управление",
+  "Questions and approvals": "Вопросы и одобрения",
+  "Finished work": "Готовая работа",
+  "Push notifications": "Push-уведомления",
   "Needs input": "Требуется ввод данных",
   "Needs takeover": "Ожидает передачи управления",
   "New password": "Новый пароль",
@@ -1254,6 +1259,12 @@ export const RU_MESSAGES: Record<string, string> = {
   "1 free month earned": "Получен 1 бесплатный месяц",
   "{count} free months earned": "Бесплатных месяцев получено: {count}",
   "Submit a plugin": "Предложить плагин",
+  "Review recent runs": "Проверить недавние запуски",
+  "Reviewing recent runs": "Проверяем недавние запуски",
+  "Proposed notes": "Предложенные заметки",
+  Accept: "Принять",
+  Reject: "Отклонить",
+  "Nothing to change": "Менять нечего",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

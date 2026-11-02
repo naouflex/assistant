@@ -16,6 +16,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#FCFCFC",
           "dark": {
+            "image": "./assets/splash-icon-dark.png",
             "backgroundColor": "#141414"
           }
         }
@@ -102,7 +103,7 @@
     },
     "android": {
       "package": "com.naouflex.atlas.app",
-      "versionCode": 10,
+      "versionCode": 12,
       "softwareKeyboardLayoutMode": "resize",
       "icon": "./assets/icon.png",
       "adaptiveIcon": {

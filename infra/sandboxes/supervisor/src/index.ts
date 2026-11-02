@@ -1155,7 +1155,20 @@ app.delete("/computers/:id", async (c) => {
   }
 });
 
-function startSupervisor() {
+/** How many times to wait out a restart that still holds the port. */
+export const SUPERVISOR_BIND_ATTEMPTS = 20;
+
+/** A listen that lost the race with the previous process should try again. A later one should not. */
+export function supervisorBindShouldRetry(error: unknown, attempt: number): boolean {
+  return (
+    attempt + 1 < SUPERVISOR_BIND_ATTEMPTS &&
+    error instanceof Error &&
+    "code" in error &&
+    error.code === "EADDRINUSE"
+  );
+}
+
+async function startSupervisor() {
   const logger = createRootLogger(SERVICE_NAMES.supervisor);
   // Resolve the ceilings before binding the port. They are otherwise parsed inside
   // containerCreateOptions, so a malformed ATLAS_COMPUTER_* value would let the supervisor start
@@ -1179,9 +1192,7 @@ function startSupervisor() {
   });
   const port = Number(process.env.SUPERVISOR_PORT ?? 7091);
   const hostname = process.env.SUPERVISOR_HOST ?? "127.0.0.1";
-  const server = serve({ fetch: app.fetch, hostname, port }, () => {
-    logger.info("supervisor listening", { "http.host": hostname, "http.port": port });
-  });
+  const server = await listenSupervisor(logger, hostname, port);
   let stopping = false;
   const shutdown = async () => {
     if (stopping) return;
@@ -1205,8 +1216,43 @@ function closeListeningServer(server: {
   });
 }
 
+function listenSupervisor(
+  logger: ReturnType<typeof createRootLogger>,
+  hostname: string,
+  port: number,
+) {
+  const bind = (attempt: number) =>
+    new Promise<ReturnType<typeof serve>>((resolve, reject) => {
+      const server = serve({ fetch: app.fetch, hostname, port }, () => {
+        server.off("error", onError);
+        logger.info("supervisor listening", { "http.host": hostname, "http.port": port });
+        resolve(server);
+      });
+      const onError = (error: Error) => {
+        server.close();
+        reject(error);
+      };
+      server.once("error", onError);
+    });
+  const attemptBind = async (attempt: number): Promise<ReturnType<typeof serve>> => {
+    try {
+      return await bind(attempt);
+    } catch (error) {
+      if (!supervisorBindShouldRetry(error, attempt)) throw error;
+      // The previous process still holds the port while a restart tears it down.
+      logger.warn("supervisor port busy", { "http.port": port, attempt });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return attemptBind(attempt + 1);
+    }
+  };
+  return attemptBind(0).catch((error) => {
+    logger.error("supervisor failed to listen", error);
+    process.exit(1);
+  });
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  startSupervisor();
+  void startSupervisor();
 }
 
 // Enforcement is host-side (DOCKER-USER/INPUT on atlas-c* bridges); the flag only

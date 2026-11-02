@@ -25,7 +25,7 @@ import {
 import { useSpaceQueries } from "../lib/query";
 import { formatRelativeTime } from "../lib/relative-time";
 
-export function statusTone(status: RunActivityRow["status"], updatedAt?: string): string {
+export function statusTone(status: string, updatedAt?: string): string {
   if (status === "failed") return "text-destructive";
   if (status === "cancelled") return "text-muted-foreground";
   if (status === "completed") return "text-success";

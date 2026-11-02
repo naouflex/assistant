@@ -1,3 +1,4 @@
+import { IOS_APP_STORE_URL } from "@atlas/contracts";
 import type { LocalServerStatus } from "@atlas/contracts";
 import { Button } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -6,8 +7,8 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ComputerDeviceSettings } from "../components/ComputerDeviceSettings";
 import { LocalModelHostSettings } from "../components/LocalModelHostSettings";
+import { QrMark } from "../components/QrCode";
 import { SettingsGroup, SettingsRow } from "../components/SettingsRows";
-import { desktopBridge } from "../lib/desktop";
 import { useSpaceQueries } from "../lib/query";
 
 function serverHost(server: LocalServerStatus): string {
@@ -25,7 +26,7 @@ export function DevicesSettingsPanel() {
   const queryClient = useQueryClient();
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const desktop = desktopBridge();
+  const [loadingModel, setLoadingModel] = useState<string | null>(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => {
@@ -55,6 +56,17 @@ export function DevicesSettingsPanel() {
       await queryClient.invalidateQueries({ queryKey: queries.models.list.key() });
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  async function loadModel(baseUrl: string, modelId: string) {
+    setLoadingModel(modelId);
+    try {
+      const next = await queries.models.loadLocal.call({ baseUrl, modelId });
+      queryClient.setQueryData(queries.models.localStatus.queryKey({ input: {} }), next);
+      await queryClient.invalidateQueries({ queryKey: queries.models.list.key() });
+    } finally {
+      setLoadingModel(null);
     }
   }
 
@@ -133,23 +145,61 @@ export function DevicesSettingsPanel() {
                     ? t`1 model`
                     : t`${server.models.length} models`;
               return (
-                <SettingsRow
-                  key={server.baseUrl}
-                  label={
-                    <p className="flex min-w-0 flex-col gap-0.5">
-                      <span className="truncate">{serverHost(server)}</span>
+                <div key={server.baseUrl} className="divide-y divide-border">
+                  <SettingsRow
+                    label={
+                      <p className="flex min-w-0 flex-col gap-0.5">
+                        <span className="truncate">{serverHost(server)}</span>
+                        <span className="text-[12.5px] text-muted-foreground">
+                          {kind}
+                          {modelCount ? ` · ${modelCount}` : null}
+                        </span>
+                      </p>
+                    }
+                    control={
                       <span className="text-[12.5px] text-muted-foreground">
-                        {kind}
-                        {modelCount ? ` · ${modelCount}` : null}
+                        {server.reachable ? <Trans>Online</Trans> : <Trans>Offline</Trans>}
                       </span>
-                    </p>
-                  }
-                  control={
-                    <span className="text-[12.5px] text-muted-foreground">
-                      {server.reachable ? <Trans>Online</Trans> : <Trans>Offline</Trans>}
-                    </span>
-                  }
-                />
+                    }
+                  />
+                  {server.models.map((model) => {
+                    const loading = loadingModel === model.id;
+                    const state = loading ? "loading" : model.loadState;
+                    return (
+                      <SettingsRow
+                        key={model.id}
+                        label={
+                          <p className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate">{model.id}</span>
+                            <span className="text-[12.5px] text-muted-foreground">
+                              {state === "loaded" ? (
+                                <Trans>Loaded</Trans>
+                              ) : state === "loading" ? (
+                                <Trans>Loading</Trans>
+                              ) : state === "unloaded" ? (
+                                <Trans>Not loaded</Trans>
+                              ) : null}
+                            </span>
+                          </p>
+                        }
+                        control={
+                          server.kind === "llama-server" && state === "unloaded" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={loadingModel != null}
+                              data-testid={`devices-model-load-${model.id}`}
+                              onClick={() => void loadModel(server.baseUrl, model.id)}
+                            >
+                              <Trans>Load</Trans>
+                            </Button>
+                          ) : null
+                        }
+                      />
+                    );
+                  })}
+                </div>
               );
             })
           )}
@@ -160,18 +210,22 @@ export function DevicesSettingsPanel() {
 
       <ComputerDeviceSettings alwaysShow />
 
-      {!desktop ? (
-        <SettingsGroup title={<Trans>Phone</Trans>} data-testid="devices-phone">
-          <SettingsRow
-            label={<Trans>Install the Atlas APK and sign in</Trans>}
-            control={
-              <span className="text-[12.5px] text-muted-foreground">
-                <Trans>Push needs Expo token</Trans>
-              </span>
-            }
-          />
-        </SettingsGroup>
-      ) : null}
+      <SettingsGroup title={<Trans>Phone</Trans>} data-testid="devices-phone">
+        <div className="flex justify-center px-4 py-4">
+          <a
+            href={IOS_APP_STORE_URL}
+            data-testid="devices-apk-qr"
+            className="flex flex-col items-center gap-3"
+          >
+            <span className="rounded-lg bg-white p-3">
+              <QrMark value={IOS_APP_STORE_URL} testId="devices-apk-qr-mark" />
+            </span>
+            <span className="text-[14px] text-foreground">
+              <Trans>Install Atlas and sign in</Trans>
+            </span>
+          </a>
+        </div>
+      </SettingsGroup>
     </div>
   );
 }

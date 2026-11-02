@@ -2,6 +2,7 @@ import {
   SandboxDamagedError,
   SandboxRateLimitError,
   SandboxUnavailableError,
+  SandboxUnreachableError,
   SandboxUnresponsiveError,
   VoiceAccountError,
 } from "@atlas/adapter-kit";
@@ -161,6 +162,36 @@ describe("logUnexpectedRpcError", () => {
         level: "warn",
         message: "rpc computer/screenUrl computer unavailable",
         reason: "Boat API request failed (HTTP 502)",
+      }),
+    ]);
+  });
+
+  it("returns a computer service that is not listening as a retryable 503 without an error report", () => {
+    const sink = createTestSink();
+    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    const error = new SandboxUnreachableError({
+      cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:7091"), {
+        code: "ECONNREFUSED",
+      }),
+    });
+
+    let thrown: unknown;
+    try {
+      handleRpcError(error, ["computer", "screenUrl"]);
+    } catch (failure) {
+      thrown = failure;
+    }
+
+    expect(thrown).toBeInstanceOf(ORPCError);
+    expect(thrown).toMatchObject({
+      code: "SERVICE_UNAVAILABLE",
+      message: "The computer could not be reached.",
+    });
+    expect(sink.events).toEqual([
+      expect.objectContaining({
+        level: "warn",
+        message: "rpc computer/screenUrl computer unreachable",
+        reason: "connect ECONNREFUSED 127.0.0.1:7091",
       }),
     ]);
   });

@@ -18,13 +18,14 @@ export function withChatCompletionsCompatibility<O extends SimpleStreamOptions>(
   const previous = options.onPayload;
   const stringContent = requiresStringContent(model);
   const selfHosted = model.provider === "local" || model.provider === "openai-compatible";
+  // Off arrives as no reasoning. A saved level is the only thing that turns thinking on.
+  const reasoningEffort = model.reasoning ? options.reasoning : undefined;
   const local = selfHosted
     ? {
-        // A thinking-capable model follows the run's level (off arrives as no reasoning);
-        // any other self-hosted model keeps the env switch.
         disableThinking: model.reasoning
-          ? !options.reasoning
+          ? !reasoningEffort
           : localThinkingDisabled(model.provider, env),
+        reasoningEffort,
       }
     : undefined;
   return {
@@ -75,12 +76,14 @@ export function localThinkingDisabled(
 /**
  * Self-hosted servers differ in what they read: Ollama ignores max_completion_tokens and
  * reads max_tokens, `think` and `reasoning_effort`; llama.cpp and vLLM pass
- * chat_template_kwargs to the template (Qwen's enable_thinking). Send each spelling so a
- * cap and a thinking switch hold on all of them. A new payload when anything changed.
+ * chat_template_kwargs to the template (Qwen's enable_thinking). A llama-server started
+ * with reasoning off keeps that default when the request omits the flag, and a request
+ * enable_thinking overrides it. Send each spelling for both positions so the bot's
+ * Thinking switch holds. A new payload when anything changed.
  */
 export function selfHostedPayload(
   payload: unknown,
-  options: { disableThinking?: boolean },
+  options: { disableThinking?: boolean; reasoningEffort?: string },
 ): unknown {
   if (!isRecord(payload)) return undefined;
   const next: Record<string, unknown> = { ...payload };
@@ -89,8 +92,14 @@ export function selfHostedPayload(
     next.max_tokens = payload.max_completion_tokens;
     changed = true;
   }
-  if (options.disableThinking) {
-    const kwargs = isRecord(payload.chat_template_kwargs) ? payload.chat_template_kwargs : {};
+  const kwargs = isRecord(payload.chat_template_kwargs) ? payload.chat_template_kwargs : {};
+  if (options.reasoningEffort && !options.disableThinking) {
+    next.chat_template_kwargs = { ...kwargs, enable_thinking: true };
+    next.think = true;
+    next.reasoning_effort = options.reasoningEffort;
+    delete next.reasoning;
+    changed = true;
+  } else if (options.disableThinking) {
     next.chat_template_kwargs = { ...kwargs, enable_thinking: false };
     next.think = false;
     next.reasoning_effort = "none";

@@ -52,6 +52,7 @@ import {
   createThreadMessageInTransaction,
   partialReplyClientNonce,
   RunHistoryWriteError,
+  seqPastExisting,
 } from "./messages.js";
 import { deleteRunSecretsInTransaction } from "./run-secrets.js";
 import { isRunResponse, readRunTimingFields } from "./run-timing.js";
@@ -2129,12 +2130,13 @@ export async function appendEventInTransaction(
   }
   // Unpaired UTF-16 surrogates (e.g. a split emoji high half) are invalid JSON for Postgres.
   const payload = sanitizeJsonValue(input.payload);
+  const seq = await seqPastExisting(tx, input.threadId, thread.nextEventSeq - 1, "event");
   const event = await tx.event.create({
     data: {
       spaceId: input.spaceId,
       threadId: input.threadId,
       botId: input.botId,
-      seq: thread.nextEventSeq - 1,
+      seq,
       type: input.type,
       payload: payload as Prisma.InputJsonValue,
       runId: input.runId,

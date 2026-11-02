@@ -48,9 +48,9 @@ describe("resolveImageTag", () => {
     expect(resolveImageTag({ version: "0.2.0", packaged: true })).toBe("v0.2.0");
   });
 
-  it("follows edge for development builds and prereleases", () => {
-    expect(resolveImageTag({ version: "0.2.0", packaged: false })).toBe("edge");
-    expect(resolveImageTag({ version: "0.2.0-beta.1", packaged: true })).toBe("edge");
+  it("uses local images for development builds and prereleases", () => {
+    expect(resolveImageTag({ version: "0.2.0", packaged: false })).toBe("local");
+    expect(resolveImageTag({ version: "0.2.0-beta.1", packaged: true })).toBe("local");
   });
 
   it("lets ATLAS_IMAGE_TAG override everything", () => {
@@ -80,7 +80,7 @@ describe("renderStackEnv", () => {
     expect(lines.some((line) => line.startsWith("ATLAS_IMAGE_TAG="))).toBe(false);
     expect(lines.some((line) => line.startsWith("ATLAS_COMPUTER_IMAGE_TAG="))).toBe(false);
     // Everything else, including the image names and empty optional keys, stays verbatim.
-    expect(lines).toContain("ATLAS_IMAGE=ghcr.io/naouflex/assistant/app");
+    expect(lines).toContain("ATLAS_IMAGE=atlas/app");
     expect(lines).toContain("SANDBOX_PROVIDER=docker");
     expect(lines).toContain("OPENROUTER_API_KEY=");
     expect(rendered.endsWith("\n")).toBe(template.endsWith("\n"));
@@ -304,6 +304,9 @@ describe("stackFailureMessage", () => {
     expect(stackFailureMessage("image-not-found", "pulling", "v0.2.0")).toBe(
       "Images for v0.2.0 are not published yet. Try again in a few minutes.",
     );
+    expect(stackFailureMessage("image-not-found", "pulling", "local")).toContain(
+      "Build atlas/app and atlas/computer",
+    );
   });
 
   it("points at the ports for a port clash", () => {
@@ -475,6 +478,8 @@ describe("LocalStackController", () => {
       expect(call.binary).toBe("/usr/bin/docker");
       expect(call.cwd).toBe(stackPath);
       expect(call.env).toMatchObject({
+        ATLAS_IMAGE: "atlas/app",
+        ATLAS_COMPUTER_IMAGE: "atlas/computer",
         ATLAS_IMAGE_TAG: "v1.2.3",
         ATLAS_COMPUTER_IMAGE_TAG: "v1.2.3",
         COMPOSE_PROGRESS: "plain",
@@ -575,6 +580,33 @@ describe("LocalStackController", () => {
       expect(calls.some((call) => call.args[0] === "image")).toBe(false);
     },
   );
+
+  it("uses cached local images without pulling the registry", async () => {
+    const images = ["atlas/app:local", "atlas/computer:local"];
+    const stack = controller({ imageTag: "local", probe: async () => "local" }, (args) => {
+      if (args[7] === "config") return { stdout: `${images.join("\n")}\n` };
+      if (args[0] === "image" && args[1] === "inspect") return { stdout: "sha256:cached\n" };
+      if (args[7] === "pull") return { code: 1, stderr: "registry unavailable" };
+      return ok(args);
+    });
+
+    expect((await stack.start()).phase).toBe("ready");
+    expect(calls.some((call) => call.args[7] === "pull")).toBe(false);
+  });
+
+  it("fails without pulling when local images are missing", async () => {
+    const stack = controller({ imageTag: "local", probe: async () => "local" }, (args) => {
+      if (args[7] === "config") return { stdout: "atlas/app:local\n" };
+      if (args[0] === "image") return { code: 1, stderr: "No such image" };
+      if (args[7] === "pull") return { code: 1, stderr: "should not pull" };
+      return ok(args);
+    });
+
+    const state = await stack.start();
+    expect(state.phase).toBe("failed");
+    expect(state.message).toContain("Build atlas/app and atlas/computer");
+    expect(calls.some((call) => call.args[7] === "pull")).toBe(false);
+  });
 
   it("reuses only the privately identified stack on the desired image", async () => {
     const stackPath = path.join(root, "stack");

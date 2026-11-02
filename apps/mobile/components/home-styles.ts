@@ -32,6 +32,13 @@ export function createHomeStyles() {
       paddingTop: 8,
       paddingBottom: 10,
     },
+    headerMark: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     headerActions: {
       flexDirection: "row",
       alignItems: "center",

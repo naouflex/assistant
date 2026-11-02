@@ -75,9 +75,13 @@ export function stackResourceDir(input: {
 
 const STABLE_VERSION = /^\d+\.\d+\.\d+$/;
 
+/** Locally built images (no registry). Desktop compose defaults here, not GHCR. */
+export const LOCAL_APP_IMAGE = "atlas/app";
+export const LOCAL_COMPUTER_IMAGE = "atlas/computer";
+
 /**
  * Installed builds pin images to their own version so the DMG and the multi-arch
- * images move together; development builds follow `edge`.
+ * images move together; development and unpackaged builds use locally built `local`.
  */
 export function resolveImageTag(input: {
   version: string;
@@ -87,7 +91,12 @@ export function resolveImageTag(input: {
   const override = input.override?.trim();
   if (override) return override;
   if (input.packaged && STABLE_VERSION.test(input.version)) return `v${input.version}`;
-  return "edge";
+  return "local";
+}
+
+/** Tags that must never hit a registry — use images already on this machine. */
+export function usesLocalOnlyImages(imageTag: string): boolean {
+  return imageTag === "local" || imageTag.startsWith("local-");
 }
 
 const GENERATED_SECRETS: Record<string, number> = {
@@ -273,7 +282,9 @@ export function stackFailureMessage(
 ): string {
   switch (kind) {
     case "image-not-found":
-      return `Images for ${imageTag} are not published yet. Try again in a few minutes.`;
+      return usesLocalOnlyImages(imageTag)
+        ? `Local Docker images for ${imageTag} were not found. Build atlas/app and atlas/computer on this machine, then retry.`
+        : `Images for ${imageTag} are not published yet. Try again in a few minutes.`;
     case "port-in-use":
       return "Could not bind a local port after retrying. Retry to choose another port.";
     case "address-pool-exhausted":
@@ -313,6 +324,10 @@ export interface LocalStackDeps {
   localWebUrl: string;
   allocatePort?: () => Promise<number>;
   imageTag: string;
+  /** Compose image repository (defaults to local `atlas/app`). */
+  appImage?: string;
+  /** Compose computer image repository (defaults to local `atlas/computer`). */
+  computerImage?: string;
   /** Returns the authenticated running image tag, or null for any other listener. */
   probe: (url: string, signal: AbortSignal, token: string) => Promise<string | null>;
   randomHex: (bytes: number) => string;
@@ -516,6 +531,13 @@ export class LocalStackController {
     const imagesCached = await this.hasLocalReleaseImages(binary, signal);
     if (signal.aborted) return this.push({ type: "failed", message: START_INTERRUPTED });
     if (!imagesCached) {
+      if (usesLocalOnlyImages(this.deps.imageTag)) {
+        this.push({
+          type: "failed",
+          message: stackFailureMessage("image-not-found", "pulling", this.deps.imageTag),
+        });
+        return;
+      }
       this.push({ type: "pull-start" });
       const pulled = await this.compose(binary, ["pull"], PULL_TIMEOUT_MS, signal);
       if (interrupted(signal, pulled))
@@ -582,8 +604,12 @@ export class LocalStackController {
   }
 
   private async hasLocalReleaseImages(binary: string, signal: AbortSignal): Promise<boolean> {
-    // Moving tags must still check the registry for newer images.
-    if (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
+    // Moving registry tags must still check the registry for newer images.
+    // `local` / `local-*` only ever use images already on this machine.
+    if (
+      !usesLocalOnlyImages(this.deps.imageTag) &&
+      (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
+    )
       return false;
     const config = await this.compose(
       binary,
@@ -613,6 +639,8 @@ export class LocalStackController {
       env: dockerSpawnEnv(this.deps.platform, this.deps.env, binary, {
         SANDBOX_HOST_URL: this.deps.hostComputer?.url ?? "",
         SANDBOX_HOST_TOKEN: this.deps.hostComputer?.token ?? "",
+        ATLAS_IMAGE: this.deps.appImage ?? LOCAL_APP_IMAGE,
+        ATLAS_COMPUTER_IMAGE: this.deps.computerImage ?? LOCAL_COMPUTER_IMAGE,
         ATLAS_IMAGE_TAG: this.deps.imageTag,
         ATLAS_COMPUTER_IMAGE_TAG: this.deps.imageTag,
         // Restricted egress needs host iptables rules. Docker Desktop keeps its

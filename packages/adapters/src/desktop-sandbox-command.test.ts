@@ -180,6 +180,36 @@ describe("desktop command execution", () => {
     }
   });
 
+  it("decodes a UTF-16 wsl listing from the host shell", async () => {
+    const root = mkdtempSync(path.join(tmpdir(), "atlas-desktop-command-"));
+    roots.push(root);
+    const desktop = new DesktopSandboxProvider({ root });
+    const computer = await desktop.provision({ botId: "wsl-list", homePath: "/unused" }, ctx);
+    const child = Object.assign(new EventEmitter(), {
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+    });
+    const tree = { alive: () => false, kill: vi.fn(), close: vi.fn() };
+    const spawn = vi.spyOn(processTree, "spawnOwnedCommand").mockImplementation(() => {
+      setImmediate(() => {
+        child.stdout.write(Buffer.from("\ufeff  NAME\n* Ubuntu-24.04 Running\n", "utf16le"));
+        child.emit("close", 0, null);
+      });
+      return { child: child as unknown as ChildProcessWithoutNullStreams, tree };
+    });
+    try {
+      const result = await collect(desktop.execute(computer, { argv: ["wsl"] }, ctx));
+      expect(result).toEqual({
+        code: 0,
+        stdout: "  NAME\n* Ubuntu-24.04 Running\n",
+        stderr: "",
+      });
+    } finally {
+      spawn.mockRestore();
+      await desktop.destroy(computer, ctx);
+    }
+  });
+
   it("never starts an OS process for an already-cancelled command", async () => {
     const root = mkdtempSync(path.join(tmpdir(), "atlas-desktop-command-"));
     roots.push(root);

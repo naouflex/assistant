@@ -46,10 +46,11 @@ Native file reads and workspace exports are limited to 8 MiB per file. A larger 
 - **Local computer access** in the app-managed Electron instance runs commands on Windows, macOS,
   or Linux through the native bridge. Bots can read/change local files and launch installed apps
   through OS commands, subject to your account and OS permissions. Portable file tools and
-  checkpoints remain scoped to bot workspaces; use commands for other local folders. Graphical
-  screen control is unavailable. Permission is remembered locally and can be revoked from the
-  app menu. Only enable this for a trusted personal instance: every bot on that instance can use
-  your account’s permissions.
+  checkpoints remain scoped to bot workspaces; use commands for other local folders. This computer
+  has no graphical desktop of its own. A connected Atlas desktop can look at and drive installed
+  apps, and asks before the first use of each app. Permission is remembered locally and can be
+  revoked from the app menu. Only enable this for a trusted personal instance: every bot on that
+  instance can use your account’s permissions.
 - **Desktop provider** (`SANDBOX_PROVIDER=desktop`) runs commands directly on the API/worker host,
   with only a minimal shell environment (no server secrets). The API and worker refuse it unless
   `NODE_ENV` is `development` or `test`, so a production server never runs bot commands on itself.

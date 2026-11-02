@@ -92,6 +92,7 @@ export const DELEGATION_TOOL_NAMES = new Set<string>([
   "spawn_bot",
   "archive_bot",
   "delete_bot",
+  "move_bot",
   "handoff_to_bot",
   "message_bot",
   ...FLEET_TOOL_NAMES,
@@ -443,7 +444,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "user_computer_shell",
     description:
-      "Run a command on the user's own computer. Use only when the task needs their local files, credentials, or network. cwd defaults to their home folder and must stay inside it.",
+      "Run a command on the user's own computer, not on this bot's computer. Use only when the task needs their local files, credentials, or network. cwd defaults to their home folder and must stay inside it. On Windows this shell is PowerShell, not WSL: run wsl for their Linux environment and leave cwd on their Windows home.",
     inputSchema: {
       type: "object",
       properties: {
@@ -724,6 +725,19 @@ export const builtinAgentTools: ConnectorTool[] = [
     },
   },
   {
+    name: "read_memory",
+    description: "Read one memory note. path and scope come from the memory index.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        scope: { type: "string", enum: ["bot", "user"] },
+      },
+      required: ["path"],
+    },
+    readOnly: true,
+  },
+  {
     name: "remember",
     description:
       "Add a durable fact to this bot's explicit memory. The fact is appended; existing memory is kept.",
@@ -739,7 +753,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "save_shared_memory",
     description:
-      "Save a Space shared memory document every bot reads. Replaces the full content, so include everything it should keep.",
+      "Propose a replacement for a shared memory note every bot reads. The current note stays until the user accepts the proposal. Include the complete new content.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1643,6 +1657,24 @@ export const builtinAgentTools: ConnectorTool[] = [
         },
       },
       required: ["confirm_name"],
+    },
+  },
+  {
+    name: "move_bot",
+    description:
+      "Move a bot of this space, with its chat, memory, skills, routines and child bots, to another space of this user; or change which bot is its parent. Identify the bot by bot_id or bot_name (exact). Pass exactly one of space_id/space_name, parent_bot_id/parent_bot_name, or clear_parent: true. The bot must be idle. Needs the owner's approval.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        bot_id: { type: "string" },
+        bot_name: { type: "string" },
+        space_id: { type: "string" },
+        space_name: { type: "string", description: "Exact name of the target space." },
+        parent_bot_id: { type: "string" },
+        parent_bot_name: { type: "string" },
+        clear_parent: { type: "boolean", description: "Make it a top-level bot." },
+      },
+      additionalProperties: false,
     },
   },
   {

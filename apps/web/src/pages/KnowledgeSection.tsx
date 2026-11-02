@@ -1,4 +1,10 @@
-import type { AgentSkill, AgentSkillCatalogEntry, MemoryDocument } from "@atlas/contracts";
+import type {
+  AgentSkill,
+  AgentSkillCatalogEntry,
+  MemoryDocument,
+  MemoryDream,
+  MemoryProposal,
+} from "@atlas/contracts";
 import { isDeletableMemoryDocument, isEmptyBotMemory } from "@atlas/contracts";
 import { fetchFresh, writeSaved } from "@atlas/core/query";
 import { Badge, Button, Skeleton, Textarea } from "@atlas/ui-web";
@@ -54,12 +60,86 @@ export function SpaceMemorySection() {
         <Trans>Shared memory</Trans>
       </SettingsSectionHeading>
       <p className="mt-1 text-[13px] text-muted-foreground">
-        <Trans>Every bot in this space reads these notes and keeps them up to date.</Trans>
+        <Trans>Every bot reads these notes. A change waits until you accept it.</Trans>
       </p>
       <div className="mt-3">
         <MemoryDocumentList input={{ scope: "user" }} testId="space-memory-list" />
       </div>
     </section>
+  );
+}
+
+function MemoryReview({
+  dream,
+  proposals,
+  reviewing,
+  nothingToChange,
+  busy,
+  onReview,
+  onAccept,
+  onReject,
+}: {
+  dream: MemoryDream | null;
+  proposals: MemoryProposal[];
+  reviewing: boolean;
+  nothingToChange: boolean;
+  busy: boolean;
+  onReview: () => void;
+  onAccept: (proposal: MemoryProposal) => void;
+  onReject: (proposal: MemoryProposal) => void;
+}) {
+  return (
+    <div className="mb-3">
+      <Button type="button" variant="outline" disabled={busy || reviewing} onClick={onReview}>
+        <Trans>Review recent runs</Trans>
+      </Button>
+      {reviewing ? (
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          <Trans>Reviewing recent runs</Trans>
+        </p>
+      ) : null}
+      {dream?.status === "failed" && dream.error ? (
+        <p className="mt-2 text-[13px] text-destructive">{dream.error}</p>
+      ) : null}
+      {nothingToChange ? (
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          <Trans>Nothing to change</Trans>
+        </p>
+      ) : null}
+      {proposals.length > 0 ? (
+        <div className="mt-3">
+          <h4 className="text-xs font-medium text-muted-foreground">
+            <Trans>Proposed notes</Trans>
+          </h4>
+          {proposals.map((proposal) => (
+            <div key={proposal.id} className="mt-2 border-b border-border pb-2 last:border-0">
+              <div className="text-[14px]" dir="auto">
+                {proposal.path}
+              </div>
+              <p className="text-[13px] text-muted-foreground" dir="auto">
+                {proposal.reason}
+              </p>
+              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[13px]">
+                {proposal.content}
+              </pre>
+              <div className="mt-2 flex gap-2">
+                <Button type="button" disabled={busy} onClick={() => onAccept(proposal)}>
+                  <Trans>Accept</Trans>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => onReject(proposal)}
+                >
+                  <Trans>Reject</Trans>
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -77,10 +157,32 @@ function MemoryDocumentList({
   const queries = useSpaceQueries();
   const queryClient = useQueryClient();
   const list = queries.memory.list.queryOptions({ input });
+  const proposalOptions = queries.memory.proposals.queryOptions({ input });
+  const dreamOptions = queries.memory.dream.queryOptions({ input });
   // Bots write memory as they run, so every open refreshes behind the cached list.
   const listQuery = useQuery({ ...list, refetchOnMount: "always" });
+  const proposalQuery = useQuery({ ...proposalOptions, refetchOnMount: "always" });
+  const dreamQuery = useQuery({
+    ...dreamOptions,
+    refetchOnMount: "always",
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "queued" || status === "running" ? 2000 : false;
+    },
+  });
   const docs = listQuery.data ?? NO_DOCS;
+  const proposals = proposalQuery.data ?? [];
+  const dream = dreamQuery.data ?? null;
+  const reviewing = dream?.status === "queued" || dream?.status === "running";
   const loading = listQuery.isPending;
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const [nothingToChange, setNothingToChange] = useState(false);
+  useEffect(() => {
+    if (!reviewId || dream?.id !== reviewId) return;
+    if (dream.status === "queued" || dream.status === "running") return;
+    setReviewId(null);
+    setNothingToChange(dream.status === "ready" && proposals.length === 0);
+  }, [reviewId, dream, proposals.length]);
   const [showAll, setShowAll] = useState(false);
   // Once shown, memory stays visible while the panel is open, even if emptied.
   const [memoryShown, setMemoryShown] = useState(false);
@@ -182,7 +284,60 @@ function MemoryDocumentList({
     }
   }
 
-  if (compact && !memoryVisible && !error) return null;
+  async function startReview() {
+    if (busy || reviewing) return;
+    setBusy(true);
+    setNothingToChange(false);
+    try {
+      const started = await rpc.memory.startDream(input);
+      setReviewId(started.id);
+      queryClient.setQueryData(dreamOptions.queryKey, started);
+    } catch {
+      setError(t`Could not review recent runs`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function acceptProposal(proposal: MemoryProposal) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await rpc.memory.acceptProposal({ proposalId: proposal.id });
+      await setDocs((current) => {
+        const index = current.findIndex((entry) => entry.path === updated.path);
+        if (index < 0) return [updated, ...current];
+        return current.map((entry, position) => (position === index ? updated : entry));
+      });
+      setNothingToChange(false);
+      await queryClient.invalidateQueries({ queryKey: proposalOptions.queryKey });
+    } catch (err) {
+      setError(
+        err instanceof ORPCError && err.code === "CONFLICT"
+          ? t`This note changed.`
+          : t`Could not save`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rejectProposal(proposal: MemoryProposal) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await rpc.memory.rejectProposal({ proposalId: proposal.id });
+      await queryClient.invalidateQueries({ queryKey: proposalOptions.queryKey });
+    } catch {
+      setError(t`Could not save`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (compact && !memoryVisible && !error && proposals.length === 0 && !reviewing) return null;
   return (
     <section className={compact ? "mt-6" : undefined}>
       {compact ? (
@@ -197,6 +352,16 @@ function MemoryDocumentList({
             <Trans>Document changed. Reopen to edit the latest version.</Trans>
           </div>
         ) : null}
+        <MemoryReview
+          dream={dream}
+          proposals={proposals}
+          reviewing={reviewing}
+          nothingToChange={nothingToChange}
+          busy={busy}
+          onReview={() => void startReview()}
+          onAccept={(proposal) => void acceptProposal(proposal)}
+          onReject={(proposal) => void rejectProposal(proposal)}
+        />
         {loading ? <Skeleton className="h-10 w-full" /> : null}
         {!compact && !loading && docs.length === 0 && !error ? (
           <div className="py-1 text-[13px] text-muted-foreground">

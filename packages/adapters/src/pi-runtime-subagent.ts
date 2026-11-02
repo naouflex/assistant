@@ -1,8 +1,10 @@
 import { Agent } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage } from "@earendil-works/pi-ai";
+import { isLocalAnswerModel, LOCAL_FAST_MODEL_ID } from "./answer-quality.js";
 import { withAutomatedLabels } from "./automated-messages.js";
 import { DELEGATION_TOOL_NAMES } from "./builtin-tools.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
+import { LOCAL_PROVIDER_ID } from "./local-provider-identity.js";
 import { estimatePiImageTokens } from "./pi-image-context.js";
 import {
   assistantText,
@@ -65,6 +67,18 @@ export async function executeSubagent(
         throw new Error("Per-call subagent model selection is unavailable");
       }
       requestModel = await host.request.resolveModel(requestedProvider, requestedModelId);
+    } else if (
+      host.request.resolveModel &&
+      isLocalAnswerModel(host.request.model.provider, host.request.model.id)
+    ) {
+      // A helper is a fast tool turn. If the 4B is on this server, use it and
+      // leave thinking off. A missing 4B keeps the answer model.
+      try {
+        const fast = await host.request.resolveModel(LOCAL_PROVIDER_ID, LOCAL_FAST_MODEL_ID);
+        requestModel = { ...fast, thinkingLevel: "off" };
+      } catch {
+        // The fast model is not connected here.
+      }
     }
   } catch (error) {
     const message = sanitizeError(error instanceof Error ? error.message : String(error));

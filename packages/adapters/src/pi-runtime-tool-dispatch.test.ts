@@ -16,7 +16,8 @@ const fakeAgentState = vi.hoisted(() => ({
     | "ask-pause"
     | "nested-ask-pause"
     | "tools-then-empty-failure"
-    | "tools-then-final-text",
+    | "tools-then-final-text"
+    | "search-nudge",
   terminalMessage: undefined as
     | {
         role: "assistant";
@@ -100,6 +101,43 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
           context: { messages: [] },
           newMessages: [],
         });
+        return;
+      }
+      if (fakeAgentState.mode === "search-nudge") {
+        const invented = "I searched but found nothing.";
+        this.emit({
+          type: "message_update",
+          assistantMessageEvent: { type: "text_delta", delta: invented },
+        });
+        this.emit({
+          type: "message_end",
+          message: { role: "assistant", content: [{ type: "text", text: invented }] },
+        });
+        this.emit({
+          type: "turn_end",
+          message: { role: "assistant", content: [{ type: "text", text: invented }] },
+          toolResults: [],
+        });
+        const search = this.tools.find((tool) => tool.name === "web_search");
+        if (fakeAgentState.followUpMessages.length > 0 && search) {
+          const args = { query: "Ada Lovelace" };
+          this.emit({ type: "tool_execution_start", toolName: "web_search", args });
+          await search.execute("call-search", args);
+          const answer = "From the search.";
+          this.emit({
+            type: "message_update",
+            assistantMessageEvent: { type: "text_delta", delta: answer },
+          });
+          this.emit({
+            type: "message_end",
+            message: { role: "assistant", content: [{ type: "text", text: answer }] },
+          });
+          this.emit({
+            type: "turn_end",
+            message: { role: "assistant", content: [{ type: "text", text: answer }] },
+            toolResults: [],
+          });
+        }
         return;
       }
       if (fakeAgentState.mode === "empty" || fakeAgentState.mode === "two-boundaries") {
@@ -1082,6 +1120,176 @@ describe("Pi connector tool dispatch", () => {
       type: "done",
       text: "I will check the destination first.The final answer.",
     });
+  });
+
+  it("searches before answering who someone is", async () => {
+    fakeAgentState.mode = "search-nudge";
+    const runtime = new PiAgentRuntime();
+    const events: unknown[] = [];
+    const webSearch = {
+      name: "web_search",
+      description: "Search the web",
+      inputSchema: { type: "object", properties: { query: { type: "string" } } },
+    };
+
+    for await (const event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "search-nudge",
+        prompt: "Who is Ada Lovelace?",
+        instructions: "Answer from search.",
+        history: [],
+        tools: [webSearch],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => ({ results: [{ snippet: "Mathematician" }] })),
+      },
+      {
+        operationId: "search-nudge",
+        traceId: "search-nudge",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      events.push(event);
+    }
+
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "tool",
+        name: "web_search",
+        args: { query: "Who is Ada Lovelace?" },
+      }),
+    );
+    expect(fakeAgentState.promptInputs[0]).toContain("web_search already ran");
+    expect(fakeAgentState.promptInputs[0]).toContain("Mathematician");
+    expect(fakeAgentState.followUpMessages).toEqual([]);
+    expect(events).toContainEqual({ type: "text", text: "I searched but found nothing." });
+  });
+
+  it("hides a who-is reply when the search itself fails and asks the model to call it", async () => {
+    fakeAgentState.mode = "search-nudge";
+    const runtime = new PiAgentRuntime();
+    const events: unknown[] = [];
+    let calls = 0;
+
+    for await (const event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "search-nudge-retry",
+        prompt: "Who is Ada Lovelace?",
+        instructions: "Answer from search.",
+        history: [],
+        tools: [
+          {
+            name: "web_search",
+            description: "Search the web",
+            inputSchema: { type: "object", properties: { query: { type: "string" } } },
+          },
+        ],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => {
+          calls += 1;
+          if (calls === 1) throw new Error("search down");
+          return { ok: true };
+        }),
+      },
+      {
+        operationId: "search-nudge-retry",
+        traceId: "search-nudge-retry",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      events.push(event);
+    }
+
+    expect(events).not.toContainEqual({ type: "text", text: "I searched but found nothing." });
+    expect(events).toContainEqual({ type: "text", text: "From the search." });
+    expect(fakeAgentState.followUpMessages).toHaveLength(1);
+  });
+
+  it("keeps a direct reply that does not need a web search", async () => {
+    fakeAgentState.mode = "search-nudge";
+    const runtime = new PiAgentRuntime();
+    const events: unknown[] = [];
+
+    for await (const event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "search-nudge-direct",
+        prompt: "Thanks.",
+        instructions: "Answer.",
+        history: [],
+        tools: [
+          {
+            name: "web_search",
+            description: "Search the web",
+            inputSchema: { type: "object", properties: { query: { type: "string" } } },
+          },
+        ],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => ({ ok: true })),
+      },
+      {
+        operationId: "search-nudge-direct",
+        traceId: "search-nudge-direct",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      events.push(event);
+    }
+
+    expect(fakeAgentState.followUpMessages).toEqual([]);
+    expect(events).toContainEqual({ type: "text", text: "I searched but found nothing." });
+  });
+
+  it("gives the model the exact product instead of a guess", async () => {
+    fakeAgentState.mode = "search-nudge";
+    const runtime = new PiAgentRuntime();
+    const events: unknown[] = [];
+
+    for await (const event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "calculate-product",
+        prompt: "Current time: 2026-11-01.\n\nCompute 17 times 23 with the shell and reply with only the number.",
+        utterance: "Compute 17 times 23 with the shell and reply with only the number.",
+        instructions: "Answer.",
+        history: [],
+        tools: [],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => ({ ok: true })),
+      },
+      {
+        operationId: "calculate-product",
+        traceId: "calculate-product",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      events.push(event);
+    }
+
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "tool",
+        name: "calculate",
+        args: { expression: "17 * 23" },
+      }),
+    );
+    expect(events).toContainEqual({ type: "text", text: "391" });
+    expect(events).not.toContainEqual({ type: "text", text: "I searched but found nothing." });
+    expect(fakeAgentState.promptInputs).toEqual([]);
+    expect(fakeAgentState.followUpMessages).toEqual([]);
   });
 
   it("does not wait for a slow tool completion hook", async () => {

@@ -17,14 +17,19 @@ describe("desktop window chrome", () => {
     expect(opts.trafficLightPosition).toEqual({ x: 16, y: 16 });
   });
 
-  it("uses the native Windows frame in the app and setup windows", () => {
+  it("uses a hidden Windows title bar with native caption overlay", () => {
     for (const opts of [
       browserWindowOptions("win32", laptop),
       setupWindowOptions("win32", laptop),
     ]) {
       expect(opts.frame).toBe(true);
-      expect(opts.titleBarStyle).toBeUndefined();
+      expect(opts.titleBarStyle).toBe("hidden");
       expect(opts.trafficLightPosition).toBeUndefined();
+      expect(opts.titleBarOverlay).toEqual({
+        color: "#161616",
+        symbolColor: "#A8A8A8",
+        height: 40,
+      });
     }
   });
 

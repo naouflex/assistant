@@ -6,6 +6,7 @@ describe("analytics vocabulary", () => {
     expect(analyticsScreen("/app/private-bot-name")).toBe("chat");
     expect(analyticsScreen("/app/g/private-group-name")).toBe("chat");
     expect(analyticsScreen("/app/artifacts/private-document-name")).toBe("artifacts");
+    expect(analyticsScreen("/app/cubicle")).toBe("cubicle");
     expect(analyticsScreen("/thread")).toBe("chat");
     expect(analyticsScreen("/models")).toBe("settings");
     expect(analyticsScreen("/mcp/oauth/callback")).toBeUndefined();

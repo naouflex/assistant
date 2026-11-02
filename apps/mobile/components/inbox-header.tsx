@@ -8,6 +8,7 @@ import type { CreateAction } from "../lib/create-chooser";
 import { createMenuActions, isCreateAction } from "../lib/create-chooser";
 import { useI18n } from "../lib/i18n";
 import { useThemedStyles } from "../lib/native";
+import { AppMark } from "./app-mark";
 import { CREATE_MENU_GAP, createHomeStyles } from "./home-styles";
 import { NativeSymbol } from "./native-symbol";
 
@@ -46,6 +47,9 @@ export function InboxHeader({
         <HeaderButton accessibilityLabel={t("Account")} onPress={() => router.push("/account")}>
           <Text style={styles.profileInitials}>{initials}</Text>
         </HeaderButton>
+      </View>
+      <View pointerEvents="none" style={styles.headerMark}>
+        <AppMark size={28} />
       </View>
       <View style={styles.headerActions}>
         <HeaderButton

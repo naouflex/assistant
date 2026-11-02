@@ -320,6 +320,7 @@ export async function prepareToolRequest(
   const fleetWrite =
     FLEET_WRITE_TOOL_NAMES_SET.has(name) ||
     name === "archive_bot" ||
+    name === "move_bot" ||
     (name === "update_bot" && argumentGiven(args.bot_id));
   if (fleetWrite || name === "list_fleet") {
     if (isSubagentToolExecution(executionId))

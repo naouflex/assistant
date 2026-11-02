@@ -516,6 +516,11 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "Move to": "移動到",
   Name: "名稱",
   "Needs attention": "需要處理",
+  "Computer problems": "電腦問題",
+  "Takeover requests": "接管請求",
+  "Questions and approvals": "問題與核准",
+  "Finished work": "已完成的工作",
+  "Push notifications": "推播通知",
   "Needs input": "等待輸入",
   "Needs takeover": "等待接管",
   "New password": "新密碼",
@@ -1230,6 +1235,12 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "1 free month earned": "已獲得 1 個月免費",
   "{count} free months earned": "已獲得 {count} 個月免費",
   "Submit a plugin": "提交外掛程式",
+  "Review recent runs": "查看最近的執行",
+  "Reviewing recent runs": "正在查看最近的執行",
+  "Proposed notes": "建議的筆記",
+  Accept: "接受",
+  Reject: "拒絕",
+  "Nothing to change": "無需變更",
 };
 
 export const PEER_MESSAGE_FORMS = { other: "與{peer}的 {count} 則訊息" };

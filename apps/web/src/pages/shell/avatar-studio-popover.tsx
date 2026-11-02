@@ -1,6 +1,6 @@
 import type { BotAvatarSet } from "@atlas/contracts";
 import { resolveBotAvatarSet } from "@atlas/contracts";
-import { SHIPPED_BOT_AVATAR_SHAPE_KEYS } from "@atlas/core";
+import { SHIPPED_BOT_AVATAR_IMAGES, SHIPPED_BOT_AVATAR_SHAPE_KEYS } from "@atlas/core";
 import {
   BOT_AVATAR_COLORS,
   BotAvatar,
@@ -25,6 +25,20 @@ import { Trans } from "@lingui/react/macro";
 import { Check, Pencil, Upload, X } from "lucide-react";
 import type { ClipboardEvent, DragEvent } from "react";
 import { useRef, useState } from "react";
+
+/** Near-white swatches need a harder edge so they stay clickable on light popovers. */
+function isPaleAvatarSwatch(color: string): boolean {
+  const hex = color.replace("#", "");
+  const full =
+    hex.length === 3
+      ? [...hex].map((part) => `${part}${part}`).join("")
+      : hex.padStart(6, "0").slice(0, 6);
+  const r = Number.parseInt(full.slice(0, 2), 16);
+  const g = Number.parseInt(full.slice(2, 4), 16);
+  const b = Number.parseInt(full.slice(4, 6), 16);
+  if (![r, g, b].every((channel) => Number.isFinite(channel))) return false;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 230;
+}
 
 /**
  * The shape grid and color row for a bot's look. With `organicIdentities`, the grid also offers
@@ -133,6 +147,7 @@ export function BotLookPicker({
         <div className="grid grid-cols-6 place-items-center gap-2">
           {BOT_AVATAR_COLORS.map((color) => {
             const selected = currentColor.toLowerCase() === color.toLowerCase() && !parsed.isImage;
+            const pale = isPaleAvatarSwatch(color);
             return (
               <button
                 key={color}
@@ -143,7 +158,9 @@ export function BotLookPicker({
                 className={`size-6 rounded-full border transition-transform hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring ${
                   selected
                     ? "scale-105 border-transparent ring-2 ring-foreground ring-offset-2 ring-offset-popover"
-                    : "border-border"
+                    : pale
+                      ? "border-foreground/45 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]"
+                      : "border-border"
                 }`}
                 style={{ backgroundColor: color }}
               />
@@ -151,6 +168,42 @@ export function BotLookPicker({
           })}
         </div>
       </div>
+
+      {SHIPPED_BOT_AVATAR_IMAGES.length > 0 ? (
+        <div className="border-t border-border pt-2">
+          {organicIdentities ? null : (
+            <div className="mb-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              <Trans>Custom</Trans>
+            </div>
+          )}
+          <div className="grid grid-cols-4 place-items-center gap-2">
+            {SHIPPED_BOT_AVATAR_IMAGES.map((image) => {
+              const selected = parsed.isImage && value === image.value;
+              return (
+                <button
+                  key={image.id}
+                  type="button"
+                  onClick={() => onChange(image.value)}
+                  aria-label={t`Custom ${image.id}`}
+                  aria-pressed={selected}
+                  data-testid={`avatar-studio-custom-${image.id}`}
+                  className={`relative flex size-11 items-center justify-center overflow-hidden rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover ${
+                    selected
+                      ? "ring-2 ring-primary ring-offset-2 ring-offset-popover"
+                      : "hover:bg-white/5"
+                  }`}
+                >
+                  <img
+                    src={image.value}
+                    alt=""
+                    className="size-8 object-contain"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

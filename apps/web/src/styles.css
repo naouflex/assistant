@@ -88,6 +88,17 @@ body,
   -webkit-app-region: no-drag;
 }
 
+/*
+ * Windows titleBarOverlay: keep top chrome clear of the native caption buttons.
+ * Electron exposes the safe titlebar area via these env() values.
+ */
+.desktop-caption-end {
+  padding-inline-end: max(
+    0px,
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+  );
+}
+
 @keyframes rkPulse {
   0%,
   100% {

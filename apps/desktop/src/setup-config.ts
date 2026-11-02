@@ -5,8 +5,14 @@ import { isLoopbackHost, isPrivateNetworkHost } from "@atlas/contracts/network-h
 
 /** Managed desktop origin; development keeps its usual web/API ports. */
 export const DEFAULT_LOCAL_WEB_URL = "http://127.0.0.1:45173";
-/** Hosted Atlas; setup saves it as an `existing` server so it opens like any other. */
-export const ATLAS_CLOUD_URL = "https://app.rakazo.com";
+/**
+ * Hosted Atlas product URL when one exists. Empty until Atlas cloud ships —
+ * setup must not default people to a third-party host. Main may override via
+ * the ATLAS_CLOUD_URL environment variable when constructing setup state.
+ */
+export const ATLAS_CLOUD_URL = "";
+/** Day-to-day local Atlas (web on :5173 talking to the API). Prefill for "Existing instance". */
+export const DEFAULT_EXISTING_SERVER_URL = "http://127.0.0.1:5173";
 export const PROBE_RESPONSE_LIMIT_BYTES = 64 * 1024;
 
 export const SETUP_FILE_NAME = "setup.json";

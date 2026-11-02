@@ -1,3 +1,4 @@
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type { ProcessEvent } from "@atlas/adapter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -19,6 +20,36 @@ const context = {
 };
 
 describe("Docker sandbox", () => {
+  it("names a refused supervisor instead of a bare fetch failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed", {
+          cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:7091"), {
+            code: "ECONNREFUSED",
+          }),
+        });
+      }),
+    );
+    const provider = new DockerSandboxProvider("http://127.0.0.1:7091", "test-token");
+    await expect(provider.provision({ botId: "bot", homePath: "/home" }, context)).rejects.toBeInstanceOf(
+      SandboxUnreachableError,
+    );
+  });
+
+  it("leaves an aborted supervisor call aborted", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new DOMException("The operation was aborted", "AbortError");
+      }),
+    );
+    const provider = new DockerSandboxProvider("http://127.0.0.1:7091", "test-token");
+    await expect(provider.provision({ botId: "bot", homePath: "/home" }, context)).rejects.toMatchObject({
+      name: "AbortError",
+    });
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -104,6 +135,24 @@ describe("Docker sandbox", () => {
       "x-request-id": expect.any(String),
       traceparent: expect.stringMatching(/^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/),
     });
+  });
+
+  it("sends a mounted working directory unchanged", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ stdout: "", stderr: "", code: 0 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new DockerSandboxProvider("http://supervisor.test", "test-token");
+    const events: ProcessEvent[] = [];
+    for await (const event of provider.execute(
+      { id: "computer", botId: "bot", kind: "docker", providerRef: "computer" },
+      { argv: ["ls"], cwd: "/mnt/naoufel/religion-project" },
+      context,
+    )) {
+      events.push(event);
+    }
+    expect(events).toEqual([{ type: "exit", code: 0 }]);
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)).cwd).toBe(
+      "/mnt/naoufel/religion-project",
+    );
   });
 
   it("yields stdout from a streaming exec before the command exits", async () => {

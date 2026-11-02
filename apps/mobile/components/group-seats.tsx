@@ -11,9 +11,7 @@ import type { ColorValue } from "react-native";
 import { View } from "react-native";
 import Svg, {
   Circle,
-  ClipPath,
   Defs,
-  Ellipse,
   G,
   Image,
   Mask,
@@ -151,25 +149,17 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
   const parsed = mobileBotAvatarPresentation(member.color);
   const r = size / 2;
   if (parsed.kind === "image" && parsed.imageUrl) {
-    // Drawn in points, so the photo keeps its full resolution.
+    // Drawn in points, so the photo keeps its full resolution — no circular plate.
     return {
       box: [0, 0, size],
       outline: (paint) => <Circle cx={r} cy={r} r={r} {...paint} />,
       face: (
-        <>
-          <ClipPath id={`${key}-photo`}>
-            <Circle cx={r} cy={r} r={r} />
-          </ClipPath>
-          {/* A plain circle holds the photo's place while it loads, as on the avatar. */}
-          <Circle cx={r} cy={r} r={r} fill={native.fill} />
-          <Image
-            href={{ uri: parsed.imageUrl }}
-            width={size}
-            height={size}
-            preserveAspectRatio="xMidYMid slice"
-            clipPath={`url(#${key}-photo)`}
-          />
-        </>
+        <Image
+          href={{ uri: parsed.imageUrl }}
+          width={size}
+          height={size}
+          preserveAspectRatio="xMidYMid meet"
+        />
       ),
     };
   }
@@ -180,15 +170,31 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
       number,
     ];
     const center = SHIPPED_BOT_AVATAR_CENTER;
+    const eyeScale = units / 120;
+    const eyeW = 7 * eyeScale;
+    const eyeH = 24 * eyeScale;
+    const eyeOffsetX = 10.5 * eyeScale;
     return {
       box: [x, y, units],
       outline: (paint) => <Path d={parsed.shapePath} {...paint} />,
       face: (
         <>
           <Path d={parsed.shapePath} fill={parsed.color} />
-          <G fill={parsed.eyeColor}>
-            <Ellipse cx={center - 29} cy={center - 8} rx={10} ry={7} />
-            <Ellipse cx={center + 29} cy={center - 8} rx={10} ry={7} />
+          <G fill={botEyeColor}>
+            <Rect
+              x={center - eyeOffsetX - eyeW / 2}
+              y={center - 8 - eyeH / 2}
+              width={eyeW}
+              height={eyeH}
+              rx={eyeW / 2}
+            />
+            <Rect
+              x={center + eyeOffsetX - eyeW / 2}
+              y={center - 8 - eyeH / 2}
+              width={eyeW}
+              height={eyeH}
+              rx={eyeW / 2}
+            />
           </G>
         </>
       ),

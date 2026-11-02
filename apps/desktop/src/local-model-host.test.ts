@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  cudartZipUrl,
   DEFAULT_LLAMA_RELEASE,
   DEFAULT_MODEL_ID,
-  cudartZipUrl,
   hostRoot,
   isWindowsNativeHostSupported,
+  LOCAL_MODEL_CATALOG,
   llamaReleaseTag,
+  localModelRouterPreset,
   modelsDir,
   runtimeDir,
   runtimeZipUrl,
@@ -32,5 +34,39 @@ describe("local model host helpers", () => {
     expect(isWindowsNativeHostSupported("win32", "x64")).toBe(true);
     expect(isWindowsNativeHostSupported("linux", "x64")).toBe(false);
     expect(DEFAULT_MODEL_ID).toBe("qwen3.5:4b-mtp");
+  });
+
+  it("serves Qwen and the Spark 4B models from one router preset", () => {
+    expect(LOCAL_MODEL_CATALOG.map((entry) => entry.id)).toEqual([
+      "qwen3.5:4b-mtp",
+      "qwen3.5:9b",
+      "qwen3.8:9b",
+      "spark-x2.5:4b",
+      "spark-x2.6:4b",
+    ]);
+    const preset = localModelRouterPreset("/models", () => false);
+    expect(preset).toContain("[qwen3.5:4b]");
+    expect(preset).toContain("alias = qwen3.5:4b,qwen3.5:4b-mtp");
+    expect(preset).toContain("[qwen3.5:9b]");
+    expect(preset).toContain("alias = qwen3.5:9b,qwen3.5:9b-text");
+    expect(preset).toContain("/models/Qwen3.5-9B-Q4_K_M.gguf");
+    expect(preset).toContain("[qwen3.8:9b]");
+    expect(preset).toContain("alias = qwen3.8:9b");
+    expect(preset).toContain("/models/Qwen3.8-9B-Q4_K_M.gguf");
+    expect(preset).toContain("spec-type = draft-mtp");
+    expect(preset).toContain("[spark-x2.5:4b]");
+    expect(preset).toContain("/models/Spark-X2.5-4B-Q4_K_M.gguf");
+    expect(preset).toContain("[spark-x2.6:4b]");
+    expect(preset).toContain("/models/Spark-X2.6-4B-Q4_K_M.gguf");
+    expect(preset).toContain("reasoning = off");
+    expect(preset).toContain("no-reasoning-preserve = true");
+    expect(preset).not.toContain("load-on-startup");
+    const ready = localModelRouterPreset("/models", () => true);
+    const answer = ready.split("[qwen3.5:9b]")[1]?.split("\n[")[0] ?? "";
+    expect(answer).toContain("load-on-startup = true");
+    const fast = ready.split("[qwen3.5:4b]")[1]?.split("\n[")[0] ?? "";
+    expect(fast).not.toContain("load-on-startup");
+    expect(preset).not.toContain("mmproj");
+    expect(localModelRouterPreset("/models", () => true)).toContain("mmproj-Qwen3.5-4B-F16.gguf");
   });
 });

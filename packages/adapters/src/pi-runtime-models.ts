@@ -11,10 +11,10 @@ import { clampThinkingLevel } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { localThinkingDisabled } from "./chat-completions-compat.js";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
-import { localModelsVersion } from "./local-model-discovery.js";
+import { discoveredLocalModels, localModelsVersion } from "./local-model-discovery.js";
 import { PiRuntimeCredentialStore, toOAuthCredential } from "./pi-credentials.js";
 import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
-import { registerLocalProvider } from "./pi-local-provider.js";
+import { LOCAL_PROVIDER_ID, registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
 import { CHATGPT_OAUTH_PROVIDER } from "./pi-oauth.js";
 import {
@@ -94,6 +94,12 @@ export function resolveRuntimeModel(modelConfig: AgentRunRequest["model"]): {
   const credentials = credentialStoreForRequest({ model: modelConfig }, provider);
   const models = modelsForRequest({ model: modelConfig }, provider, credentials);
   let model = models.getModel(provider, modelId);
+  if (!model && provider === LOCAL_PROVIDER_ID && modelId) {
+    const canonical = discoveredLocalModels().find(
+      (entry) => entry.id === modelId || entry.aliases.includes(modelId),
+    );
+    if (canonical) model = models.getModel(provider, canonical.id);
+  }
   if (
     provider === "openrouter" &&
     !model &&

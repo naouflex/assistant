@@ -1,10 +1,11 @@
 import { useNavigation, useRouter } from "expo-router";
-import { useLayoutEffect } from "react";
+import { createElement, useLayoutEffect } from "react";
+import { AppMark } from "../components/app-mark";
 import type { CreateAction } from "./create-chooser";
 import { createMenuItems } from "./create-chooser";
 import { useI18n } from "./i18n";
 
-/** Liquid Glass home header: account on the left; activity, search and create on the right. */
+/** Liquid Glass home header: account on the left; mark centered; activity, search and create on the right. */
 export function useHomeHeader({
   nativeHeader,
   ready,
@@ -33,6 +34,7 @@ export function useHomeHeader({
       headerTransparent: true,
       headerStyle: { backgroundColor: "transparent" },
       title: "",
+      headerTitle: () => createElement(AppMark, { size: 28 }),
       unstable_headerLeftItems: () => [
         {
           type: "button" as const,
