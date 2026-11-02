@@ -3,6 +3,7 @@ import { BOT_INSTRUCTIONS_MAX_LENGTH } from "@atlas/contracts";
 import { redactSecrets } from "@atlas/core";
 import { prepareAgentConnectionResponse } from "./agent-connections.js";
 import type { FleetCardSummary } from "./approval-ask.js";
+import type { TerminatingToolResult } from "./approval-effect.js";
 import {
   approvalReplayPathError,
   approvalReplayResourceError,
@@ -21,9 +22,13 @@ import { sanitizeConnectorError } from "./connector-safety.js";
 import { isFleetApprovalTool, prepareFleetRequest } from "./fleet-tools.js";
 import { assertConnectorToolArgs, CATALOG_EXECUTE } from "./lazy-tool-catalog.js";
 import { paidRequestEffect, restorePaidRequest } from "./paid-request.js";
-import { PHONE_TOOLS } from "./phone-protocol.js";
 import type { RunContext } from "./run-context.js";
-import { isRunTainted, neverAsks } from "./run-context.js";
+import {
+  isRunTainted,
+  neverAsks,
+  OWN_INSTRUCTIONS_BASELINE_UNKNOWN_ERROR,
+  refuseOwnerSettingsChange,
+} from "./run-context.js";
 import {
   approvalReplayEffectToolName,
   CATALOG_APPROVAL_TOOL,
@@ -50,11 +55,14 @@ export interface ToolRequest {
   approvedEffectKey: string | undefined;
   replayEffectToolName: string;
   fleetSummary: FleetCardSummary | undefined;
-  /** The owner must approve this call whatever the space's rules say. */
-  ownerApproval: boolean;
+  /** Gated like a consequential action, even when the tool alone is not. */
+  heldForApproval: boolean;
 }
 
 type ToolError = { error: string };
+
+/** A prepare-step refusal: a plain error, or a result that ends the turn on a repeat. */
+type PrepareRefusal = ToolError | TerminatingToolResult;
 
 /**
  * Resolve catalog and bound connector routes, and line the call up with the next approved
@@ -260,7 +268,7 @@ export async function resolveToolRequest(
     approvedEffectKey,
     replayEffectToolName,
     fleetSummary: undefined,
-    ownerApproval: false,
+    heldForApproval: false,
   };
 }
 
@@ -268,46 +276,10 @@ export async function resolveToolRequest(
  * Check bot-management and instruction-proposal preconditions, and canonicalize the
  * requests whose approval card shows resolved names. Updates the request in place.
  */
-// Runs whose prompt someone other than the owner wrote; their text stays in the chat's history.
-const OUTSIDE_RUN_TRIGGERS = [
-  "webhook",
-  "messaging",
-  "bot_message",
-  "spawn",
-  "cloud_agent",
-  "tickets",
-];
-
-/** Earlier outside text in the chat can steer this run even when the run itself took in none. */
-async function threadHasOutsideHistory(
-  prisma: RunContext["deps"]["prisma"],
-  threadId: string,
-  botId: string,
-): Promise<boolean> {
-  const [message, run] = await Promise.all([
-    prisma.message.findFirst({
-      where: {
-        threadId,
-        OR: [
-          { role: "bot", botId: { not: botId } },
-          { blocks: { array_contains: [{ kind: "channel_message" }] } },
-          { blocks: { array_contains: [{ kind: "bot_message_received" }] } },
-        ],
-      },
-      select: { id: true },
-    }),
-    prisma.run.findFirst({
-      where: { threadId, trigger: { in: OUTSIDE_RUN_TRIGGERS } },
-      select: { id: true },
-    }),
-  ]);
-  return Boolean(message || run);
-}
-
 export async function prepareToolRequest(
   ctx: RunContext,
   request: ToolRequest,
-): Promise<ToolError | undefined> {
+): Promise<PrepareRefusal | undefined> {
   const { deps, run, bot } = ctx;
   const { name, executionId, nextApprovedTool } = request;
   let { args } = request;
@@ -318,16 +290,9 @@ export async function prepareToolRequest(
     if (isSubagentToolExecution(executionId))
       return { error: "Helpers cannot use the user's computer." };
   }
-  if (PHONE_TOOLS.has(name)) {
-    if (!ctx.source.userComputerOwner || !deps.userDevices)
-      return { error: "The user's phone is not available in this run." };
-    if (isSubagentToolExecution(executionId))
-      return { error: "Helpers cannot use the user's phone." };
-  }
   const fleetWrite =
     FLEET_WRITE_TOOL_NAMES_SET.has(name) ||
     name === "archive_bot" ||
-    name === "move_bot" ||
     (name === "update_bot" && argumentGiven(args.bot_id));
   if (fleetWrite || name === "list_fleet") {
     if (isSubagentToolExecution(executionId))
@@ -406,19 +371,18 @@ const OWN_FIELDS = new Set([
 ]);
 
 /**
- * `update_bot` on this bot itself. Instructions from the owner's own words, or any run under
- * Never ask, are written at once; another run the owner set up holds them for the owner's
- * approval, and outside runs cannot change them.
+ * `update_bot` on this bot itself. Under Never ask instructions are written at once; otherwise
+ * they go through approval like any other action, and outside runs cannot change them.
  */
 async function prepareOwnBotUpdate(
   ctx: RunContext,
   request: ToolRequest,
-): Promise<ToolError | undefined> {
-  const { deps, run, bot } = ctx;
+): Promise<PrepareRefusal | undefined> {
+  const { run } = ctx;
   const { executionId, nextApprovedTool } = request;
   if (nextApprovedTool === "update_bot") {
     // The approved replay runs the stored request.
-    request.ownerApproval = typeof request.args.previousInstructions === "string";
+    request.heldForApproval = typeof request.args.previousInstructions === "string";
     return undefined;
   }
   const { previousInstructions: _previous, reason: _reason, ...args } = request.args;
@@ -436,10 +400,10 @@ async function prepareOwnBotUpdate(
           "Only the owner can change your model, thinking, voice or read-aloud, from their own chat.",
       };
     if (!unguarded && (await isRunTainted(ctx)))
-      return {
-        error:
-          "Model, thinking, voice and read-aloud changes are blocked for the rest of this run because it read outside content.",
-      };
+      return refuseOwnerSettingsChange(
+        ctx,
+        "Model, thinking, voice and read-aloud changes are blocked for the rest of this run because it read outside content.",
+      );
   }
   if (!argumentGiven(args.instructions)) return undefined;
   if (isSubagentToolExecution(executionId)) return { error: "Helpers cannot set instructions." };
@@ -449,31 +413,23 @@ async function prepareOwnBotUpdate(
   if (redactSecrets(instructions, ctx.secrets) !== instructions)
     return { error: "Instructions cannot contain credentials." };
   request.args = { ...args, instructions };
-  // Only the owner's own words may become instructions unseen: no outside message, and no
-  // outside tool result in this attempt's context, restored or new. The creation intro has
-  // no tools that read outside content, and answering its question clears the checkpoint.
-  const ownWords =
-    !(await ctx.trust.receivedOutsideMessage()) &&
-    (run.trigger === "created" || (ctx.source.ownerStartedRun && !ctx.state.tainted)) &&
-    !(await threadHasOutsideHistory(deps.prisma, run.threadId, bot.id));
-  if (ownWords || unguarded) return undefined;
-  if (run.trigger !== "routine" && !ctx.source.ownerStartedRun)
+  if (unguarded) return undefined;
+  if (!["created", "routine"].includes(run.trigger) && !ctx.source.ownerStartedRun)
     return { error: "Instruction changes are blocked for runs someone else started." };
-  const alongside = Object.keys(args).filter((key) => key !== "instructions");
-  if (alongside.length)
-    // Small models often stop at a bare rejection, so say exactly what to send next.
-    return {
-      error: `Nothing was saved: instruction changes need the owner's approval, so they go in their own update_bot call. Call update_bot again now with only { instructions }, then make a separate update_bot call for ${alongside.join(", ")}.`,
-    };
-  const current = await deps.prisma.bot.findUniqueOrThrow({
-    where: { id: bot.id },
-    select: { instructions: true },
-  });
+  if (Object.keys(args).some((key) => key !== "instructions"))
+    return { error: "Change your instructions in their own update_bot call." };
+  // An older checkpoint predates the baseline; this attempt must not guess.
+  if (ctx.state.ownInstructionsBaseline === undefined)
+    return { error: OWN_INSTRUCTIONS_BASELINE_UNKNOWN_ERROR };
   request.args = {
     instructions,
     reason: "Set in chat",
-    previousInstructions: current.instructions,
+    // The text the model worked from, not a fresh read: a change that landed since the
+    // attempt started conflicts at approval instead of being overwritten.
+    previousInstructions: ctx.state.ownInstructionsBaseline,
+    // Provenance the approved replay checks; requests stored before the baseline lack it.
+    previousInstructionsFromBaseline: true,
   };
-  request.ownerApproval = true;
+  request.heldForApproval = true;
   return undefined;
 }

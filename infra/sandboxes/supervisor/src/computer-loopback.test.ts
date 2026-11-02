@@ -1190,7 +1190,7 @@ describe("screen release status", () => {
         .map(([options]) => options.Cmd.join(" "))
         .join("\n");
       expect(setupCommand).toContain("browser-profile-1");
-      expect(setupCommand).toContain("if ! browser_running; then");
+      expect(setupCommand).toContain("browser_running || launch_browser");
       expect(setupCommand).not.toContain("Browser.close");
       expect(setupCommand).not.toContain("for marker in /tmp/atlas/browser-profile-*");
     },

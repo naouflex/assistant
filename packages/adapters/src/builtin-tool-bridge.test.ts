@@ -39,7 +39,6 @@ describe("built-in tool bridge", () => {
       "message_user",
       "read_file",
       "read_history",
-      "read_memory",
       "remember",
       "request_secret",
       "request_takeover",
@@ -56,7 +55,7 @@ describe("built-in tool bridge", () => {
       "web_search",
       "write_file",
     ]);
-    expect(definitionBytes(listed)).toBeLessThanOrEqual(30_800);
+    expect(definitionBytes(listed)).toBeLessThanOrEqual(30_600);
     expect(deferred.map((tool) => tool.name)).toEqual(
       expect.arrayContaining(["render_plot", "create_space", "generate_secret", "scratchpad_add"]),
     );

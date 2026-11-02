@@ -130,6 +130,7 @@ it("shows the full instruction replacement as a diff with Apply and Dismiss", ()
     {
       botId: "bot-1",
       previousInstructions: "Draft only",
+      previousInstructionsFromBaseline: true,
       instructions: "Draft only\nAsk before sending",
       reason: "Learned preference",
     },
@@ -137,7 +138,7 @@ it("shows the full instruction replacement as a diff with Apply and Dismiss", ()
   );
   expect(block).toMatchObject({
     kind: "ask",
-    detail: "Learned preference\n\n- Draft only\n+ Draft only\n+ Ask before sending",
+    detail: "- Draft only\n+ Draft only\n+ Ask before sending",
     instructionUpdate: {
       botId: "bot-1",
       before: "Draft only",
@@ -148,6 +149,8 @@ it("shows the full instruction replacement as a diff with Apply and Dismiss", ()
       { id: "deny", label: "Dismiss" },
     ],
   });
+  // The stored provenance marker is not card copy.
+  expect(JSON.stringify(block)).not.toContain("previousInstructionsFromBaseline");
 });
 
 it("redacts known secrets in instruction approval details and editable metadata", () => {
@@ -269,4 +272,14 @@ describe("agent connection response cards", () => {
       detail: "Slack: [redacted]",
     });
   });
+});
+
+it("shows a bot's first instructions as plain text", () => {
+  const block = buildApprovalAskBlock(
+    "effect-1",
+    "update_bot",
+    { botId: "bot-1", previousInstructions: "", instructions: "Draft only", reason: "Set in chat" },
+    [],
+  );
+  expect(block).toMatchObject({ detail: "Draft only" });
 });

@@ -1,23 +1,4 @@
 export const JA_MESSAGES: Record<string, string> = {
-  "Phone control": "スマートフォンの操作",
-  Accessibility: "ユーザー補助",
-  Allowed: "許可済み",
-  "Bots lose access to this phone until you turn Phone control on again.":
-    "スマートフォンの操作を再びオンにするまで、ボットはこのスマートフォンにアクセスできなくなります。",
-  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
-    "オンの間、ボットはこのスマートフォンの画面を見て操作し、コマンドを実行できます。すべての操作は記録されます。",
-  "Not connected": "未接続",
-  Off: "オフ",
-  On: "オン",
-  "Remove this phone": "このスマートフォンを削除",
-  "Remove this phone?": "このスマートフォンを削除しますか？",
-  "Screenshots need Android 11 or newer.": "スクリーンショットには Android 11 以降が必要です。",
-  "Turn off after": "自動オフまでの時間",
-  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
-    "ボットが画面を見てタップできるように、ユーザー補助の設定で Atlas phone control をオンにしてください。",
-  "{count} min": "{count} 分",
-  "The server did not pair this phone.": "サーバーはこのスマートフォンをペアリングしませんでした。",
-  "Phone control needs the Android app.": "スマートフォンの操作には Android アプリが必要です。",
   "How other bots see it": "他のボットからの見え方",
   "Share to": "共有先",
   "{count} files": "{count}個のファイル",
@@ -53,6 +34,8 @@ export const JA_MESSAGES: Record<string, string> = {
     "この接続のリクエスト上限が小さすぎます。別のモデルを選択してください。",
   "This model's context window is too small. Choose another model.":
     "このモデルのコンテキストウィンドウは小さすぎます。別のモデルを選択してください。",
+  "This server's tool result does not fit the model. Turn off Keep tool results whole for that server, or choose another model.":
+    "このサーバーのツール結果はモデルに収まりません。そのサーバーの「ツール結果を省略しない」をオフにするか、別のモデルを選んでください。",
   "{provider} denied access to this model.": "{provider}がこのモデルへのアクセスを拒否しました。",
   "{summary} Backup models failed or were unavailable for this request.":
     "{summary} 予備のモデルでエラーが発生したか、このリクエストでは利用できませんでした。",
@@ -68,9 +51,6 @@ export const JA_MESSAGES: Record<string, string> = {
   "Hide password": "パスワードを非表示",
   Export: "エクスポート",
   "Edit avatar": "アバターを編集",
-  "Shape from a word": "単語から形を作る",
-  Word: "単語",
-  Generate: "生成",
   "Add open work": "未完了の作業を追加",
   Permissions: "権限",
   "Open work": "未完了の作業",
@@ -88,7 +68,7 @@ export const JA_MESSAGES: Record<string, string> = {
   "Ex: Project Falcon": "例: Project Falcon",
   "Search bots": "ボットを検索",
   "About {label}": "{label}について",
-  "Manage the bots it creates": "作成したボットを管理",
+  "Manage other bots": "他のボットを管理",
   "Allow cross-space bot communication": "スペースをまたいだボット間の通信を許可",
   "Organize the sidebar and edit bots. Instruction, model, routine and group edits need approval.":
     "サイドバーの整理とボットの編集ができます。指示、モデル、ルーティン、グループの編集には承認が必要です。",
@@ -130,8 +110,8 @@ export const JA_MESSAGES: Record<string, string> = {
   "Your model provider": "お使いのモデルプロバイダー",
   "Connect a model in Settings before running bots.":
     "ボットを実行する前に、設定でモデルを接続してください。",
-  "Connect your own API key in Models or choose Atlas credits in Billing.":
-    "モデルで自分のAPIキーを接続するか、請求でAtlasクレジットを選択してください。",
+  "Connect your own API key in Models or choose Rakazo credits in Billing.":
+    "モデルで自分のAPIキーを接続するか、請求でRakazoクレジットを選択してください。",
   "The model provider returned an error.": "モデルプロバイダーがエラーを返しました。",
   "{provider} is rate limiting requests. Try again shortly.":
     "{provider}がリクエストを制限しています。しばらくしてからもう一度お試しください。",
@@ -181,8 +161,8 @@ export const JA_MESSAGES: Record<string, string> = {
   "Chat Settings": "チャット設定",
   "Configure a plugin catalog on the server to connect apps.":
     "アプリを接続するには、サーバーでプラグインカタログを設定してください。",
-  "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed.":
-    "サーバーのOpenAI互換アドレスを貼り付けてください。必要に応じてAtlasが/v1を追加します。",
+  "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed.":
+    "サーバーのOpenAI互換アドレスを貼り付けてください。必要に応じてRakazoが/v1を追加します。",
   "Settings: General": "設定: 一般",
   "Settings: Usage": "設定: 使用量",
   "Sign-in did not return a session": "ログインでセッションが返されませんでした",
@@ -222,9 +202,9 @@ export const JA_MESSAGES: Record<string, string> = {
   "Reset your password": "パスワードをリセット",
   "Send reset link": "リセットリンクを送信",
   Server: "サーバー",
-  "Sign in to Atlas": "Atlasにログイン",
+  "Sign in to Rakazo": "Rakazoにログイン",
   "Sign up": "新規登録",
-  "Sign up for Atlas": "Atlasに新規登録",
+  "Sign up for Rakazo": "Rakazoに新規登録",
   "Use a custom server": "カスタムサーバーを使用",
   "Use default server": "デフォルトのサーバーを使用",
   Activity: "アクティビティ",
@@ -532,6 +512,10 @@ export const JA_MESSAGES: Record<string, string> = {
   "Saved.": "保存しました。",
   "Search models": "モデルを検索",
   "Server URL": "サーバーURL",
+  Protocol: "プロトコル",
+  "Chat Completions": "Chat Completions",
+  Responses: "Responses",
+  "Anthropic Messages": "Anthropic Messages",
   "Server found. Enter a model name.": "サーバーが見つかりました。モデル名を入力してください。",
   "Setup help": "セットアップのヘルプ",
   "Show less": "表示を減らす",
@@ -541,8 +525,8 @@ export const JA_MESSAGES: Record<string, string> = {
   "Supports images": "画像に対応",
   "Supports thinking": "思考に対応",
   "Then paste the code here.": "その後、ここにコードを貼り付けてください。",
-  "This subscription sign-in is not available in Atlas yet. Use a deployment credential or choose another provider.":
-    "このサブスクリプションでのログインはAtlasではまだ利用できません。デプロイの認証情報を使うか、別のプロバイダーを選択してください。",
+  "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider.":
+    "このサブスクリプションでのログインはRakazoではまだ利用できません。デプロイの認証情報を使うか、別のプロバイダーを選択してください。",
   "Use a found model": "見つかったモデルを使用",
   "Waiting for sign-in…": "ログインを待っています…",
   "exact-model-id": "exact-model-id",
@@ -659,11 +643,6 @@ export const JA_MESSAGES: Record<string, string> = {
   "Live working status": "作業状況をライブ表示",
   More: "その他",
   "Needs attention": "要対応",
-  "Computer problems": "コンピューターの問題",
-  "Takeover requests": "引き継ぎの依頼",
-  "Questions and approvals": "質問と承認",
-  "Finished work": "完了した作業",
-  "Push notifications": "プッシュ通知",
   "Notification settings": "通知設定",
   "Get notified when this Bot finishes or needs input":
     "このボットが完了したときや入力が必要なときに通知を受け取る",
@@ -811,7 +790,7 @@ export const JA_MESSAGES: Record<string, string> = {
   "Enter a server URL": "サーバーのURLを入力してください",
   "Public servers need https://. HTTP only works on your local network.":
     "公開サーバーには https:// が必要です。HTTPはローカルネットワークでのみ使用できます。",
-  "That URL did not look like an Atlas server": "そのURLはAtlasサーバーではないようです",
+  "That URL did not look like a Rakazo server": "そのURLはRakazoサーバーではないようです",
   "That URL is missing a host": "URLにホストがありません",
   "That doesn’t look like a URL": "URLではないようです",
   "Use an http or https URL": "http または https のURLを使用してください",
@@ -881,7 +860,7 @@ export const JA_MESSAGES: Record<string, string> = {
   "AI models": "AIモデル",
   Memory: "メモリ",
   "Privacy policies": "プライバシーポリシー",
-  Atlas: "Atlas",
+  Rakazo: "Rakazo",
   "Withdraw all permissions": "すべての許可を取り消す",
   "Withdraw all permissions?": "すべての許可を取り消しますか？",
   "New mobile actions won't send data to these services. Runs already in progress and routines keep going until you stop them.":
@@ -994,6 +973,21 @@ export const JA_MESSAGES: Record<string, string> = {
   Credits: "クレジット",
   "Available credits": "利用可能なクレジット",
   "Computer hours left": "コンピューターの残り時間",
+  "Trials get fewer hours to prevent abuse.":
+    "不正利用を防ぐため、トライアルでは時間が少なくなっています。",
+  "Start plan now": "今すぐプランを開始",
+  "Start your plan now?": "今すぐプランを開始しますか？",
+  "Your trial ends and your card is charged {price} today.":
+    "トライアルが終了し、本日カードに{price}が請求されます。",
+  "Your trial ends and your card is charged today.":
+    "トライアルが終了し、本日カードに請求されます。",
+  "Start plan": "プランを開始",
+  "Switch to yearly": "年払いに切り替え",
+  "Switch to yearly?": "年払いに切り替えますか？",
+  "Your card is charged {price} today, less the unused part of this month.":
+    "本日カードに{price}が請求されます（今月の未使用分を差し引きます）。",
+  "Your plan becomes {price} / year when your trial ends.":
+    "トライアル終了後、プランは年額 {price} になります。",
   "Monthly credits": "月間クレジット",
   "Upgrade now": "今すぐアップグレード",
   "Downgrade at renewal": "更新時にダウングレード",
@@ -1004,13 +998,14 @@ export const JA_MESSAGES: Record<string, string> = {
   Subscribe: "登録する",
   "Monthly credits expire at renewal. Top-ups do not expire.":
     "月間クレジットは更新時に失効します。追加購入分は失効しません。",
-  "Use Atlas credits": "Atlasクレジットを使用",
+  "Use Rakazo credits": "Rakazoクレジットを使用",
   "Choose a plan": "プランを選択",
   "Change plan": "プランを変更",
+  "Current plan": "現在のプラン",
   Plan: "プラン",
   None: "なし",
   "Free trial": "無料トライアル",
-  "Atlas credits": "Atlasクレジット",
+  "Rakazo credits": "Rakazoクレジット",
   "Free until": "無料期間の終了日",
   Ends: "終了日",
   Renews: "更新日",
@@ -1031,6 +1026,13 @@ export const JA_MESSAGES: Record<string, string> = {
   "Full access, nothing to pay": "すべての機能を無料で利用",
   "Day {days}": "{days}日目",
   "{price} / month begins": "月額 {price} の支払いを開始",
+  "Billing period": "請求期間",
+  "Yearly −{percent}%": "年払い −{percent}%",
+  "{days} days free, then {price} / year. Cancel anytime.":
+    "{days}日間無料、その後は年額 {price}。いつでも解約できます。",
+  "{price} / year": "年額 {price}",
+  "{price} / year begins": "年額 {price} の支払いを開始",
+  "{price} / year. Cancel anytime.": "年額 {price}。いつでも解約できます。",
   "Only the owner of this account can choose a plan.":
     "プランを選択できるのはこのアカウントのオーナーのみです。",
   Terms: "利用規約",
@@ -1039,7 +1041,7 @@ export const JA_MESSAGES: Record<string, string> = {
   "Your free trial has started": "無料トライアルが始まりました",
   "Free until {date}": "{date}まで無料",
   "Connect your AI": "AIを接続",
-  "Start using Atlas": "Atlasを使い始める",
+  "Start using Rakazo": "Rakazoを使い始める",
   "1 unread": "未読1件",
   "{count} unread": "未読{count}件",
   "{count} need attention": "{count}件が要対応",
@@ -1047,11 +1049,11 @@ export const JA_MESSAGES: Record<string, string> = {
   "{label}, below": "{label}、下",
   Work: "仕事",
   Both: "両方",
-  "How will you use Atlas?": "Atlasをどのように使いますか？",
-  "What do you most want Atlas to help with?": "Atlasで一番手伝ってほしいことは何ですか？",
+  "How will you use Rakazo?": "Rakazoをどのように使いますか？",
+  "What do you most want Rakazo to help with?": "Rakazoで一番手伝ってほしいことは何ですか？",
   "How big is your team?": "チームの規模はどのくらいですか？",
-  "How did you hear about us?": "Atlasを何で知りましたか？",
-  "Welcome to Atlas": "Atlasへようこそ",
+  "How did you hear about us?": "Rakazoを何で知りましたか？",
+  "Welcome to Rakazo": "Rakazoへようこそ",
   "Stop all workers and confirm that provider operations have stopped before releasing this computer.":
     "このコンピューターを解放する前に、すべてのワーカーを停止し、プロバイダーの処理が停止したことを確認してください。",
   "Workers and operations are stopped": "ワーカーと処理は停止済み",
@@ -1071,8 +1073,8 @@ export const JA_MESSAGES: Record<string, string> = {
   Loading: "読み込み中",
   "Members ({min}–{max})": "メンバー（{min}–{max}）",
   "Open computer →": "コンピューターを開く →",
-  "Point this app at your self-hosted Atlas origin, the same HTTPS URL you open in a browser.":
-    "ブラウザで開くのと同じHTTPSのURLで、セルフホストのAtlasオリジンを指定してください。",
+  "Point this app at your self-hosted Rakazo origin, the same HTTPS URL you open in a browser.":
+    "ブラウザで開くのと同じHTTPSのURLで、セルフホストのRakazoオリジンを指定してください。",
   Recover: "復旧",
   "Remove thumbs-up": "いいねを削除",
   Searching: "検索中",
@@ -1173,6 +1175,7 @@ export const JA_MESSAGES: Record<string, string> = {
   "Always open {site}": "{site} を常に開く",
   "Trusted sites": "信頼済みサイト",
   "Run history": "実行履歴",
+  "No reply": "返信なし",
   "No runs yet": "実行はまだありません",
   "Load older runs": "過去の実行を読み込む",
   "Could not load run history": "実行履歴を読み込めませんでした",
@@ -1198,15 +1201,6 @@ export const JA_MESSAGES: Record<string, string> = {
   "Add field": "フィールドを追加",
   Label: "ラベル",
   "Could not show the credential": "認証情報を表示できませんでした",
-  "Allow rule": "許可ルール",
-  "Ask rule": "確認ルール",
-  "Block rule": "ブロックルール",
-  "Candidate rule": "変更案",
-  "Could not preview rule": "ルールをプレビューできませんでした",
-  Current: "現在",
-  "No matching rule": "一致するルールなし",
-  "Test rule": "ルールを試す",
-  "Tool name": "ツール名",
   Wallet: "ウォレット",
   "Connect {name}": "{name}に接続",
   "Could not load wallet": "ウォレットを読み込めませんでした",
@@ -1274,12 +1268,31 @@ export const JA_MESSAGES: Record<string, string> = {
   "1 free month earned": "1か月分の無料期間を獲得",
   "{count} free months earned": "{count}か月分の無料期間を獲得",
   "Submit a plugin": "プラグインを申請",
-  "Review recent runs": "最近の実行を確認",
-  "Reviewing recent runs": "最近の実行を確認中",
-  "Proposed notes": "提案されたメモリ",
-  Accept: "受け入れる",
-  Reject: "却下",
-  "Nothing to change": "変更はありません",
+  Board: "ボード",
+  "To do": "未着手",
+  "In progress": "進行中",
+  "In review": "レビュー中",
+  Blocked: "ブロック中",
+  "Won't do": "対応しない",
+  "Could not move the ticket": "チケットを移動できませんでした",
+  "No tickets yet.": "チケットはまだありません。",
+  "Bot models": "ボットのモデル",
+  "1 bot has its own model:": "1個のボットが独自のモデルを使用しています:",
+  "{count} bots have their own model:": "{count}個のボットが独自のモデルを使用しています:",
+  "Use space default": "スペースのデフォルトを使用",
+  "Switching…": "切り替え中…",
+  "Switch 1 bot to the space default?": "1個のボットをスペースのデフォルトに切り替えますか？",
+  "Switch {count} bots to the space default?":
+    "{count}個のボットをスペースのデフォルトに切り替えますか？",
+  "Their own model is cleared. You can pick one again in each bot.":
+    "個別のモデル設定は解除されます。各ボットで再度選択できます。",
+  Switch: "切り替え",
+  "1 bot now uses the space default.":
+    "1個のボットがスペースのデフォルトを使用するようになりました。",
+  "{count} bots now use the space default.":
+    "{count}個のボットがスペースのデフォルトを使用するようになりました。",
+  "Could not switch {failedNames}. Try again.":
+    "{failedNames}を切り替えられませんでした。もう一度お試しください。",
 };
 
 export const PEER_MESSAGE_FORMS = { other: "{peer}とのメッセージ{count}件" };

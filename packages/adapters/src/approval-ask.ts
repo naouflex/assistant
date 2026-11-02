@@ -4,18 +4,14 @@ import { BOT_INSTRUCTIONS_MAX_LENGTH } from "@atlas/contracts";
 import {
   batchActions,
   CARD_TITLE_ESCAPED_CHARACTERS,
-  connectorToolSendsMessage,
   instructionUpdateDiff,
-  messageDraftFields,
   messagingProviderName,
   redactSecrets,
-  riskyShellCommand,
   sanitizeMessagingLabel,
   toolRequiresExplicitApproval,
 } from "@atlas/core";
 import { urlSite } from "@atlas/core/egress";
-import { PHONE_CONTROL_TOOLS, PHONE_SHELL_TOOL } from "./phone-protocol.js";
-import { USER_COMPUTER_SCREEN_TOOLS, userComputerAppName } from "./run-tools-user-computer.js";
+import { USER_COMPUTER_SCREEN_TOOLS, userComputerAppName } from "./user-computer-tools.js";
 
 export const MAX_APPROVAL_SUMMARY_LENGTH = 500;
 export const MAX_APPROVAL_DETAIL_LENGTH = 4_000;
@@ -92,7 +88,7 @@ export function buildApprovalAskBlock(
       ],
     };
   }
-  // Only an instruction change held for the owner carries the text it replaces.
+  // Only an instruction change held for approval carries the text it replaces.
   if (toolName === "update_bot" && typeof args.previousInstructions === "string") {
     const before = redactSecrets(String(args.previousInstructions ?? ""), secrets);
     const after = redactSecrets(String(args.instructions ?? ""), secrets);
@@ -101,7 +97,7 @@ export function buildApprovalAskBlock(
       kind: "ask",
       approvalEffectId: effectId,
       text: "Update instructions?",
-      detail: instructionUpdateDiff(before, after, reason),
+      detail: instructionUpdateDiff(before, after),
       instructionUpdate: {
         botId: String(args.botId ?? ""),
         before,
@@ -139,26 +135,6 @@ export function buildApprovalAskBlock(
       ],
     };
   }
-  if (toolName === PHONE_SHELL_TOOL || PHONE_CONTROL_TOOLS.has(toolName)) {
-    const shell = toolName === PHONE_SHELL_TOOL;
-    const detail = shell ? String(args.command ?? "") : phoneActionLine(toolName, args);
-    return {
-      kind: "ask",
-      approvalEffectId: effectId,
-      text: shell ? "Run on your phone?" : "Control your phone?",
-      ...(detail
-        ? {
-            detail: truncate(redactSecrets(detail, secrets), MAX_APPROVAL_DETAIL_LENGTH),
-            detailFormat: "code" as const,
-          }
-        : {}),
-      status: "pending",
-      actions: [
-        { id: "allow", label: "Allow in this space" },
-        { id: "deny", label: "Deny" },
-      ],
-    };
-  }
   if (toolName === "user_computer_shell") {
     const cwd = typeof args.cwd === "string" && args.cwd.trim() ? `cd ${args.cwd.trim()}\n` : "";
     return {
@@ -177,27 +153,6 @@ export function buildApprovalAskBlock(
       ],
     };
   }
-  const risk = toolName === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
-  if (risk) {
-    const cwd = typeof args.cwd === "string" && args.cwd.trim() ? `cd ${args.cwd.trim()}\n` : "";
-    // A risky command asks every time, so the card offers no "always allow".
-    return {
-      kind: "ask",
-      approvalEffectId: effectId,
-      text: `Run this risky command? It ${risk}.`,
-      detail: truncate(
-        redactSecrets(`${cwd}${String(args.command ?? "")}`, secrets),
-        MAX_APPROVAL_DETAIL_LENGTH,
-      ),
-      detailFormat: "code",
-      status: "pending",
-      actions: [
-        { id: "allow", label: "Allow once" },
-        { id: "deny", label: "Deny" },
-      ],
-    };
-  }
-  const draft = sendDraft(toolName, args, secrets, options?.batch);
   const fetchSite = webFetchSite(toolName, args);
   const summary = describeApprovalAction(toolName, args, options?.batch);
   const detail = formatApprovalDetail(toolName, args, options?.reviewReason, options?.batch);
@@ -214,14 +169,9 @@ export function buildApprovalAskBlock(
     ),
     detail: safeDetail ? truncate(safeDetail, MAX_APPROVAL_DETAIL_LENGTH) : undefined,
     ...(fetchSite ? { site: fetchSite } : {}),
-    ...(draft ? { draft: { fields: draft } } : {}),
     status: "pending",
-    actions: draft
-      ? [
-          { id: "allow", label: "Send" },
-          { id: "deny", label: "Discard" },
-        ]
-      : toolName === "create_space"
+    actions:
+      toolName === "create_space"
         ? [
             { id: "allow", label: "Create space", outcome: "created" },
             { id: "deny", label: "Cancel", outcome: "cancelled" },
@@ -261,14 +211,6 @@ function describeApprovalAction(
   if (toolName === "delete_bot" || toolName === "archive_bot") {
     const name = args.confirm_name ?? args.confirmName;
     return name ? `${toolName.replace("_", " ")} (${String(name)})` : toolName.replace("_", " ");
-  }
-  if (toolName === "move_bot") {
-    const name = args.bot_name ?? args.bot_id ?? "bot";
-    const to = args.space_name ?? args.space_id;
-    const parent = args.parent_bot_name ?? args.parent_bot_id;
-    if (to) return `Move ${String(name)} to space “${String(to)}”`;
-    if (parent) return `Make ${String(parent)} the parent of ${String(name)}`;
-    return `Make ${String(name)} a top-level bot`;
   }
   if (toolName === "create_space") {
     const name = args.name ? String(args.name) : "Untitled";
@@ -370,29 +312,4 @@ function screenActionLine(value: unknown): string {
     default:
       return `${String(action.kind ?? "action")}${at}`;
   }
-}
-
-/**
- * The editable draft for a confirm-before-send card. A draft holding a secret stays read-only: the
- * card would show it redacted, and sending the redacted text would change the message.
- */
-function sendDraft(
-  toolName: string,
-  args: Record<string, unknown>,
-  secrets: string[],
-  batch?: ToolBatch,
-) {
-  if (batch || !connectorToolSendsMessage(toolName)) return undefined;
-  const fields = messageDraftFields(args);
-  if (!fields?.every((field) => redactSecrets(field.value, secrets) === field.value))
-    return undefined;
-  return fields;
-}
-
-/** One line for a phone control card: the tool and the arguments it was given. */
-function phoneActionLine(toolName: string, args: Record<string, unknown>): string {
-  const fields = Object.entries(args)
-    .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
-    .map(([key, value]) => `${key}=${typeof value === "string" ? JSON.stringify(value) : value}`);
-  return [toolName.replace(/^phone_/, ""), ...fields].join(" ");
 }

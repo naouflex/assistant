@@ -27,6 +27,7 @@ import {
   Input,
   NativeSelect,
   NativeSelectOption,
+  SectionHeading,
   Switch,
   Tabs,
   TabsContent,
@@ -177,10 +178,10 @@ export function BotSettings({
   const [memoryScope, setMemoryScope] = useState(bot.memoryScope);
   const [autoSpeak, setAutoSpeak] = useState(bot.autoSpeak);
   const [crossSpaceCommunication, setCrossSpaceCommunication] = useState(
-    bot.crossSpaceCommunication ?? false,
+    bot.crossSpaceCommunication ?? true,
   );
   useEffect(
-    () => setCrossSpaceCommunication(bot.crossSpaceCommunication ?? false),
+    () => setCrossSpaceCommunication(bot.crossSpaceCommunication ?? true),
     [bot.crossSpaceCommunication],
   );
   const [fleetManagement, setFleetManagement] = useState(bot.fleetManagement);
@@ -562,9 +563,9 @@ export function BotSettings({
         {/* Stays mounted so scratchpad and knowledge drafts survive a tab switch. */}
         <TabsContent value="settings" keepMounted data-testid="bot-settings-advanced">
           <section className="mt-6">
-            <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+            <SectionHeading variant="label" className="mb-2">
               <Trans>Notifications</Trans>
-            </h3>
+            </SectionHeading>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-4">
               <div>
                 <label
@@ -741,7 +742,7 @@ export function BotSettings({
               </div>
               <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
                 <label htmlFor={`${ids}-fleet-management`} className={rowLabelClass}>
-                  <Trans>Manage the bots it creates</Trans>
+                  <Trans>Manage other bots</Trans>
                 </label>
                 <Switch
                   id={`${ids}-fleet-management`}
@@ -949,7 +950,9 @@ function SettingsGroup({
 }) {
   return (
     <section>
-      <h3 className="mb-2 text-xs font-medium text-muted-foreground">{label}</h3>
+      <SectionHeading variant="label" className="mb-2">
+        {label}
+      </SectionHeading>
       <div className={`space-y-3 [&>*]:mt-0 ${plain ? "" : "rounded-xl bg-muted/50 p-4"}`}>
         {children}
       </div>

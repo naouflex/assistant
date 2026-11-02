@@ -1,6 +1,7 @@
 import type { AdapterContext, ComputerRef } from "@atlas/adapter-kit";
+import { BROWSER_STILL_RUNNING_EXIT } from "@atlas/core/node/desktop-runtime";
 import { describe, expect, it } from "vitest";
-import { BrowserStoppedReleaseError } from "./computer-screens.js";
+import { BrowserStillRunningError, BrowserStoppedReleaseError } from "./computer-screens.js";
 import { LinuxDesktop } from "./linux-desktop.js";
 
 const context = {
@@ -25,9 +26,9 @@ type Result = { code: number; stdout: string; stderr?: string };
 function host(result: Result | ((command: string) => Result), commands: string[] = []) {
   return {
     environment: async () => ({
-      homeDir: "/home/atlas",
-      workspaceDir: "/home/atlas",
-      browserProfilesDir: "/home/atlas/.browser-profiles",
+      homeDir: "/home/rakazo",
+      workspaceDir: "/home/rakazo",
+      browserProfilesDir: "/home/rakazo/.browser-profiles",
       displayStart: 1,
     }),
     run: async (_computer: ComputerRef, command: string) => {
@@ -38,12 +39,12 @@ function host(result: Result | ((command: string) => Result), commands: string[]
   };
 }
 
-const releasesBrowser = (command: string) => command.includes("ATLAS_DESKTOP_RELEASED");
+const releasesBrowser = (command: string) => command.includes("RAKAZO_DESKTOP_RELEASED");
 
 describe("LinuxDesktop.releaseScreen", () => {
   it("reports the browser stopped when slot cleanup fails after the release marker", async () => {
     const desktop = new LinuxDesktop(
-      host({ code: 1, stdout: "ATLAS_DESKTOP_RELEASED=0\n", stderr: "slot lock failed" }),
+      host({ code: 1, stdout: "RAKAZO_DESKTOP_RELEASED=0\n", stderr: "slot lock failed" }),
     );
 
     await expect(desktop.releaseScreen(computer, context)).rejects.toBeInstanceOf(
@@ -100,5 +101,30 @@ describe("LinuxDesktop.releaseScreen", () => {
     await desktop.releaseScreen(computer, { ...context, ...overrides });
 
     expect(commands.map(releasesBrowser)).toEqual([true]);
+  });
+});
+
+describe("LinuxDesktop.connectScreen", () => {
+  it("keeps the exit code of a desktop command that failed without stderr", async () => {
+    const desktop = new LinuxDesktop(host({ code: 137, stdout: "", stderr: "" }));
+
+    const error = await desktop
+      .connectScreen(computer, { view: "stream" }, context)
+      .catch((caught) => caught);
+
+    expect(error.message).toBe("computer desktop operation failed");
+    expect(error.cause.message).toBe("exit 137");
+  });
+});
+
+describe("LinuxDesktop.stopBrowsers", () => {
+  it("names a browser that is open again so the save can wait for it", async () => {
+    const desktop = new LinuxDesktop(
+      host({ code: BROWSER_STILL_RUNNING_EXIT, stdout: "", stderr: "browser still running\n" }),
+    );
+
+    await expect(desktop.stopBrowsers(computer, context)).rejects.toBeInstanceOf(
+      BrowserStillRunningError,
+    );
   });
 });

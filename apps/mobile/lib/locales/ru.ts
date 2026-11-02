@@ -1,23 +1,4 @@
 export const RU_MESSAGES: Record<string, string> = {
-  "Phone control": "Управление телефоном",
-  Accessibility: "Специальные возможности",
-  Allowed: "Разрешено",
-  "Bots lose access to this phone until you turn Phone control on again.":
-    "Боты потеряют доступ к этому телефону, пока вы снова не включите управление телефоном.",
-  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
-    "Пока это включено, ваши боты могут видеть этот телефон, управлять им и выполнять на нём команды. Каждое действие записывается.",
-  "Not connected": "Нет подключения",
-  Off: "Выкл.",
-  On: "Вкл.",
-  "Remove this phone": "Удалить этот телефон",
-  "Remove this phone?": "Удалить этот телефон?",
-  "Screenshots need Android 11 or newer.": "Для снимков экрана нужен Android 11 или новее.",
-  "Turn off after": "Выключать через",
-  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
-    "Включите Atlas phone control в настройках специальных возможностей, чтобы боты могли видеть экран и нажимать на него.",
-  "{count} min": "{count} мин",
-  "The server did not pair this phone.": "Сервер не подключил этот телефон.",
-  "Phone control needs the Android app.": "Для управления телефоном нужно приложение для Android.",
   "How other bots see it": "Как его видят другие боты",
   "Share to": "Отправить в",
   "{count} files": "Файлов: {count}",
@@ -60,9 +41,6 @@ export const RU_MESSAGES: Record<string, string> = {
   "Hide password": "Скрыть пароль",
   Export: "Экспорт",
   "Edit avatar": "Изменить аватар",
-  "Shape from a word": "Форма из слова",
-  Word: "Слово",
-  Generate: "Сгенерировать",
   "Add open work": "Добавить задачу",
   Permissions: "Разрешения",
   "Open work": "Открытые задачи",
@@ -81,7 +59,7 @@ export const RU_MESSAGES: Record<string, string> = {
   "Search bots": "Поиск ботов",
   "{count} messages with {peer}": "{count} сообщения с {peer}",
   "About {label}": "О настройке «{label}»",
-  "Manage the bots it creates": "Управлять созданными им ботами",
+  "Manage other bots": "Управлять другими ботами",
   "Allow cross-space bot communication": "Разрешить общение ботов из разных пространств",
   "Organize the sidebar and edit bots. Instruction, model, routine and group edits need approval.":
     "Упорядочивайте боковую панель и редактируйте ботов. Изменения групп, инструкций, моделей и процедур требуют вашего одобрения.",
@@ -125,8 +103,8 @@ export const RU_MESSAGES: Record<string, string> = {
   "Your model provider": "Ваш поставщик моделей",
   "Connect a model in Settings before running bots.":
     "Подключите модель в настройках, прежде чем запускать ботов.",
-  "Connect your own API key in Models or choose Atlas credits in Billing.":
-    "Подключите свой API-ключ в разделе «Модели» или выберите кредиты Atlas в разделе «Оплата».",
+  "Connect your own API key in Models or choose Rakazo credits in Billing.":
+    "Подключите свой API-ключ в разделе «Модели» или выберите кредиты Rakazo в разделе «Оплата».",
   "The model provider returned an error.": "Поставщик моделей вернул ошибку.",
   "{provider} is rate limiting requests. Try again shortly.":
     "{provider} ограничивает частоту запросов. Повторите попытку чуть позже.",
@@ -143,6 +121,8 @@ export const RU_MESSAGES: Record<string, string> = {
     "Лимит запроса этого подключения слишком мал. Выберите другую модель.",
   "This model's context window is too small. Choose another model.":
     "Контекстное окно этой модели слишком мало. Выберите другую модель.",
+  "This server's tool result does not fit the model. Turn off Keep tool results whole for that server, or choose another model.":
+    "Результат инструмента этого сервера не помещается в модель. Выключите «Сохранять результаты инструментов целиком» для этого сервера или выберите другую модель.",
   "{provider} took too long to respond. Try again.":
     "{provider} не ответил вовремя. Повторите попытку.",
   "{provider} is overloaded right now. Try again in a moment.":
@@ -577,11 +557,6 @@ export const RU_MESSAGES: Record<string, string> = {
   "Move to": "Переместить в",
   Name: "Имя",
   "Needs attention": "Требует внимания",
-  "Computer problems": "Проблемы с компьютером",
-  "Takeover requests": "Запросы на управление",
-  "Questions and approvals": "Вопросы и одобрения",
-  "Finished work": "Готовая работа",
-  "Push notifications": "Push-уведомления",
   "Needs input": "Требуется ввод данных",
   "Needs takeover": "Ожидает передачи управления",
   "New password": "Новый пароль",
@@ -627,8 +602,8 @@ export const RU_MESSAGES: Record<string, string> = {
   "Photo library": "Библиотека фотографий",
   Pin: "Закрепить",
   "Please try again.": "Повторите попытку.",
-  "Point this app at your self-hosted Atlas origin, the same HTTPS URL you open in a browser.":
-    "Направьте это приложение на свой собственный источник Atlas, тот же URL-адрес HTTPS, который вы открываете в браузере.",
+  "Point this app at your self-hosted Rakazo origin, the same HTTPS URL you open in a browser.":
+    "Направьте это приложение на свой собственный источник Rakazo, тот же URL-адрес HTTPS, который вы открываете в браузере.",
   Private: "Личный",
   Profile: "Профиль",
   Providers: "Провайдеры",
@@ -686,6 +661,10 @@ export const RU_MESSAGES: Record<string, string> = {
   "Sending…": "Отправка…",
   Server: "Сервер",
   "Server URL": "URL-адрес сервера",
+  Protocol: "Протокол",
+  "Chat Completions": "Chat Completions",
+  Responses: "Responses",
+  "Anthropic Messages": "Anthropic Messages",
   "Setup help": "Помощь по настройке",
   Share: "Поделиться",
   "Share {name}": "Поделиться {name}",
@@ -693,10 +672,10 @@ export const RU_MESSAGES: Record<string, string> = {
   "Show more": "Показать ещё",
   "Show {label}": "Показать {label}",
   "Sign in": "Войти",
-  "Sign in to Atlas": "Войти в Atlas",
+  "Sign in to Rakazo": "Войти в Rakazo",
   "Sign out": "Выйти",
   "Sign up": "Зарегистрироваться",
-  "Sign up for Atlas": "Зарегистрироваться в Atlas",
+  "Sign up for Rakazo": "Зарегистрироваться в Rakazo",
   "Sign-in": "Вход",
   "Sign-up": "Регистрация",
   "Sign-in did not return a session": "Вход не вернул сессию",
@@ -726,7 +705,7 @@ export const RU_MESSAGES: Record<string, string> = {
   Team: "Команда",
   "Team Computer": "Командный компьютер",
   "That doesn’t look like a URL": "Это не похоже на URL",
-  "That URL did not look like an Atlas server": "Этот адрес не похож на сервер Atlas",
+  "That URL did not look like a Rakazo server": "Этот адрес не похож на сервер Rakazo",
   "That URL is missing a host": "Для этого URL-адреса отсутствует хост",
   "The server changed while starting the request": "Сервер изменился при запуске запроса",
   "This permanently deletes your account, bots, conversations, memories, files, and saved connections. This cannot be undone.":
@@ -813,8 +792,8 @@ export const RU_MESSAGES: Record<string, string> = {
   "Open conversation": "Открыть диалог",
   "Open in full window": "Открыть в полном окне",
   "OpenAPI JSON": "OpenAPI JSON",
-  "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed.":
-    "Вставьте OpenAI-совместимый адрес со своего сервера. При необходимости Atlas добавляет /v1.",
+  "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed.":
+    "Вставьте OpenAI-совместимый адрес со своего сервера. При необходимости Rakazo добавляет /v1.",
   Paused: "Приостановлено",
   Prompt: "Промпт",
   "Recording a live demonstration needs desktop or web with the full computer view. You can still ask this bot to run saved skills from chat.":
@@ -830,8 +809,8 @@ export const RU_MESSAGES: Record<string, string> = {
   "Delete {name} and its {count} bots?": "Удалить {name} и его ботов ({count})?",
   "This removes every message and stops current work. The bot, computer, memory, and routines are kept.":
     "Это удалит все сообщения и остановит текущую работу. Бот, компьютер, память и задачи сохранятся.",
-  "This subscription sign-in is not available in Atlas yet. Use a deployment credential or choose another provider.":
-    "Вход по этой подписке пока недоступен в Atlas. Используйте учётные данные развёртывания или выберите другого провайдера.",
+  "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider.":
+    "Вход по этой подписке пока недоступен в Rakazo. Используйте учётные данные развёртывания или выберите другого провайдера.",
   Tools: "Инструменты",
   Uninstall: "Удалить",
   "Verify and add": "Проверить и добавить",
@@ -933,7 +912,7 @@ export const RU_MESSAGES: Record<string, string> = {
   "AI models": "Модели ИИ",
   Memory: "Память",
   "Privacy policies": "Политики конфиденциальности",
-  Atlas: "Atlas",
+  Rakazo: "Rakazo",
   "Withdraw all permissions": "Отозвать все разрешения",
   "Withdraw all permissions?": "Отозвать все разрешения?",
   "New mobile actions won't send data to these services. Runs already in progress and routines keep going until you stop them.":
@@ -1045,6 +1024,21 @@ export const RU_MESSAGES: Record<string, string> = {
   Credits: "Кредиты",
   "Available credits": "Доступные кредиты",
   "Computer hours left": "Осталось часов компьютера",
+  "Trials get fewer hours to prevent abuse.":
+    "В пробном периоде меньше часов, чтобы предотвратить злоупотребления.",
+  "Start plan now": "Начать тариф сейчас",
+  "Start your plan now?": "Начать тариф сейчас?",
+  "Your trial ends and your card is charged {price} today.":
+    "Пробный период закончится, и сегодня с вашей карты спишется {price}.",
+  "Your trial ends and your card is charged today.":
+    "Пробный период закончится, и сегодня с вашей карты будет списана оплата.",
+  "Start plan": "Начать тариф",
+  "Switch to yearly": "Перейти на годовой план",
+  "Switch to yearly?": "Перейти на годовой план?",
+  "Your card is charged {price} today, less the unused part of this month.":
+    "Сегодня с карты спишется {price} за вычетом неиспользованной части месяца.",
+  "Your plan becomes {price} / year when your trial ends.":
+    "После пробного периода план будет стоить {price} в год.",
   "Monthly credits": "Ежемесячные кредиты",
   "Upgrade now": "Повысить тариф сейчас",
   "Downgrade at renewal": "Понизить тариф при продлении",
@@ -1055,13 +1049,14 @@ export const RU_MESSAGES: Record<string, string> = {
   Subscribe: "Оформить подписку",
   "Monthly credits expire at renewal. Top-ups do not expire.":
     "Ежемесячные кредиты истекают при продлении. Разовые пополнения не сгорают.",
-  "Use Atlas credits": "Использовать кредиты Atlas",
+  "Use Rakazo credits": "Использовать кредиты Rakazo",
   "Choose a plan": "Выбрать тариф",
   "Change plan": "Сменить тариф",
+  "Current plan": "Текущий тариф",
   Plan: "Тариф",
   None: "Нет",
   "Free trial": "Бесплатный пробный период",
-  "Atlas credits": "Кредиты Atlas",
+  "Rakazo credits": "Кредиты Rakazo",
   "Free until": "Бесплатно до",
   Ends: "Заканчивается",
   Renews: "Продление",
@@ -1082,6 +1077,13 @@ export const RU_MESSAGES: Record<string, string> = {
   "Full access, nothing to pay": "Полный доступ без оплаты",
   "Day {days}": "День {days}",
   "{price} / month begins": "Далее {price} в месяц",
+  "Billing period": "Период оплаты",
+  "Yearly −{percent}%": "Год −{percent}%",
+  "{days} days free, then {price} / year. Cancel anytime.":
+    "{days} дн. бесплатно, затем {price} в год. Отмена в любой момент.",
+  "{price} / year": "{price} в год",
+  "{price} / year begins": "Далее {price} в год",
+  "{price} / year. Cancel anytime.": "{price} в год. Отмена в любой момент.",
   "Only the owner of this account can choose a plan.":
     "Только владелец этого аккаунта может выбрать тариф.",
   Terms: "Условия",
@@ -1090,7 +1092,7 @@ export const RU_MESSAGES: Record<string, string> = {
   "Your free trial has started": "Бесплатный пробный период начался",
   "Free until {date}": "Бесплатно до {date}",
   "Connect your AI": "Подключить ИИ",
-  "Start using Atlas": "Начать работу с Atlas",
+  "Start using Rakazo": "Начать работу с Rakazo",
   "1 unread": "1 непрочитанный",
   "{count} unread": "Непрочитанных: {count}",
   "{count} need attention": "Требуют внимания: {count}",
@@ -1098,11 +1100,12 @@ export const RU_MESSAGES: Record<string, string> = {
   "{label}, below": "{label}, ниже",
   Work: "Работа",
   Both: "И то, и другое",
-  "How will you use Atlas?": "Как вы будете использовать Atlas?",
-  "What do you most want Atlas to help with?": "С чем Atlas должен помогать вам в первую очередь?",
+  "How will you use Rakazo?": "Как вы будете использовать Rakazo?",
+  "What do you most want Rakazo to help with?":
+    "С чем Rakazo должен помогать вам в первую очередь?",
   "How big is your team?": "Сколько человек в вашей команде?",
   "How did you hear about us?": "Как вы о нас узнали?",
-  "Welcome to Atlas": "Добро пожаловать в Atlas",
+  "Welcome to Rakazo": "Добро пожаловать в Rakazo",
   Messaging: "Сообщения",
   Unlink: "Отвязать",
   "Connect a chat app": "Подключить чат-приложение",
@@ -1180,6 +1183,7 @@ export const RU_MESSAGES: Record<string, string> = {
   "Always open {site}": "Всегда открывать {site}",
   "Trusted sites": "Доверенные сайты",
   "Run history": "История запусков",
+  "No reply": "Без ответа",
   "No runs yet": "Запусков пока нет",
   "Load older runs": "Загрузить более ранние запуски",
   "Could not load run history": "Не удалось загрузить историю запусков",
@@ -1205,15 +1209,6 @@ export const RU_MESSAGES: Record<string, string> = {
   "Add field": "Добавить поле",
   Label: "Название",
   "Could not show the credential": "Не удалось показать учетные данные",
-  "Allow rule": "Правило разрешения",
-  "Ask rule": "Правило подтверждения",
-  "Block rule": "Правило блокировки",
-  "Candidate rule": "Предлагаемое правило",
-  "Could not preview rule": "Не удалось проверить правило",
-  Current: "Сейчас",
-  "No matching rule": "Нет подходящего правила",
-  "Test rule": "Проверить правило",
-  "Tool name": "Название инструмента",
   Wallet: "Кошелёк",
   "Connect {name}": "Подключить {name}",
   "Could not load wallet": "Не удалось загрузить кошелёк",
@@ -1281,12 +1276,30 @@ export const RU_MESSAGES: Record<string, string> = {
   "1 free month earned": "Получен 1 бесплатный месяц",
   "{count} free months earned": "Бесплатных месяцев получено: {count}",
   "Submit a plugin": "Предложить плагин",
-  "Review recent runs": "Проверить недавние запуски",
-  "Reviewing recent runs": "Проверяем недавние запуски",
-  "Proposed notes": "Предложенные заметки",
-  Accept: "Принять",
-  Reject: "Отклонить",
-  "Nothing to change": "Менять нечего",
+  Board: "Доска",
+  "To do": "К выполнению",
+  "In progress": "В работе",
+  "In review": "На проверке",
+  Blocked: "Заблокировано",
+  "Won't do": "Не будем делать",
+  "Could not move the ticket": "Не удалось переместить тикет",
+  "No tickets yet.": "Тикетов пока нет.",
+  "Bot models": "Модели ботов",
+  "1 bot has its own model:": "1 бот использует свою модель:",
+  "{count} bots have their own model:": "Своя модель у ботов ({count}):",
+  "Use space default": "Использовать модель пространства по умолчанию",
+  "Switching…": "Переключение…",
+  "Switch 1 bot to the space default?": "Переключить 1 бота на модель пространства по умолчанию?",
+  "Switch {count} bots to the space default?":
+    "Переключить ботов на модель пространства по умолчанию ({count})?",
+  "Their own model is cleared. You can pick one again in each bot.":
+    "Их собственная модель будет сброшена. Её можно снова выбрать в каждом боте.",
+  Switch: "Переключить",
+  "1 bot now uses the space default.": "1 бот теперь использует модель пространства по умолчанию.",
+  "{count} bots now use the space default.":
+    "Ботов переведено на модель пространства по умолчанию: {count}.",
+  "Could not switch {failedNames}. Try again.":
+    "Не удалось переключить {failedNames}. Попробуйте снова.",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

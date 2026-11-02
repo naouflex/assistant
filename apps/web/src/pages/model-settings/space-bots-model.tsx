@@ -1,4 +1,6 @@
+import { Plural, Trans } from "@lingui/react/macro";
 import type { Bot } from "@atlas/contracts";
+import { botsWithOwnModel } from "@atlas/core";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,16 +12,8 @@ import {
   AlertDialogTitle,
   Button,
 } from "@atlas/ui-web";
-import { Plural, Trans } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useSpaceRpc } from "../../lib/space-rpc";
-
-/** Bots that pick their own model ignore the space default and its changes. */
-export function botsWithOwnModel<T extends Pick<Bot, "modelProvider" | "modelId">>(
-  bots: readonly T[],
-): T[] {
-  return bots.filter((bot) => Boolean(bot.modelProvider && bot.modelId));
-}
 
 /**
  * Lists the bots that ignore the space default and, after a confirm, moves them all onto

@@ -1,5 +1,11 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { AccountSecurity, UsageSummary } from "@atlas/contracts";
-import { accountDisplay, displayName, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@atlas/core";
+import {
+  accountDisplay,
+  displayName,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "@atlas/core";
 import {
   Button,
   Field,
@@ -13,7 +19,6 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@atlas/ui-web";
-import { Disclosure } from "@atlas/ui-web/components/ui/disclosure";
 import {
   Table,
   TableBody,
@@ -22,12 +27,12 @@ import {
   TableHeader,
   TableRow,
 } from "@atlas/ui-web/components/ui/table";
-import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import { useId, useRef, useState, useSyncExternalStore } from "react";
-import { AccountAccess } from "../components/AccountAccess";
+import { AccountAccess, LinkSsoRow } from "../components/AccountAccess";
 import { AccountDataSettings } from "../components/AccountDataSettings";
 import { SuccessPop } from "../components/ai/primitives";
+import { ComputerDeviceSettings } from "../components/ComputerDeviceSettings";
 import { ComputersUnavailableHint } from "../components/ComputersUnavailableHint";
 import { DesktopUpdateSection } from "../components/DesktopUpdates";
 import { PasskeySettings } from "../components/PasskeySettings";
@@ -161,6 +166,7 @@ export function GeneralSettingsPanels({
     accountSecurity?.hasPassword && accountSecurity.passwordChangeEnabled !== false,
   );
   const passkeysSupported = usePasskeysSupported();
+  const canLinkSso = Boolean(accountSecurity?.sso && !accountSecurity.ssoLinked);
   const [timezonePending, setTimezonePending] = useState(false);
   const [timezoneError, setTimezoneError] = useState<string | null>(null);
   const deviceTimezone = localTimezone();
@@ -371,103 +377,93 @@ export function GeneralSettingsPanels({
         ) : null}
       </SettingsGroup>
 
-      <Disclosure
-        data-testid="advanced-settings"
-        className="group rounded-xl border border-border"
-        summary={<Trans>Advanced</Trans>}
-        summaryClassName="w-full flex items-center justify-between gap-4 px-4 py-3 text-[14px] text-foreground"
-      >
-        <div className="divide-y divide-border border-t border-border">
-          <SettingsRow
-            label={
-              <Label htmlFor={enterToSendId} className="text-[14px] font-normal text-foreground">
-                <Trans>Send with Enter</Trans>
-              </Label>
-            }
-            control={
-              <Switch
-                id={enterToSendId}
-                data-testid="composer-enter-to-send-toggle"
-                checked={enterToSend}
-                onCheckedChange={(checked) => setComposerEnterToSend(checked)}
-              />
-            }
-          />
-          <SettingsRow
-            label={
-              <Label htmlFor={streamRepliesId} className="text-[14px] font-normal text-foreground">
-                <Trans>Stream replies</Trans>
-              </Label>
-            }
-            control={
-              <Switch
-                id={streamRepliesId}
-                data-testid="response-streaming-toggle"
-                checked={streamReplies}
-                onCheckedChange={(checked) => {
-                  setStreamReplies(checked);
-                  setResponseStreamingPreference(checked ? "on" : "off");
-                }}
-              />
-            }
-          />
-          <SettingsRow
-            label={
-              <Label
-                htmlFor={showToolActivityId}
-                className="text-[14px] font-normal text-foreground"
-              >
-                <Trans>Show tool activity</Trans>
-              </Label>
-            }
-            control={
-              <Switch
-                id={showToolActivityId}
-                data-testid="tool-activity-toggle"
-                checked={showToolActivity}
-                onCheckedChange={(checked) => {
-                  setShowToolActivity(checked);
-                  setToolActivityPreference(checked ? "on" : "off");
-                }}
-              />
-            }
-          />
-          <SettingsRow
-            label={
-              <Label
-                htmlFor={loadRemoteImagesId}
-                className="text-[14px] font-normal text-foreground"
-              >
-                <Trans>Load web images automatically</Trans>
-              </Label>
-            }
-            control={
-              <Switch
-                id={loadRemoteImagesId}
-                data-testid="remote-images-toggle"
-                checked={loadRemoteImages}
-                onCheckedChange={(checked) => {
-                  setLoadRemoteImages(checked);
-                  setRemoteImagesPreference(checked ? "on" : "off");
-                }}
-              />
-            }
-          />
-        </div>
-      </Disclosure>
+      <SettingsGroup title={<Trans>Chat</Trans>}>
+        <SettingsRow
+          label={
+            <Label htmlFor={enterToSendId} className="text-[14px] font-normal text-foreground">
+              <Trans>Send with Enter</Trans>
+            </Label>
+          }
+          control={
+            <Switch
+              id={enterToSendId}
+              data-testid="composer-enter-to-send-toggle"
+              checked={enterToSend}
+              onCheckedChange={(checked) => setComposerEnterToSend(checked)}
+            />
+          }
+        />
+        <SettingsRow
+          label={
+            <Label htmlFor={streamRepliesId} className="text-[14px] font-normal text-foreground">
+              <Trans>Stream replies</Trans>
+            </Label>
+          }
+          control={
+            <Switch
+              id={streamRepliesId}
+              data-testid="response-streaming-toggle"
+              checked={streamReplies}
+              onCheckedChange={(checked) => {
+                setStreamReplies(checked);
+                setResponseStreamingPreference(checked ? "on" : "off");
+              }}
+            />
+          }
+        />
+        <SettingsRow
+          label={
+            <Label htmlFor={showToolActivityId} className="text-[14px] font-normal text-foreground">
+              <Trans>Show tool activity</Trans>
+            </Label>
+          }
+          control={
+            <Switch
+              id={showToolActivityId}
+              data-testid="tool-activity-toggle"
+              checked={showToolActivity}
+              onCheckedChange={(checked) => {
+                setShowToolActivity(checked);
+                setToolActivityPreference(checked ? "on" : "off");
+              }}
+            />
+          }
+        />
+        <SettingsRow
+          label={
+            <Label htmlFor={loadRemoteImagesId} className="text-[14px] font-normal text-foreground">
+              <Trans>Load web images automatically</Trans>
+            </Label>
+          }
+          control={
+            <Switch
+              id={loadRemoteImagesId}
+              data-testid="remote-images-toggle"
+              checked={loadRemoteImages}
+              onCheckedChange={(checked) => {
+                setLoadRemoteImages(checked);
+                setRemoteImagesPreference(checked ? "on" : "off");
+              }}
+            />
+          }
+        />
+      </SettingsGroup>
 
       <TrustedLinkSitesSettings />
+      <ComputerDeviceSettings />
 
-      {showPassword || passkeysSupported ? (
+      {showPassword || passkeysSupported || canLinkSso ? (
         <SettingsGroup title={<Trans>Security</Trans>}>
           {showPassword ? <ChangePasswordRow email={email} /> : null}
+          {canLinkSso ? <LinkSsoRow /> : null}
           <PasskeySettings />
         </SettingsGroup>
       ) : null}
 
-      <AccountDataSettings onImported={onAccountImported} onImportAgent={onImportAgent} />
-
-      <AccountAccess onSecurity={setAccountSecurity} />
+      <SettingsGroup title={<Trans>Data</Trans>} data-testid="account-data">
+        <AccountDataSettings onImported={onAccountImported} onImportAgent={onImportAgent} />
+        <AccountAccess onSecurity={setAccountSecurity} />
+      </SettingsGroup>
     </div>
   );
 }
@@ -481,20 +477,14 @@ export function UsageSettingsPanel({
 }) {
   const { t, i18n } = useLingui();
   const count = new Intl.NumberFormat(i18n.locale);
-  const usd = new Intl.NumberFormat(i18n.locale, { style: "currency", currency: "USD" });
+  const usd = new Intl.NumberFormat(i18n.locale, {
+    style: "currency",
+    currency: "USD",
+  });
   const number = (value: number | null | undefined) => (value == null ? "—" : count.format(value));
   const cost = (value: number | null | undefined) =>
     value == null ? "—" : value > 0 && value < 0.01 ? `<${usd.format(0.01)}` : usd.format(value);
   const models = usage?.models ?? [];
-  const bots = usage?.bots ?? [];
-  const percent = new Intl.NumberFormat(i18n.locale, {
-    style: "percent",
-    maximumFractionDigits: 0,
-  });
-  const seconds = new Intl.NumberFormat(i18n.locale, { maximumFractionDigits: 1 });
-  const share = (value: number | null) => (value == null ? "?" : percent.format(value));
-  const latency = (ms: number | null) =>
-    ms == null ? "?" : ms < 1000 ? `${count.format(ms)} ms` : `${seconds.format(ms / 1000)} s`;
   return (
     <div ref={panelRef} tabIndex={-1} data-testid="usage-settings" className="outline-none">
       {usage ? (
@@ -552,64 +542,6 @@ export function UsageSettingsPanel({
                     {number(row.outputTokens)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{cost(row.costUsd)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : null}
-      {bots.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-border px-2" data-testid="usage-by-bot">
-          <Table className="text-[13.5px]">
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-muted-foreground">
-                  <Trans>Bot</Trans>
-                </TableHead>
-                <TableHead className="text-right text-muted-foreground">
-                  <Trans>Tokens</Trans>
-                </TableHead>
-                <TableHead
-                  className="text-right text-muted-foreground"
-                  title={t`Share of prompt tokens served from the model's cache`}
-                >
-                  <Trans>From cache</Trans>
-                </TableHead>
-                <TableHead
-                  className="text-right text-muted-foreground"
-                  title={t`Median time from your message to the bot's first reply, tool call or question`}
-                >
-                  <Trans>First response</Trans>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {bots.map((row) => (
-                <TableRow key={row.botId} className="hover:bg-transparent">
-                  <TableCell>
-                    <div className="text-foreground">{row.name ?? t`Deleted bot`}</div>
-                    <div className="text-[12px] text-muted-foreground">
-                      {row.deleted ? t`Deleted` : null}
-                      {row.deleted ? " ? " : null}
-                      {t`${count.format(row.modelCalls)} model calls`}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {number(row.totalTokens)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {share(row.cachedShare)}
-                  </TableCell>
-                  <TableCell
-                    className="text-right tabular-nums"
-                    title={
-                      row.firstResponseRuns
-                        ? t`Median of ${count.format(row.firstResponseRuns)} recent runs`
-                        : undefined
-                    }
-                  >
-                    {latency(row.firstResponseMs)}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -872,7 +804,10 @@ function UiLocalePicker({
       className="w-56 max-w-full"
       data-testid="ui-locale-select"
       aria-label={t`Language`}
-      options={UI_LOCALES.map((code) => ({ value: code, label: UI_LOCALE_LABELS[code] }))}
+      options={UI_LOCALES.map((code) => ({
+        value: code,
+        label: UI_LOCALE_LABELS[code],
+      }))}
       value={value}
       onValueChange={onChange}
     />

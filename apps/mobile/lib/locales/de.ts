@@ -1,23 +1,4 @@
 export const DE_MESSAGES: Record<string, string> = {
-  "Phone control": "Telefonsteuerung",
-  Accessibility: "Bedienungshilfen",
-  Allowed: "Erlaubt",
-  "Bots lose access to this phone until you turn Phone control on again.":
-    "Bots verlieren den Zugriff auf dieses Telefon, bis du die Telefonsteuerung wieder einschaltest.",
-  "Lets your bots see and control this phone and run commands on it while this is on. Every action is logged.":
-    "Solange dies aktiviert ist, können deine Bots dieses Telefon sehen, steuern und Befehle darauf ausführen. Jede Aktion wird protokolliert.",
-  "Not connected": "Nicht verbunden",
-  Off: "Aus",
-  On: "Ein",
-  "Remove this phone": "Dieses Telefon entfernen",
-  "Remove this phone?": "Dieses Telefon entfernen?",
-  "Screenshots need Android 11 or newer.": "Bildschirmfotos erfordern Android 11 oder neuer.",
-  "Turn off after": "Ausschalten nach",
-  "Turn on Atlas phone control in Accessibility settings to let bots see and tap the screen.":
-    "Aktiviere „Atlas phone control“ in den Bedienungshilfen, damit Bots den Bildschirm sehen und tippen können.",
-  "{count} min": "{count} Min.",
-  "The server did not pair this phone.": "Der Server hat dieses Telefon nicht gekoppelt.",
-  "Phone control needs the Android app.": "Die Telefonsteuerung erfordert die Android-App.",
   "How other bots see it": "So sehen andere Bots ihn",
   "Share to": "Teilen mit",
   "{count} files": "{count} Dateien",
@@ -63,9 +44,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Hide password": "Passwort verbergen",
   Export: "Exportieren",
   "Edit avatar": "Avatar bearbeiten",
-  "Shape from a word": "Form aus einem Wort",
-  Word: "Wort",
-  Generate: "Erzeugen",
   "Add open work": "Offene Aufgabe hinzufügen",
   Permissions: "Berechtigungen",
   "Open work": "Offene Aufgaben",
@@ -84,7 +62,7 @@ export const DE_MESSAGES: Record<string, string> = {
   "Search bots": "Bots suchen",
   "{count} messages with {peer}": "{count} Nachrichten mit {peer}",
   "About {label}": "Über {label}",
-  "Manage the bots it creates": "Die von ihm erstellten Bots verwalten",
+  "Manage other bots": "Andere Bots verwalten",
   "Allow cross-space bot communication":
     "Kommunikation zwischen Bots in verschiedenen Spaces erlauben",
   "Organize the sidebar and edit bots. Instruction, model, routine and group edits need approval.":
@@ -132,8 +110,8 @@ export const DE_MESSAGES: Record<string, string> = {
   "Your model provider": "Dein Modellanbieter",
   "Connect a model in Settings before running bots.":
     "Verbinde ein Modell in den Einstellungen, bevor du Bots ausführst.",
-  "Connect your own API key in Models or choose Atlas credits in Billing.":
-    "Verbinde deinen eigenen API-Schlüssel unter Modelle oder wähle Atlas-Guthaben unter Abrechnung.",
+  "Connect your own API key in Models or choose Rakazo credits in Billing.":
+    "Verbinde deinen eigenen API-Schlüssel unter Modelle oder wähle Rakazo-Guthaben unter Abrechnung.",
   "The model provider returned an error.": "Der Modellanbieter hat einen Fehler zurückgegeben.",
   "{provider} is rate limiting requests. Try again shortly.":
     "{provider} begrenzt die Anfragerate. Versuche es gleich noch einmal.",
@@ -149,6 +127,8 @@ export const DE_MESSAGES: Record<string, string> = {
     "Das Modell hat eine unbrauchbare Antwort geliefert. Versuche es erneut.",
   "This connection's request limit is too small. Choose another model.":
     "Das Anfragelimit dieser Verbindung ist zu niedrig. Wähle ein anderes Modell.",
+  "This server's tool result does not fit the model. Turn off Keep tool results whole for that server, or choose another model.":
+    "Das Werkzeugergebnis dieses Servers passt nicht ins Modell. Schalte „Werkzeugergebnisse vollständig behalten“ für diesen Server aus, oder wähle ein anderes Modell.",
   "This model's context window is too small. Choose another model.":
     "Das Kontextfenster dieses Modells ist zu klein. Wähle ein anderes Modell.",
   "{provider} took too long to respond. Try again.":
@@ -198,8 +178,8 @@ export const DE_MESSAGES: Record<string, string> = {
   "Chat Settings": "Chat-Einstellungen",
   "Configure a plugin catalog on the server to connect apps.":
     "Richte auf dem Server einen Plugin-Katalog ein, um Apps zu verbinden.",
-  "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed.":
-    "Füge die OpenAI-kompatible Adresse deines Servers ein. Atlas ergänzt /v1 bei Bedarf.",
+  "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed.":
+    "Füge die OpenAI-kompatible Adresse deines Servers ein. Rakazo ergänzt /v1 bei Bedarf.",
   "Settings: General": "Einstellungen: Allgemein",
   "Settings: Usage": "Einstellungen: Nutzung",
   "Sign-in did not return a session": "Die Anmeldung hat keine Sitzung zurückgegeben",
@@ -239,9 +219,9 @@ export const DE_MESSAGES: Record<string, string> = {
   "Reset your password": "Setze dein Passwort zurück",
   "Send reset link": "Link zum Zurücksetzen senden",
   Server: "Server",
-  "Sign in to Atlas": "Bei Atlas anmelden",
+  "Sign in to Rakazo": "Bei Rakazo anmelden",
   "Sign up": "Registrieren",
-  "Sign up for Atlas": "Bei Atlas registrieren",
+  "Sign up for Rakazo": "Bei Rakazo registrieren",
   "Use a custom server": "Eigenen Server verwenden",
   "Use default server": "Standardserver verwenden",
   Activity: "Aktivität",
@@ -550,6 +530,10 @@ export const DE_MESSAGES: Record<string, string> = {
   "Saved.": "Gespeichert.",
   "Search models": "Modelle suchen",
   "Server URL": "Server-URL",
+  Protocol: "Protokoll",
+  "Chat Completions": "Chat Completions",
+  Responses: "Responses",
+  "Anthropic Messages": "Anthropic Messages",
   "Server found. Enter a model name.": "Server gefunden. Gib einen Modellnamen ein.",
   "Setup help": "Einrichtungshilfe",
   "Show less": "Weniger anzeigen",
@@ -559,8 +543,8 @@ export const DE_MESSAGES: Record<string, string> = {
   "Supports images": "Unterstützt Bilder",
   "Supports thinking": "Unterstützt Denkmodus",
   "Then paste the code here.": "Füge dann den Code hier ein.",
-  "This subscription sign-in is not available in Atlas yet. Use a deployment credential or choose another provider.":
-    "Diese Abonnementanmeldung ist in Atlas noch nicht verfügbar. Verwende Zugangsdaten der Bereitstellung oder wähle einen anderen Anbieter.",
+  "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider.":
+    "Diese Abonnementanmeldung ist in Rakazo noch nicht verfügbar. Verwende Zugangsdaten der Bereitstellung oder wähle einen anderen Anbieter.",
   "Use a found model": "Gefundenes Modell verwenden",
   "Waiting for sign-in…": "Warten auf Anmeldung…",
   "exact-model-id": "exact-model-id",
@@ -676,11 +660,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Live working status": "Live-Arbeitsstatus",
   More: "Mehr",
   "Needs attention": "Aufmerksamkeit erforderlich",
-  "Computer problems": "Computerprobleme",
-  "Takeover requests": "Übernahmeanfragen",
-  "Questions and approvals": "Fragen und Freigaben",
-  "Finished work": "Erledigte Arbeit",
-  "Push notifications": "Push-Benachrichtigungen",
   "Notification settings": "Benachrichtigungseinstellungen",
   Notifications: "Benachrichtigungen",
   "Questions, approvals, takeover": "Fragen, Freigaben, Übernahme",
@@ -829,7 +808,8 @@ export const DE_MESSAGES: Record<string, string> = {
   "Enter a server URL": "Gib eine Server-URL ein",
   "Public servers need https://. HTTP only works on your local network.":
     "Öffentliche Server brauchen https://. HTTP funktioniert nur im lokalen Netzwerk.",
-  "That URL did not look like an Atlas server": "Diese URL sieht nicht nach einem Atlas-Server aus",
+  "That URL did not look like a Rakazo server":
+    "Diese URL sieht nicht nach einem Rakazo-Server aus",
   "That URL is missing a host": "Dieser URL fehlt ein Host",
   "That doesn’t look like a URL": "Das sieht nicht nach einer URL aus",
   "Use an http or https URL": "Verwende eine http- oder https-URL",
@@ -899,7 +879,7 @@ export const DE_MESSAGES: Record<string, string> = {
   "AI models": "KI-Modelle",
   Memory: "Gedächtnis",
   "Privacy policies": "Datenschutzerklärungen",
-  Atlas: "Atlas",
+  Rakazo: "Rakazo",
   "Withdraw all permissions": "Alle Berechtigungen widerrufen",
   "Withdraw all permissions?": "Alle Berechtigungen widerrufen?",
   "New mobile actions won't send data to these services. Runs already in progress and routines keep going until you stop them.":
@@ -1013,6 +993,21 @@ export const DE_MESSAGES: Record<string, string> = {
   Credits: "Guthaben",
   "Available credits": "Verfügbares Guthaben",
   "Computer hours left": "Verbleibende Computerstunden",
+  "Trials get fewer hours to prevent abuse.":
+    "Testzeiträume erhalten weniger Stunden, um Missbrauch zu verhindern.",
+  "Start plan now": "Plan jetzt starten",
+  "Start your plan now?": "Plan jetzt starten?",
+  "Your trial ends and your card is charged {price} today.":
+    "Dein Testzeitraum endet und deine Karte wird heute mit {price} belastet.",
+  "Your trial ends and your card is charged today.":
+    "Dein Testzeitraum endet und deine Karte wird heute belastet.",
+  "Start plan": "Plan starten",
+  "Switch to yearly": "Zu jährlich wechseln",
+  "Switch to yearly?": "Zu jährlich wechseln?",
+  "Your card is charged {price} today, less the unused part of this month.":
+    "Deine Karte wird heute mit {price} belastet, abzüglich des ungenutzten Teils dieses Monats.",
+  "Your plan becomes {price} / year when your trial ends.":
+    "Nach dem Testzeitraum kostet dein Plan {price} / Jahr.",
   "Monthly credits": "Monatliches Guthaben",
   "Upgrade now": "Jetzt upgraden",
   "Downgrade at renewal": "Bei Verlängerung downgraden",
@@ -1023,13 +1018,14 @@ export const DE_MESSAGES: Record<string, string> = {
   Subscribe: "Abonnieren",
   "Monthly credits expire at renewal. Top-ups do not expire.":
     "Monatliches Guthaben verfällt bei Verlängerung. Einmalige Aufladungen verfallen nicht.",
-  "Use Atlas credits": "Atlas-Guthaben verwenden",
+  "Use Rakazo credits": "Rakazo-Guthaben verwenden",
   "Choose a plan": "Tarif wählen",
   "Change plan": "Tarif ändern",
+  "Current plan": "Aktueller Tarif",
   Plan: "Tarif",
   None: "Keiner",
   "Free trial": "Kostenlose Testphase",
-  "Atlas credits": "Atlas-Guthaben",
+  "Rakazo credits": "Rakazo-Guthaben",
   "Free until": "Kostenlos bis",
   Ends: "Endet am",
   Renews: "Verlängert sich am",
@@ -1050,6 +1046,13 @@ export const DE_MESSAGES: Record<string, string> = {
   "Full access, nothing to pay": "Voller Zugriff, nichts zu zahlen",
   "Day {days}": "Tag {days}",
   "{price} / month begins": "Ab dann {price} / Monat",
+  "Billing period": "Abrechnungszeitraum",
+  "Yearly −{percent}%": "Jährlich −{percent} %",
+  "{days} days free, then {price} / year. Cancel anytime.":
+    "{days} Tage kostenlos, danach {price} / Jahr. Jederzeit kündbar.",
+  "{price} / year": "{price} / Jahr",
+  "{price} / year begins": "Ab dann {price} / Jahr",
+  "{price} / year. Cancel anytime.": "{price} / Jahr. Jederzeit kündbar.",
   "Only the owner of this account can choose a plan.":
     "Nur der Inhaber dieses Kontos kann einen Tarif wählen.",
   Terms: "AGB",
@@ -1058,7 +1061,7 @@ export const DE_MESSAGES: Record<string, string> = {
   "Your free trial has started": "Deine kostenlose Testphase hat begonnen",
   "Free until {date}": "Kostenlos bis {date}",
   "Connect your AI": "Deine KI verbinden",
-  "Start using Atlas": "Mit Atlas loslegen",
+  "Start using Rakazo": "Mit Rakazo loslegen",
   "1 unread": "1 ungelesen",
   "{count} unread": "{count} ungelesen",
   "{count} need attention": "{count} brauchen Aufmerksamkeit",
@@ -1066,11 +1069,11 @@ export const DE_MESSAGES: Record<string, string> = {
   "{label}, below": "{label}, unten",
   Work: "Arbeit",
   Both: "Beides",
-  "How will you use Atlas?": "Wie wirst du Atlas nutzen?",
-  "What do you most want Atlas to help with?": "Wobei soll dir Atlas am meisten helfen?",
+  "How will you use Rakazo?": "Wie wirst du Rakazo nutzen?",
+  "What do you most want Rakazo to help with?": "Wobei soll dir Rakazo am meisten helfen?",
   "How big is your team?": "Wie groß ist dein Team?",
   "How did you hear about us?": "Wie hast du von uns erfahren?",
-  "Welcome to Atlas": "Willkommen bei Atlas",
+  "Welcome to Rakazo": "Willkommen bei Rakazo",
   Messaging: "Nachrichten",
   Unlink: "Verknüpfung aufheben",
   "Connect a chat app": "Chat-App verbinden",
@@ -1148,6 +1151,7 @@ export const DE_MESSAGES: Record<string, string> = {
   "Always open {site}": "Immer {site} öffnen",
   "Trusted sites": "Vertrauenswürdige Websites",
   "Run history": "Ausführungsverlauf",
+  "No reply": "Keine Antwort",
   "No runs yet": "Noch keine Ausführungen",
   "Load older runs": "Ältere Ausführungen laden",
   "Could not load run history": "Ausführungsverlauf konnte nicht geladen werden",
@@ -1174,15 +1178,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Add field": "Feld hinzufügen",
   Label: "Bezeichnung",
   "Could not show the credential": "Zugangsdaten konnten nicht angezeigt werden",
-  "Allow rule": "Erlaubnisregel",
-  "Ask rule": "Nachfrageregel",
-  "Block rule": "Sperrregel",
-  "Candidate rule": "Vorgeschlagene Regel",
-  "Could not preview rule": "Regelvorschau fehlgeschlagen",
-  Current: "Aktuell",
-  "No matching rule": "Keine passende Regel",
-  "Test rule": "Regel testen",
-  "Tool name": "Werkzeugname",
   Wallet: "Wallet",
   "Connect {name}": "{name} verbinden",
   "Could not load wallet": "Wallet konnte nicht geladen werden",
@@ -1250,12 +1245,28 @@ export const DE_MESSAGES: Record<string, string> = {
   "1 free month earned": "1 Gratismonat verdient",
   "{count} free months earned": "{count} Gratismonate verdient",
   "Submit a plugin": "Plugin einreichen",
-  "Review recent runs": "Letzte Ausführungen prüfen",
-  "Reviewing recent runs": "Letzte Ausführungen werden geprüft",
-  "Proposed notes": "Vorgeschlagene Notizen",
-  Accept: "Annehmen",
-  Reject: "Ablehnen",
-  "Nothing to change": "Nichts zu ändern",
+  Board: "Board",
+  "To do": "Zu erledigen",
+  "In progress": "In Arbeit",
+  "In review": "In Prüfung",
+  Blocked: "Blockiert",
+  "Won't do": "Wird nicht gemacht",
+  "Could not move the ticket": "Ticket konnte nicht verschoben werden",
+  "No tickets yet.": "Noch keine Tickets.",
+  "Bot models": "Bot-Modelle",
+  "1 bot has its own model:": "1 Bot hat ein eigenes Modell:",
+  "{count} bots have their own model:": "{count} Bots haben ein eigenes Modell:",
+  "Use space default": "Space-Standard verwenden",
+  "Switching…": "Wird gewechselt…",
+  "Switch 1 bot to the space default?": "1 Bot auf den Space-Standard umstellen?",
+  "Switch {count} bots to the space default?": "{count} Bots auf den Space-Standard umstellen?",
+  "Their own model is cleared. You can pick one again in each bot.":
+    "Ihr eigenes Modell wird entfernt. Du kannst in jedem Bot wieder eines wählen.",
+  Switch: "Umstellen",
+  "1 bot now uses the space default.": "1 Bot verwendet jetzt den Space-Standard.",
+  "{count} bots now use the space default.": "{count} Bots verwenden jetzt den Space-Standard.",
+  "Could not switch {failedNames}. Try again.":
+    "{failedNames} konnte nicht umgestellt werden. Versuche es erneut.",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

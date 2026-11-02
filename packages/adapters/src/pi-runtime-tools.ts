@@ -1,3 +1,6 @@
+import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
+import type { Api, Model, Models } from "@earendil-works/pi-ai";
+import { validateToolArguments } from "@earendil-works/pi-ai";
 import type {
   AdapterContext,
   AgentRunRequest,
@@ -7,13 +10,13 @@ import type {
   ConnectorTool,
   ModelCallObserver,
 } from "@atlas/adapter-kit";
-import { DEFAULT_CONTEXT_STRATEGY, SandboxUnreachableError } from "@atlas/adapter-kit";
+import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
 import { FLEET_TOOL_NAMES } from "@atlas/contracts";
-import { humanizeToolName } from "@atlas/core";
-import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
-import type { Api, Model, Models } from "@earendil-works/pi-ai";
-import { validateToolArguments } from "@earendil-works/pi-ai";
-import { isToolPauseResult } from "./approval-effect.js";
+import {
+  isInternalTermination,
+  isTerminatingReplyResult,
+  isToolPauseResult,
+} from "./approval-effect.js";
 import {
   connectionIdArgument,
   credentialArgument,
@@ -32,6 +35,7 @@ import { VERBATIM_TOOL_RESULTS } from "./runtime-context.js";
 import { SCHEDULE_TOOL_NAMES } from "./schedule-tools.js";
 import type { FinishedShellCommand } from "./shell-command-stream.js";
 import { textContentArg } from "./tool-text.js";
+import { isVerbatimMcpResult } from "./verbatim-mcp-result.js";
 
 export interface ToolCallBudget {
   count: number;
@@ -95,6 +99,7 @@ function useToolAgentTool(
           name: USE_TOOL,
           args: params as Record<string, unknown>,
           executionId: JSON.stringify(["pi-tool", host.agentNamespace ?? "main", toolCallId]),
+          response: host.modelResponses,
         });
         throw new Error(`${name} is not available. Use a name find_tool lists.`);
       }
@@ -181,11 +186,6 @@ export function describeToolActivity(toolName: string, args: unknown): string {
     return `Running on your computer: ${detail(record.command)}`;
   if (toolName === "user_computer_observe") return `Looking at ${detail(record.app)}`;
   if (toolName === "user_computer_act") return `Using ${detail(record.app)}`;
-  if (toolName === "phone_shell") return `Running on your phone: ${detail(record.command)}`;
-  if (toolName === "phone_open_app") return `Opening ${detail(record.app)} on your phone`;
-  if (toolName === "phone_screenshot" || toolName === "phone_ui_tree")
-    return "Looking at your phone";
-  if (toolName.startsWith("phone_")) return "Using your phone";
   if (toolName === "read_file") return `Reading ${detail(record.path)}`;
   if (toolName === "write_file") return `Writing ${detail(record.path)}`;
   if (toolName === "list_files") return `Listing ${detail(record.path ?? ".")}`;
@@ -209,9 +209,8 @@ export function describeToolActivity(toolName: string, args: unknown): string {
   if (toolName === "set_child_instructions") return "Rewriting a bot's instructions";
   if (toolName === "set_child_bot_model") return "Setting a bot's model";
   if (toolName === "create_child_routine") return `Scheduling routine: ${detail(record.name)}`;
-  if (toolName === "read_memory") return `Reading memory: ${detail(record.path)}`;
   if (toolName === "remember") return "Saving a note to memory";
-  if (toolName === "save_shared_memory") return `Proposing shared memory: ${detail(record.path)}`;
+  if (toolName === "save_shared_memory") return `Saving shared memory: ${detail(record.path)}`;
   if (toolName === "web_search") return `Searching the web: ${detail(record.query)}`;
   if (toolName === "web_fetch") return `Reading page: ${detail(redactActivityUrl(record.url))}`;
   if (toolName === "skill_read")
@@ -224,8 +223,8 @@ export function describeToolActivity(toolName: string, args: unknown): string {
   if (toolName === "skill_delete")
     return `Deleting skill: ${detail(record.name ?? record.skillId)}`;
   const mcp = toolName.match(/^mcp__(.+?)__(.+)$/);
-  if (mcp?.[1] && mcp[2]) return `Using ${mcp[1]}: ${humanizeToolName(mcp[2])}`;
-  return `Using ${humanizeToolName(toolName)}`;
+  if (mcp) return `Using ${mcp[1]}: ${mcp[2]}`;
+  return `Using ${toolName}`;
 }
 
 /**
@@ -328,7 +327,7 @@ function toAgentTool(
       if (tool.name === "remember") {
         return {
           content: String(raw.content ?? ""),
-          path: String(raw.path ?? "MEMORY.md"),
+          ...(typeof raw.old_text === "string" && raw.old_text ? { old_text: raw.old_text } : {}),
         };
       }
       if (tool.name === "request_takeover") {
@@ -417,6 +416,9 @@ function toAgentTool(
         async (span) => {
           host.signal.throwIfAborted();
           const args = (params ?? {}) as Record<string, unknown>;
+          const keepToolResultWhole = (name: string, callArgs: Record<string, unknown>) =>
+            VERBATIM_TOOL_RESULTS.has(name) ||
+            isVerbatimMcpResult(name, callArgs, host.request.verbatimMcpServers);
           recordPiTelemetryContent(span, "pi.agent.tool.arguments", args);
           const rawCallId =
             toolCallId || `${host.request.runId}:${tool.name}:${host.toolCallSeq.value++}`;
@@ -440,6 +442,7 @@ function toAgentTool(
             name: tool.name,
             args,
             executionId,
+            response: host.modelResponses,
             ...(viaUseTool ? { viaUseTool } : {}),
           });
           const startedAt = Date.now();
@@ -545,7 +548,9 @@ function toAgentTool(
                 );
                 if (isAgentToolExecutionResult(result)) {
                   if (isToolPauseResult(result)) host.pausePending = true;
-                  return boundAgentToolResult(result);
+                  return keepToolResultWhole(tool.name, args)
+                    ? result
+                    : boundAgentToolResult(result);
                 }
                 return {
                   content: [
@@ -556,6 +561,7 @@ function toAgentTool(
                         host.request.contextStrategy,
                         tool.name,
                         args,
+                        host.request.verbatimMcpServers,
                       ),
                     },
                   ],
@@ -572,21 +578,16 @@ function toAgentTool(
                 details: { error: "no executor" },
               };
             })();
-            if (VERBATIM_TOOL_RESULTS.has(tool.name)) return result as AgentToolResult<unknown>;
+            if (keepToolResultWhole(tool.name, args)) return result as AgentToolResult<unknown>;
             return boundAgentToolResult(result as AgentToolResult<unknown>);
           } catch (error) {
             failure = error;
-            // Pi turns a thrown tool into a result and asks the model to continue. A computer
-            // that cannot be reached is not a command the model should explain.
-            if (error instanceof SandboxUnreachableError) {
-              host.computerUnreachable = error;
-              host.abortTurn();
-            }
             throw error;
           } finally {
             // Pi only terminates a parallel batch when every result terminates.
-            // A single paused call must stop the turn before another model request.
-            if (host.pausePending) host.abortTurn?.();
+            // A single paused or turn-ending call must stop the turn before another
+            // model request, or the next assistant message replaces its final reply.
+            if (host.pausePending || isTerminatingReplyResult(result)) host.abortTurn?.();
             const details = (
               result as AgentToolResult<{ error?: unknown; isError?: unknown }> | undefined
             )?.details;
@@ -622,6 +623,8 @@ function isAgentToolExecutionResult(result: unknown): result is AgentToolExecuti
     !result ||
     typeof result !== "object" ||
     (result as { kind?: unknown }).kind !== "agent_tool_result" ||
+    (((result as { terminate?: unknown }).terminate === true || isToolPauseResult(result)) &&
+      !isInternalTermination(result)) ||
     !("content" in result)
   ) {
     return false;
@@ -644,12 +647,18 @@ export function serializeToolResult(
   strategy: AgentRunRequest["contextStrategy"],
   name: string,
   args: Record<string, unknown>,
+  verbatimMcpServers?: AgentRunRequest["verbatimMcpServers"],
 ) {
   try {
     const text = JSON.stringify(result);
     if (!text) return "ok";
     // skill-tools.ts already bounds skill content; the context budget selector may still shorten it.
-    if (text.length <= 12_000 || VERBATIM_TOOL_RESULTS.has(name)) return text;
+    if (
+      text.length <= 12_000 ||
+      VERBATIM_TOOL_RESULTS.has(name) ||
+      isVerbatimMcpResult(name, args, verbatimMcpServers)
+    )
+      return text;
     return (strategy ?? DEFAULT_CONTEXT_STRATEGY) === "current"
       ? clipToolResultText(text)
       : shortenToolResultText(text, 12_000, { name, arguments: args });
@@ -707,8 +716,6 @@ export interface ToolHost {
   /** Shared fallback uniqueness when the model omits toolCallId (nested hosts reuse this). */
   toolCallSeq: { value: number };
   abortTurn(): void;
-  /** Set when a tool finds that nothing is accepting computer connections. */
-  computerUnreachable?: SandboxUnreachableError;
   signal: AbortSignal;
   depth: number;
   agentNamespace?: string;
@@ -716,6 +723,8 @@ export interface ToolHost {
   captureCheckpoint?: (toolCallId: string, executionId: string) => Promise<void>;
   /** Shell commands that returned output and are still running. */
   pendingShells: Array<Promise<FinishedShellCommand>>;
+  /** Model responses started by the main agent. Helpers reset it, so each of their calls counts. */
+  modelResponses?: number;
 }
 
 export function toolCallBudgetExceededMessage(limit: number) {

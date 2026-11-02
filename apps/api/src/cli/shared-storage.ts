@@ -6,12 +6,14 @@ import {
   migrateLocalArtifacts,
   migrateLocalPushTokens,
   PrismaPushTokenStore,
+  unwrapEnvFromKeyManager,
 } from "@atlas/adapters";
 import { resolveEncryptionKey } from "@atlas/core";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import { createDb } from "@atlas/db";
 
 loadRootEnv();
+await unwrapEnvFromKeyManager();
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: { "dry-run": { type: "boolean" } },
@@ -22,7 +24,7 @@ if (positionals.length !== 1 || !["artifacts", "push-tokens"].includes(positiona
   );
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 const { prisma, pool, contentKeys } = createDb(process.env.DATABASE_URL, {
-  applicationName: "atlas-storage-migration",
+  applicationName: "rakazo-storage-migration",
   keyProvider: contentKeyProviderFromEnv(),
 });
 const dataDir = process.env.DATA_DIR ?? "./data";

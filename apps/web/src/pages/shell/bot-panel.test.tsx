@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import type { Bot, BotAvatarSet } from "@atlas/contracts";
 import { i18n } from "@lingui/core";
 import { ORPCError } from "@orpc/client";
+import type { Bot, BotAvatarSet } from "@atlas/contracts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ComponentProps, ReactNode } from "react";
 import { act } from "react";
@@ -17,7 +17,6 @@ vi.mock("../../lib/rpc", () => {
     models: {
       credentials: vi.fn().mockResolvedValue([]),
       list: vi.fn().mockResolvedValue([]),
-      localStatus: vi.fn().mockResolvedValue({ contextWindow: null, servers: [], checkedAt: "" }),
     },
     me: vi.fn().mockResolvedValue(null),
   };
@@ -34,6 +33,10 @@ vi.mock("@lingui/react/macro", () => {
   return { useLingui: () => ({ t }), Trans: ({ children }: { children: ReactNode }) => children };
 });
 vi.mock("@atlas/ui-web", () => ({
+  SectionHeading: ({
+    variant: _variant,
+    ...props
+  }: ComponentProps<"h3"> & { variant?: string }) => <h3 {...props} />,
   Button: ({
     variant: _variant,
     size: _size,
@@ -114,7 +117,7 @@ vi.mock("./avatar-studio-popover", () => ({
         aria-label="Avatar set"
         data-avatar-set={avatarSet}
         data-color={value}
-        onClick={() => onChange("#F97316", avatarSet === "atlas" ? "organic" : "atlas")}
+        onClick={() => onChange("#F97316", avatarSet === "rakazo" ? "organic" : "rakazo")}
       />
     </>
   ),
@@ -280,7 +283,7 @@ it("shows the profile and the Advanced tab's controls", async () => {
     memoryScope: "Memory scope",
     voice: "Voice",
     readAloud: "Read replies aloud",
-    fleetManagement: "Manage the bots it creates",
+    fleetManagement: "Manage other bots",
   };
   const controls = [...advanced.querySelectorAll("h3, span, label, div")].flatMap((node) =>
     Object.entries(labels)
@@ -396,7 +399,7 @@ describe("BotSettings thinking options", () => {
     if (!(model instanceof HTMLSelectElement)) throw new Error("Missing model select");
     expect(model.value).toBe("openai-compatible::beta");
     if (!(thinking instanceof HTMLSelectElement)) throw new Error("Missing thinking select");
-    expect([...thinking.options].map((option) => option.value)).toEqual(["", "off", "low", "high"]);
+    expect([...thinking.options].map((option) => option.value)).toEqual(["", "low", "high"]);
   });
 });
 
@@ -735,12 +738,12 @@ describe("BotSettings avatar set persistence", () => {
     await render("Billing", { color: "#10B981" });
     const control = () => container.querySelector<HTMLButtonElement>('[aria-label="Avatar set"]')!;
     await act(async () => control().click());
-    expect(onSave.mock.lastCall?.[0]).toMatchObject({ avatarSet: "atlas", color: "#F97316" });
-    expect(control().getAttribute("data-avatar-set")).toBe("atlas");
+    expect(onSave.mock.lastCall?.[0]).toMatchObject({ avatarSet: "rakazo", color: "#F97316" });
+    expect(control().getAttribute("data-avatar-set")).toBe("rakazo");
     await act(async () => root.unmount());
     root = createRoot(container);
-    await render("Billing", { color: "#F97316", avatarSet: "atlas" });
-    expect(control().getAttribute("data-avatar-set")).toBe("atlas");
+    await render("Billing", { color: "#F97316", avatarSet: "rakazo" });
+    expect(control().getAttribute("data-avatar-set")).toBe("rakazo");
   });
 
   it("restores the accepted colour and set when switching fails", async () => {
@@ -756,14 +759,14 @@ describe("BotSettings avatar set persistence", () => {
   });
 
   it("keeps a colour edit in its existing set", async () => {
-    await render("Billing", { avatarSet: "atlas" });
+    await render("Billing", { avatarSet: "rakazo" });
     await act(async () =>
       container.querySelector<HTMLButtonElement>('[aria-label="Avatar color"]')!.click(),
     );
     expect(onSave.mock.lastCall?.[0]).not.toHaveProperty("avatarSet");
     expect(
       container.querySelector('[aria-label="Avatar set"]')?.getAttribute("data-avatar-set"),
-    ).toBe("atlas");
+    ).toBe("rakazo");
   });
 });
 

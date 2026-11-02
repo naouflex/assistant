@@ -1,5 +1,6 @@
 import { BillingEmulator } from "@atlas/adapters";
 import type { Actor } from "@atlas/contracts";
+import { BYOK_MONTHLY_PRICE_CENTS } from "@atlas/contracts";
 import type { PrismaClient } from "@atlas/db";
 import { asSystem, billingAccountForOrganization, createDb } from "@atlas/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -15,7 +16,7 @@ dbTests("model credit billing service", () => {
   const actor: Actor = {
     userId,
     spaceId,
-    email: `credit-${stamp}@atlas.test`,
+    email: `credit-${stamp}@rakazo.test`,
     isDeploymentOwner: false,
   };
   const provider = new BillingEmulator({ modelCredits: true, namespace: `credits-${stamp}` });
@@ -78,7 +79,7 @@ dbTests("model credit billing service", () => {
     await expect(service.status(actor)).resolves.toMatchObject({
       access: false,
       funding: null,
-      byokPriceCents: 1000,
+      byokPriceCents: BYOK_MONTHLY_PRICE_CENTS,
       byokFreeUntil: null,
     });
   });

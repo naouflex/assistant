@@ -10,17 +10,25 @@ monthly model credits in USD: $10, $20, $50, $100, $200, or $500. One-time top-u
 amounts. Monthly credits expire at the end of their service period; one-time top-ups do not expire.
 The hosted computer is included in both paths, and monthly credits include the own-key plan.
 
-`BYOK_MONTHLY_PRICE_CENTS` in `@atlas/contracts` sets the own-key plan's price; `null` makes it
-free and ends paid own-key subscriptions at their period end. Runs check access on the server, so a
-lapsed organization's bots and routines stop until it subscribes.
+`BYOK_MONTHLY_PRICE_CENTS` in `@rakazo/contracts` sets the own-key plan's price for new
+subscriptions; existing subscribers keep the price they signed up at. `null` makes it
+free and ends paid own-key subscriptions at their period end. `BYOK_ANNUAL_PRICE_CENTS` offers the
+same plan billed yearly, shown as its monthly equivalent; `null` offers it monthly only. Monthly
+subscribers can switch to yearly from Billing, which charges the yearly price less the unused part
+of the month. It is offered only to a paid-up plan that is not cancelling, has no monthly credits,
+and saves money. Billing reads a plan's period from its price on every sync, so a switch made in the
+Stripe billing portal also shows correctly. Portal plan switching skips those checks and allows
+both directions, including yearly back to monthly with its own proration, so enable it only if
+that is acceptable; the yearly price exists after the first yearly checkout or switch. Runs check
+access on the server, so a lapsed organization's bots and routines stop until it subscribes.
 
 ## Model credits
 
 Configure the managed default model through the existing model connection settings. The default
 OpenRouter model is Luna 6; customers can choose another available model, with its usage deducted
-at model cost. In credit mode, the configured hosted provider uses Atlas's key even when a personal
+at model cost. In credit mode, the configured hosted provider uses Rakazo's key even when a personal
 key for that provider is saved. Switching back to BYOK restores that connection. Personal connections
-to other providers continue to use their own keys and never debit Atlas credits. Hosted calls reserve an upper cost estimate atomically before starting, then settle
+to other providers continue to use their own keys and never debit Rakazo credits. Hosted calls reserve an upper cost estimate atomically before starting, then settle
 to reported or catalog-priced usage. Unknown usage retains its reservation for reconciliation.
 
 `STRIPE_PRICE_ID` is optional and only needed to display the legacy seat price. Existing live seat
@@ -53,9 +61,8 @@ attempts. An hourly, paginated audit rebuilds drifted balance caches from the jo
 repairs. Investigate `Model credit hold requires review` logs using the shared call ID; do not turn
 missing provider evidence into a zero-cost settlement.
 
-OpenRouter inference requests include the normal Atlas user ID in `user`, `HTTP-Referer`
-(the deployment's public `WEB_ORIGIN`, never `rakazo.com`), and `X-OpenRouter-Title` / `X-Title`
-(`Atlas`). These values are sent only to OpenRouter's
+OpenRouter inference requests include the normal Rakazo user ID in `user`, `HTTP-Referer`
+(`https://rakazo.com`), and `X-OpenRouter-Title` (`Rakazo`). These values are sent only to OpenRouter's
 HTTPS inference endpoints, never to compatible custom hosts. Recovery uses the existing configured
 deployment credential; no Redis or external accounting service is required.
 

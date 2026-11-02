@@ -27,6 +27,7 @@ import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { pathToFileURL } from "node:url";
 import { canReleaseScreenLease, canTakeScreenLease } from "@atlas/core";
+import type Docker from "dockerode";
 import { z } from "zod";
 import type { SandboxInput } from "./computer-spec.js";
 import { xdotoolCommand } from "./computer-spec.js";
@@ -107,8 +108,8 @@ export function hasComputerIdentity(
   botId: string,
   spaceId: string,
 ) {
-  const labeledSpaceId = labels?.["atlas.spaceId"] ?? labels?.["atlas.workspaceId"];
-  return labels?.["atlas.botId"] === botId && labeledSpaceId === spaceId;
+  const labeledSpaceId = labels?.["rakazo.spaceId"] ?? labels?.["rakazo.workspaceId"];
+  return labels?.["rakazo.botId"] === botId && labeledSpaceId === spaceId;
 }
 
 export function hasValidBearerToken(authorization: string | undefined, expectedToken: string) {
@@ -529,8 +530,8 @@ export function containerActionStep(
     argv = [
       "env",
       `DISPLAY=${display}`,
-      ...(browserProfile ? [`ATLAS_BROWSER_PROFILE=${browserProfile}`] : []),
-      isHttpUrl ? "xdg-open" : "atlas-browser",
+      ...(browserProfile ? [`RAKAZO_BROWSER_PROFILE=${browserProfile}`] : []),
+      isHttpUrl ? "xdg-open" : "rakazo-browser",
       target,
     ];
   } else {
@@ -538,11 +539,11 @@ export function containerActionStep(
     argv = [
       "env",
       `DISPLAY=${display}`,
-      ...(browser && browserProfile ? [`ATLAS_BROWSER_PROFILE=${browserProfile}`] : []),
+      ...(browser && browserProfile ? [`RAKAZO_BROWSER_PROFILE=${browserProfile}`] : []),
       // focus routes through the image wrapper, which raises a matching window
       // by WM_CLASS or execs the allowlisted launcher to spawn one.
-      ...(action.kind === "focus" ? ["atlas-focus-or-launch"] : []),
-      browser ? "atlas-browser" : action.application,
+      ...(action.kind === "focus" ? ["rakazo-focus-or-launch"] : []),
+      browser ? "rakazo-browser" : action.application,
       ...(action.uri ? [action.uri] : []),
     ];
   }
@@ -550,7 +551,7 @@ export function containerActionStep(
 }
 
 /** Image label of computers whose control service takes aimed and sideways scrolls. */
-export const AIMED_SCROLL_CONTROL_LABEL = "atlas.control.aimedScroll";
+export const AIMED_SCROLL_CONTROL_LABEL = "rakazo.control.aimedScroll";
 
 /**
  * Whether a computer's control service can run these actions. One built before aimed and
@@ -589,7 +590,7 @@ export function normalizeWorkspaceRelative(value: string) {
 }
 
 export function workspaceTarget(relative: string) {
-  return relative ? path.posix.join("/home/atlas", relative) : "/home/atlas";
+  return relative ? path.posix.join("/home/rakazo", relative) : "/home/rakazo";
 }
 
 export function sandboxTimeoutCommand(argv: string[], timeoutMs: number, completionMarker: string) {
@@ -765,9 +766,53 @@ export function demuxDockerStream(buffer: Buffer): { stdout: string; stderr: str
 export function computerCommandEnv(layout: { display: string }) {
   return [
     `DISPLAY=${layout.display}`,
-    "HOME=/home/atlas",
-    "PATH=/home/atlas/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-    "NPM_CONFIG_PREFIX=/home/atlas/.local",
+    "HOME=/home/rakazo",
+    "PATH=/home/rakazo/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "NPM_CONFIG_PREFIX=/home/rakazo/.local",
     "PIP_USER=1",
   ];
+}
+
+/** Resolve the inspected ID before removing, so a changed name cannot target another container. */
+export async function removeOwnedComputer(
+  named: Pick<Docker.Container, "inspect">,
+  remove: (id: string) => Promise<unknown>,
+  owns: (info: Docker.ContainerInspectInfo) => boolean,
+  removed: (id: string) => void,
+): Promise<boolean> {
+  try {
+    const info = await named.inspect();
+    if (!info.Id || !owns(info)) return false;
+    await remove(info.Id);
+    removed(info.Id);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Only create's 409 can reclaim an owned name holder; never retry start failures. */
+export async function createComputerWithNameRetry<T>(
+  create: () => Promise<T>,
+  removeNamed: () => Promise<boolean>,
+): Promise<T> {
+  try {
+    return await create();
+  } catch (error) {
+    if ((error as { statusCode?: number })?.statusCode !== 409 || !(await removeNamed())) {
+      throw error;
+    }
+    return await create();
+  }
+}
+
+export function isManagedComputer(
+  info: Docker.ContainerInspectInfo,
+  botId: string,
+  spaceId: string,
+  image: string,
+) {
+  const labels = info.Config.Labels ?? {};
+  const managed = labels["rakazo.managed"] === "true" || info.Config.Image === image;
+  return managed && hasComputerIdentity(labels, botId, spaceId);
 }

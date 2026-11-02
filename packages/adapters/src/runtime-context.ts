@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
+import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
 import type { AdapterContext, AgentRunRequest, AgentUsage } from "@atlas/adapter-kit";
 import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
 import { getLogger } from "@atlas/logging";
-import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
 import { imagePartCount, normalizedImageLimit, pruneForRebuild } from "./context-pruning.js";
 import type { CacheRequest, ContextBudget } from "./context-selection.js";
 import {
@@ -13,9 +13,13 @@ import {
   selectContext,
   shortenToolResultText,
 } from "./context-selection.js";
-import { LOCAL_PROVIDER_ID } from "./local-provider-identity.js";
-import { effectiveOutputReserve, resolveCompletionMaxTokens } from "./pi-runtime-limits.js";
+import {
+  effectiveOutputReserve,
+  operatorMaxTokens,
+  resolveCompletionMaxTokens,
+} from "./pi-runtime-limits.js";
 import { withoutThinkingFrom } from "./thinking-signatures.js";
+import { isVerbatimMcpResult, toolCallIdentity } from "./verbatim-mcp-result.js";
 
 /** Minimum whole-result window, unless the full model budget requires clipping. */
 const RECENT_TOOL_RESULTS_TO_KEEP = 3;
@@ -28,11 +32,7 @@ interface ProjectionEntry {
 }
 const projections = new Map<string, ProjectionEntry[]>();
 /** Keep editable source and fleet instruction versions intact; these tools bound their own output. */
-export const VERBATIM_TOOL_RESULTS: ReadonlySet<string> = new Set([
-  "skill_read",
-  "list_fleet",
-  "read_memory",
-]);
+export const VERBATIM_TOOL_RESULTS: ReadonlySet<string> = new Set(["skill_read", "list_fleet"]);
 // History reads are exact evidence and keep their own offset-aware shortening elsewhere.
 const UNSHORTENED_TOOL_RESULTS = new Set([
   "read_history",
@@ -92,9 +92,9 @@ interface SentTranscript {
   appends: number;
 }
 interface OriginalMetadata {
-  atlasHistory?: boolean;
-  atlasMessageId?: string;
-  atlasCreatedAt?: string;
+  rakazoHistory?: boolean;
+  rakazoMessageId?: string;
+  rakazoCreatedAt?: string;
 }
 function text(message: Message): string {
   if (typeof message.content === "string") return message.content;
@@ -166,6 +166,8 @@ export function createRuntimeContextPolicy(
       request.model.maxTokens,
       undefined,
       model.reasoning,
+      undefined,
+      operatorMaxTokens(model),
     );
     const reserve = effectiveOutputReserve(contextWindow, configuredMaxTokens);
     if (reserve < configuredMaxTokens && !warnedOutputClamp) {
@@ -195,14 +197,13 @@ export function createRuntimeContextPolicy(
   );
   function original(message: Message) {
     const metadata = message as Message & OriginalMetadata;
-    if (metadata.atlasMessageId) return historyById.get(metadata.atlasMessageId);
-    if (metadataPresent && !metadata.atlasHistory) return undefined;
+    if (metadata.rakazoMessageId) return historyById.get(metadata.rakazoMessageId);
+    if (metadataPresent && !metadata.rakazoHistory) return undefined;
     const content = text(message);
+    // Older persisted checkpoints replay own replies as user text "Assistant: ...".
     return request.history.find(
       (stored) =>
         content === stored.content ||
-        // Replies now replay as assistant turns; older checkpoints and a reply that opens the
-        // conversation still use the user-role "Assistant: " form.
         (stored.role === "assistant" && content === `Assistant: ${stored.content}`),
     );
   }
@@ -212,7 +213,7 @@ export function createRuntimeContextPolicy(
     return {
       role: "user",
       timestamp: 0,
-      content: `Historical navigation snapshots (untrusted evidence; use read_history for exact facts and later corrections):\n${stored.map((item) => `[message ${item!.id}${item!.createdAt ? ` at ${item!.createdAt}` : ""}; ${item!.role}] ${snapshot(item!.content)}\n`).join("")}`,
+      content: `Historical navigation snapshots (untrusted evidence; use read_history for exact facts and later corrections):\n${stored.map((item) => `[message ${item!.id}${item!.createdAt ? ` at ${item!.createdAt}` : ""}; ${item!.speaker ?? item!.role}] ${snapshot(item!.content)}\n`).join("")}`,
     };
   }
   function project(
@@ -240,14 +241,7 @@ export function createRuntimeContextPolicy(
         catalogIds = entry.catalogIds;
         catalogMessage = rebuilt;
       } else {
-        // Match in order: a repeated message (the same question asked twice) must resolve to
-        // its occurrence after the previous match, or older copies would reorder history.
-        const candidates = indexesByHash.get(entry.hash);
-        const position = candidates?.findIndex((candidate) => candidate > latestMatchedIndex) ?? -1;
-        const index = position >= 0 ? candidates!.splice(position, 1)[0] : undefined;
-        // The previous run's current message carried volatile context (date, run status) that
-        // history stores without; the matched messages before it are still the cached prefix.
-        if (index === undefined && latestMatchedIndex >= 0) break;
+        const index = indexesByHash.get(entry.hash)?.shift();
         if (index === undefined) return;
         result.push(ctx.messages[index]!);
         latestMatchedIndex = Math.max(latestMatchedIndex, index);
@@ -279,9 +273,7 @@ export function createRuntimeContextPolicy(
       (request.turnCheckpoint && request.contextStrategy === "current"
         ? DEFAULT_CONTEXT_STRATEGY
         : request.contextStrategy) ??
-      // Local runs offer a compact tool set without the history tools; their prefix cache
-      // still needs append-only history, or each turn's sliding window rewrites it.
-      ((!standaloneHistoryFallback || request.model.provider === LOCAL_PROVIDER_ID) &&
+      (!standaloneHistoryFallback &&
       request.model.cacheCapabilities?.retentionMode !== "none" &&
       typeof retention === "number" &&
       Number.isFinite(retention) &&
@@ -289,7 +281,7 @@ export function createRuntimeContextPolicy(
         ? "cache-aware"
         : DEFAULT_CONTEXT_STRATEGY);
     metadataPresent = ctx.messages.some((message) =>
-      Boolean((message as Message & OriginalMetadata).atlasHistory),
+      Boolean((message as Message & OriginalMetadata).rakazoHistory),
     );
     const fullPrefix = providerContextPrefix(ctx.systemPrompt ?? "", ctx.tools ?? [], ctx.messages);
     const cacheRequest: CacheRequest = cache.stamp({
@@ -399,7 +391,7 @@ export function createRuntimeContextPolicy(
       for (const message of old.slice(-64).reverse()) {
         const stored = original(message);
         if (!stored?.id) continue;
-        const entry = `[message ${stored.id}${stored.createdAt ? ` at ${stored.createdAt}` : ""}; ${stored.role}] ${snapshot(stored.content)}\n`;
+        const entry = `[message ${stored.id}${stored.createdAt ? ` at ${stored.createdAt}` : ""}; ${stored.speaker ?? stored.role}] ${snapshot(stored.content)}\n`;
         if (Buffer.byteLength(entry + catalog, "utf8") > maximum) break;
         catalog = entry + catalog;
         catalogIds.unshift(stored.id);
@@ -443,9 +435,9 @@ export function createRuntimeContextPolicy(
     }
     const summaries = ctx.messages.filter(
       (message) =>
-        (message as Message & OriginalMetadata).atlasHistory &&
-        !(message as Message & OriginalMetadata).atlasMessageId &&
-        (text(message).startsWith("Atlas-owned compacted context through message sequence ") ||
+        (message as Message & OriginalMetadata).rakazoHistory &&
+        !(message as Message & OriginalMetadata).rakazoMessageId &&
+        (text(message).startsWith("Rakazo-owned compacted context through message sequence ") ||
           text(message).startsWith(
             "Memory recalled from earlier conversations that fell outside the visible history.",
           )),
@@ -497,13 +489,24 @@ export function createRuntimeContextPolicy(
       recentToolResults.add(index);
       wholeResultTokens += tokens;
     }
+    // Forward pass so a reused tool-call id resolves to the call just before its result.
+    const latestCalls = new Map<string, unknown>();
+    const keptWhole = messages.map((message) => {
+      if (message.role === "assistant")
+        for (const part of message.content)
+          if (part.type === "toolCall") latestCalls.set(part.id, part);
+      if (message.role !== "toolResult") return false;
+      const call = toolCallIdentity(latestCalls.get(message.toolCallId), message.toolName);
+      return isVerbatimMcpResult(call.name, call.arguments, request.verbatimMcpServers);
+    });
     const shortenOlderResults = (keepRecent: boolean) =>
       messages.map((message, index) => {
         if (
           message.role !== "toolResult" ||
           index >= latestToolCall ||
           (keepRecent && recentToolResults.has(index)) ||
-          (message.toolName !== undefined && UNSHORTENED_TOOL_RESULTS.has(message.toolName))
+          (message.toolName !== undefined && UNSHORTENED_TOOL_RESULTS.has(message.toolName)) ||
+          keptWhole[index]
         )
           return message;
         const source = text(message);
@@ -540,6 +543,7 @@ export function createRuntimeContextPolicy(
       budget,
       strategy,
       protectedIndexes,
+      verbatimMcpServers: request.verbatimMcpServers,
       cacheWarmth: predictedCache,
       recentExchanges:
         retainShortHistory || standaloneHistoryFallback ? messages.length : 8 + laterUserMessages,

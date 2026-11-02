@@ -6,6 +6,7 @@ import {
   migrateSecrets,
   PostgresRealtimeFanout,
   secretStoreOptionsFromEnv,
+  unwrapEnvFromKeyManager,
 } from "@atlas/adapters";
 import { resolveEncryptionKey } from "@atlas/core";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
@@ -13,6 +14,7 @@ import { createDb, runAsSystem } from "@atlas/db";
 import { createSecretMigrationRepository } from "../secret-migration.js";
 
 loadRootEnv();
+await unwrapEnvFromKeyManager();
 
 const args = process.argv.slice(2);
 if (args.some((arg) => !["--dry-run", "--reverse"].includes(arg)))

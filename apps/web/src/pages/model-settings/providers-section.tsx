@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { MAX_MODEL_CONNECTION_LABEL } from "@atlas/contracts";
 import {
   Button,
@@ -11,8 +12,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  SectionHeading,
 } from "@atlas/ui-web";
-import { Trans, useLingui } from "@lingui/react/macro";
 import { ChevronRight, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useRef, useState } from "react";
@@ -47,9 +48,9 @@ export function ProvidersSection({
 }) {
   return (
     <section className="mb-8" data-testid="model-providers">
-      <h3 className="mb-2.5 text-[15px] font-medium text-foreground">
+      <SectionHeading className="mb-2.5">
         <Trans>Providers</Trans>
-      </h3>
+      </SectionHeading>
       <ul className="divide-y divide-border rounded-xl border border-border">
         {[...credentials]
           // Saving a key reorders the account's connections; this list stays put.

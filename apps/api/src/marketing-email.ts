@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { TransactionalEmailProvider } from "@atlas/adapter-kit";
-import { welcomeEmail } from "@atlas/auth";
+import { emailLocale, welcomeEmail } from "@atlas/auth";
 import type { PrismaClient } from "@atlas/db";
 import { runAsSystem } from "@atlas/db";
 import { Hono } from "hono";
@@ -36,11 +36,13 @@ export async function sendWelcomeEmail(
     onError: (error: unknown) => void;
   },
   userId: string,
+  /** The first sign-in comes before any app reports a language, so its browser's stands in. */
+  headers?: Headers,
 ): Promise<void> {
   try {
     const user = await deps.prisma.user.findFirst({
       where: { id: userId, createdAt: { gte: new Date(Date.now() - WELCOME_WINDOW_MS) } },
-      select: { email: true, name: true },
+      select: { email: true, name: true, locale: true },
     });
     if (!user) return;
     const claim = await deps.prisma.emailSend.createMany({
@@ -48,7 +50,11 @@ export async function sendWelcomeEmail(
       skipDuplicates: true,
     });
     if (claim.count === 0) return;
-    const message = await welcomeEmail(user, unsubscribeUrl(deps.origin, deps.secret, userId));
+    const message = await welcomeEmail(
+      user,
+      unsubscribeUrl(deps.origin, deps.secret, userId),
+      emailLocale(user.locale, headers),
+    );
     // The provider tracks the send, so shutdown drains it; sign-in does not wait on delivery.
     void deps.email.send(message).catch(deps.onError);
   } catch (error) {
@@ -67,7 +73,7 @@ export function marketingEmailRoutes(prisma: PrismaClient, secret: string) {
   app.get(UNSUBSCRIBE_PATH, (c) =>
     verifiedUser(c.req.url)
       ? page(
-          `<form method="post"><button type="submit">Unsubscribe from Atlas emails</button></form>`,
+          `<form method="post"><button type="submit">Unsubscribe from Rakazo emails</button></form>`,
         )
       : page("This link is not valid.", 400),
   );
@@ -87,7 +93,7 @@ export function marketingEmailRoutes(prisma: PrismaClient, secret: string) {
 
 function page(content: string, status = 200): Response {
   return new Response(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Atlas</title></head><body style="font-family: Arial, sans-serif; max-width: 480px; margin: 48px auto; padding: 0 24px">${content}</body></html>`,
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Rakazo</title></head><body style="font-family: Arial, sans-serif; max-width: 480px; margin: 48px auto; padding: 0 24px">${content}</body></html>`,
     {
       status,
       headers: { "cache-control": "no-store", "content-type": "text/html; charset=utf-8" },

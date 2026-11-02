@@ -13,7 +13,6 @@ import {
   connectorKindFromToolName,
   connectorReadRequiresApproval,
   connectorToolRequiresApproval,
-  connectorToolSendsMessage,
   decisiveActionApprovalRules,
   displayName,
   humanizeToolName,
@@ -23,7 +22,6 @@ import {
   redactSecrets,
   repeatsDeniedAction,
   resolveActionApprovalForTools,
-  riskyShellCommand,
   toolRequiresApproval,
   toolRequiresExplicitApproval,
   unattendedTriggerToolRequiresApproval,
@@ -49,11 +47,10 @@ import {
   resolveAutoReviewChecker,
 } from "./auto-review.js";
 import { reviewWithBackups } from "./auto-review-backups.js";
-import { ATLAS_DOCS_URLS } from "./builtin-skills.js";
+import { RAKAZO_DOCS_URLS } from "./builtin-skills.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import { findConnectedModelCredential } from "./model-selection.js";
 import { paidRequestEffect } from "./paid-request.js";
-import { PHONE_TOOLS } from "./phone-protocol.js";
 import { autoReviewCheckerProvider } from "./run-auto-review.js";
 import type { RunContext, RunTrust } from "./run-context.js";
 import {
@@ -76,7 +73,6 @@ import { resolveCompletedSecretLeftover } from "./run-secret.js";
 import type { ToolRequest } from "./run-tool-request.js";
 import { BUILTIN_AGENT_TOOL_NAMES, READ_ONLY_AGENT_TOOLS } from "./run-tool-selection.js";
 import { callMediaTool } from "./run-tools-files.js";
-import { phoneGate } from "./run-tools-phone.js";
 import { USER_COMPUTER_TOOLS, userComputerGate } from "./run-tools-user-computer.js";
 import { connectorTrustKeys } from "./run-trust.js";
 import { watchFromTool } from "./schedule-tools.js";
@@ -200,7 +196,7 @@ export async function gateToolCall(
           site: fetchSite,
           trusted:
             ctx.trust.searchResultUrls.has(fetchUrl) ||
-            (name === "web_fetch" && ATLAS_DOCS_URLS.includes(fetchUrl)) ||
+            (name === "web_fetch" && RAKAZO_DOCS_URLS.includes(fetchUrl)) ||
             (await ctx.trust.loadTrustedSites()).has(fetchSite),
           rules: await ctx.trust.loadApprovalRules(),
         })
@@ -243,14 +239,8 @@ export async function gateToolCall(
       (name === "schedule_update" && Boolean(args.prompt))) &&
     (await isRunTainted(ctx)) &&
     (await ctx.trust.routineNamesNewSite(String(args.prompt ?? "")));
-  // A shell command that cannot be undone (rm -rf, force push, sudo, DROP DATABASE?) waits for a person.
-  const riskyShell = name === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
-  // Confirm before send: outbound email and messages always wait for the owner.
-  const sendsMessage =
-    viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName));
   const requiresApprovalByDefault =
-    request.ownerApproval ||
-    Boolean(riskyShell) ||
+    request.heldForApproval ||
     commandWatch ||
     requiresUnattendedApproval ||
     siteGate === "new" ||
@@ -261,13 +251,10 @@ export async function gateToolCall(
   // A gated read still fails closed when its review errors, and keeps its approval key.
   const gated = requiresApprovalByDefault || connectorReadGated;
   const requiresMandatoryApproval =
-    request.ownerApproval ||
     commandWatch ||
     scheduleNamesNewSite ||
     requiresUnattendedApproval ||
-    toolRequiresExplicitApproval(name) ||
-    Boolean(riskyShell) ||
-    sendsMessage;
+    toolRequiresExplicitApproval(name);
   // Never ask runs everything else: only another owner's connection could have been steered into it.
   const guardedInNeverAsk = name === "respond_agent_connection";
   const resolvedRules = resolveActionApprovalForTools({
@@ -320,22 +307,19 @@ export async function gateToolCall(
         : false));
   const plan = USER_COMPUTER_TOOLS.has(name)
     ? await userComputerGate(ctx, approvalResolved.decision === "deny", name, args)
-    : PHONE_TOOLS.has(name)
-      ? await phoneGate(ctx, approvalResolved.decision === "deny", name)
-      : planActionGate({
-          resolved: approvalResolved,
-          mode,
-          mandatory: requiresMandatoryApproval,
-          alwaysAsk: Boolean(riskyShell) || sendsMessage,
-          steerable:
-            guardedInNeverAsk && mode === "never"
-              ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
-              : undefined,
-          consequential: requiresApprovalByDefault,
-          reviewOnly: connectorReadGated,
-          checkerConfigured,
-          newDestination: siteGate === "new",
-        });
+    : planActionGate({
+        resolved: approvalResolved,
+        mode,
+        mandatory: requiresMandatoryApproval,
+        steerable:
+          guardedInNeverAsk && mode === "never"
+            ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
+            : undefined,
+        consequential: requiresApprovalByDefault,
+        reviewOnly: connectorReadGated,
+        checkerConfigured,
+        newDestination: siteGate === "new",
+      });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {
       reason: approvalResolved.decision === "deny" ? "rule" : "never_asks",

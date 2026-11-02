@@ -15,6 +15,7 @@ import { escapePromptData, redactSecrets } from "@atlas/core";
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
 import { LOCAL_PROVIDER_ID } from "./pi-local-provider.js";
+import { localModelIds } from "./pi-local-provider-id.js";
 import { secretValuesToRedact } from "./pi-oauth.js";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -51,15 +52,8 @@ export const SCRIPTED_AUTO_REVIEW_PROVIDER = "scripted";
 export const DEFAULT_JEV_MODEL = "jev-latest";
 export const DEFAULT_AUTO_REVIEW_MIN_CONFIDENCE = 0.5;
 
-function localModelIds(env: NodeJS.ProcessEnv): string[] {
-  return (env.ATLAS_LOCAL_MODELS ?? "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id.length > 0);
-}
-
 export function autoReviewTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = env.ATLAS_AUTO_REVIEW_TIMEOUT_MS?.trim();
+  const raw = env.RAKAZO_AUTO_REVIEW_TIMEOUT_MS?.trim();
   if (!raw) return DEFAULT_TIMEOUT_MS;
   const value = Number(raw);
   if (!Number.isFinite(value) || value < 200 || value > 30_000) return DEFAULT_TIMEOUT_MS;
@@ -73,7 +67,7 @@ export function typesafeApiKey(env: NodeJS.ProcessEnv = process.env): string | u
 }
 
 export function autoReviewMinConfidence(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = env.ATLAS_AUTO_REVIEW_MIN_CONFIDENCE?.trim();
+  const raw = env.RAKAZO_AUTO_REVIEW_MIN_CONFIDENCE?.trim();
   if (!raw) return DEFAULT_AUTO_REVIEW_MIN_CONFIDENCE;
   const value = Number(raw);
   if (!Number.isFinite(value) || value < 0 || value > 1) return DEFAULT_AUTO_REVIEW_MIN_CONFIDENCE;
@@ -86,14 +80,14 @@ function isVerifierKind(value: string | undefined): value is "jev" | "scripted" 
 }
 
 /**
- * `ATLAS_AUTO_REVIEW_PROVIDER=jev` selects TypeSafe Jev when a key is present;
+ * `RAKAZO_AUTO_REVIEW_PROVIDER=jev` selects TypeSafe Jev when a key is present;
  * otherwise the existing LLM checker. `scripted` is the offline test adapter.
  * Any other value remains the LLM provider id (openrouter, anthropic, …).
  */
 export function resolveAutoReviewProviderKind(
   env: NodeJS.ProcessEnv = process.env,
 ): AutoReviewProviderKind {
-  const requested = env.ATLAS_AUTO_REVIEW_PROVIDER?.trim().toLowerCase();
+  const requested = env.RAKAZO_AUTO_REVIEW_PROVIDER?.trim().toLowerCase();
   if (requested === "jev") return typesafeApiKey(env) ? "jev" : "llm";
   if (requested === "scripted" && env.AGENT_RUNTIME === "scripted") return "scripted";
   return "llm";
@@ -110,15 +104,15 @@ export function resolveAutoReviewChecker(
   if (kind === "jev") {
     return {
       provider: JEV_AUTO_REVIEW_PROVIDER,
-      model: env.ATLAS_AUTO_REVIEW_MODEL?.trim() || DEFAULT_JEV_MODEL,
+      model: env.RAKAZO_AUTO_REVIEW_MODEL?.trim() || DEFAULT_JEV_MODEL,
     };
   }
   if (kind === "scripted") {
     return { provider: SCRIPTED_AUTO_REVIEW_PROVIDER, model: "scripted" };
   }
 
-  const overrideProvider = env.ATLAS_AUTO_REVIEW_PROVIDER?.trim();
-  const overrideModel = env.ATLAS_AUTO_REVIEW_MODEL?.trim();
+  const overrideProvider = env.RAKAZO_AUTO_REVIEW_PROVIDER?.trim();
+  const overrideModel = env.RAKAZO_AUTO_REVIEW_MODEL?.trim();
   if (overrideProvider && overrideModel && !isVerifierKind(overrideProvider)) {
     return { provider: overrideProvider, model: overrideModel };
   }

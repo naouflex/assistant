@@ -10,10 +10,11 @@ import {
   dockerSpawnEnv,
   resolveDockerBinary,
 } from "./docker-cli.js";
+import { t } from "./i18n.js";
 import { readPrivateFile, writePrivateFile } from "./setup-store.js";
 
 export const STACK_DIR_NAME = "stack";
-export const STACK_PROJECT_NAME = "atlas-desktop";
+export const STACK_PROJECT_NAME = "rakazo-desktop";
 export const STACK_COMPOSE_FILE = "docker-compose.images.yml";
 export const STACK_ENV_TEMPLATE = ".env.images.example";
 export const STACK_ENV_FILE = ".env";
@@ -75,13 +76,9 @@ export function stackResourceDir(input: {
 
 const STABLE_VERSION = /^\d+\.\d+\.\d+$/;
 
-/** Locally built images (no registry). Desktop compose defaults here, not GHCR. */
-export const LOCAL_APP_IMAGE = "atlas/app";
-export const LOCAL_COMPUTER_IMAGE = "atlas/computer";
-
 /**
  * Installed builds pin images to their own version so the DMG and the multi-arch
- * images move together; development and unpackaged builds use locally built `local`.
+ * images move together; development builds follow `edge`.
  */
 export function resolveImageTag(input: {
   version: string;
@@ -91,12 +88,7 @@ export function resolveImageTag(input: {
   const override = input.override?.trim();
   if (override) return override;
   if (input.packaged && STABLE_VERSION.test(input.version)) return `v${input.version}`;
-  return "local";
-}
-
-/** Tags that must never hit a registry — use images already on this machine. */
-export function usesLocalOnlyImages(imageTag: string): boolean {
-  return imageTag === "local" || imageTag.startsWith("local-");
+  return "edge";
 }
 
 const GENERATED_SECRETS: Record<string, number> = {
@@ -107,7 +99,7 @@ const GENERATED_SECRETS: Record<string, number> = {
   SCREEN_PROXY_SECRET: 32,
   SANDBOX_SUPERVISOR_TOKEN: 32,
 };
-const LAUNCH_SUPPLIED = ["ATLAS_IMAGE_TAG", "ATLAS_COMPUTER_IMAGE_TAG"];
+const LAUNCH_SUPPLIED = ["RAKAZO_IMAGE_TAG", "RAKAZO_COMPUTER_IMAGE_TAG"];
 
 /**
  * Port of install-images.sh `create_env`: fills the empty secret lines with random
@@ -206,7 +198,7 @@ export type LocalStackEvent =
   | { type: "wait-start" }
   | { type: "output"; line: string }
   | { type: "ready" }
-  | { type: "failed"; message: string };
+  | { type: "failed"; message: string; output?: string[] };
 
 export function initialStackState(imageTag: string): DesktopLocalStackState {
   return { phase: "idle", message: null, output: [], layerBytes: {}, imageTag };
@@ -265,14 +257,20 @@ export function reduceStackState(
     case "ready":
       return { ...state, phase: "ready", message: null };
     case "failed":
-      return { ...state, phase: "failed", message: event.message };
+      return {
+        ...state,
+        phase: "failed",
+        message: event.message,
+        output: [...state.output, ...(event.output ?? [])].slice(-STACK_OUTPUT_LINES),
+      };
   }
 }
 
-const DOCKER_GROUP_HINT =
-  "This user cannot access Docker. Add it to the docker group (sudo usermod -aG docker $USER), sign out and back in, then check again.";
-const STOP_FAILED = "Could not stop the local stack. Check that Docker is running, then try again.";
-const START_INTERRUPTED = "The start was interrupted. Retry to continue.";
+const dockerGroupHint = () =>
+  t(
+    "This user cannot access Docker. Add it to the docker group (sudo usermod -aG docker $USER), sign out and back in, then check again.",
+  );
+const startInterrupted = () => t("The start was interrupted. Retry to continue.");
 
 /** Docker output may contain paths and hostnames, so the person only ever sees these. */
 export function stackFailureMessage(
@@ -282,25 +280,29 @@ export function stackFailureMessage(
 ): string {
   switch (kind) {
     case "image-not-found":
-      return usesLocalOnlyImages(imageTag)
-        ? `Local Docker images for ${imageTag} were not found. Build atlas/app and atlas/computer on this machine, then retry.`
-        : `Images for ${imageTag} are not published yet. Try again in a few minutes.`;
+      return t("Images for {tag} are not published yet. Try again in a few minutes.", {
+        tag: imageTag,
+      });
     case "port-in-use":
-      return "Could not bind a local port after retrying. Retry to choose another port.";
+      return t("Could not bind a local port after retrying. Retry to choose another port.");
     case "address-pool-exhausted":
-      return "Docker has no free network address pools. Remove unused Docker networks or expand Docker’s address pools, then retry.";
+      return t(
+        "Docker has no free network address pools. Remove unused Docker networks or expand Docker’s address pools, then retry.",
+      );
     case "network":
-      return "Could not reach the image registry. Check the internet connection, then retry.";
+      return t("Could not reach the image registry. Check the internet connection, then retry.");
     case "daemon-down":
-      return "Docker stopped answering. Start Docker, then retry.";
+      return t("Docker stopped answering. Start Docker, then retry.");
     case "socket-permission":
-      return DOCKER_GROUP_HINT;
+      return dockerGroupHint();
     case "compose-missing":
-      return "Docker Compose is missing. Install Docker Desktop or the docker-compose-plugin, then retry.";
+      return t(
+        "Docker Compose is missing. Install Docker Desktop or the docker-compose-plugin, then retry.",
+      );
     case "other":
       return phase === "pulling"
-        ? "Downloading Atlas images failed. Check the output below, then retry."
-        : "Atlas services did not start. Check the output below, then retry.";
+        ? t("Downloading Rakazo images failed. Check the output below, then retry.")
+        : t("Rakazo services did not start. Check the output below, then retry.");
   }
 }
 
@@ -324,10 +326,6 @@ export interface LocalStackDeps {
   localWebUrl: string;
   allocatePort?: () => Promise<number>;
   imageTag: string;
-  /** Compose image repository (defaults to local `atlas/app`). */
-  appImage?: string;
-  /** Compose computer image repository (defaults to local `atlas/computer`). */
-  computerImage?: string;
   /** Returns the authenticated running image tag, or null for any other listener. */
   probe: (url: string, signal: AbortSignal, token: string) => Promise<string | null>;
   randomHex: (bytes: number) => string;
@@ -446,7 +444,13 @@ export class LocalStackController {
     this.setState(
       stopped?.code === 0
         ? initialStackState(this.deps.imageTag)
-        : { ...this.current, phase: "failed", message: STOP_FAILED },
+        : {
+            ...this.current,
+            phase: "failed",
+            message: t(
+              "Could not stop the local stack. Check that Docker is running, then try again.",
+            ),
+          },
     );
     return this.current;
   }
@@ -468,7 +472,7 @@ export class LocalStackController {
       await this.attempt(controller.signal);
     } catch {
       // Copying the bundled compose files failed; the path would not help the person.
-      this.push({ type: "failed", message: "Could not prepare the local stack. Retry." });
+      this.push({ type: "failed", message: t("Could not prepare the local stack. Retry.") });
     } finally {
       if (this.inFlight === controller) this.inFlight = null;
     }
@@ -481,7 +485,10 @@ export class LocalStackController {
 
     const binary = resolveDockerBinary(this.deps.platform, this.deps.env, this.deps.exists);
     if (binary === null) {
-      this.push({ type: "docker-missing", message: "Docker is not installed on this computer." });
+      this.push({
+        type: "docker-missing",
+        message: t("Docker is not installed on this computer."),
+      });
       return;
     }
     const version = await this.docker(
@@ -491,13 +498,25 @@ export class LocalStackController {
       signal,
     );
     if (interrupted(signal, version))
-      return this.push({ type: "failed", message: START_INTERRUPTED });
+      return this.push({ type: "failed", message: startInterrupted() });
     if (version.code !== 0) {
-      this.push({
-        type: "docker-missing",
-        message:
-          "Docker is installed, but Docker Compose is missing. Install Docker Desktop or the docker-compose-plugin.",
-      });
+      if (failureKind(version) === "compose-missing") {
+        this.push({
+          type: "docker-missing",
+          message: t(
+            "Docker is installed, but Docker Compose is missing. Install Docker Desktop or the docker-compose-plugin.",
+          ),
+        });
+      } else {
+        this.push({
+          type: "failed",
+          message: t("Could not check Docker Compose. Check the output below, then retry."),
+          output: [
+            ...`${version.stdout}\n${version.stderr}`.split(/\r?\n/).filter((line) => line !== ""),
+            `docker compose version --short exited with code ${version.code}.`,
+          ],
+        });
+      }
       return;
     }
     const info = await this.docker(
@@ -506,14 +525,15 @@ export class LocalStackController {
       DOCKER_INFO_TIMEOUT_MS,
       signal,
     );
-    if (interrupted(signal, info)) return this.push({ type: "failed", message: START_INTERRUPTED });
+    if (interrupted(signal, info))
+      return this.push({ type: "failed", message: startInterrupted() });
     if (info.code !== 0) {
       this.push({
         type: "docker-not-running",
         message:
           failureKind(info) === "socket-permission"
-            ? DOCKER_GROUP_HINT
-            : "Docker is installed but not running. Start Docker, then check again.",
+            ? dockerGroupHint()
+            : t("Docker is installed but not running. Start Docker, then check again."),
       });
       return;
     }
@@ -529,19 +549,12 @@ export class LocalStackController {
     this.currentStackToken = stackToken;
 
     const imagesCached = await this.hasLocalReleaseImages(binary, signal);
-    if (signal.aborted) return this.push({ type: "failed", message: START_INTERRUPTED });
+    if (signal.aborted) return this.push({ type: "failed", message: startInterrupted() });
     if (!imagesCached) {
-      if (usesLocalOnlyImages(this.deps.imageTag)) {
-        this.push({
-          type: "failed",
-          message: stackFailureMessage("image-not-found", "pulling", this.deps.imageTag),
-        });
-        return;
-      }
       this.push({ type: "pull-start" });
       const pulled = await this.compose(binary, ["pull"], PULL_TIMEOUT_MS, signal);
       if (interrupted(signal, pulled))
-        return this.push({ type: "failed", message: START_INTERRUPTED });
+        return this.push({ type: "failed", message: startInterrupted() });
       if (pulled.code !== 0) {
         this.push({
           type: "failed",
@@ -568,7 +581,7 @@ export class LocalStackController {
       await writePrivateFile(path.join(this.deps.stackDir, STACK_WEB_URL_FILE), this.currentWebUrl);
       up = await this.compose(binary, upArgs, UP_TIMEOUT_MS, signal);
     }
-    if (interrupted(signal, up)) return this.push({ type: "failed", message: START_INTERRUPTED });
+    if (interrupted(signal, up)) return this.push({ type: "failed", message: startInterrupted() });
     if (up.code !== 0) {
       // Best effort: recent service logs usually name the failing service.
       await this.compose(binary, ["logs", "--tail", "30", "--no-color"], LOGS_TIMEOUT_MS, signal);
@@ -598,18 +611,14 @@ export class LocalStackController {
     this.push({
       type: "failed",
       message: signal.aborted
-        ? START_INTERRUPTED
-        : "The stack started but the web app did not answer. Retry, and check the output below.",
+        ? startInterrupted()
+        : t("The stack started but the web app did not answer. Retry, and check the output below."),
     });
   }
 
   private async hasLocalReleaseImages(binary: string, signal: AbortSignal): Promise<boolean> {
-    // Moving registry tags must still check the registry for newer images.
-    // `local` / `local-*` only ever use images already on this machine.
-    if (
-      !usesLocalOnlyImages(this.deps.imageTag) &&
-      (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
-    )
+    // Moving tags must still check the registry for newer images.
+    if (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
       return false;
     const config = await this.compose(
       binary,
@@ -639,10 +648,8 @@ export class LocalStackController {
       env: dockerSpawnEnv(this.deps.platform, this.deps.env, binary, {
         SANDBOX_HOST_URL: this.deps.hostComputer?.url ?? "",
         SANDBOX_HOST_TOKEN: this.deps.hostComputer?.token ?? "",
-        ATLAS_IMAGE: this.deps.appImage ?? LOCAL_APP_IMAGE,
-        ATLAS_COMPUTER_IMAGE: this.deps.computerImage ?? LOCAL_COMPUTER_IMAGE,
-        ATLAS_IMAGE_TAG: this.deps.imageTag,
-        ATLAS_COMPUTER_IMAGE_TAG: this.deps.imageTag,
+        RAKAZO_IMAGE_TAG: this.deps.imageTag,
+        RAKAZO_COMPUTER_IMAGE_TAG: this.deps.imageTag,
         // Restricted egress needs host iptables rules. Docker Desktop keeps its
         // bridges inside its VM where the host cannot add them, and the app cannot
         // install root firewall rules on Linux either, so the stack would refuse
@@ -653,10 +660,10 @@ export class LocalStackController {
         CONTENT_ENCRYPTION: "off",
         ...(this.currentStackToken === null
           ? {}
-          : { ATLAS_DESKTOP_STACK_TOKEN: this.currentStackToken }),
-        ATLAS_WEB_PORT: new URL(this.currentWebUrl).port || "80",
+          : { RAKAZO_DESKTOP_STACK_TOKEN: this.currentStackToken }),
+        RAKAZO_WEB_PORT: new URL(this.currentWebUrl).port || "80",
         // Only web needs a stable host address. Docker allocates the API host port.
-        ATLAS_API_PORT: "0",
+        RAKAZO_API_PORT: "0",
         BETTER_AUTH_URL: this.currentWebUrl,
         WEB_ORIGIN: this.currentWebUrl,
         API_URL: this.currentWebUrl,

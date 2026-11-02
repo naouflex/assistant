@@ -1,27 +1,29 @@
+import { ORPCError, onError, os } from "@orpc/server";
+import { RPCHandler } from "@orpc/server/fetch";
 import {
+  SandboxAllowanceUsedError,
   SandboxDamagedError,
   SandboxRateLimitError,
   SandboxUnavailableError,
-  SandboxUnreachableError,
   SandboxUnresponsiveError,
   VoiceAccountError,
 } from "@atlas/adapter-kit";
 import { MODEL_IMAGE_INPUT_ERROR } from "@atlas/core";
 import { IsolationError } from "@atlas/db";
 import { createLogger, createTestSink, installLogger } from "@atlas/logging";
-import { ORPCError, onError, os } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
+import { requestLogging } from "@atlas/logging/hono";
+import { Hono } from "hono";
 import { afterEach, describe, expect, it } from "vitest";
 import { handleRpcError, logUnexpectedRpcError } from "./app.js";
 
 describe("logUnexpectedRpcError", () => {
   afterEach(() => {
-    installLogger(createLogger({ service: "atlas-api", level: "off", sinks: [] }));
+    installLogger(createLogger({ service: "rakazo-api", level: "off", sinks: [] }));
   });
 
   it("stays quiet for an error the router chose to return", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
 
     logUnexpectedRpcError(new ORPCError("BAD_REQUEST", { message: "file is too large" }), [
       "computer",
@@ -31,9 +33,55 @@ describe("logUnexpectedRpcError", () => {
     expect(sink.events).toEqual([]);
   });
 
+  it("reports a procedure's own 5xx under the procedure with its cause", () => {
+    const sink = createTestSink();
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
+    const cause = new Error("key service unreachable");
+
+    logUnexpectedRpcError(new ORPCError("SERVICE_UNAVAILABLE", { cause }), ["models", "list"]);
+
+    expect(sink.events[0]).toMatchObject({
+      level: "error",
+      message: "rpc models/list failed",
+      error: { cause: { message: "key service unreachable" } },
+    });
+  });
+
+  it("completes a request the provider outage answered with 503 as a warning", async () => {
+    const sink = createTestSink();
+    const logger = createLogger({ service: "rakazo-api", sinks: [sink] });
+    installLogger(logger);
+    const rpc = new RPCHandler(
+      {
+        boot: os.handler(() => {
+          throw new SandboxUnresponsiveError("Boat API request failed (HTTP 525)");
+        }),
+      },
+      { clientInterceptors: [onError((error, { path }) => handleRpcError(error, path))] },
+    );
+    const app = new Hono();
+    app.use("*", requestLogging(logger));
+    app.post("/rpc/*", async (c) => {
+      const { response } = await rpc.handle(c.req.raw, { prefix: "/rpc", context: {} });
+      return response ?? c.notFound();
+    });
+
+    const response = await app.request("/rpc/boot", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    });
+
+    expect(response.status).toBe(503);
+    expect(sink.events.map((event) => [event.level, event.message])).toEqual([
+      ["warn", "rpc boot computer unavailable"],
+      ["warn", "http.request.completed"],
+    ]);
+  });
+
   it("keeps an image send the model cannot read out of error reports", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const rejection = new ORPCError("CONFLICT", {
       message: MODEL_IMAGE_INPUT_ERROR,
       data: { reason: "model_image_input_unsupported" },
@@ -45,7 +93,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("names the procedure and every cause behind an opaque failure", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const error = new Error("fetch failed", {
       cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:7091"), {
         code: "ECONNREFUSED",
@@ -65,7 +113,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("keeps a failure after the client disconnected out of error reports", async () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const client = new AbortController();
     const router = {
       voices: os.handler(() => {
@@ -96,7 +144,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("returns a provider rate limit as too many requests without an error report", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const error = new SandboxRateLimitError({ cause: new Error("HTTP 429, rate_limited") });
 
     let thrown: unknown;
@@ -119,7 +167,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("returns a computer the provider never started as a retryable 503 without an error report", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const error = new SandboxUnavailableError({ cause: new Error("sandbox did not become ready") });
 
     let thrown: unknown;
@@ -142,7 +190,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("returns an unreachable computer provider as a retryable 503 without an error report", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const error = new SandboxUnresponsiveError("Boat API request failed (HTTP 502)");
 
     let thrown: unknown;
@@ -166,39 +214,27 @@ describe("logUnexpectedRpcError", () => {
     ]);
   });
 
-  it("returns a computer service that is not listening as a retryable 503 without an error report", () => {
+  it("returns a spent computer allowance with its message and no error report", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
-    const error = new SandboxUnreachableError({
-      cause: Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:7091"), {
-        code: "ECONNREFUSED",
-      }),
-    });
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
+    const error = new SandboxAllowanceUsedError();
 
     let thrown: unknown;
     try {
-      handleRpcError(error, ["computer", "screenUrl"]);
+      handleRpcError(error, ["computer", "boot"]);
     } catch (failure) {
       thrown = failure;
     }
 
-    expect(thrown).toBeInstanceOf(ORPCError);
-    expect(thrown).toMatchObject({
-      code: "SERVICE_UNAVAILABLE",
-      message: "The computer could not be reached.",
-    });
-    expect(sink.events).toEqual([
-      expect.objectContaining({
-        level: "warn",
-        message: "rpc computer/screenUrl computer unreachable",
-        reason: "connect ECONNREFUSED 127.0.0.1:7091",
-      }),
+    expect(thrown).toMatchObject({ code: "FORBIDDEN", status: 403, message: error.message });
+    expect(sink.events.map((event) => [event.level, event.message])).toEqual([
+      ["warn", "rpc computer/boot computer allowance used up"],
     ]);
   });
 
   it("returns a damaged computer's Recover message as a conflict without an error report", () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const error = new SandboxDamagedError();
 
     let thrown: unknown;
@@ -216,7 +252,7 @@ describe("logUnexpectedRpcError", () => {
   });
 
   it("sends a provider rate limit to the client as HTTP 429 with the plain message", async () => {
-    installLogger(createLogger({ service: "atlas-api", sinks: [createTestSink()] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [createTestSink()] }));
     const router = {
       boot: os.handler(() => {
         throw new SandboxRateLimitError({ cause: new Error("HTTP 429, rate_limited") });
@@ -241,7 +277,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("sends a spent voice provider account to the client as HTTP 402 with its code and no error report", async () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const router = {
       voices: os.handler(() => {
         throw new VoiceAccountError(
@@ -272,7 +308,7 @@ describe("logUnexpectedRpcError", () => {
 
   it("sends a missing or foreign resource to the client as HTTP 404 without an error report", async () => {
     const sink = createTestSink();
-    installLogger(createLogger({ service: "atlas-api", sinks: [sink] }));
+    installLogger(createLogger({ service: "rakazo-api", sinks: [sink] }));
     const router = {
       read: os.handler(() => {
         throw new IsolationError();

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { contentKeyProviderFromEnv } from "@atlas/adapters";
+import { contentKeyProviderFromEnv, unwrapEnvFromKeyManager } from "@atlas/adapters";
 import { createAuth } from "@atlas/auth";
 import { bootstrapUserSpace, createDb, runAsSystem } from "@atlas/db";
 
@@ -9,6 +9,7 @@ function required(name: string): string {
   return value;
 }
 
+await unwrapEnvFromKeyManager();
 const { prisma, pool } = createDb(required("DATABASE_URL"), {
   keyProvider: contentKeyProviderFromEnv(),
 });
@@ -52,7 +53,7 @@ async function bootstrap() {
       await prisma.user.create({
         data: {
           id: userId,
-          name: "",
+          name: "Account",
           email,
           emailVerified: true,
           accounts: {

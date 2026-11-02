@@ -10,20 +10,24 @@ import type {
   SandboxProvider,
   SecretStore,
 } from "@atlas/adapter-kit";
-import { messagingDeliverJob } from "@atlas/adapter-kit";
+import {
+  messagingDeliverJob,
+  SandboxRateLimitError,
+  SandboxUnavailableError,
+  SandboxUnresponsiveError,
+} from "@atlas/adapter-kit";
 import type { PrismaClient, ThreadEvents } from "@atlas/db";
 import { runAsSystem, runAsTenant } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 import { settleCallRequest } from "./call-request.js";
 import type { CloudAgentConnection } from "./cloud-agent-factory.js";
 import { pollCloudAgent } from "./cloud-agent-poll.js";
-import { expireComputerControl } from "./computer-control.js";
-import { scheduleComputerSleep, sleepComputerIfIdle } from "./computer-idle.js";
+import { expireComputerControl, scheduleComputerControlExpiry } from "./computer-control.js";
+import { rateLimitEnds, scheduleComputerSleep, sleepComputerIfIdle } from "./computer-idle.js";
 import { performComputerUpdate } from "./computer-update.js";
 import type { createRunExecutor } from "./executor.js";
 import type { ExpoPushProvider } from "./expo-push.js";
 import { compactHistory } from "./history-compaction.js";
-import { runMemoryDream } from "./memory-dream.js";
 import type { MemoryProviderResolver } from "./memory-provider-factory.js";
 import { deliverMessagingOutbound, mirrorMessagingOutbound } from "./messaging-delivery.js";
 import { pollPurchase } from "./purchase-poll.js";
@@ -50,6 +54,7 @@ function asOwner<Key, P extends Key>(
 }
 
 const OWNER = { spaceId: true, userId: true } as const;
+const CONTROL_EXPIRE_RETRY_MS = 30_000;
 
 export function createBackgroundJobHandlers(deps: {
   executor: ReturnType<typeof createRunExecutor>;
@@ -110,8 +115,6 @@ export function createBackgroundJobHandlers(deps: {
     deps.prisma.cloudAgent.findUnique({ where: { id: agentId }, select: OWNER });
   const purchase = ({ purchaseId }: { purchaseId: string }) =>
     deps.prisma.purchase.findUnique({ where: { id: purchaseId }, select: OWNER });
-  const dream = ({ dreamId }: { dreamId: string }) =>
-    deps.prisma.memoryDream.findUnique({ where: { id: dreamId }, select: OWNER });
   const updatedComputer = async ({ updateId }: { updateId: string }) =>
     (
       await deps.prisma.computerUpdate.findUnique({
@@ -166,9 +169,26 @@ export function createBackgroundJobHandlers(deps: {
     "computer.sleep": asOwner(computer, async (payload) => {
       await sleepComputerIfIdle(deps, payload.computerId);
     }),
-    "computer.control-expire": asOwner(computer, async (payload) => {
-      if (await expireComputerControl(deps, payload.computerId, payload.leaseId)) {
-        scheduleComputerSleep(deps.jobs, payload.computerId);
+    "computer.control-expire": asOwner(computer, async ({ computerId, leaseId }) => {
+      try {
+        if (await expireComputerControl(deps, computerId, leaseId)) {
+          scheduleComputerSleep(deps.jobs, computerId);
+        }
+      } catch (error) {
+        // Input is already denied and the lease kept, so a provider outage only delays the release.
+        if (
+          !(error instanceof SandboxUnresponsiveError) &&
+          !(error instanceof SandboxUnavailableError) &&
+          !(error instanceof SandboxRateLimitError)
+        )
+          throw error;
+        getLogger().warn("computer.control_expire_deferred", { "computer.id": computerId, error });
+        await scheduleComputerControlExpiry(
+          deps.jobs,
+          computerId,
+          leaseId,
+          rateLimitEnds(error) ?? new Date(Date.now() + CONTROL_EXPIRE_RETRY_MS),
+        );
       }
     }),
     "skill.teaching-expire": asOwner(skill, async (payload) => {
@@ -198,18 +218,6 @@ export function createBackgroundJobHandlers(deps: {
     "push.receipt": async (payload) => {
       await runAsSystem("check a push receipt", () => deps.notifications?.checkReceipt(payload));
     },
-    "memory.dream": asOwner(dream, async ({ dreamId }) => {
-      await runMemoryDream(
-        {
-          prisma: deps.prisma,
-          runtime: deps.runtime,
-          deploymentModelKey: deps.deploymentModelKey,
-          deploymentModelConfigured: deps.deploymentModelConfigured,
-          ...(deps.executor.resolveModel ? { resolveModel: deps.executor.resolveModel } : {}),
-        },
-        dreamId,
-      );
-    }),
     "history.compact": asOwner(thread, async (payload) => {
       // Retrieval policies use stored context without paid message-count compaction.
       // Skip legacy backlog work after a policy change.

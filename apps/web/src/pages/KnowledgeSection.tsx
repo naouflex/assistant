@@ -1,17 +1,11 @@
-import type {
-  AgentSkill,
-  AgentSkillCatalogEntry,
-  MemoryDocument,
-  MemoryDream,
-  MemoryProposal,
-} from "@atlas/contracts";
-import { isDeletableMemoryDocument, isEmptyBotMemory } from "@atlas/contracts";
-import { fetchFresh, writeSaved } from "@atlas/core/query";
-import { Badge, Button, Skeleton, Textarea } from "@atlas/ui-web";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@atlas/ui-web/components/ui/tooltip";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ORPCError } from "@orpc/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AgentSkill, AgentSkillCatalogEntry, MemoryDocument } from "@atlas/contracts";
+import { isDeletableMemoryDocument, isEmptyBotMemory } from "@atlas/contracts";
+import { fetchFresh, writeSaved } from "@atlas/core/query";
+import { Badge, Button, SectionHeading, Skeleton, Textarea } from "@atlas/ui-web";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@atlas/ui-web/components/ui/tooltip";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -60,86 +54,12 @@ export function SpaceMemorySection() {
         <Trans>Shared memory</Trans>
       </SettingsSectionHeading>
       <p className="mt-1 text-[13px] text-muted-foreground">
-        <Trans>Every bot reads these notes. A change waits until you accept it.</Trans>
+        <Trans>Every bot in this space reads these notes and keeps them up to date.</Trans>
       </p>
       <div className="mt-3">
         <MemoryDocumentList input={{ scope: "user" }} testId="space-memory-list" />
       </div>
     </section>
-  );
-}
-
-function MemoryReview({
-  dream,
-  proposals,
-  reviewing,
-  nothingToChange,
-  busy,
-  onReview,
-  onAccept,
-  onReject,
-}: {
-  dream: MemoryDream | null;
-  proposals: MemoryProposal[];
-  reviewing: boolean;
-  nothingToChange: boolean;
-  busy: boolean;
-  onReview: () => void;
-  onAccept: (proposal: MemoryProposal) => void;
-  onReject: (proposal: MemoryProposal) => void;
-}) {
-  return (
-    <div className="mb-3">
-      <Button type="button" variant="outline" disabled={busy || reviewing} onClick={onReview}>
-        <Trans>Review recent runs</Trans>
-      </Button>
-      {reviewing ? (
-        <p className="mt-2 text-[13px] text-muted-foreground">
-          <Trans>Reviewing recent runs</Trans>
-        </p>
-      ) : null}
-      {dream?.status === "failed" && dream.error ? (
-        <p className="mt-2 text-[13px] text-destructive">{dream.error}</p>
-      ) : null}
-      {nothingToChange ? (
-        <p className="mt-2 text-[13px] text-muted-foreground">
-          <Trans>Nothing to change</Trans>
-        </p>
-      ) : null}
-      {proposals.length > 0 ? (
-        <div className="mt-3">
-          <h4 className="text-xs font-medium text-muted-foreground">
-            <Trans>Proposed notes</Trans>
-          </h4>
-          {proposals.map((proposal) => (
-            <div key={proposal.id} className="mt-2 border-b border-border pb-2 last:border-0">
-              <div className="text-[14px]" dir="auto">
-                {proposal.path}
-              </div>
-              <p className="text-[13px] text-muted-foreground" dir="auto">
-                {proposal.reason}
-              </p>
-              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[13px]">
-                {proposal.content}
-              </pre>
-              <div className="mt-2 flex gap-2">
-                <Button type="button" disabled={busy} onClick={() => onAccept(proposal)}>
-                  <Trans>Accept</Trans>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => onReject(proposal)}
-                >
-                  <Trans>Reject</Trans>
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -157,39 +77,28 @@ function MemoryDocumentList({
   const queries = useSpaceQueries();
   const queryClient = useQueryClient();
   const list = queries.memory.list.queryOptions({ input });
-  const proposalOptions = queries.memory.proposals.queryOptions({ input });
-  const dreamOptions = queries.memory.dream.queryOptions({ input });
   // Bots write memory as they run, so every open refreshes behind the cached list.
   const listQuery = useQuery({ ...list, refetchOnMount: "always" });
-  const proposalQuery = useQuery({ ...proposalOptions, refetchOnMount: "always" });
-  const dreamQuery = useQuery({
-    ...dreamOptions,
-    refetchOnMount: "always",
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status === "queued" || status === "running" ? 2000 : false;
-    },
-  });
   const docs = listQuery.data ?? NO_DOCS;
-  const proposals = proposalQuery.data ?? [];
-  const dream = dreamQuery.data ?? null;
-  const reviewing = dream?.status === "queued" || dream?.status === "running";
   const loading = listQuery.isPending;
-  const [reviewId, setReviewId] = useState<string | null>(null);
-  const [nothingToChange, setNothingToChange] = useState(false);
-  useEffect(() => {
-    if (!reviewId || dream?.id !== reviewId) return;
-    if (dream.status === "queued" || dream.status === "running") return;
-    setReviewId(null);
-    setNothingToChange(dream.status === "ready" && proposals.length === 0);
-  }, [reviewId, dream, proposals.length]);
+  const budgetInput = input.scope === "bot" && input.botId ? { botId: input.botId } : null;
+  const budgetOptions = budgetInput
+    ? queries.memory.budget.queryOptions({ input: budgetInput })
+    : null;
+  const budgetQuery = useQuery(
+    budgetOptions ?? { queryKey: ["memory-budget", "none"], queryFn: skipToken },
+  );
+  const budget = budgetInput && budgetQuery.data ? budgetQuery.data : null;
+  const bytesLeftOut = budget
+    ? budget.omitted.reduce((sum, entry) => sum + entry.totalBytes, 0) +
+      budget.documents.reduce((sum, entry) => sum + entry.totalBytes - entry.includedBytes, 0)
+    : 0;
+  const kb = Math.ceil(bytesLeftOut / 1024);
   const [showAll, setShowAll] = useState(false);
   // Once shown, memory stays visible while the panel is open, even if emptied.
   const [memoryShown, setMemoryShown] = useState(false);
   const memoryVisible = memoryShown || docs.some((doc) => !isEmptyBotMemory(doc));
   if (memoryVisible && !memoryShown) setMemoryShown(true);
-  const listedDocs =
-    !compact || memoryShown ? docs : docs.filter((doc) => !isEmptyBotMemory(doc));
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [loadedRevision, setLoadedRevision] = useState<number | undefined>();
@@ -199,8 +108,9 @@ function MemoryDocumentList({
   const error = actionError ?? (listQuery.isError ? t`Could not load` : null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  function setDocs(update: (current: MemoryDocument[]) => MemoryDocument[]) {
-    return writeSaved(queryClient, list.queryKey, (current) => update(current ?? []));
+  async function setDocs(update: (current: MemoryDocument[]) => MemoryDocument[]) {
+    await writeSaved(queryClient, list.queryKey, (current) => update(current ?? []));
+    if (budgetOptions) void queryClient.invalidateQueries({ queryKey: budgetOptions.queryKey });
   }
 
   function openDoc(doc: MemoryDocument) {
@@ -286,93 +196,26 @@ function MemoryDocumentList({
     }
   }
 
-  async function startReview() {
-    if (busy || reviewing) return;
-    setBusy(true);
-    setNothingToChange(false);
-    try {
-      const started = await rpc.memory.startDream(input);
-      setReviewId(started.id);
-      queryClient.setQueryData(dreamOptions.queryKey, started);
-    } catch {
-      setError(t`Could not review recent runs`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function acceptProposal(proposal: MemoryProposal) {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const updated = await rpc.memory.acceptProposal({ proposalId: proposal.id });
-      await setDocs((current) => {
-        const index = current.findIndex((entry) => entry.path === updated.path);
-        if (index < 0) return [updated, ...current];
-        return current.map((entry, position) => (position === index ? updated : entry));
-      });
-      setNothingToChange(false);
-      await queryClient.invalidateQueries({ queryKey: proposalOptions.queryKey });
-    } catch (err) {
-      setError(
-        err instanceof ORPCError && err.code === "CONFLICT"
-          ? t`This note changed.`
-          : t`Could not save`,
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function rejectProposal(proposal: MemoryProposal) {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await rpc.memory.rejectProposal({ proposalId: proposal.id });
-      await queryClient.invalidateQueries({ queryKey: proposalOptions.queryKey });
-    } catch {
-      setError(t`Could not save`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // Notes stay hidden until one exists, but the review is how a bot gets its first notes.
-  if (
-    compact &&
-    listQuery.isPending &&
-    !memoryVisible &&
-    !error &&
-    proposals.length === 0 &&
-    !reviewing
-  )
-    return null;
+  if (compact && !memoryVisible && !error) return null;
   return (
     <section className={compact ? "mt-6" : undefined}>
       {compact ? (
-        <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+        <SectionHeading variant="label" className="mb-2">
           <Trans>Memory</Trans>
-        </h3>
+        </SectionHeading>
       ) : null}
       <div data-testid={testId} className={compact ? "rounded-xl bg-muted/50 p-4" : undefined}>
         {error ? <div className="pb-2 text-[13px] text-destructive">{error}</div> : null}
+        {kb > 0 ? (
+          <p className="pb-2 text-[13px] text-muted-foreground" data-testid="memory-budget-note">
+            {t`About ${kb} KB of memory no longer reaches the bot.`}
+          </p>
+        ) : null}
         {conflicted ? (
           <div className="pb-2 text-[13px] text-destructive">
             <Trans>Document changed. Reopen to edit the latest version.</Trans>
           </div>
         ) : null}
-        <MemoryReview
-          dream={dream}
-          proposals={proposals}
-          reviewing={reviewing}
-          nothingToChange={nothingToChange}
-          busy={busy}
-          onReview={() => void startReview()}
-          onAccept={(proposal) => void acceptProposal(proposal)}
-          onReject={(proposal) => void rejectProposal(proposal)}
-        />
         {loading ? <Skeleton className="h-10 w-full" /> : null}
         {!compact && !loading && docs.length === 0 && !error ? (
           <div className="py-1 text-[13px] text-muted-foreground">
@@ -380,7 +223,7 @@ function MemoryDocumentList({
           </div>
         ) : null}
         <div>
-          {(compact && !showAll ? listedDocs.slice(0, 5) : listedDocs).map((doc) => (
+          {(compact && !showAll ? docs.slice(0, 5) : docs).map((doc) => (
             <div key={doc.id} className="border-b border-border last:border-0">
               <div className="flex items-center gap-2">
                 <Button
@@ -397,15 +240,6 @@ function MemoryDocumentList({
                     {doc.path}
                   </span>
                 </Button>
-                <time
-                  dateTime={doc.updatedAt}
-                  className="shrink-0 text-muted-foreground text-xs tabular-nums"
-                >
-                  {new Date(doc.updatedAt).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </time>
                 <Tooltip>
                   <TooltipTrigger
                     render={<Button variant="ghost" size="icon-sm" />}
@@ -468,7 +302,7 @@ function MemoryDocumentList({
             </div>
           ))}
         </div>
-        {compact && listedDocs.length > 5 && !showAll ? (
+        {compact && docs.length > 5 && !showAll ? (
           <Button
             variant="ghost"
             size="sm"

@@ -4,7 +4,7 @@ import type { JobPublisher, JobWorkerHost } from "@atlas/adapter-kit";
 import {
   ComposioConnector,
   IntegrationProviderSettings,
-  startLocalModelDiscovery,
+  unwrapEnvFromKeyManager,
 } from "@atlas/adapters";
 import { phoneCallSettings } from "@atlas/core";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
@@ -13,6 +13,7 @@ import { startWorkerHealth, watchEventLoopStalls } from "./health.js";
 import { createWorkerSecretStore } from "./secret-store.js";
 
 loadRootEnv();
+await unwrapEnvFromKeyManager();
 
 import {
   auditLogConfig,
@@ -24,7 +25,6 @@ import {
   createAuditLogReconciler,
   createBackgroundJobHandlers,
   createCloudAgentConnection,
-  createComputerHealthSweeper,
   createConnectorStack,
   createDeadJobPruner,
   createIdleComputerSweeper,
@@ -57,7 +57,6 @@ import {
   mcpStdioOptionsFromEnv,
   messagingEnvFromProcess,
   messagingPlatformsFromEnv,
-  notificationPreferenceGate,
   PiAgentRuntime,
   PipedreamConnector,
   PostgresRealtimeFanout,
@@ -107,8 +106,6 @@ const logger = createRootLogger(SERVICE_NAMES.worker);
 
 async function main() {
   const stopStallWatch = watchEventLoopStalls();
-  // Runs can pick a discovered local model, so the worker needs the same list.
-  startLocalModelDiscovery();
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const poolMax = parsePositiveInteger(process.env.DB_POOL_MAX, 8);
@@ -121,7 +118,7 @@ async function main() {
   // A larger max competes for Postgres max_connections (53300).
   const created = createDb(databaseUrl, {
     poolMax,
-    applicationName: "atlas-worker",
+    applicationName: "rakazo-worker",
     keyProvider: contentKeyProviderFromEnv(),
   });
   const { pool } = created;
@@ -218,8 +215,14 @@ async function main() {
       pipedream,
     },
   );
+  const installedConnectors = new InstalledConnectorProvider(
+    prisma,
+    secrets,
+    {},
+    allowPrivateEndpoint,
+  );
   const stack = createConnectorStack(undefined, [
-    new InstalledConnectorProvider(prisma, secrets, {}, allowPrivateEndpoint),
+    installedConnectors,
     ...integrationSettings.providers(),
     mcp,
   ]);
@@ -260,7 +263,6 @@ async function main() {
     sessionExpiresAt: (sessionId) => pushSessionExpiresAt(prisma, sessionId),
     jobs,
     accessToken: process.env.EXPO_ACCESS_TOKEN,
-    allows: notificationPreferenceGate(prisma),
   });
   const executor = createRunExecutor({
     maxUploadSizeBytes: uploadSizeFromEnv(process.env),
@@ -372,7 +374,6 @@ async function main() {
     reconcileAuditLog: createAuditLogReconciler(prisma, auditLogConfig()),
     reconcileHomeStorage: homeStorageSweeper(home),
     reconcileIdleComputers: createIdleComputerSweeper({ prisma, jobs }),
-    reconcileComputerHealth: createComputerHealthSweeper({ prisma, jobs, notifications }),
     reconcileDeadJobs: inMemoryJobs ? undefined : createDeadJobPruner(pool),
   });
   let stopHealth: (() => Promise<void>) | undefined;
@@ -390,6 +391,7 @@ async function main() {
       await secrets.close();
       await realtime.close();
       await mcp.close();
+      await installedConnectors.close();
       await prisma.$disconnect().catch(() => undefined);
       await pool.end().catch(() => undefined);
     } finally {

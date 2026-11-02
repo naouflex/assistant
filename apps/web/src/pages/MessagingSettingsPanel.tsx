@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { MessagingChannelMembership, MessagingInstallationsStatus } from "@atlas/contracts";
 import { isRetryableError, messagingConnectOptions } from "@atlas/core";
 import { fetchFresh, writeSaved } from "@atlas/core/query";
@@ -9,8 +10,8 @@ import {
   DropdownMenuTrigger,
   NativeSelect,
   NativeSelectOption,
+  SectionHeading,
 } from "@atlas/ui-web";
-import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDownIcon, PlusIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -216,7 +217,7 @@ export function MessagingSettingsPanel() {
   }
 
   function installSlack() {
-    const popup = window.open("about:blank", "atlas-slack-install");
+    const popup = window.open("about:blank", "rakazo-slack-install");
     if (popup) popup.opener = null;
     void act(async () => {
       try {
@@ -279,9 +280,9 @@ export function MessagingSettingsPanel() {
 
       {hasRequests ? (
         <section>
-          <h3 className="text-[13px] font-medium text-muted-foreground">
+          <SectionHeading variant="label">
             <Trans>Requests</Trans>
-          </h3>
+          </SectionHeading>
           <ul className="mt-3 space-y-3">
             {invitedChannels.map((channel) => (
               <Row
@@ -454,9 +455,9 @@ export function MessagingSettingsPanel() {
 
       {hasConversations ? (
         <section>
-          <h3 className="text-[13px] font-medium text-muted-foreground">
+          <SectionHeading variant="label">
             <Trans>Conversations</Trans>
-          </h3>
+          </SectionHeading>
           <ul className="mt-3 space-y-3">
             {joinedChannels.map((channel) => (
               <Row

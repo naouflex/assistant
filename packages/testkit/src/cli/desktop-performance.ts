@@ -1,31 +1,43 @@
 import type { ChildProcess } from "node:child_process";
-import { execFileSync, spawn } from "node:child_process";
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { brotliCompressSync, gzipSync } from "node:zlib";
+import { serve } from "@hono/node-server";
+import type { ElectronApplication, Page } from "@playwright/test";
+import { _electron as electron, expect } from "@playwright/test";
 import type { createApp } from "@atlas/api/app";
 import { abortableDelay } from "@atlas/core";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import type { PrismaClient } from "@atlas/db";
 import { createThreadMessage } from "@atlas/db";
-import { serve } from "@hono/node-server";
-import type { CDPSession, ElectronApplication, Page } from "@playwright/test";
-import { _electron as electron, expect } from "@playwright/test";
-import type { NumericSummary, PerformanceReport } from "../performance-report.js";
+import type { PerformanceReport } from "../performance-report.js";
 import {
   PERFORMANCE_REPORT_SCHEMA_VERSION,
   parseTcpPort,
+  roundedSummary,
   roundMetric,
-  summarize,
 } from "../performance-report.js";
-import { disposableDatabaseEnv, startPostgres } from "./postgres.js";
+import {
+  argument,
+  benchmarkEnvironment,
+  cdpMetrics,
+  migrateDatabase,
+  output,
+  positiveInteger,
+  repositoryRoot as root,
+  run,
+  safeName,
+  startPreview,
+  stopProcess,
+  waitForUrl,
+} from "./performance-stack.js";
+import { startPostgres } from "./postgres.js";
 
 loadRootEnv();
 
-const root = path.resolve(import.meta.dirname, "../../../..");
 const desktopRoot = path.join(root, "apps/desktop");
 const webRoot = path.join(root, "apps/web");
 const outputLabel = argument("--label") ?? "baseline";
@@ -46,7 +58,7 @@ if (webPort === apiPort) {
 const webOrigin = `http://127.0.0.1:${webPort}`;
 const apiOrigin = `http://127.0.0.1:${apiPort}`;
 const reportDirectory = path.join(root, ".context/performance");
-const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-desktop-performance-"));
+const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "rakazo-desktop-performance-"));
 
 const container = await startPostgres();
 let preview: ChildProcess | undefined;
@@ -70,7 +82,7 @@ try {
   });
   await waitForUrl(`${apiOrigin}/health`);
 
-  preview = startPreview(benchmarkEnv);
+  preview = startPreview(benchmarkEnv, webPort);
   await waitForUrl(webOrigin);
 
   const executablePath = await packagedExecutable();
@@ -146,37 +158,15 @@ try {
 
 function performanceEnvironment(databaseUrl: string): NodeJS.ProcessEnv {
   return {
-    ...process.env,
-    NODE_ENV: "production",
-    ...disposableDatabaseEnv(databaseUrl),
-    VERIFY_DATABASE: "1",
-    WAKEUP_DRIVER: "memory",
-    SANDBOX_PROVIDER: "fake",
-    AGENT_RUNTIME: "scripted",
-    COMPOSIO_API_KEY: "",
-    OPENROUTER_API_KEY: "",
-    E2B_API_KEY: "",
-    DAYTONA_API_KEY: "",
-    BETTER_AUTH_SECRET: "atlas-benchmark-auth-secret-over-32-characters",
-    ENCRYPTION_KEY: "atlas-benchmark-encryption-key-over-32-characters",
-    SANDBOX_SUPERVISOR_TOKEN: "atlas-benchmark-supervisor-token-over-32-characters",
-    SCREEN_PROXY_SECRET: "atlas-benchmark-screen-proxy-secret-over-32-characters",
-    BETTER_AUTH_URL: webOrigin,
-    WEB_ORIGIN: webOrigin,
-    API_PORT: String(apiPort),
-    API_URL: apiOrigin,
-    API_PROXY_TARGET: apiOrigin,
-    WEB_PORT: String(webPort),
-    ATLAS_HOST: "127.0.0.1",
-    ATLAS_WEB_URL: webOrigin,
-    ATLAS_DISABLE_BUNDLED_RENDERER: remoteRenderer ? "1" : "0",
-    ATLAS_DISABLE_WARM_WINDOW: disableWarmWindow ? "1" : "0",
-    ATLAS_PERFORMANCE_ASSET_DELAY_MS: String(assetDelayMs),
-    DATA_DIR: path.join(temporaryRoot, "data"),
-    SIGNUPS_ENABLED: "true",
-    SIGNUP_ALLOWLIST: "",
-    PUBLIC_POSTHOG_KEY: "",
-    CI: "",
+    ...benchmarkEnvironment({
+      databaseUrl,
+      webPort,
+      apiPort,
+      dataDir: path.join(temporaryRoot, "data"),
+    }),
+    RAKAZO_DISABLE_BUNDLED_RENDERER: remoteRenderer ? "1" : "0",
+    RAKAZO_DISABLE_WARM_WINDOW: disableWarmWindow ? "1" : "0",
+    RAKAZO_PERFORMANCE_ASSET_DELAY_MS: String(assetDelayMs),
     CSC_IDENTITY_AUTO_DISCOVERY: "false",
   };
 }
@@ -185,39 +175,11 @@ function buildProductionArtifacts(env: NodeJS.ProcessEnv) {
   run("pnpm", ["--filter", "@atlas/desktop", "pack:dir"], env);
 }
 
-function migrateDatabase(env: NodeJS.ProcessEnv) {
-  run("pnpm", ["--filter", "@atlas/db", "generate"], env);
-  run("pnpm", ["--filter", "@atlas/db", "exec", "prisma", "migrate", "deploy"], env);
-}
-
-function run(command: string, args: string[], env: NodeJS.ProcessEnv) {
-  execFileSync(command, args, { cwd: root, env, stdio: "inherit" });
-}
-
-function startPreview(env: NodeJS.ProcessEnv) {
-  return spawn(
-    "pnpm",
-    [
-      "--filter",
-      "@atlas/web",
-      "exec",
-      "vite",
-      "preview",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(webPort),
-      "--strictPort",
-    ],
-    { cwd: root, env, stdio: "inherit" },
-  );
-}
-
 async function packagedExecutable() {
   const out = path.join(desktopRoot, "out");
-  const candidates = process.platform === "darwin" ? await findNamed(out, "Atlas.app") : [];
+  const candidates = process.platform === "darwin" ? await findNamed(out, "Rakazo.app") : [];
   if (process.platform === "darwin" && candidates[0]) {
-    return path.join(candidates[0], "Contents/MacOS/Atlas");
+    return path.join(candidates[0], "Contents/MacOS/Rakazo");
   }
   const desktopRequire = createRequire(path.join(desktopRoot, "package.json"));
   return desktopRequire("electron") as string;
@@ -254,7 +216,7 @@ async function prepareAuthenticatedProfile(benchmark: BenchmarkContext, profile:
     const stamp = Date.now();
     await page.goto(`${webOrigin}/sign-up`);
     await page.getByPlaceholder("Your name").fill("Benchmark User");
-    await page.getByPlaceholder("Your email address").fill(`benchmark-${stamp}@atlas.test`);
+    await page.getByPlaceholder("Your email address").fill(`benchmark-${stamp}@rakazo.test`);
     await page.getByPlaceholder("Password").fill("password12");
     await page.getByRole("button", { name: "Create account" }).click();
     await page
@@ -345,8 +307,8 @@ async function launchDesktop(
     executablePath: benchmark.executablePath,
     env: {
       ...benchmark.env,
-      ATLAS_PERFORMANCE_USER_DATA: profile,
-      ATLAS_PERFORMANCE_CLEAR_CACHE: clearCache ? "1" : "0",
+      RAKAZO_PERFORMANCE_USER_DATA: profile,
+      RAKAZO_PERFORMANCE_CLEAR_CACHE: clearCache ? "1" : "0",
     },
   });
   const page = await app.firstWindow();
@@ -511,7 +473,7 @@ async function measureInteractions(app: ElectronApplication, page: Page) {
     const target = document.querySelector<HTMLInputElement>('input[placeholder^="Message "]');
     if (!target) throw new Error("Composer is missing");
     const samples: number[] = [];
-    (window as typeof window & { __atlasKeyPaintSamples?: number[] }).__atlasKeyPaintSamples =
+    (window as typeof window & { __rakazoKeyPaintSamples?: number[] }).__rakazoKeyPaintSamples =
       samples;
     target.addEventListener("keydown", () => {
       const started = performance.now();
@@ -521,13 +483,13 @@ async function measureInteractions(app: ElectronApplication, page: Page) {
   await page.keyboard.type("a".repeat(characterCount), { delay: 16 });
   await page.waitForFunction(
     (count) =>
-      ((window as typeof window & { __atlasKeyPaintSamples?: number[] }).__atlasKeyPaintSamples
+      ((window as typeof window & { __rakazoKeyPaintSamples?: number[] }).__rakazoKeyPaintSamples
         ?.length ?? 0) >= count,
     characterCount,
   );
   const keyPaintMs = await page.evaluate(
     () =>
-      (window as typeof window & { __atlasKeyPaintSamples?: number[] }).__atlasKeyPaintSamples ??
+      (window as typeof window & { __rakazoKeyPaintSamples?: number[] }).__rakazoKeyPaintSamples ??
       [],
   );
   const typingAfter = await cdpMetrics(session);
@@ -649,13 +611,6 @@ async function waitForWindowVisible(app: ElectronApplication) {
   throw new Error("Desktop window did not become visible");
 }
 
-async function cdpMetrics(session: CDPSession) {
-  const response = (await session.send("Performance.getMetrics")) as {
-    metrics: Array<{ name: string; value: number }>;
-  };
-  return Object.fromEntries(response.metrics.map((metric) => [metric.name, metric.value]));
-}
-
 function metricDelta(before: Record<string, number>, after: Record<string, number>) {
   return Object.fromEntries(
     ["LayoutCount", "LayoutDuration", "RecalcStyleCount", "RecalcStyleDuration", "TaskDuration"]
@@ -744,7 +699,7 @@ function environmentFingerprint(versions: { electron?: string; chrome?: string }
 
 async function measureBundles() {
   const web = await directorySize(path.join(webRoot, "dist"));
-  const applications = await findNamed(path.join(desktopRoot, "out"), "Atlas.app");
+  const applications = await findNamed(path.join(desktopRoot, "out"), "Rakazo.app");
   const desktop = applications[0] ? await directorySize(applications[0]) : null;
   return { web, desktop };
 }
@@ -795,20 +750,9 @@ function summarizeReport(
   };
 }
 
-function roundedSummary(values: number[]): NumericSummary {
-  const summary = summarize(values);
-  return {
-    count: summary.count,
-    min: roundMetric(summary.min),
-    median: roundMetric(summary.median),
-    p95: roundMetric(summary.p95),
-    max: roundMetric(summary.max),
-  };
-}
-
 function renderMarkdown(report: PerformanceReport) {
   const summary = report.summary;
-  return `# Atlas desktop performance — ${report.label}
+  return `# Rakazo desktop performance — ${report.label}
 
 - Commit: \`${report.environment.gitSha.slice(0, 12)}\`
 - Platform: ${report.environment.platform}/${report.environment.arch}
@@ -835,58 +779,9 @@ function bytesToMib(value: number) {
   return roundMetric(value / 1024 / 1024);
 }
 
-async function waitForUrl(url: string) {
-  const started = Date.now();
-  let detail = "no response";
-  while (Date.now() - started < 30_000) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) return;
-      detail = `HTTP ${response.status}`;
-    } catch (error) {
-      detail = error instanceof Error ? error.message : String(error);
-    }
-    await abortableDelay(200);
-  }
-  throw new Error(`Timed out waiting for ${url}: ${detail}`);
-}
-
-async function stopProcess(child: ChildProcess) {
-  if (child.exitCode !== null) return;
-  const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
-  child.kill("SIGTERM");
-  await Promise.race([exited, abortableDelay(5_000)]);
-  if (child.exitCode === null) {
-    child.kill("SIGKILL");
-    await exited;
-  }
-}
-
-function output(command: string, args: string[]) {
-  return execFileSync(command, args, { cwd: root, encoding: "utf8" }).trim();
-}
-
-function argument(name: string) {
-  const inline = process.argv.find((arg) => arg.startsWith(`${name}=`));
-  if (inline) return inline.slice(name.length + 1);
-  const index = process.argv.indexOf(name);
-  return index >= 0 ? process.argv[index + 1] : undefined;
-}
-
-function positiveInteger(value: string) {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 1)
-    throw new Error(`Expected a positive integer: ${value}`);
-  return parsed;
-}
-
 function nonnegativeInteger(value: string) {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0)
     throw new Error(`Expected a non-negative integer: ${value}`);
   return parsed;
-}
-
-function safeName(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
 }

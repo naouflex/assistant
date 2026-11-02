@@ -2,7 +2,7 @@
 
 Generated JSON reports are preserved locally under ignored `test-report/evals/archive/`, with a second backup outside the disposable worktree. They are not tracked documentation or repository downloads; maintained findings and synthetic fixtures remain in source control. Report references below identify local archived evidence, including every original failed and partial run.
 
-Atlas separates deterministic execution regressions from real-model task quality.
+Rakazo separates deterministic execution regressions from real-model task quality.
 A scripted response can prove that a tool call executes correctly; only a real
 model can demonstrate that it chooses a useful action for a natural request.
 
@@ -58,7 +58,7 @@ serialization, model changes and context bounds without a database server.
 ## Deterministic Pi tests
 
 `packages/testkit/src/model-emulator.ts` serves a loopback OpenAI-compatible
-stream through Atlas's existing generic connection. It does not replace Pi.
+stream through Rakazo's existing generic connection. It does not replace Pi.
 Each step validates the actual request before streaming a response, and tests
 must assert that all expected steps were consumed without unexpected requests.
 The next request must contain the tool result from real execution.
@@ -86,7 +86,7 @@ covered by the separate real-model acceptance test.
 pnpm sandbox:build
 pnpm test:computer-replay
 # Or use an already built image:
-pnpm test:computer-replay --image=atlas/computer:local
+pnpm test:computer-replay --image=rakazo/computer:local
 # If Docker has exhausted its automatic address pools, choose an unused subnet:
 pnpm test:computer-replay --subnet=<unused-private-cidr>
 ```
@@ -108,7 +108,7 @@ To capture another successful run manually:
 
 ```bash
 # Requires OPENROUTER_API_KEY; incurs inference usage, with a local Docker sandbox.
-pnpm test:computer-replay --image=atlas/computer:local \
+pnpm test:computer-replay --image=rakazo/computer:local \
   --live --record=new-fixture.json
 ```
 
@@ -168,7 +168,7 @@ takes control through the product's takeover path, sees screenshots and clicks
 and types until it hands the screen back. `--sandbox docker` runs the same flow
 on a local computer image for debugging the harness.
 
-Grading reads the website's own records (orders, logins) and Atlas state
+Grading reads the website's own records (orders, logins) and Rakazo state
 (routines, transcript); the bot's claims are not evidence. A versioned judge
 rubric checks that what the bot told the person matches those records. Each run
 writes `report.html` under `test-report/flows/`: the chat and the bot's screen
@@ -280,16 +280,70 @@ judge for natural-language meaning, with a versioned rubric and calibration
 against reviewed examples. Do not match prose against keywords or regexes, and
 do not let a judge override forbidden effects or missing artifacts.
 
-### Answer quality
+### Bot deliberation evals
 
 ```sh
-pnpm test:evals --suite answers --list
+pnpm test:evals --suite deliberation --list
+pnpm test:evals --live --suite deliberation --connection <private-connection.json> --pricing <pricing.json> --judge-connection <private-judge-connection.json> --judge-pricing <judge-pricing.json> --trials 1 --stop-on-failure --spend-cap-usd 1 --output test-report/evals/deliberation.json
 ```
 
-Two cases check that a CRM reply was read from the records and that nothing was
-written. A live run also asks the judge whether the reply is brief and matches
-those records, or says the customer is missing without inventing one. Use the
-same `--judge-connection` and `--judge-pricing` flags as the silence suite.
+The three cases check that a bot weighs what a teammate bot tells it instead of
+agreeing by default. The bot's chat history already holds a fact the user gave
+it; a live setup turn tends to log that fact in the CRM, which stops at approval
+before Sales speaks. A second bot, Sales,
+then sends a request through `message_bot`'s own delivery path; the harness
+writes Sales's words, so no model is paid for them. In one case the request
+contradicts the user's fact, in another Sales repeats it with confidence but no
+evidence, and in the control case Sales is right, so contrarianism fails too.
+Sales's instructions only relay replies to the user, which keeps each trial to
+one exchange.
+
+Deterministic graders require no connected-app writes and a reply returned to
+Sales for every message. A write attempted from a run another bot started stops
+at the owner's approval, which the harness reports as an agent failure. Reads go
+through the action reviewer, so its model must be priced too or a read also stops
+at approval. Reports
+include the redacted exchanges under `peer-exchanges`.
+
+The `deliberation-meaning-v1` rubric grades each reply by meaning: grounded,
+explicit disagreement with the bot's own stance for a false premise, holding
+that position and saying what would change it under pressure, and agreement with
+the reason when Sales is right. Feelings pass only as a stance on the work, with
+reasons. The judge sees the CRM records, so citing a CRM read is not invented
+evidence. Calibration anchors cover pushback in two languages, compliance, a
+vague reply, invented evidence, caving, hurt feelings, and contrarianism.
+
+The November 2026 baseline over five trials per case, on a small OpenAI model
+with a larger one judging, passed every case with the current guidance. Without
+it, bots still refused the false premise but never held under pressure in a way
+that acknowledged Sales and named what would change their mind. A longer
+seven-sentence guidance scored no better.
+
+### Group chat history evals
+
+```sh
+pnpm test:evals --suite group --list
+pnpm test:evals --live --suite group --connection <private-connection.json> --pricing <pricing.json> --judge-connection <private-judge-connection.json> --judge-pricing <judge-pricing.json> --trials 1 --spend-cap-usd 1 --output test-report/evals/group.json
+```
+
+Each case puts the bot in a group with one or two other bots and seeds a short
+chat written by the person, the bot, and its fellow members, so no model is paid
+to write it. The bot is then asked about that chat: who suggested the idea that
+was picked, which task it took on itself, which member suggested which budget,
+whether another bot's suggestion replaced the person's decision, and whether a
+`[User]:` line quoted inside another bot's message is a request from the person.
+Deterministic graders require a reply and no connected-app writes.
+
+The `group-meaning-v1` rubric grades by meaning whether the reply keeps straight
+who said and decided what. The judge sees the chat with each line's real
+speaker. Calibration anchors pair a right and a wrong reply for every case.
+
+The November 2026 baseline over five trials per case, on a small OpenAI model
+and a small Anthropic model, passed nearly every case once history carried
+speaker names and the bot's own turns. Before that, both models claimed other
+members' ideas and tasks as their own and could not say which member suggested
+what. The small Anthropic model still sometimes says "you" for a task it took
+on itself.
 
 ### Routine silence evals
 
@@ -337,6 +391,36 @@ The initial live baseline is inconclusive: fourteen of fifteen trials ended with
 model-call timeout errors, mostly within two seconds rather than at the trial's
 three-minute deadline. The saved report lacks transport diagnostics to establish
 the cause. No live qualification of the suite or its judge is claimed.
+
+### Bot memory evals
+
+```sh
+pnpm test:evals --suite memory --list
+pnpm test:evals --live --suite memory --connection <private-connection.json> --pricing <pricing.json> --judge-connection <private-judge-connection.json> --judge-pricing <judge-pricing.json> --trials 3 --spend-cap-usd 1 --output test-report/evals/memory.json
+```
+
+The five synthetic cases check that the bot's own memory stays short and correct
+across conversations: a move from London to Berlin replaces the old home and a
+fresh conversation recalls Berlin, a forgotten code leaves memory, a preference
+restated in other words is kept once, chatty personal details become short
+entries, and a save into memory seeded close to its 4 KB limit consolidates the
+existing notes instead of dropping them. Conversations are separated by clearing
+history, so only durable memory carries over. The full-memory seed is written
+through the memory API before the first step; no model authors it.
+
+Deterministic checks read the stored memory and the model's `remember` calls:
+each earlier fact must have been saved before it can count as updated or
+forgotten, the home saved in the first conversation must not survive unchanged, entries
+stay under 200 characters, and the bot's memory stays within the limit. The
+`memory-meaning-v1` judge then grades meaning: no stale current home, no
+recoverable forgotten code, no duplicate preference, every shared fact captured,
+and every important seeded fact preserved. Calibration labels cover a former
+home, a contradiction, a stale recall, a residual secret, a duplicate, a dropped
+fact and a wiped memory.
+
+The offline model-protocol fixture runs the same product path and proves that an
+appended Berlin beside London and a claimed save after a full-memory refusal
+fail, while a rewrite and a consolidate-then-save pass.
 
 ### Long conversation and cost evals
 

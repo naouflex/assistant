@@ -1,10 +1,14 @@
 import { MEMORY_REVISION_CONFLICT_ERROR } from "@atlas/adapter-kit";
-import { HistoryReadInputSchema, HistorySearchInputSchema } from "@atlas/contracts";
+import {
+  HistoryReadInputSchema,
+  HistorySearchInputSchema,
+  MEMORY_INDEX_PATH,
+} from "@atlas/contracts";
 import { readHistory, searchHistory } from "@atlas/db";
 import { sharedMemorySaveError } from "./builtin-tools.js";
 import { redactConnectorPayload } from "./connector-safety.js";
 import { MAX_RECALLED_MEMORIES } from "./history-compaction.js";
-import { appendMemoryFact } from "./memory-tools.js";
+import { editMemory } from "./memory-tools.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolCall, ToolHandlers } from "./run-tool-gate.js";
 
@@ -63,13 +67,19 @@ export const memoryTools: ToolHandlers = {
   async remember(ctx, call) {
     const { deps, runId, bot, thread, context } = ctx;
     const { args } = call;
-    const path = String(args.path ?? "").trim() || "MEMORY.md";
-    // A fact is added to the document, never replaces it. A concurrent save
-    // changes the revision, so re-read and append again.
+    // One document per bot keeps the size cap meaningful.
+    const path = MEMORY_INDEX_PATH;
+    // A concurrent save changes the revision, so re-read and apply the edit again.
     for (let attempt = 1; ; attempt += 1) {
       const snapshot = await deps.memory.read({ scope: "bot", botId: bot.id, path }, context);
       const existing = snapshot.documents[0];
-      const content = appendMemoryFact(existing?.content ?? "", String(args.content ?? ""));
+      const edit = editMemory(
+        existing?.content ?? "",
+        String(args.content ?? ""),
+        String(args.old_text ?? ""),
+      );
+      if ("error" in edit) return call.finish(edit);
+      const { content } = edit;
       if (content === (existing?.content ?? "")) return call.finish({ ok: true });
       try {
         await deps.memory.commit(
@@ -91,66 +101,34 @@ export const memoryTools: ToolHandlers = {
       }
     }
   },
-  async read_memory(ctx, call) {
-    const { deps, bot, context } = ctx;
-    const { args } = call;
-    const path = String(args.path ?? "").trim();
-    if (!path) return call.finish({ error: "path is required" });
-    const scope = args.scope === "user" ? "user" : "bot";
-    const snapshot = await deps.memory.read(
-      { scope, path, ...(scope === "bot" ? { botId: bot.id } : {}) },
-      context,
-    );
-    const document = snapshot.documents[0];
-    if (!document) return call.finish({ error: "No note at that path." });
-    return call.finish({
-      path: document.path,
-      scope,
-      revision: document.revision,
-      content: document.content,
-    });
-  },
   async save_shared_memory(ctx, call) {
-    const { deps, runId, context } = ctx;
+    const { deps, runId, thread, context } = ctx;
     const { args } = call;
     const invalid = sharedMemorySaveError(args);
     if (invalid) return call.finish({ error: invalid });
     const path = String(args.path ?? "").trim();
-    const content = String(args.content ?? "");
-    // The current note stays. The person accepts the full replacement later, and
-    // that accept uses the revision recorded here so a newer edit is not overwritten.
+    // The save replaces the whole document. Pass the revision just read so a
+    // concurrent edit is rejected instead of overwritten.
     const snapshot = await deps.memory.read({ scope: "user", path }, context);
-    const existing = snapshot.documents[0];
-    if ((existing?.content ?? "") === content) {
-      return call.finish({ ok: true, pending: true, path });
+    const expectedRevision = snapshot.documents[0]?.revision ?? 0;
+    try {
+      const saved = await deps.memory.commit(
+        {
+          scope: "user",
+          path,
+          content: String(args.content ?? ""),
+          expectedRevision,
+          sourceRunId: runId,
+          sourceThreadId: thread.id,
+        },
+        context,
+      );
+      return call.finish({ ok: true, path: saved.path, revision: saved.revision });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not save shared memory.";
+      if (message === MEMORY_REVISION_CONFLICT_ERROR) return call.finish({ error: message });
+      throw error;
     }
-    const duplicate = await deps.prisma.memoryProposal.findFirst({
-      where: {
-        spaceId: context.spaceId,
-        userId: context.userId,
-        scope: "user",
-        botId: null,
-        path,
-        content,
-        status: "pending",
-      },
-    });
-    if (duplicate) return call.finish({ ok: true, pending: true, path });
-    await deps.prisma.memoryProposal.create({
-      data: {
-        spaceId: context.spaceId,
-        userId: context.userId,
-        scope: "user",
-        path,
-        content,
-        baseRevision: existing?.revision ?? 0,
-        reason: "Proposed during a run.",
-        evidence: { runIds: [runId], count: 1 },
-        source: "bot",
-        status: "pending",
-      },
-    });
-    return call.finish({ ok: true, pending: true, path });
   },
   async recall_memory(ctx, call) {
     const { bot, thread, context } = ctx;

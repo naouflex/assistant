@@ -1,5 +1,5 @@
 import type { TransactionalEmailProvider } from "@atlas/adapter-kit";
-import { referralEmail } from "@atlas/auth";
+import { emailLocale, referralEmail } from "@atlas/auth";
 import { ActorSchema } from "@atlas/contracts";
 import type { PrismaClient } from "@atlas/db";
 import { unsubscribeUrl } from "./marketing-email.js";
@@ -27,7 +27,13 @@ export function sendReferralEmails(deps: {
         members: { some: { role: { contains: "owner" } } },
         emailSends: { none: { kind: KIND } },
       },
-      select: { id: true, email: true, name: true, members: { select: { role: true } } },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        locale: true,
+        members: { select: { role: true } },
+      },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: 100,
     });
@@ -43,6 +49,7 @@ export function sendReferralEmails(deps: {
           user,
           deps.appUrl,
           unsubscribeUrl(deps.origin, deps.secret, user.id),
+          emailLocale(user.locale),
         );
         // Claim before sending: concurrent instances race on (userId, kind), and an
         // uncertain delivery is never retried.

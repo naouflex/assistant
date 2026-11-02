@@ -23,7 +23,7 @@ export interface DesktopUpdateState {
   checkedAt: string | null;
 }
 
-export interface AtlasDesktopUpdate {
+export interface RakazoDesktopUpdate {
   state: () => Promise<DesktopUpdateState>;
   check: () => Promise<DesktopUpdateState>;
   download: () => Promise<DesktopUpdateState>;
@@ -31,43 +31,16 @@ export interface AtlasDesktopUpdate {
   install: () => Promise<DesktopUpdateState>;
 }
 
-export interface AtlasDesktopOAuthCallback {
+export interface RakazoDesktopOAuthCallback {
   code: string;
   state?: string;
 }
 
-export interface AtlasDesktopDevice {
+export interface RakazoDesktopDevice {
   /** Null until paired. */
   deviceId: string | null;
   name: string;
   allowed: boolean;
-}
-
-/** Windows-native CUDA llama-server managed by the desktop app. */
-export type DesktopLocalModelHostPhase =
-  | "idle"
-  | "unsupported"
-  | "downloading-runtime"
-  | "installing-runtime"
-  | "downloading-model"
-  | "installing-model"
-  | "starting"
-  | "running"
-  | "failed";
-
-export interface DesktopLocalModelHostState {
-  supported: boolean;
-  phase: DesktopLocalModelHostPhase;
-  message: string | null;
-  /** 0–100 while downloading; otherwise null. */
-  progress: number | null;
-  port: number;
-  modelId: string;
-  modelLabel: string;
-  modelReady: boolean;
-  runtimeReady: boolean;
-  online: boolean;
-  baseUrl: string;
 }
 
 /**
@@ -75,12 +48,30 @@ export interface DesktopLocalModelHostState {
  * `result` carries the session's whole text so far, `error` a Web Speech error code,
  * and `end` always comes last.
  */
-export type AtlasDesktopSpeechEvent =
+export type RakazoDesktopSpeechEvent =
   | { session: number; type: "result"; text: string }
   | { session: number; type: "error"; error: string }
   | { session: number; type: "end" };
 
-export interface AtlasDesktop {
+/** App menu items the page carries out; each matches a shortcut the page also handles itself. */
+export const DESKTOP_MENU_COMMANDS = [
+  "new",
+  "command-menu",
+  "search",
+  "toggle-sidebar",
+  "back",
+  "forward",
+  "next-bot",
+  "previous-bot",
+] as const;
+
+export type DesktopMenuCommand = (typeof DESKTOP_MENU_COMMANDS)[number];
+
+export function isDesktopMenuCommand(value: unknown): value is DesktopMenuCommand {
+  return (DESKTOP_MENU_COMMANDS as readonly unknown[]).includes(value);
+}
+
+export interface RakazoDesktop {
   /** Optional for compatibility with older desktop releases. */
   badge?: {
     set: (count: number) => Promise<boolean>;
@@ -95,23 +86,22 @@ export interface AtlasDesktop {
   /** Optional for compatibility with older desktop releases. */
   device?: {
     /** Null when the app shows its own local server. */
-    state: () => Promise<AtlasDesktopDevice | null>;
+    state: () => Promise<RakazoDesktopDevice | null>;
     /** Turning it on asks with a native prompt the page cannot answer. */
-    setAllowed: (allowed: boolean) => Promise<AtlasDesktopDevice | null>;
+    setAllowed: (allowed: boolean) => Promise<RakazoDesktopDevice | null>;
   };
-  /**
-   * Windows-native local model host (CUDA llama-server). Absent on older builds and
-   * non-Windows platforms.
-   */
-  localModel?: {
-    state: () => Promise<DesktopLocalModelHostState>;
-    start: () => Promise<DesktopLocalModelHostState>;
-    stop: () => Promise<DesktopLocalModelHostState>;
-    onChange: (listener: (state: DesktopLocalModelHostState) => void) => () => void;
+  /** Absent on older desktop releases, whose menus carry no app commands. */
+  menu?: {
+    onCommand: (listener: (command: DesktopMenuCommand) => void) => () => void;
   };
   /** False for local builds, whose errors must not reach production reporting. Absent on older releases. */
   monitoring?: {
     enabled: () => Promise<boolean>;
+  };
+  /** Optional for compatibility with older desktop releases. */
+  locale?: {
+    /** The language the page shows, so the app's own menus, dialogs and setup window follow it. */
+    set: (locale: string) => Promise<void>;
   };
   /** Optional for compatibility with older desktop releases. */
   passkeys?: {
@@ -133,13 +123,10 @@ export interface AtlasDesktop {
     /** Ends the utterance: its final text and `end` still arrive. */
     stop: (session: number) => Promise<void>;
     abort: (session: number) => Promise<void>;
-    onEvent: (listener: (event: AtlasDesktopSpeechEvent) => void) => () => void;
+    onEvent: (listener: (event: RakazoDesktopSpeechEvent) => void) => () => void;
   };
   platform: string;
-  /**
-   * Windows uses a hidden title bar with a native caption overlay (no separate
-   * title strip). Absent on older frameless releases, which still need in-app controls.
-   */
+  /** Absent on older frameless releases, which still need in-app controls. */
   nativeWindowFrame?: boolean;
   window: {
     close: () => Promise<void>;
@@ -147,7 +134,7 @@ export interface AtlasDesktop {
     toggleMaximize: () => Promise<void>;
     state: () => Promise<{ minimized: boolean; maximized: boolean; fullScreen: boolean }>;
   };
-  update: AtlasDesktopUpdate;
+  update: RakazoDesktopUpdate;
   oauth: {
     /**
      * Open system-browser auth. A redirect_uri must be HTTP loopback with state;
@@ -159,12 +146,12 @@ export interface AtlasDesktop {
      * Authorization codes captured from the system browser or a legacy popup.
      * Returns an unsubscribe function.
      */
-    onCallback: (listener: (callback: AtlasDesktopOAuthCallback) => void) => () => void;
+    onCallback: (listener: (callback: RakazoDesktopOAuthCallback) => void) => () => void;
   };
 }
 
 /**
- * How the desktop app was pointed at an Atlas server during first-run setup.
+ * How the desktop app was pointed at a Rakazo server during first-run setup.
  * `new` is the Docker Compose stack this app installs and runs on the same computer.
  */
 export type DesktopInstanceMode = "new" | "existing";
@@ -178,9 +165,7 @@ export interface DesktopSetup {
 
 export interface DesktopSetupState {
   defaultLocalUrl: string;
-  /** Prefill for "Existing instance" (day-to-day local Atlas web). */
-  defaultExistingUrl?: string;
-  /** Hosted Atlas origin when configured; empty hides the Cloud choice. */
+  /** Hosted Rakazo origin, saved as an `existing` server when chosen. */
   cloudUrl: string;
   saved: DesktopSetup | null;
   /** Present when a saved or newly selected server could not be reopened. */
@@ -234,11 +219,13 @@ export type DesktopSetupLink = "docker-desktop" | "orbstack" | "docker-engine";
 
 /**
  * Bridge exposed only to the first-run setup window. The app window keeps the
- * narrower `atlasDesktop` bridge so a connected server can never re-point the app.
+ * narrower `rakazoDesktop` bridge so a connected server can never re-point the app.
  */
-export interface AtlasSetup {
+export interface RakazoSetup {
   /** Used only to reserve space for native window controls in the local setup UI. */
   platform: string;
+  /** The page's language and its translations, keyed by the English text; empty for English. */
+  locale: { lang: string; dir: "ltr" | "rtl"; messages: Readonly<Record<string, string>> };
   state: () => Promise<DesktopSetupState>;
   test: (url: string, headers?: Record<string, string>) => Promise<DesktopReachability>;
   save: (setup: DesktopSetup) => Promise<{ ok: boolean; error?: string }>;

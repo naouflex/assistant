@@ -1,5 +1,5 @@
 export type VsPoints = {
-  atlas: readonly string[];
+  rakazo: readonly string[];
   other: readonly string[];
 };
 
@@ -9,35 +9,31 @@ export type VsPoints = {
  */
 export const VS_CARDS: Record<string, VsPoints> = {
   "muse-alternative": {
-    atlas: ["You host it", "You bring the model", "Apache-2.0"],
+    rakazo: ["You host it", "You bring the model", "Apache-2.0"],
     other: ["Meta hosts it", "Muse Spark", "Muse app and WhatsApp"],
   },
   "dots-alternative": {
-    atlas: ["You host it", "Any supported model", "Apache-2.0"],
+    rakazo: ["You host it", "Any supported model", "Apache-2.0"],
     other: ["OpenAI hosts it", "Eligible ChatGPT plans", "Not open source"],
   },
-  "grok-bot-alternative": {
-    atlas: ["You host it", "You bring the model", "Apache-2.0"],
-    other: ["xAI hosts it", "Paid Cursor and SuperGrok", "No source to run"],
-  },
   "openclaw-alternative": {
-    atlas: ["Chat in the Atlas app", "Docker installer, then chat", "Apache-2.0"],
+    rakazo: ["Chat in the Rakazo app", "Docker installer, then chat", "Apache-2.0"],
     other: ["Gateway for chat apps", "CLI, onboarding, config file", "MIT"],
   },
   "hermes-alternative": {
-    atlas: ["Chat in the Atlas app", "Docker installer, then chat", "Apache-2.0"],
+    rakazo: ["Chat in the Rakazo app", "Docker installer, then chat", "Apache-2.0"],
     other: ["Desktop app and a CLI", "Config under ~/.hermes", "MIT"],
   },
   "instinct-alternative": {
-    atlas: ["You host it", "You bring the model", "Apache-2.0"],
+    rakazo: ["You host it", "You bring the model", "Apache-2.0"],
     other: ["Hosted assistant", "Text or call", "Not self-hosted"],
   },
   "claude-duet-alternative": {
-    atlas: ["You host it", "Claude or any supported model", "Apache-2.0"],
+    rakazo: ["You host it", "Claude or any supported model", "Apache-2.0"],
     other: ["Anthropic hosts it", "Claude Pro and Max, US only", "Not self-hosted"],
   },
   "hark-alternative": {
-    atlas: ["You host it", "You bring the model", "Apache-2.0"],
+    rakazo: ["You host it", "You bring the model", "Apache-2.0"],
     other: ["Hark hosts it", "Free, with paid usage tiers", "Not self-hosted"],
   },
 };

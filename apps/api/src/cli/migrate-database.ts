@@ -2,7 +2,7 @@
 // login. Everything here runs as the migration (owner) role; the API and worker
 // then connect with DATABASE_URL and only get the runtime grants.
 import { execFileSync } from "node:child_process";
-import { migrateJobQueue } from "@atlas/adapters";
+import { migrateJobQueue, unwrapEnvFromKeyManager } from "@atlas/adapters";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import {
   databaseUrls,
@@ -13,6 +13,7 @@ import {
 } from "@atlas/db";
 
 loadRootEnv();
+await unwrapEnvFromKeyManager();
 const urls = databaseUrls(process.env);
 await deployMigrations({
   migrationUrl: urls.migrationUrl,

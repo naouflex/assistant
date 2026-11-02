@@ -16,7 +16,6 @@ import { cloudflareProviderEnv } from "./cloudflare-ai-gateway.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetPrepareDeps } from "./fleet-tools.js";
-import { LOCAL_PROVIDER_ID, localCacheCapabilities } from "./local-provider-identity.js";
 import {
   HostedModelCreditsRequiredError,
   hostedModelCreditObserver,
@@ -35,6 +34,7 @@ import { modelIdSupportsImages } from "./model-vision.js";
 import { assertAllowedOpenAiCompatibleUrl } from "./openai-compatible-url.js";
 import { codexLiveModel } from "./pi-codex-catalog.js";
 import { toOAuthCredential } from "./pi-credentials.js";
+import { LOCAL_PROVIDER_ID } from "./pi-local-provider.js";
 import type { StoredModelSecret } from "./pi-oauth.js";
 import {
   CHATGPT_OAUTH_PROVIDER,
@@ -180,15 +180,7 @@ export async function resolveModelKey(...args: Parameters<typeof resolveModelKey
   }
   const callObserver =
     !credential && billingEnabled ? await hostedModelCreditObserver(deps.prisma, scope) : undefined;
-  return {
-    ...material,
-    apiKey: material.apiKey ?? runtimeKey,
-    callObserver,
-    // A local server keeps its KV cache warm between calls; declaring it keeps history append-only.
-    cacheCapabilities:
-      material.cacheCapabilities ??
-      (provider === LOCAL_PROVIDER_ID ? localCacheCapabilities() : undefined),
-  };
+  return { ...material, apiKey: material.apiKey ?? runtimeKey, callObserver };
 }
 
 async function resolveModelKeyMaterial(
@@ -388,13 +380,32 @@ async function resolveModelKeyMaterial(
   return { apiKey: deploymentKeyFor(deps, provider), redact: [] };
 }
 
-export function cloudflareRunFields(resolved: { accountId?: string; gatewayId?: string }): {
-  accountId?: string;
-  gatewayId?: string;
-} {
+/** Translate resolved credentials and capabilities consistently for every run path. */
+export function resolvedModelRunFields(
+  resolved: Awaited<ReturnType<typeof resolveModelKey>>,
+): Omit<AgentRunRequest["model"], "provider" | "id" | "connectionId" | "thinkingLevel"> {
   return {
+    apiKey: resolved.oauth ? undefined : resolved.apiKey,
+    callObserver: resolved.callObserver,
     ...(resolved.accountId ? { accountId: resolved.accountId } : {}),
     ...(resolved.gatewayId ? { gatewayId: resolved.gatewayId } : {}),
+    baseUrl: resolved.baseUrl,
+    apiProtocol: resolved.apiProtocol,
+    headers: resolved.headers,
+    allowPrivateEndpoint: resolved.allowPrivateEndpoint,
+    cacheCapabilities: resolved.cacheCapabilities,
+    contextWindow: resolved.contextWindow,
+    reasoning: resolved.reasoning,
+    maxTokens: resolved.maxTokens,
+    acceptsImages: resolved.acceptsImages,
+    maxImagesPerPrompt: resolved.maxImagesPerPrompt,
+    oauth: resolved.oauth
+      ? {
+          credential: resolved.oauth,
+          persist: resolved.persistOAuth,
+          retire: resolved.retireOAuth,
+        }
+      : undefined,
   };
 }
 
@@ -470,22 +481,7 @@ export async function resolveConnectedRunModel(
     provider,
     id: modelId,
     ...(credentialId ? { connectionId: credentialId } : {}),
-    apiKey: resolved.oauth ? undefined : resolved.apiKey,
-    callObserver: resolved.callObserver,
-    ...cloudflareRunFields(resolved),
-    baseUrl: resolved.baseUrl,
-    apiProtocol: resolved.apiProtocol,
-    headers: resolved.headers,
-    allowPrivateEndpoint: resolved.allowPrivateEndpoint,
-    cacheCapabilities:
-      resolved.cacheCapabilities ??
-      (provider === LOCAL_PROVIDER_ID ? localCacheCapabilities() : undefined),
-    contextWindow: resolved.contextWindow,
-
-    reasoning: resolved.reasoning,
-    maxTokens: resolved.maxTokens,
-    acceptsImages: resolved.acceptsImages,
-    maxImagesPerPrompt: resolved.maxImagesPerPrompt,
+    ...resolvedModelRunFields(resolved),
     thinkingLevel:
       ((thinkingLevel !== undefined
         ? thinkingLevel
@@ -494,13 +490,6 @@ export async function resolveConnectedRunModel(
           : null) as AgentRunRequest["model"]["thinkingLevel"]) ??
       resolved.thinkingLevel ??
       null,
-    oauth: resolved.oauth
-      ? {
-          credential: resolved.oauth,
-          persist: resolved.persistOAuth,
-          retire: resolved.retireOAuth,
-        }
-      : undefined,
   };
 }
 
@@ -519,12 +508,7 @@ export async function resolveRunModel(
           userId: scope.userId,
           spaceId: scope.spaceId,
         },
-        select: {
-          modelProvider: true,
-          modelId: true,
-          thinkingLevel: true,
-          modelFastTier: true,
-        },
+        select: { modelProvider: true, modelId: true, thinkingLevel: true },
       })
     : null;
   const hasOverride = Boolean(override?.modelProvider && override.modelId);
@@ -555,7 +539,7 @@ export async function resolveRunModel(
       deployment: deps.deploymentModelConfigured ? resolveDeploymentModel() : null,
     },
   });
-  const { credential, thinkingLevel, modelFastTier } = selected;
+  const { credential, thinkingLevel } = selected;
   let { provider, id } = selected;
   if (!provider || !id) {
     const runtimeFallback = runtimeFallbackModel(deps.runtime);
@@ -575,30 +559,7 @@ export async function resolveRunModel(
   return {
     provider,
     id,
-    apiKey: resolved.oauth ? undefined : resolved.apiKey,
-    callObserver: resolved.callObserver,
-    ...cloudflareRunFields(resolved),
-    baseUrl: resolved.baseUrl,
-    apiProtocol: resolved.apiProtocol,
-    headers: resolved.headers,
-    allowPrivateEndpoint: resolved.allowPrivateEndpoint,
-    cacheCapabilities:
-      resolved.cacheCapabilities ??
-      (provider === LOCAL_PROVIDER_ID ? localCacheCapabilities() : undefined),
-    contextWindow: resolved.contextWindow,
-
-    reasoning: resolved.reasoning,
-    maxTokens: resolved.maxTokens,
-    acceptsImages: resolved.acceptsImages,
-    maxImagesPerPrompt: resolved.maxImagesPerPrompt,
+    ...resolvedModelRunFields(resolved),
     thinkingLevel: thinkingLevel ?? resolved.thinkingLevel ?? null,
-    modelFastTier: modelFastTier ?? false,
-    oauth: resolved.oauth
-      ? {
-          credential: resolved.oauth,
-          persist: resolved.persistOAuth,
-          retire: resolved.retireOAuth,
-        }
-      : undefined,
   };
 }

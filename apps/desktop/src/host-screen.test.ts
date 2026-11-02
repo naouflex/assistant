@@ -3,20 +3,17 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { deflateRawSync } from "node:zlib";
-import { HostScreenError, hostScreenSupported } from "@atlas/adapters/host-screen";
+import { HostScreenError } from "@atlas/adapters/host-screen";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ScreenDriverRelease, ScreenPermissionApi } from "./host-screen.js";
 import {
   createDesktopHostScreen,
   ensureScreenPermissions,
   SCREEN_DRIVER_DOWNLOAD_MESSAGE,
-  SCREEN_DRIVER_START_MESSAGE,
+  SCREEN_DRIVER_RELEASES,
   SCREEN_LOCKED_MESSAGE,
   SCREEN_PERMISSION_MESSAGE,
   screenDriverInstaller,
-  screenDriverRelease,
-  screenDriverReleases,
 } from "./host-screen.js";
 
 const scope = { botId: "bot-1", signal: new AbortController().signal };
@@ -58,20 +55,29 @@ describe("desktop screen", () => {
     locked: () => false,
   };
 
-  it("exists on the desktops that have a pinned driver", () => {
+  it("exists on macOS and Windows", () => {
     const api = permissions(true, []);
-    for (const platform of ["darwin", "win32", "linux"] as const) {
-      expect(hostScreenSupported(platform)).toBe(true);
+    for (const platform of ["darwin", "win32"] as const)
       expect(createDesktopHostScreen({ ...options, permissions: api, platform })).toBeDefined();
-      expect(screenDriverRelease(platform, "x64")?.url).toMatch(
-        /^https:\/\/github\.com\/trycua\/cua\/releases\/download\/cua-driver-rs-v[\d.]+\/cua-driver-rs-[\d.]+-/,
-      );
-    }
-    expect(screenDriverRelease("win32", "ia32")).toBeUndefined();
     expect(
-      createDesktopHostScreen({ ...options, permissions: api, platform: "aix" }),
+      createDesktopHostScreen({ ...options, permissions: api, platform: "linux" }),
     ).toBeUndefined();
-    expect(hostScreenSupported("android")).toBe(false);
+  });
+
+  it("asks Windows for no permission and fetches the driver on first use", async () => {
+    const api = permissions(false, []);
+    const driver = vi.fn(async () => {
+      throw new HostScreenError(SCREEN_DRIVER_DOWNLOAD_MESSAGE);
+    });
+    const screen = createDesktopHostScreen({
+      ...options,
+      driver,
+      permissions: api,
+      platform: "win32",
+    })!;
+    expect(driver).not.toHaveBeenCalled();
+    await expect(screen.observe(scope, "notepad")).rejects.toThrow(SCREEN_DRIVER_DOWNLOAD_MESSAGE);
+    expect(api.isTrustedAccessibilityClient).not.toHaveBeenCalled();
   });
 
   it("says the screen is locked before starting anything", async () => {
@@ -114,23 +120,6 @@ describe("desktop screen", () => {
       SCREEN_DRIVER_DOWNLOAD_MESSAGE,
     );
   });
-
-  it("starts the driver on Windows without the Mac permission prompts", async () => {
-    const api = permissions(false, ["denied"]);
-    const driver = vi.fn(async () => {
-      throw new Error("spawn ENOENT");
-    });
-    const screen = createDesktopHostScreen({
-      ...options,
-      driver,
-      platform: "win32",
-      permissions: api,
-    })!;
-    await expect(screen.observe(scope, "Notepad")).rejects.toThrow(SCREEN_DRIVER_START_MESSAGE);
-    expect(api.isTrustedAccessibilityClient).not.toHaveBeenCalled();
-    expect(api.requestScreenCapture).not.toHaveBeenCalled();
-    expect(driver).toHaveBeenCalledOnce();
-  });
 });
 
 describe("screen driver download", () => {
@@ -138,7 +127,7 @@ describe("screen driver download", () => {
   let archive: Buffer;
   let release: ScreenDriverRelease;
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), "atlas-screen-driver-"));
+    dir = await mkdtemp(path.join(tmpdir(), "rakazo-screen-driver-"));
     const source = path.join(dir, "source");
     await mkdir(source);
     await writeFile(path.join(source, "cua-driver"), "#!/bin/sh\n", { mode: 0o755 });
@@ -155,8 +144,8 @@ describe("screen driver download", () => {
     release = {
       url: "https://example.test/driver.tar.gz",
       sha256: createHash("sha256").update(archive).digest("hex"),
+      driver: "cua-driver",
       driverSha256: createHash("sha256").update("#!/bin/sh\n").digest("hex"),
-      executable: "cua-driver",
     };
   });
   afterEach(async () => {
@@ -205,50 +194,17 @@ describe("screen driver download", () => {
     await expect(install()).resolves.toBe(path.join(bin, release.driverSha256, "cua-driver"));
   });
 
-  it("extracts the pinned executable from a zip", async () => {
-    const body = Buffer.from("MZ-fake-driver");
-    const name = "cua-driver.exe";
-    const compressed = deflateRawSync(body);
-    const nameBytes = Buffer.from(name);
-    const header = Buffer.alloc(30);
-    header.writeUInt32LE(0x04034b50, 0);
-    header.writeUInt16LE(20, 4);
-    header.writeUInt16LE(8, 8);
-    header.writeUInt32LE(compressed.length, 18);
-    header.writeUInt32LE(body.length, 22);
-    header.writeUInt16LE(nameBytes.length, 26);
-    const zip = Buffer.concat([header, nameBytes, compressed]);
-    const zipRelease: ScreenDriverRelease = {
-      url: "https://example.test/driver.zip",
-      sha256: createHash("sha256").update(zip).digest("hex"),
-      driverSha256: createHash("sha256").update(body).digest("hex"),
-      executable: name,
-    };
-    const bin = path.join(dir, "zip-bin");
-    const install = screenDriverInstaller({ dir: bin, fetch: serve(zip), release: zipRelease });
-    const command = await install();
-    expect(command).toBe(path.join(bin, zipRelease.driverSha256, name));
-    expect(await readFile(command)).toEqual(body);
-  });
-
-  it("pins one checksummed release per desktop from the driver's publisher", () => {
-    const releases = screenDriverReleases();
-    expect(releases.map((release) => release.executable).sort()).toEqual([
-      "cua-driver",
-      "cua-driver",
-      "cua-driver",
-      "cua-driver.exe",
-      "cua-driver.exe",
-    ]);
-    for (const release of releases) {
-      expect(release.url).toMatch(
-        /^https:\/\/github\.com\/trycua\/cua\/releases\/download\/cua-driver-rs-v[\d.]+\/cua-driver-rs-[\d.]+-(darwin-universal-binary\.tar\.gz|linux-(x86_64|arm64)-binary\.tar\.gz|windows-(x86_64|arm64)-binary\.zip)$/,
-      );
+  it("pins one checksummed release per platform from each driver's publisher", () => {
+    const { darwin, win32 } = SCREEN_DRIVER_RELEASES;
+    expect(darwin.url).toMatch(
+      /^https:\/\/github\.com\/trycua\/cua\/releases\/download\/cua-driver-rs-v[\d.]+\/cua-driver-rs-[\d.]+-darwin-universal-binary\.tar\.gz$/,
+    );
+    expect(win32.url).toMatch(
+      /^https:\/\/github\.com\/vercel-labs\/agent-desktop\/releases\/download\/v([\d.]+)\/agent-desktop-v\1-x86_64-pc-windows-msvc\.tar\.gz$/,
+    );
+    for (const release of [darwin, win32]) {
       expect(release.sha256).toMatch(/^[a-f0-9]{64}$/);
       expect(release.driverSha256).toMatch(/^[a-f0-9]{64}$/);
-      expect(release.executable === "cua-driver" || release.executable === "cua-driver.exe").toBe(
-        true,
-      );
     }
   });
 });

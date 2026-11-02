@@ -3,11 +3,13 @@ import {
   contentKeyProviderFromEnv,
   createAgentHomeStore,
   ObjectAgentHomeStore,
+  unwrapEnvFromKeyManager,
 } from "@atlas/adapters";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import { createDb } from "@atlas/db";
 
 loadRootEnv();
+await unwrapEnvFromKeyManager();
 
 const USAGE = `Usage: home-storage migrate [--dry-run]
   migrate   Upload homes that exist only under DATA_DIR/homes to object storage and verify
@@ -36,7 +38,7 @@ if (!parsed) {
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
 const { prisma, pool } = createDb(process.env.DATABASE_URL, {
-  applicationName: "atlas-home-storage",
+  applicationName: "rakazo-home-storage",
   keyProvider: contentKeyProviderFromEnv(),
 });
 const write = (line: string) => process.stdout.write(`${line}\n`);

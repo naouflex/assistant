@@ -54,6 +54,24 @@ export const TimeZoneSchema = z
   .min(1)
   .max(64)
   .refine(isValidTimeZone, { message: "Unknown timezone" });
+
+/** An app language code, such as "es", "pt-BR" or "zh-TW". */
+export const AppLocaleSchema = z.enum([
+  "en",
+  "de",
+  "ko",
+  "tr",
+  "hi",
+  "pt-BR",
+  "zh-CN",
+  "zh-TW",
+  "es",
+  "ru",
+  "fr",
+  "he",
+  "nl",
+  "ja",
+]);
 export type AvatarStyle = z.infer<typeof AvatarStyleSchema>;
 
 export { AGENT_SECRET_NAME_PATTERN };
@@ -109,11 +127,10 @@ export const BotSchema = z.object({
   modelProvider: z.string().nullable(),
   modelId: z.string().nullable(),
   thinkingLevel: ThinkingLevelSchema.nullable(),
-  modelFastTier: z.boolean().default(false),
   teamChatAmbientEnabled: z.boolean(),
   teamChatRules: z.string(),
   crossSpaceCommunication: z.boolean().optional(),
-  fleetManagement: z.boolean().default(false),
+  fleetManagement: z.boolean().default(true),
   disabledBuiltinTools: z.array(z.string()).default([]),
   webhookConfigured: z.boolean(),
   /** Present when created with an idempotency key (e.g. onboarding:first). */
@@ -404,7 +421,6 @@ export const UpdateBotInput = z
     modelProvider: z.string().trim().min(1).max(80).nullable().optional(),
     modelId: z.string().trim().min(1).max(200).nullable().optional(),
     thinkingLevel: ThinkingLevelSchema.nullable().optional(),
-    modelFastTier: z.boolean().optional(),
     teamChatAmbientEnabled: z.boolean().optional(),
     teamChatRules: z.string().max(TEAM_CHAT_RULES_MAX_LENGTH).optional(),
     crossSpaceCommunication: z.boolean().optional(),
@@ -729,32 +745,29 @@ export const MemoryDocumentSchema = z.object({
 });
 export type MemoryDocument = z.infer<typeof MemoryDocumentSchema>;
 
-export const MemoryProposalSchema = z.object({
-  id: Id,
+/** Which of a bot's memory documents reach the prompt, and what did not fit. */
+export const MemoryPromptDocumentUseSchema = z.object({
   scope: MemoryScope,
-  botId: Id.nullable(),
   path: z.string(),
-  content: z.string(),
-  baseRevision: z.number().int(),
-  reason: z.string(),
-  source: z.enum(["dream", "bot"]),
-  status: z.enum(["pending", "accepted", "rejected"]),
-  createdAt: z.string(),
+  revision: z.number().int(),
+  totalBytes: z.number().int().nonnegative(),
+  includedBytes: z.number().int().nonnegative(),
+  truncated: z.boolean(),
 });
-export type MemoryProposal = z.infer<typeof MemoryProposalSchema>;
+export type MemoryPromptDocumentUse = z.infer<typeof MemoryPromptDocumentUseSchema>;
 
-export const MemoryDreamSchema = z.object({
-  id: Id,
-  scope: MemoryScope,
-  botId: Id.nullable(),
-  status: z.enum(["queued", "running", "ready", "failed"]),
-  error: z.string().nullable(),
-  createdAt: z.string(),
+export const MemoryPromptBudgetSchema = z.object({
+  limitBytes: z.number().int().positive(),
+  usedBytes: z.number().int().nonnegative(),
+  documents: z.array(MemoryPromptDocumentUseSchema),
+  omitted: z.array(MemoryPromptDocumentUseSchema),
 });
-export type MemoryDream = z.infer<typeof MemoryDreamSchema>;
+export type MemoryPromptBudget = z.infer<typeof MemoryPromptBudgetSchema>;
 
 /** Every bot and Space keeps its MEMORY.md index; other memory documents can be deleted. */
 export const MEMORY_INDEX_PATH = "MEMORY.md";
+/** What a bot may write to its memory. People can still write more by hand. */
+export const BOT_MEMORY_MAX_BYTES = 4 * 1024;
 export function isDeletableMemoryDocument(path: string): boolean {
   return path !== MEMORY_INDEX_PATH;
 }
@@ -788,12 +801,6 @@ export const ActionApprovalRuleSchema = z.object({
   createdAt: z.string(),
 });
 export type ActionApprovalRule = z.infer<typeof ActionApprovalRuleSchema>;
-
-export const ApprovalRulePreviewSchema = z.object({
-  before: z.enum(["always_allow", "require_approval", "deny", "default"]),
-  after: z.enum(["always_allow", "require_approval", "deny", "default"]),
-});
-export type ApprovalRulePreview = z.infer<typeof ApprovalRulePreviewSchema>;
 
 /** How much a space asks before acting; see VISION.md. */
 export const ApprovalModeSchema = z.enum(["never", "auto", "ask"]);
@@ -901,14 +908,25 @@ export const PluginMarketplaceCatalogSchema = z.object({
 export type PluginMarketplaceCatalog = z.infer<typeof PluginMarketplaceCatalogSchema>;
 
 export const PLUGIN_SUBMISSIONS_PATH = "/api/v1/plugin-submissions";
+/** Approved claims, public so the marketing site can show each owner's page at build time. */
+export const INTEGRATION_CLAIMS_PATH = "/api/v1/integration-claims";
+/** Opened from the email that proves a claimant reads mail at the app's domain. */
+export const INTEGRATION_CLAIM_CONFIRM_PATH = "/api/v1/integration-claims/confirm";
 export const SUBMIT_PLUGIN_URL = `${ATLAS_PUBLIC_ORIGIN}/plugins/submit/`;
+export const integrationPageUrl = (slug: string) => `https://rakazo.com/integrations/${slug}/`;
 
+/** People type a bare domain like `acme.com`, so a URL without a scheme gets `https://`. */
 const HttpsUrlSchema = z
   .string()
   .trim()
-  .max(2048)
-  .url()
-  .refine((value) => value.startsWith("https://"), "Use an https:// URL");
+  .transform((value) => (/^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`))
+  .pipe(
+    z
+      .string()
+      .max(2048)
+      .url()
+      .refine((value) => value.startsWith("https://"), "Use an https:// URL"),
+  );
 
 export const PluginSubmissionInputSchema = z.object({
   email: z.string().trim().max(254).email(),
@@ -922,12 +940,38 @@ export const PluginSubmissionInputSchema = z.object({
 });
 export type PluginSubmissionInput = z.infer<typeof PluginSubmissionInputSchema>;
 
+/** An app's owner claiming its integration page so it links to their site. */
+export const IntegrationClaimInputSchema = z.object({
+  /** The page's URL slug, as in `integrationPageUrl`. */
+  claim: z
+    .string()
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, "Use the page's URL slug"),
+  email: z.string().trim().max(254).email(),
+  name: z.string().trim().min(1).max(80),
+  website: HttpsUrlSchema,
+});
+export type IntegrationClaimInput = z.infer<typeof IntegrationClaimInputSchema>;
+
+export const IntegrationClaimSchema = z.object({
+  slug: z.string(),
+  website: z.string(),
+});
+export type IntegrationClaim = z.infer<typeof IntegrationClaimSchema>;
+
 export const PluginSubmissionStatusSchema = z.enum(["pending", "approved", "rejected"]);
 export type PluginSubmissionStatus = z.infer<typeof PluginSubmissionStatusSchema>;
 
 export const PluginSubmissionSchema = PluginSubmissionInputSchema.omit({ tested: true }).extend({
   id: z.string(),
   website: z.string().nullable(),
+  logo: z.string().nullable(),
+  source: z.string().nullable(),
+  testing: z.string().nullable(),
+  /** Empty for a claim, which only links the page. */
+  description: z.string(),
+  /** The integration page URL slug a claim is for; null for plugins. */
+  claim: z.string().nullable(),
   status: PluginSubmissionStatusSchema,
   reason: z.string().nullable(),
   createdAt: z.string(),
@@ -940,6 +984,29 @@ export const PluginSubmissionReviewSchema = z.discriminatedUnion("decision", [
   z.object({ id: Id, decision: z.literal("reject"), reason: z.string().trim().min(1).max(1000) }),
 ]);
 export type PluginSubmissionReview = z.infer<typeof PluginSubmissionReviewSchema>;
+
+export const AccessGrantInputSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().max(254).email(),
+    creditCents: z.number().int().min(0).max(100_000).default(0),
+    freeMonths: z.number().int().min(0).max(12).default(0),
+  })
+  .refine((grant) => grant.creditCents > 0 || grant.freeMonths > 0, {
+    message: "Grant credits, free months, or both",
+  });
+export type AccessGrantInput = z.input<typeof AccessGrantInputSchema>;
+
+export const AccessGrantSchema = z.object({
+  id: Id,
+  email: z.string(),
+  creditCents: z.number().int(),
+  freeMonths: z.number().int(),
+  createdBy: z.string().nullable(),
+  status: z.enum(["pending", "applied", "revoked"]),
+  createdAt: z.string(),
+  appliedAt: z.string().nullable(),
+});
+export type AccessGrant = z.infer<typeof AccessGrantSchema>;
 
 export const IntegrationCatalogSurfaceSchema = z.object({
   kind: z.enum(["mcp", "openapi", "graphql", "cli"]),
@@ -971,6 +1038,8 @@ const McpServerBaseInput = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().max(2000).default(""),
   enabled: z.boolean().default(true),
+  /** Keep this server's tool results whole instead of cutting them to fit context. Omitted keeps the stored value. */
+  verbatimResults: z.boolean().optional(),
   /** Update-only: drop the stored static credential (secret/env/headers).
    * OAuth state survives so a connected server stays connected. */
   clearCredential: z.boolean().optional(),
@@ -1002,7 +1071,7 @@ const McpOAuthClientFields = {
  * authorization server, so the client is bound to it on first use. */
 const McpOAuthClientInput = z.object(McpOAuthClientFields).nullable().optional();
 /** A stdio server has no URL to discover from, so its client names the
- * authorization server (its issuer, e.g. https://accounts.google.com). Atlas
+ * authorization server (its issuer, e.g. https://accounts.google.com). Rakazo
  * runs the OAuth flow and passes the grant through `{{oauth.*}}` env references. */
 const McpStdioOAuthClientInput = z
   .object({ ...McpOAuthClientFields, authorizationServer: McpRemoteEndpointSchema })
@@ -1081,8 +1150,12 @@ export const McpServerSchema = z.object({
   oauthClientId: z.string().nullable(),
   health: McpServerHealthSchema,
   enabled: z.boolean(),
+  /** Keep this server's tool results whole instead of cutting them to fit context. */
+  verbatimResults: z.boolean().default(false),
   revision: z.number().int().positive(),
   availability: SpaceAvailabilitySchema.optional(),
+  /** Every agent can use it; when false, only the agents assigned to it. */
+  allBots: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -1147,9 +1220,7 @@ export const UsageRecordSchema = z.object({
   usageSource: z.string().nullable().optional(),
   callId: z.string().nullable().optional(),
   operationId: z.string().nullable().optional(),
-  operationKind: z
-    .enum(["answer", "setup", "retrieval", "subagent", "compaction", "dream"])
-    .optional(),
+  operationKind: z.enum(["answer", "setup", "retrieval", "subagent", "compaction"]).optional(),
   parentRunId: z.string().nullable().optional(),
   agentId: z.string().nullable().optional(),
   createdAt: z.string(),
@@ -1163,65 +1234,11 @@ const UsageTotalsSchema = z.object({
   costUsd: z.number().nullable().optional(),
   modelCalls: z.number().optional(),
 });
-/** One bot's spend, prompt-cache reuse and responsiveness. */
-/** One local model server as the picker shows it: reachable, context sizes, slow models. */
-export const LocalModelLoadStateSchema = z.enum(["loaded", "loading", "unloaded"]);
-export type LocalModelLoadState = z.infer<typeof LocalModelLoadStateSchema>;
-
-export const LocalModelStatusSchema = z.object({
-  id: z.string(),
-  aliases: z.array(z.string()),
-  sizeBytes: z.number().nullable(),
-  parameterSize: z.string().nullable(),
-  contextWindow: z.number().nullable(),
-  large: z.boolean(),
-  /** Whether this model is in GPU memory. Null when the server does not say. */
-  loadState: LocalModelLoadStateSchema.nullable(),
-});
-export type LocalModelStatus = z.infer<typeof LocalModelStatusSchema>;
-
-export const LocalServerStatusSchema = z.object({
-  baseUrl: z.string(),
-  kind: z.enum(["llama-server", "ollama", "openai-compatible", "unknown"]),
-  reachable: z.boolean(),
-  contextWindow: z.number().nullable(),
-  models: z.array(LocalModelStatusSchema),
-});
-export type LocalServerStatus = z.infer<typeof LocalServerStatusSchema>;
-
-export const LocalModelsStatusSchema = z.object({
-  /** Context Atlas sends local models (ATLAS_LOCAL_CONTEXT_WINDOW); null without local models. */
-  contextWindow: z.number().nullable(),
-  servers: z.array(LocalServerStatusSchema),
-  checkedAt: z.string(),
-});
-export type LocalModelsStatus = z.infer<typeof LocalModelsStatusSchema>;
-
-export const BotUsageSchema = z.object({
-  botId: z.string(),
-  /** Null when the bot no longer exists and left no deletion record. */
-  name: z.string().nullable(),
-  deleted: z.boolean().optional(),
-  modelCalls: z.number(),
-  totalTokens: z.number(),
-  inputTokens: z.number(),
-  outputTokens: z.number(),
-  cacheReadTokens: z.number(),
-  /** Share of prompt tokens served from the provider's cache, 0-1; null without prompt tokens. */
-  cachedShare: z.number().nullable(),
-  /** Median ms from a user's message to the bot's first reply, tool call or question. */
-  firstResponseMs: z.number().nullable(),
-  /** How many recent user runs the median covers. */
-  firstResponseRuns: z.number(),
-});
-export type BotUsage = z.infer<typeof BotUsageSchema>;
-
 export const UsageSummarySchema = UsageTotalsSchema.extend({
   runs: z.number(),
   models: z
     .array(UsageTotalsSchema.required().extend({ provider: z.string(), model: z.string() }))
     .optional(),
-  bots: z.array(BotUsageSchema).optional(),
 });
 export type UsageSummary = z.infer<typeof UsageSummarySchema>;
 
@@ -1259,8 +1276,6 @@ export const ComputerStatusSchema = z.object({
   busyBotName: z.string().nullable(),
   canUpdate: z.boolean(),
   terminalAvailable: z.boolean(),
-  /** A broken computer Atlas is restarting by itself, or gave up on. Older servers omit it. */
-  autoRecovery: z.enum(["trying", "gave_up"]).nullable().optional(),
 });
 export type ComputerStatus = z.infer<typeof ComputerStatusSchema>;
 
@@ -1443,7 +1458,11 @@ export function modelOutputLeavesInputRoom(
 }
 
 /** Wire protocol selected for one OpenAI-compatible connection. */
-export const ModelApiProtocolSchema = z.enum(["chat-completions", "responses"]);
+export const ModelApiProtocolSchema = z.enum([
+  "chat-completions",
+  "responses",
+  "anthropic-messages",
+]);
 export type ModelApiProtocol = z.infer<typeof ModelApiProtocolSchema>;
 
 export const ModelCredentialSchema = z.object({
@@ -1667,8 +1686,6 @@ export const ModelCatalogEntrySchema = z.object({
   signIn: ModelOAuthSignInModeSchema.optional(),
   reasoning: z.boolean().optional(),
   thinkingLevels: z.array(ThinkingLevelSchema).optional(),
-  /** The level a run uses when no level is saved, when the deployment sets one. */
-  defaultThinkingLevel: ThinkingLevelSchema.optional(),
   /** The model reads images. Left out where a connection setting decides it. */
   images: z.boolean().optional(),
   /** Catalog stand-in so a provider appears before the user enters a real model id. */
@@ -1677,8 +1694,6 @@ export const ModelCatalogEntrySchema = z.object({
   catalogProbe: z.boolean().optional(),
   /** Listed by the provider's live models list but not in the bundled catalog. */
   live: z.literal(true).optional(),
-  /** Provider accepts a faster service tier (for example OpenAI Codex or xAI priority). */
-  supportsFastTier: z.boolean().optional(),
 });
 export type ModelCatalogEntry = z.infer<typeof ModelCatalogEntrySchema>;
 
@@ -1713,14 +1728,6 @@ export const VoiceCredentialSchema = z.object({
   sttModel: z.string().default(""),
 });
 export type VoiceCredential = z.infer<typeof VoiceCredentialSchema>;
-
-export const NotificationPreferencesSchema = z.object({
-  finish: z.boolean(),
-  help: z.boolean(),
-  takeover: z.boolean(),
-  computer: z.boolean(),
-});
-export type NotificationPreferences = z.infer<typeof NotificationPreferencesSchema>;
 
 export const VoiceStatusSchema = z.object({
   configured: z.boolean(),
@@ -1856,7 +1863,7 @@ export const MeSchema = z.object({
   spaceId: Id,
   /** Deprecated: app accounts never have server administrator privileges. Always false. */
   isDeploymentOwner: z.boolean(),
-  /** Listed in ATLAS_ADMIN_EMAILS with a verified email: reviews plugin submissions, adds stdio MCP servers. */
+  /** Listed in RAKAZO_ADMIN_EMAILS with a verified email: reviews plugins, adds stdio MCP servers, grants access. */
   isAdmin: z.boolean().default(false),
   needsModel: z.boolean(),
   defaultProvider: z.string().nullable(),
@@ -1876,6 +1883,11 @@ export const MeSchema = z.object({
    * Absent from servers that predate it.
    */
   timezone: z.string().nullable().optional(),
+  /**
+   * The app language last reported for the user, or null until an app reports it.
+   * Absent from servers that predate it.
+   */
+  locale: z.string().nullable().optional(),
   billingEnabled: z.boolean(),
   /** True until a user of a billing deployment answers or skips the signup survey. Absent from older servers. */
   needsSignupSurvey: z.boolean().optional(),
@@ -1884,10 +1896,14 @@ export const MeSchema = z.object({
 });
 export type Me = z.infer<typeof MeSchema>;
 
-export const MODEL_CREDIT_AMOUNTS = [1000, 2000, 5000, 10000, 20000, 50000] as const;
+export const MODEL_CREDIT_AMOUNTS = [1000, 2000, 3000, 5000, 10000, 20000, 50000] as const;
 /** Monthly price in cents of running bots on your own model connection; `null` makes it free. */
-export const BYOK_MONTHLY_PRICE_CENTS: number | null = 1000;
-export const DEFAULT_MONTHLY_CREDIT_AMOUNT = 2000;
+export const BYOK_MONTHLY_PRICE_CENTS: number | null = 1500;
+/** Yearly price in cents of the same plan; `null` offers it monthly only. */
+export const BYOK_ANNUAL_PRICE_CENTS: number | null = 14400;
+export const ByokIntervalSchema = z.enum(["month", "year"]);
+export type ByokInterval = z.infer<typeof ByokIntervalSchema>;
+export const DEFAULT_MONTHLY_CREDIT_AMOUNT = 3000;
 export const ModelCreditAmountSchema = z.union(
   MODEL_CREDIT_AMOUNTS.map((amount) => z.literal(amount)),
 );
@@ -1919,13 +1935,29 @@ export const BillingClientSchema = z.literal("mobile").optional();
 /** The deep link the API sends a mobile checkout back to; it closes the in-app browser. */
 export const MOBILE_BILLING_CALLBACK_URL = "atlas://billing";
 
+export const BILLING_CANCELLATION_REASONS = [
+  "too_expensive",
+  "missing_features",
+  "switched_service",
+  "unused",
+  "customer_service",
+  "too_complex",
+  "low_quality",
+  "other",
+] as const;
+export type BillingCancellationReason = (typeof BILLING_CANCELLATION_REASONS)[number];
+
 export const BillingStatusSchema = z.object({
   funding: z.enum(["byok", "credits"]).nullable().optional(),
   balanceUsd: z.number().optional(),
   monthlyAmountCents: z.number().int().positive().nullable().optional(),
   creditPurchasesEnabled: z.boolean().optional(),
-  /** Monthly price of the own-key plan; `null` when it is free. */
+  /** Monthly price of the own-key plan, as subscribed when the organization has it; `null` when free. */
   byokPriceCents: z.number().int().positive().nullable().optional(),
+  /** How often `byokPriceCents` bills. Absent from older servers, which bill monthly. */
+  byokInterval: ByokIntervalSchema.optional(),
+  /** Yearly price of the own-key plan for new subscriptions, when offered. */
+  byokAnnualPriceCents: z.number().int().positive().nullable().optional(),
   /** End of an unpaid own-key organization's free period. */
   byokFreeUntil: z.string().nullable().optional(),
   access: z.boolean(),
@@ -1965,6 +1997,32 @@ export const BillingStatusSchema = z.object({
     .optional(),
 });
 export type BillingStatus = z.infer<typeof BillingStatusSchema>;
+
+/** The percent a yearly own-key price saves over twelve months at `monthlyCents`. */
+export function byokYearlySavingsPercent(monthlyCents: number, annualCents: number): number {
+  return Math.round((1 - annualCents / (monthlyCents * 12)) * 100);
+}
+
+/**
+ * What switching a paid monthly own-key plan to yearly saves, in percent, or null when the switch
+ * is not offered: not the owner, no live monthly plan, or a yearly price that saves nothing.
+ */
+export function byokYearlySwitchSavings(status: BillingStatus): number | null {
+  if (
+    !status.canManage ||
+    status.funding !== "byok" ||
+    status.byokInterval === "year" ||
+    status.byokFreeUntil ||
+    status.monthlyAmountCents ||
+    status.cancelAtPeriodEnd ||
+    (status.state !== "active" && status.state !== "trialing") ||
+    !status.byokPriceCents ||
+    !status.byokAnnualPriceCents
+  )
+    return null;
+  const savings = byokYearlySavingsPercent(status.byokPriceCents, status.byokAnnualPriceCents);
+  return savings > 0 ? savings : null;
+}
 
 export const AppBootstrapSchema = z.object({
   me: MeSchema,

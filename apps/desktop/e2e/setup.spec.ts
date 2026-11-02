@@ -5,10 +5,11 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { ElectronApplication } from "@playwright/test";
+import type { ElectronApplication, Page } from "@playwright/test";
 import { _electron as electron, expect, test } from "@playwright/test";
+import type { RakazoDesktop } from "@atlas/contracts";
 
-const APP_MARKER = "Existing Atlas instance ready";
+const APP_MARKER = "Existing Rakazo instance ready";
 /** Outlasts the shell's 20s wait for a mounted app before it rejects the server. */
 const NOT_READY_TIMEOUT_MS = 30_000;
 const execFileAsync = promisify(execFile);
@@ -41,6 +42,12 @@ test.beforeAll(async () => {
       response.end(JSON.stringify({ dsn: null }));
       return;
     }
+    if (request.url?.startsWith("/redirect?")) {
+      const target = new URL(request.url, serverUrl).searchParams.get("to") ?? "/";
+      response.writeHead(302, { location: target });
+      response.end();
+      return;
+    }
     if (request.url === "/rpc/health" && request.method === "POST") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       response.end(JSON.stringify({ json: { ok: true, version: "0.1.0" } }));
@@ -48,7 +55,7 @@ test.beforeAll(async () => {
     }
     response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     response.end(
-      `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Atlas</title></head><body><main>${APP_MARKER}</main></body></html>`,
+      `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rakazo</title></head><body><main>${APP_MARKER}</main></body></html>`,
     );
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -65,7 +72,9 @@ test.afterAll(async () => {
 });
 
 test.beforeEach(async () => {
-  userData = await mkdtemp(path.join(tmpdir(), "atlas-desktop-e2e-"));
+  userData = await mkdtemp(path.join(tmpdir(), "rakazo-desktop-e2e-"));
+  // Setup otherwise follows the machine's language; these specs read its English text.
+  await writeFile(path.join(userData, "ui-locale.txt"), "en\n");
 });
 
 test.afterEach(async () => {
@@ -75,10 +84,10 @@ test.afterEach(async () => {
 });
 
 function launch(extraEnv: Record<string, string> = {}) {
-  const env = { ...process.env, ATLAS_PERFORMANCE_USER_DATA: userData };
-  // A stale ATLAS_WEB_URL from the developer's shell would bypass setup entirely.
-  delete env.ATLAS_WEB_URL;
-  const executablePath = process.env.ATLAS_E2E_EXECUTABLE;
+  const env = { ...process.env, RAKAZO_PERFORMANCE_USER_DATA: userData };
+  // A stale RAKAZO_WEB_URL from the developer's shell would bypass setup entirely.
+  delete env.RAKAZO_WEB_URL;
+  const executablePath = process.env.RAKAZO_E2E_EXECUTABLE;
   return electron.launch({
     ...(executablePath ? { executablePath: path.resolve(executablePath) } : {}),
     args: executablePath ? [] : ["."],
@@ -87,22 +96,22 @@ function launch(extraEnv: Record<string, string> = {}) {
   });
 }
 
-test("first run offers Atlas Cloud first, with local and existing instances", async () => {
+test("first run offers Rakazo Cloud first, with local and existing instances", async () => {
   app = await launch();
-  if (process.env.ATLAS_E2E_EXECUTABLE) {
+  if (process.env.RAKAZO_E2E_EXECUTABLE) {
     expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(true);
   }
   const setup = await app.firstWindow();
 
-  await expect(setup.getByRole("heading", { name: "Welcome to Atlas" })).toBeVisible();
+  await expect(setup.getByRole("heading", { name: "Welcome to Rakazo" })).toBeVisible();
   await expect(setup.getByText("Choose which server this app should use.")).toBeVisible();
-  await expect(setup.getByText("Atlas Cloud")).toBeVisible();
+  await expect(setup.getByText("Rakazo Cloud")).toBeVisible();
   await expect(setup.getByText("This computer")).toBeVisible();
   await expect(setup.getByText("Existing instance")).toBeVisible();
   await expect(setup.locator(".card")).toHaveCount(0);
 
   // Cloud is the default: one click opens the hosted app, with nothing to fill in.
-  await expect(setup.getByRole("radio", { name: /Atlas Cloud/ })).toBeChecked();
+  await expect(setup.getByRole("radio", { name: /Rakazo Cloud/ })).toBeChecked();
   await expect(setup.locator("#panel-new")).toBeHidden();
   await expect(setup.locator("#panel-existing")).toBeHidden();
   await expect(setup.getByRole("button", { name: "Check connection" })).toBeHidden();
@@ -152,17 +161,45 @@ test("first run offers Atlas Cloud first, with local and existing instances", as
   }
 });
 
-test("Atlas Cloud saves the hosted address and is reselected when saved", async () => {
+test("setup opens in the language the app last used", async () => {
+  await writeFile(path.join(userData, "ui-locale.txt"), "es\n");
   app = await launch();
   const setup = await app.firstWindow();
-  await expect(setup.getByRole("radio", { name: /Atlas Cloud/ })).toBeChecked();
+
+  await expect(setup.locator("html")).toHaveAttribute("lang", "es");
+  await expect(
+    setup.getByRole("heading", { name: "Te damos la bienvenida a Rakazo" }),
+  ).toBeVisible();
+  await expect(setup.getByRole("button", { name: "Continuar" })).toBeEnabled();
+  await setup.screenshot({
+    path: path.join(import.meta.dirname, "screenshots", "10-setup-spanish.png"),
+  });
+});
+
+test("setup lays out right to left in Hebrew", async () => {
+  await writeFile(path.join(userData, "ui-locale.txt"), "he\n");
+  app = await launch();
+  const setup = await app.firstWindow();
+
+  await expect(setup.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(setup.getByRole("heading", { name: "ברוכים הבאים ל-Rakazo" })).toBeVisible();
+  await expect(setup.getByRole("button", { name: "המשך" })).toBeEnabled();
+  await setup.screenshot({
+    path: path.join(import.meta.dirname, "screenshots", "11-setup-hebrew.png"),
+  });
+});
+
+test("Rakazo Cloud saves the hosted address and is reselected when saved", async () => {
+  app = await launch();
+  const setup = await app.firstWindow();
+  await expect(setup.getByRole("radio", { name: /Rakazo Cloud/ })).toBeChecked();
   await expect(setup.getByRole("button", { name: "Continue" })).toBeEnabled();
 
   // Capture the request instead of reaching the hosted server, so CI stays offline.
   const { cloudUrl } = await setup.evaluate(() =>
     (
-      window as typeof window & { atlasSetup: { state: () => Promise<{ cloudUrl: string }> } }
-    ).atlasSetup.state(),
+      window as typeof window & { rakazoSetup: { state: () => Promise<{ cloudUrl: string }> } }
+    ).rakazoSetup.state(),
   );
   expect(cloudUrl).toMatch(/^https:\/\//);
   await app.evaluate(({ ipcMain }) => {
@@ -193,7 +230,7 @@ test("Atlas Cloud saves the hosted address and is reselected when saved", async 
     }));
   }, cloudUrl);
   await setup.reload();
-  await expect(setup.getByRole("radio", { name: /Atlas Cloud/ })).toBeChecked();
+  await expect(setup.getByRole("radio", { name: /Rakazo Cloud/ })).toBeChecked();
   await expect(setup.locator("#panel-existing")).toBeHidden();
 });
 
@@ -206,7 +243,7 @@ test("connecting to an existing instance verifies, saves, and opens it", async (
 
   await setup.locator("#server-url").fill(serverUrl);
   await setup.getByRole("button", { name: "Check connection" }).click();
-  await expect(setup.locator("#status")).toHaveText(`Atlas answered at ${serverUrl}.`);
+  await expect(setup.locator("#status")).toHaveText(`Rakazo answered at ${serverUrl}.`);
   await expect(setup.locator("#status")).toHaveAttribute("data-tone", "ok");
 
   await setup.screenshot({
@@ -317,8 +354,8 @@ test("an HTTP error document is not accepted after a healthy probe", async () =>
 
 test("a session-pending shell skeleton is not accepted as a ready app", async () => {
   test.setTimeout(2 * NOT_READY_TIMEOUT_MS);
-  const skeletonHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Atlas</title></head>
-<body><div id="root"><div data-atlas-app-state="session-pending"><aside></aside><main><div>Opening your Space…</div></main></div></div></body></html>`;
+  const skeletonHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rakazo</title></head>
+<body><div id="root"><div data-rakazo-app-state="session-pending"><aside></aside><main><div>Opening your Space…</div></main></div></div></body></html>`;
   const skeleton = createServer((request, response) => {
     if (request.url === "/rpc/health" && request.method === "POST") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -360,17 +397,17 @@ for (const { name, surface } of [
   },
   {
     name: "logged-out welcome",
-    surface: '<div data-atlas-surface="welcome"><button>Sign up</button></div>',
+    surface: '<div data-rakazo-surface="welcome"><button>Sign up</button></div>',
   },
   {
     name: "translated logged-out welcome",
-    surface: '<div data-atlas-surface="welcome"><button>Créer un compte</button></div>',
+    surface: '<div data-rakazo-surface="welcome"><button>Créer un compte</button></div>',
   },
 ]) {
   test(`a post-session ${name} mount is accepted`, async () => {
-    const readyHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Atlas</title>
+    const readyHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rakazo</title>
 </head>
-<body><div id="root"><div data-atlas-app-state="ready">${surface}</div></div></body></html>`;
+<body><div id="root"><div data-rakazo-app-state="ready">${surface}</div></div></body></html>`;
     const ready = createServer((request, response) => {
       if (request.url === "/rpc/health" && request.method === "POST") {
         response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -395,7 +432,7 @@ for (const { name, surface } of [
         setup.getByRole("button", { name: "Continue" }).click(),
       ]).then(([window]) => window);
 
-      await expect(appWindow.locator('[data-atlas-app-state="ready"]')).toBeVisible();
+      await expect(appWindow.locator('[data-rakazo-app-state="ready"]')).toBeVisible();
       await expect
         .poll(async () => {
           try {
@@ -418,8 +455,8 @@ for (const { name, surface } of [
 
 test("a shell mount before workspace bootstrap is not accepted", async () => {
   test.setTimeout(2 * NOT_READY_TIMEOUT_MS);
-  const preBootstrapHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Atlas</title></head>
-<body><div id="root"><div data-atlas-app-state="ready"><div data-testid="shell-root" data-ready="false">Workspace</div></div></div></body></html>`;
+  const preBootstrapHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rakazo</title></head>
+<body><div id="root"><div data-rakazo-app-state="ready"><div data-testid="shell-root" data-ready="false">Workspace</div></div></div></body></html>`;
   const preBootstrap = createServer((request, response) => {
     if (request.url === "/rpc/health" && request.method === "POST") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -456,8 +493,8 @@ test("a shell mount before workspace bootstrap is not accepted", async () => {
 
 test("a session-ready marker without a route surface is not accepted", async () => {
   test.setTimeout(2 * NOT_READY_TIMEOUT_MS);
-  const emptyReadyHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Atlas</title></head>
-<body><div id="root"><div data-atlas-app-state="ready" class="h-full"></div></div></body></html>`;
+  const emptyReadyHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rakazo</title></head>
+<body><div id="root"><div data-rakazo-app-state="ready" class="h-full"></div></div></body></html>`;
   const emptyReady = createServer((request, response) => {
     if (request.url === "/rpc/health" && request.method === "POST") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -506,10 +543,10 @@ test("a malformed address is rejected before anything is written", async () => {
   }).toPass();
 });
 
-test("a generic web page is not accepted as an Atlas server", async () => {
+test("a generic web page is not accepted as a Rakazo server", async () => {
   const plain = createServer((_request, response) => {
     response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    response.end("<!doctype html><p>not Atlas</p>");
+    response.end("<!doctype html><p>not Rakazo</p>");
   });
   await new Promise<void>((resolve) => plain.listen(0, "127.0.0.1", resolve));
   const address = plain.address();
@@ -523,7 +560,7 @@ test("a generic web page is not accepted as an Atlas server", async () => {
     await setup.getByRole("button", { name: "Continue" }).click();
 
     await expect(setup.locator("#status")).toHaveText(
-      "That address did not respond like an Atlas server.",
+      "That address did not respond like a Rakazo server.",
     );
     await expect(async () => {
       await expect(readFile(path.join(userData, "setup.json"), "utf8")).rejects.toThrow();
@@ -576,7 +613,7 @@ test("an unreachable saved server falls back to setup with a recovery message", 
   app = await launch();
   const setup = await app.firstWindow();
 
-  await expect(setup.getByRole("heading", { name: "Welcome to Atlas" })).toBeVisible();
+  await expect(setup.getByRole("heading", { name: "Welcome to Rakazo" })).toBeVisible();
   await expect(setup.getByRole("radio", { name: /Existing instance/ })).toBeChecked();
   await expect(setup.locator("#server-url")).toHaveValue(closedUrl);
   await expect(setup.locator("#status")).toContainText("Could not reconnect to the saved server.");
@@ -586,19 +623,19 @@ test("an unreachable saved server falls back to setup with a recovery message", 
 });
 
 test("the native application menu can reopen setup without exposing setup IPC to the server", async () => {
-  app = await launch({ ATLAS_WEB_URL: serverUrl });
+  app = await launch({ RAKAZO_WEB_URL: serverUrl });
   const appWindow = await app.firstWindow();
   await expect(appWindow.getByText(APP_MARKER)).toBeVisible();
 
   const setupPromise = app.waitForEvent("window");
   await app.evaluate(({ Menu }) => {
-    const item = Menu.getApplicationMenu()?.getMenuItemById("change-atlas-server");
+    const item = Menu.getApplicationMenu()?.getMenuItemById("change-rakazo-server");
     if (!item) throw new Error("Change server menu item is missing");
     item.click();
   });
   const setup = await setupPromise;
 
-  await expect(setup.getByRole("heading", { name: "Welcome to Atlas" })).toBeVisible();
+  await expect(setup.getByRole("heading", { name: "Welcome to Rakazo" })).toBeVisible();
   await expect(setup.locator("#status")).toBeEmpty();
 
   // Closing setup without saving restores the connected instance.
@@ -617,7 +654,7 @@ test("servers on the same host but different ports do not share login cookies", 
     if (monitoringDisabled(request.url, response)) return;
     response.writeHead(200, {
       "content-type": "text/html; charset=utf-8",
-      "set-cookie": "atlas_session=fake-one; Path=/; SameSite=Lax",
+      "set-cookie": "rakazo_session=fake-one; Path=/; SameSite=Lax",
     });
     response.end("<!doctype html><main>Cookie stored</main>");
   });
@@ -642,13 +679,13 @@ test("servers on the same host but different ports do not share login cookies", 
   }
 
   try {
-    app = await launch({ ATLAS_WEB_URL: `http://127.0.0.1:${firstAddress.port}` });
+    app = await launch({ RAKAZO_WEB_URL: `http://127.0.0.1:${firstAddress.port}` });
     const firstWindow = await app.firstWindow();
     await expect(firstWindow.getByText("Cookie stored")).toBeVisible();
     await expect.poll(() => firstWindow.evaluate(() => document.cookie)).toContain("fake-one");
     await app.close();
 
-    app = await launch({ ATLAS_WEB_URL: `http://127.0.0.1:${secondAddress.port}` });
+    app = await launch({ RAKAZO_WEB_URL: `http://127.0.0.1:${secondAddress.port}` });
     const secondWindow = await app.firstWindow();
     await expect(secondWindow.getByText("Cookies: none")).toBeVisible();
   } finally {
@@ -666,14 +703,98 @@ test("servers on the same host but different ports do not share login cookies", 
 });
 
 test("setup IPC is not reachable from the connected app window", async () => {
-  app = await launch({ ATLAS_WEB_URL: serverUrl });
+  app = await launch({ RAKAZO_WEB_URL: serverUrl });
   const appWindow = await app.firstWindow();
   await expect(appWindow.getByText(APP_MARKER)).toBeVisible();
 
   const exposed = await appWindow.evaluate(() =>
-    Object.keys((window as typeof window & { atlasSetup?: unknown }).atlasSetup ?? {}),
+    Object.keys((window as typeof window & { rakazoSetup?: unknown }).rakazoSetup ?? {}),
   );
   expect(exposed).toEqual([]);
+});
+
+test("the app window stays on its server when a link redirects to another site", async () => {
+  const elsewhere = createServer((_request, response) => {
+    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    response.end("<!doctype html><main>Another site</main>");
+  });
+  await new Promise<void>((resolve) => elsewhere.listen(0, "127.0.0.1", resolve));
+  const address = elsewhere.address();
+  if (address === null || typeof address === "string") throw new Error("fixture has no port");
+  const elsewhereUrl = `http://127.0.0.1:${address.port}/landing`;
+  const signInUrl = "https://sign-in.invalid/authorize";
+  const openSignIn = (page: Page) =>
+    page.evaluate(
+      (url) =>
+        (window as typeof window & { rakazoDesktop: RakazoDesktop }).rakazoDesktop.oauth
+          .open(url)
+          .then(
+            () => "opened",
+            (error: Error) => error.message,
+          ),
+      signInUrl,
+    );
+
+  try {
+    const launched = await launch({ RAKAZO_WEB_URL: serverUrl });
+    app = launched;
+    const appWindow = await launched.firstWindow();
+    await expect(appWindow.getByText(APP_MARKER)).toBeVisible();
+    await launched.evaluate(({ shell }) => {
+      const opened: string[] = [];
+      Object.assign(globalThis, { opened });
+      shell.openExternal = async (url) => {
+        opened.push(url);
+      };
+    });
+    const openedUrls = () =>
+      launched.evaluate(() => (globalThis as typeof globalThis & { opened: string[] }).opened);
+
+    // Links to another site go to the system browser.
+    await appWindow.evaluate((to) => window.location.assign(to), elsewhereUrl);
+    await expect.poll(openedUrls).toEqual([elsewhereUrl]);
+    // Playwright keeps waiting on a navigation cancelled before it starts, so ask the page itself.
+    expect(await appWindow.evaluate(() => window.location.href)).toBe(`${serverUrl}/`);
+
+    // So does a server redirect to another site.
+    await appWindow.evaluate(
+      (to) => window.location.assign(`/redirect?to=${encodeURIComponent(to)}`),
+      elsewhereUrl,
+    );
+    await expect.poll(openedUrls).toEqual([elsewhereUrl, elsewhereUrl]);
+    await expect(appWindow).toHaveURL(`${serverUrl}/`);
+    await expect(appWindow.getByText(APP_MARKER)).toBeVisible();
+
+    // Embedded frames may still follow redirects to other sites.
+    await appWindow.evaluate((to) => {
+      const frame = document.createElement("iframe");
+      frame.src = `/redirect?to=${encodeURIComponent(to)}`;
+      document.body.append(frame);
+    }, elsewhereUrl);
+    await expect(appWindow.frameLocator("iframe").getByText("Another site")).toBeVisible();
+
+    // Redirects within the server still load in the app.
+    await appWindow.evaluate(() => window.location.assign("/redirect?to=/after"));
+    await expect(appWindow).toHaveURL(`${serverUrl}/after`);
+    await expect(appWindow.getByText(APP_MARKER)).toBeVisible();
+    expect(await openSignIn(appWindow)).toBe("opened");
+    await expect.poll(openedUrls).toEqual([elsewhereUrl, elsewhereUrl, signInUrl]);
+
+    // Another site in the app window cannot start a browser sign-in.
+    await launched.evaluate(
+      ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0]?.webContents.loadURL(url),
+      elsewhereUrl,
+    );
+    await expect(appWindow.getByText("Another site")).toBeVisible();
+    expect(await openSignIn(appWindow)).toContain("Invalid sign-in request.");
+    expect(await openedUrls()).toEqual([elsewhereUrl, elsewhereUrl, signInUrl]);
+  } finally {
+    await app?.close();
+    app = undefined;
+    await new Promise<void>((resolve, reject) => {
+      elsewhere.close((error) => (error ? reject(error) : resolve()));
+    });
+  }
 });
 
 for (const failure of ["load", "save"] as const) {
@@ -706,7 +827,7 @@ for (const failure of ["load", "save"] as const) {
     try {
       const setupPromise = app.waitForEvent("window");
       await app.evaluate(({ Menu }) => {
-        const item = Menu.getApplicationMenu()?.getMenuItemById("change-atlas-server");
+        const item = Menu.getApplicationMenu()?.getMenuItemById("change-rakazo-server");
         if (!item) throw new Error("Change server menu item is missing");
         item.click();
       });
