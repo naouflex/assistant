@@ -592,7 +592,8 @@ describe("bot settings device voice menu", () => {
   it("shows a quiet header with no Save or empty context groups", async () => {
     await act(async () => root.render(<BotSettingsScreen />));
     expect(container.textContent).not.toContain("Open work");
-    expect(container.textContent).not.toContain("Memory");
+    expect(container.textContent).toContain("Review recent runs");
+    expect(container.textContent).not.toContain("MEMORY.md");
     expect(
       [...container.querySelectorAll("button")].some((button) => button.textContent === "Save"),
     ).toBe(false);
@@ -691,7 +692,7 @@ describe("bot settings device voice menu", () => {
     expect(trigger.getAttribute("role")).toBe("button");
     expect(JSON.parse(trigger.dataset.style!)).toMatchObject({ marginTop: 24, minHeight: 44 });
     const headings = [...container.querySelectorAll<HTMLElement>('[role="header"]')];
-    expect(headings.map((heading) => heading.textContent)).toEqual(["Notifications"]);
+    expect(headings.map((heading) => heading.textContent)).toEqual(["Notifications", "Memory"]);
     expect(trigger.querySelector('[data-ios="chevron.right"]')).not.toBeNull();
     expect(container.querySelector('[aria-label="Instructions"]')).toBeNull();
     await expand();

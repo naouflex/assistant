@@ -188,6 +188,8 @@ function MemoryDocumentList({
   const [memoryShown, setMemoryShown] = useState(false);
   const memoryVisible = memoryShown || docs.some((doc) => !isEmptyBotMemory(doc));
   if (memoryVisible && !memoryShown) setMemoryShown(true);
+  const listedDocs =
+    !compact || memoryShown ? docs : docs.filter((doc) => !isEmptyBotMemory(doc));
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [loadedRevision, setLoadedRevision] = useState<number | undefined>();
@@ -337,7 +339,16 @@ function MemoryDocumentList({
     }
   }
 
-  if (compact && !memoryVisible && !error && proposals.length === 0 && !reviewing) return null;
+  // Notes stay hidden until one exists, but the review is how a bot gets its first notes.
+  if (
+    compact &&
+    listQuery.isPending &&
+    !memoryVisible &&
+    !error &&
+    proposals.length === 0 &&
+    !reviewing
+  )
+    return null;
   return (
     <section className={compact ? "mt-6" : undefined}>
       {compact ? (
@@ -369,7 +380,7 @@ function MemoryDocumentList({
           </div>
         ) : null}
         <div>
-          {(compact && !showAll ? docs.slice(0, 5) : docs).map((doc) => (
+          {(compact && !showAll ? listedDocs.slice(0, 5) : listedDocs).map((doc) => (
             <div key={doc.id} className="border-b border-border last:border-0">
               <div className="flex items-center gap-2">
                 <Button
@@ -457,7 +468,7 @@ function MemoryDocumentList({
             </div>
           ))}
         </div>
-        {compact && docs.length > 5 && !showAll ? (
+        {compact && listedDocs.length > 5 && !showAll ? (
           <Button
             variant="ghost"
             size="sm"

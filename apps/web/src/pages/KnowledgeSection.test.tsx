@@ -296,7 +296,8 @@ it("hides empty bot memory and limits long lists to five documents", async () =>
   try {
     memoryApi.list.mockReset().mockResolvedValueOnce([]);
     await show(root, <KnowledgeSection key="empty" botId="fixture" />);
-    expect(host.textContent).toBe("");
+    expect(host.textContent).toContain("Review recent runs");
+    expect(host.textContent).not.toContain("MEMORY.md");
     memoryApi.list.mockResolvedValueOnce(
       Array.from({ length: 7 }, (_, i) => ({
         id: `doc-${i}`,
@@ -329,7 +330,7 @@ it.each([" \n", "# Fixture\n\n"])("hides empty memory: %j", async (content) => {
   const root = createRoot(host);
   try {
     await show(root, <KnowledgeSection botId="fixture" />);
-    expect(host.textContent).not.toContain("Memory");
+    expect(host.textContent).toContain("Review recent runs");
     expect(host.textContent).not.toContain("MEMORY.md");
   } finally {
     await act(async () => root.unmount());

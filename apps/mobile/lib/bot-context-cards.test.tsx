@@ -76,7 +76,9 @@ describe("bot context cards", () => {
       method === "scratchpad/list" ? [] : [{ id: "memory-a", path: "MEMORY.md", content: "" }],
     );
     await render();
-    expect(container.textContent).toBe("");
+    expect(container.textContent).toContain("Review recent runs");
+    expect(container.textContent).not.toContain("Open work");
+    expect(container.textContent).not.toContain("MEMORY.md");
   });
 
   it("ignores results from the previous bot", async () => {
@@ -92,6 +94,7 @@ describe("bot context cards", () => {
     await render();
     await render("bot-b");
     await act(async () => resolveWork(work));
-    expect(container.textContent).toBe("");
+    expect(container.textContent).not.toContain("Review draft");
+    expect(container.textContent).toContain("Review recent runs");
   });
 });
