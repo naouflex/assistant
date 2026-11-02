@@ -261,6 +261,8 @@ async function resealMessages(tx: Tx, threadIds: string[], moveTo: MoveTo) {
       await tx.message.update({
         where: { id: message.id },
         data: { blocks: message.blocks as Prisma.InputJsonValue },
+        // The thread still points at the old space, so the new ciphertext cannot be read back yet.
+        select: { id: true },
       });
     }
     if (page.length < PAGE) return;
@@ -281,6 +283,7 @@ async function resealEvents(tx: Tx, threadIds: string[], target: string, moveTo:
       await tx.event.update({
         where: { id: event.id },
         data: { spaceId: target, payload: event.payload as Prisma.InputJsonValue },
+        select: { id: true },
       });
     }
     if (page.length < PAGE) return;
@@ -301,6 +304,7 @@ async function resealRevisions(tx: Tx, documentIds: string[], moveTo: MoveTo) {
       await tx.memoryRevision.update({
         where: { id: revision.id },
         data: { content: revision.content },
+        select: { id: true },
       });
     }
     if (page.length < PAGE) return;
