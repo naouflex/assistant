@@ -29,7 +29,11 @@ describe("call barge-in", () => {
   it("keeps playing through a one-word backchannel", () => {
     expect(isCallBargeIn("yeah")).toBe(false);
     expect(isInterimCallBargeIn("yeah")).toBe(false);
-    expect(isInterimCallBargeIn("stop")).toBe(false);
+  });
+
+  it("cuts playback on an interruption word before the final transcript", () => {
+    expect(isInterimCallBargeIn("stop")).toBe(true);
+    expect(isInterimCallBargeIn("wait")).toBe(true);
   });
 
   it("ignores the reply leaking back at the playback threshold", () => {

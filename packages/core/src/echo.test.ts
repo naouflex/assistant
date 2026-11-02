@@ -25,6 +25,14 @@ describe("isEchoOfSpeech", () => {
     ).toBe(false);
   });
 
+  it("catches a long transcript that mostly repeats the spoken reply", () => {
+    const spoken =
+      "I checked your calendar and you are free Friday afternoon so we can book the flight then if that works for you";
+    const heard =
+      "I checked your calendar and you are free Friday afternoon so we can book the flight then if that works";
+    expect(isEchoOfSpeech(heard, spoken, 0.4)).toBe(true);
+  });
+
   it("drops a looser overlap only at the playback threshold", () => {
     expect(isEchoOfSpeech("I am here what about that", SPOKEN)).toBe(false);
     expect(isEchoOfSpeech("I am here what about that", SPOKEN, 0.4)).toBe(true);
@@ -76,6 +84,22 @@ describe("SpokenMemory", () => {
     memory.remember("I am checking the deploy now", 500);
 
     expect(memory.isEcho("a second I am checking", undefined, 1_000)).toBe(true);
+  });
+
+  it("catches a long echo of one spoken reply without matching every other line", () => {
+    const memory = new SpokenMemory();
+    const reply =
+      "Happy to help with that newspaper headline but I need to know which paper you mean before I search";
+    memory.remember("Sure, one moment", 0);
+    memory.remember(reply, 500);
+
+    expect(
+      memory.isEcho(
+        "happy to help with that newspaper headline but I need to know which paper you mean before I search",
+        0.4,
+        1_000,
+      ),
+    ).toBe(true);
   });
 
   it("forgets what was spoken more than the window ago", () => {

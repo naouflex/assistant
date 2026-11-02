@@ -1449,11 +1449,6 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 voiceCall: Boolean(voiceCall),
               })
             : undefined,
-          voiceCall &&
-          !callEndRun &&
-          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
-            ? voiceActionNote(taskPrompt, { voiceCall: true })
-            : undefined,
           run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
             ? wslPlaceNote(taskPrompt, {
                 userComputer,
@@ -1472,6 +1467,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 userComputerPlatform,
                 voiceCall: Boolean(voiceCall),
               })
+            : undefined,
+          voiceCall &&
+          !callEndRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? voiceActionNote(taskPrompt, { voiceCall: true })
             : undefined,
         ]
           .filter(Boolean)

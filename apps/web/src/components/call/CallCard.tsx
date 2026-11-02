@@ -56,14 +56,21 @@ export function CallCard({ onSettings }: { onSettings: () => void }) {
   if (!call || call.minimized) return null;
   const onBotScreen = botId === call.botId;
   const ringing = call.phase === "ringing";
-  const activity =
-    call.phase === "speaking"
+  const activity = call.endingCall
+    ? t`Ending call`
+    : call.phase === "speaking"
       ? t`Speaking`
       : call.phase === "thinking"
         ? t`Thinking`
         : call.muted
           ? t`Muted`
           : t`Listening`;
+  const liveLine =
+    call.phase === "listening" && call.heard.trim()
+      ? call.heard
+      : call.caption.trim()
+        ? call.caption
+        : "";
   return (
     <CallWindow
       data-testid="call-view"
@@ -186,9 +193,13 @@ export function CallCard({ onSettings }: { onSettings: () => void }) {
             </p>
           ) : null}
         </div>
-      ) : call.caption ? (
-        <p className="mb-4 text-center text-sm text-muted-foreground" dir="auto">
-          {call.caption}
+      ) : liveLine ? (
+        <p
+          className="mb-4 line-clamp-2 text-center text-sm text-muted-foreground"
+          dir="auto"
+          aria-live="polite"
+        >
+          {liveLine}
         </p>
       ) : null}
 
@@ -223,6 +234,18 @@ export function CallReturnBar() {
   const call = useCallSession();
   const elapsed = useCallElapsed(call);
   if (!call?.minimized) return null;
+  const barActivity = call.endingCall
+    ? t`Ending call`
+    : call.phase === "speaking"
+      ? t`Speaking`
+      : call.phase === "thinking"
+        ? t`Thinking`
+        : call.muted
+          ? t`Muted`
+          : call.phase === "ringing"
+            ? t`Calling…`
+            : t`Listening`;
+  const barDetail = call.caption.trim() || (call.phase === "listening" ? call.heard.trim() : "");
   return (
     <button
       type="button"
@@ -230,9 +253,12 @@ export function CallReturnBar() {
       onClick={() => setCallMinimized(false)}
       className="app-no-drag flex min-h-10 w-full shrink-0 items-center justify-center gap-1.5 bg-success px-3 text-sm font-medium text-background"
     >
-      <span dir="auto">{t`Return to call with ${call.botName}`}</span>
-      <span className="ms-1 tabular-nums">
-        {call.phase === "ringing" ? t`Calling…` : callClock(elapsed)}
+      <span className="min-w-0 truncate" dir="auto">
+        {t`Return to call with ${call.botName}`}
+        {barDetail ? ` · ${barDetail}` : ""}
+      </span>
+      <span className="shrink-0 tabular-nums">
+        {call.phase === "ringing" ? barActivity : `${callClock(elapsed)} · ${barActivity}`}
       </span>
     </button>
   );

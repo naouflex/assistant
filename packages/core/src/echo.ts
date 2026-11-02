@@ -1,8 +1,10 @@
-/** A heard line longer than this is a real turn, however much it overlaps the reply. */
-const MAX_ECHO_WORDS = 12;
+/** Heard lines longer than this need a stronger word overlap to count as echo. */
+const LONG_ECHO_HEARD_WORDS = 12;
 /** Fewer matched words than this is coincidence, not the speaker leaking into the mic. */
 const MIN_ECHO_WORDS = 3;
 const ECHO_MATCH_RATIO = 0.6;
+/** Default overlap for matching a long heard line against a spoken reply. */
+export const PLAYBACK_ECHO_RATIO = 0.4;
 
 const CONTRACTIONS: Record<string, string> = {
   m: "am",
@@ -41,7 +43,7 @@ export function isEchoOfSpeech(
 ): boolean {
   const heardWords = words(heard);
   const spokenWords = words(spoken);
-  if (heardWords.length > MAX_ECHO_WORDS || !spokenWords.length) return false;
+  if (!spokenWords.length) return false;
   if (heardWords.length === 2) {
     return spokenWords.some(
       (word, i) => word === heardWords[0] && spokenWords[i + 1] === heardWords[1],
@@ -56,7 +58,11 @@ export function isEchoOfSpeech(
     cursor = at + 1;
   }
   if (matched < MIN_ECHO_WORDS) return false;
-  return matched / heardWords.length >= threshold;
+  const ratio = matched / heardWords.length;
+  if (heardWords.length > LONG_ECHO_HEARD_WORDS) {
+    return ratio >= Math.max(threshold, PLAYBACK_ECHO_RATIO);
+  }
+  return ratio >= threshold;
 }
 
 /** How long a spoken line can still come back through the microphone. */
@@ -91,7 +97,16 @@ export class SpokenMemory {
    */
   isEcho(heard: string, threshold?: number, now = Date.now()): boolean {
     this.prune(now);
-    return isEchoOfSpeech(heard, this.entries.map((entry) => entry.text).join(". "), threshold);
+    const matchThreshold = threshold ?? ECHO_MATCH_RATIO;
+    for (const entry of this.entries) {
+      if (isEchoOfSpeech(heard, entry.text, matchThreshold)) return true;
+    }
+    if (this.entries.length < 2) return false;
+    return isEchoOfSpeech(
+      heard,
+      this.entries.map((entry) => entry.text).join(". "),
+      matchThreshold,
+    );
   }
 
   private prune(now: number): void {

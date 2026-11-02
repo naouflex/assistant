@@ -29,13 +29,18 @@ vi.mock("./call-pickup.js", () => ({
   pickUp: vi.fn(async () => undefined),
 }));
 
-vi.mock("./dictation.js", () => ({
-  dictation: {
-    listen: vi.fn(async () => undefined),
-    stop: vi.fn(),
-    subscribe: vi.fn(() => () => undefined),
-  },
-}));
+vi.mock("./dictation.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./dictation.js")>();
+  return {
+    ...actual,
+    dictationSupportsInterimBargeIn: vi.fn(() => true),
+    dictation: {
+      listen: vi.fn(async () => undefined),
+      stop: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
+    },
+  };
+});
 
 vi.mock("./tts.js", () => ({
   speaker: {
@@ -71,9 +76,11 @@ const getThread = vi.mocked(rpc.threads.get);
 const endCallRpc = vi.mocked(rpc.threads.endCall);
 
 describe("call session", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     endCall();
     vi.clearAllMocks();
+    const dictationModule = await import("./dictation.js");
+    vi.mocked(dictationModule.dictationSupportsInterimBargeIn).mockReturnValue(true);
     vi.useFakeTimers();
     isSpeaking.mockReturnValue(false);
     listen.mockResolvedValue(undefined);
@@ -502,6 +509,35 @@ describe("call session", () => {
     expect(send).not.toHaveBeenCalled();
     expect(speaker.stop).not.toHaveBeenCalled();
     expect(getSnapshot()?.phase).toBe("speaking");
+  });
+
+  it("ignores a long transcript of the reply after playback", async () => {
+    const reply =
+      "I looked it up and the meeting is at three pm on Thursday in the main conference room downtown";
+    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
+    const speech = await speakingReply(reply);
+    send.mockClear();
+
+    speech?.({ status: "idle" });
+    await vi.advanceTimersByTimeAsync(ECHO_GUARD_MS);
+    await heard(reply);
+
+    expect(send).not.toHaveBeenCalled();
+    expect(getSnapshot()?.phase).toBe("listening");
+  });
+
+  it("does not open dictation over playback when only server transcription is available", async () => {
+    const dictationModule = await import("./dictation.js");
+    vi.mocked(dictationModule.dictationSupportsInterimBargeIn).mockReturnValue(false);
+    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: true });
+    getThread.mockResolvedValue(snapshot([botMessage("message-1", "Booked for Friday")]) as never);
+    await heard("book the flight");
+    listen.mockClear();
+    const speech = vi.mocked(speaker.subscribe).mock.calls.at(-1)?.[0];
+    speech?.({ status: "speaking", caption: "Booked for Friday" });
+    await Promise.resolve();
+    expect(listen).not.toHaveBeenCalled();
+    vi.mocked(dictationModule.dictationSupportsInterimBargeIn).mockReturnValue(true);
   });
 
   it("stops the reply when the caller talks over it", async () => {

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   combineTranscript,
   Dictation,
+  dictationSupportsInterimBargeIn,
   MAX_TRANSCRIPTION_RESPONSE_BYTES,
   TRANSCRIPTION_RESPONSE_TIMEOUT_MS,
   transcriptionLanguage,
@@ -1772,6 +1773,18 @@ describe("Dictation web speech", () => {
     instances[1]?.onerror?.({ error: "network" });
     expect(offline.state.error).toBe("Dictation failed: network");
     expect(started).not.toHaveBeenCalled();
+  });
+});
+
+describe("dictationSupportsInterimBargeIn", () => {
+  it("is false on mobile browsers that use server transcription", () => {
+    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone)", language: "en-US" });
+    expect(dictationSupportsInterimBargeIn(true)).toBe(false);
+  });
+
+  it("follows Web Speech availability on desktop", () => {
+    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Windows NT 10.0)", language: "en-US" });
+    expect(dictationSupportsInterimBargeIn(true)).toBe(webSpeechAvailable());
   });
 });
 

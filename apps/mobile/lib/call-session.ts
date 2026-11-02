@@ -13,6 +13,7 @@ import {
   isRetryableError,
   latestSpokenCallReply,
   newClientId,
+  PLAYBACK_ECHO_RATIO,
   recognitionLocaleTag,
   retryDelayMs,
   spokenMemory,
@@ -59,6 +60,7 @@ export type CallState = {
   caption: string;
   heard: string;
   exchanges: CallExchange[];
+  endingCall: boolean;
 };
 
 export type CallClip = { base64: string; mimeType: string };
@@ -240,6 +242,7 @@ export function startCall(
     caption: "",
     heard: "",
     exchanges: [],
+    endingCall: false,
   };
   unwatch = deps.watch(call.botId, onReply, onCallEnded);
   emit();
@@ -432,7 +435,7 @@ async function handleTranscript(raw: string): Promise<void> {
     deps.stopSpeaking();
     set({ phase: "thinking", caption: "" });
   }
-  if (spokenMemory.isEcho(text)) {
+  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) {
     set({ heard: "" });
     void listen();
     return;
@@ -462,6 +465,7 @@ async function handleTranscript(raw: string): Promise<void> {
     });
   if (isFarewell(text)) {
     hangUpAfterReply = true;
+    set({ endingCall: true });
     // A second goodbye replaces this timer. Clear the previous one or it can
     // end the next call after this one has already hung up.
     if (hangUpTimer) clearTimeout(hangUpTimer);
@@ -644,6 +648,7 @@ function onCallEnded(ended: CallEnded): void {
   if (!state || switching || ended.callId !== callId || botEndedCall) return;
   hangUpAfterReply = true;
   botEndedCall = true;
+  set({ endingCall: true });
   if (hangUpTimer) clearTimeout(hangUpTimer);
   hangUpTimer = setTimeout(endCall, CALL_FAREWELL_TIMEOUT_MS);
   const farewell = ended.farewell?.trim();

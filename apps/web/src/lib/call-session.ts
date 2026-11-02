@@ -10,6 +10,7 @@ import {
   isFarewell,
   isSecretAskBlock,
   newClientId,
+  PLAYBACK_ECHO_RATIO,
   runThreadSubscription,
   speechFromBlocks,
   spokenDecision,
@@ -19,7 +20,7 @@ import { t } from "@lingui/core/macro";
 import { getGlobalBroadcastChannel } from "better-auth/client";
 import { useSyncExternalStore } from "react";
 import { pickUp } from "./call-pickup.js";
-import { dictation } from "./dictation.js";
+import { dictation, dictationSupportsInterimBargeIn } from "./dictation.js";
 import {
   newLogoAvatarActivitySource,
   openLogoAvatarActivityFeed,
@@ -49,6 +50,8 @@ export interface CallState {
   caption: string;
   heard: string;
   exchanges: CallExchange[];
+  /** The bot or caller said goodbye; the call hangs up after the next reply. */
+  endingCall: boolean;
 }
 
 const RUN_ACTIVE = ["running", "queued", "leased"];
@@ -172,6 +175,7 @@ export function startCall(call: {
     caption: "",
     heard: "",
     exchanges: [],
+    endingCall: false,
   };
   unsubSpeech = speaker.subscribe((speech) => {
     if (!state || state.phase === "ringing") return;
@@ -179,8 +183,12 @@ export function startCall(call: {
     if (speech.status === "speaking") {
       bargedIn = false;
       set({ phase: "speaking", caption: speech.caption ?? "" });
-      // The mic stays open through playback so the caller can talk over the reply.
-      void openMic();
+      if (dictationSupportsInterimBargeIn(transcribe)) {
+        void openMic();
+      } else {
+        dictation.stop("cancel");
+        micOpen = false;
+      }
     } else if (speech.status === "idle" && state.phase !== "listening" && !bargedIn) {
       set({ caption: "" });
       guardThenListen();
@@ -465,6 +473,7 @@ function watchThread(botId: string) {
       if (botEndedCall) return;
       hangUpAfterReply = true;
       botEndedCall = true;
+      set({ endingCall: true });
       if (hangUpTimer) clearTimeout(hangUpTimer);
       hangUpTimer = setTimeout(endCall, CALL_FAREWELL_TIMEOUT_MS);
       speakFarewell(event.payload);
@@ -569,7 +578,7 @@ async function handleTranscript(text: string) {
   }
   dictation.stop("submit");
   // The microphone caught the reply, not the caller: drop it and keep listening.
-  if (spokenMemory.isEcho(text)) {
+  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) {
     set({ heard: "" });
     void listen();
     return;
@@ -587,7 +596,12 @@ async function handleTranscript(text: string) {
   const turnCallId = callId;
   const closing = isFarewell(text);
   awaitingReply = true;
-  set({ heard: text, phase: "thinking", exchanges: [...exchanges, { role: "user", text }] });
+  set({
+    heard: text,
+    phase: "thinking",
+    exchanges: [...exchanges, { role: "user", text }],
+    ...(closing ? { endingCall: true } : {}),
+  });
   if (closing) {
     hangUpAfterReply = true;
     // A second goodbye replaces this timer. Clear the previous one or it can
@@ -671,6 +685,10 @@ function reactToThread() {
       awaitingReply = false;
       set({ exchanges: [...state.exchanges, { role: "bot", text }], heard: "" });
       spokenMemory.remember(text);
+      if (!dictationSupportsInterimBargeIn(transcribe)) {
+        dictation.stop("cancel");
+        micOpen = false;
+      }
       void speaker.speak(
         secretAsk
           ? `${text}. ${t`Hang up first, then enter the code on screen.`}`

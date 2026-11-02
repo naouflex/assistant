@@ -52,6 +52,18 @@ export function webSpeechAvailable(): boolean {
   return Boolean(speechRecognitionCtor());
 }
 
+/** True when dictation can stream partial text so the caller can talk over bot speech. */
+export function dictationSupportsInterimBargeIn(transcribeOpt?: boolean): boolean {
+  const transcribe = Boolean(transcribeOpt);
+  if (
+    (prefersServerDictation() && transcribeOpt !== false) ||
+    (desktopBridge()?.speech && transcribe)
+  ) {
+    return false;
+  }
+  return webSpeechAvailable();
+}
+
 /**
  * Electron exposes webkitSpeechRecognition without a speech-service key, so
  * recognition fails with `network`. Don't treat that API as available there.

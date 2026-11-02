@@ -118,6 +118,21 @@ export function CallCard() {
   }, [call?.botId, call?.botName, call?.phase]);
 
   if (!call) return null;
+  const activity = call.endingCall
+    ? t("Ending call")
+    : call.phase === "speaking"
+      ? t("Speaking")
+      : call.phase === "thinking"
+        ? t("Thinking")
+        : call.muted
+          ? t("Muted")
+          : t("Listening");
+  const liveLine =
+    call.phase === "listening" && call.heard.trim()
+      ? call.heard
+      : call.caption.trim()
+        ? call.caption
+        : "";
   return (
     <GlassSurface
       shape="roundedRectangle"
@@ -151,7 +166,18 @@ export function CallCard() {
             {call.botName}
           </Text>
         </Pressable>
-        <Waveform phase={call.phase} />
+        <View style={styles.statusCol}>
+          <Waveform phase={call.phase} />
+          {!call.transcriptOpen || liveLine ? (
+            <Text
+              numberOfLines={1}
+              accessibilityLiveRegion="polite"
+              style={[styles.statusLine, { color: tokens.mutedForeground }]}
+            >
+              {liveLine || activity}
+            </Text>
+          ) : null}
+        </View>
         <View style={[styles.initial, { backgroundColor: tokens.muted }]}>
           <Text style={[styles.initialText, { color: tokens.mutedForeground }]}>{initial}</Text>
         </View>
@@ -318,13 +344,14 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row", alignItems: "center", gap: 10 },
   name: { ...typeScale.cardTitle, maxWidth: 110, writingDirection: "auto" },
+  statusCol: { flex: 1, alignItems: "center", gap: 2 },
   waveform: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
   },
+  statusLine: { ...typeScale.caption, maxWidth: 140, writingDirection: "auto" },
   initial: {
     width: 28,
     height: 28,

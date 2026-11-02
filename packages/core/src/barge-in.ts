@@ -1,7 +1,6 @@
-import { spokenMemory } from "./echo.js";
+import { PLAYBACK_ECHO_RATIO, spokenMemory } from "./echo.js";
 
-/** Lower echo match while audio plays: most of what the mic hears is the speaker. */
-const PLAYBACK_ECHO_RATIO = 0.4;
+export { PLAYBACK_ECHO_RATIO };
 /** The only one-word turns worth cutting a reply short for. */
 const INTERRUPT_WORDS = new Set(["stop", "wait", "hold on", "pause", "no"]);
 
@@ -20,7 +19,9 @@ export function isCallBargeIn(text: string): boolean {
 
 /** An interim is revised word by word, so one stray word never cuts playback. */
 export function isInterimCallBargeIn(text: string): boolean {
-  return cleanWords(text).includes(" ") && !spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO);
+  const cleaned = cleanWords(text);
+  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) return false;
+  return cleaned.includes(" ") || INTERRUPT_WORDS.has(cleaned);
 }
 
 function cleanWords(text: string): string {
