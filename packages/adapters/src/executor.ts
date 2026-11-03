@@ -49,8 +49,10 @@ import {
 import { enrichLogContext, getLogger } from "@atlas/logging";
 import { sanitizedError } from "@atlas/logging/monitoring";
 import { formatAgentEnvironmentInstruction } from "./agent-environment.js";
+import { localAnswerThinking } from "./answer-quality.js";
 import { createApprovedEffectReplayQueue } from "./approval-effect.js";
 import { PARTIAL_REPLY_NOTE } from "./automated-messages.js";
+import { BACKGROUND_WAKE_DELAY_MS, helperParentStillRunning } from "./background-helper-run.js";
 import { loadBotMessageContext } from "./bot-messages.js";
 import {
   commandCredentialRedactions,
@@ -59,7 +61,7 @@ import {
   loadRunLoginRedactions,
 } from "./bot-secrets.js";
 import { createBrowserProvider } from "./browser-provider-factory.js";
-import { partitionTools } from "./builtin-tool-bridge.js";
+import { compactToolSet, partitionTools } from "./builtin-tool-bridge.js";
 import { agentConnectionTools, builtinAgentTools } from "./builtin-tools.js";
 import { cloudAgentsEnabled } from "./cloud-agent-factory.js";
 import { mergeConnectedPlugins, needsLivePluginSync } from "./composio-connector.js";
@@ -84,6 +86,7 @@ import {
 } from "./connection-context.js";
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
+import { doTheJobNote } from "./do-the-job.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetRun } from "./fleet-tools.js";
 import { loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
@@ -101,13 +104,9 @@ import {
   neutralizeSpeakerLabels,
   USER_SPEAKER,
 } from "./history-speakers.js";
+import { hostScreenSupported } from "./host-screen.js";
 import { createMediaGenerationProvider } from "./media-generation-factory.js";
-import {
-  BACKGROUND_WAKE_DELAY_MS,
-  helperParentStillRunning,
-} from "./background-helper-run.js";
 import { loadAgentMemoryContext } from "./memory-context.js";
-import { seedScratchpadFromUserPrompt } from "./scratchpad-seed.js";
 import { HostedModelCreditsRequiredError } from "./model-credit-observer.js";
 import {
   effectiveModelRole,
@@ -121,7 +120,9 @@ import {
   runModelChoice,
 } from "./model-selection.js";
 import { modelAcceptsImageInput } from "./model-vision.js";
+import { mountWorkNote, ownFilesNote } from "./mounted-files.js";
 import { usesNativeShell } from "./native-shell.js";
+import { optionChoiceNote } from "./option-choice.js";
 import { paymentWalletConnected } from "./payment-wallets.js";
 import { isRetiredModelCredentialError } from "./pi-oauth.js";
 import { loadPurchaseRedactions } from "./purchase-service.js";
@@ -140,12 +141,17 @@ import { restoreTurnCheckpointEffects, settleRunningHelpers } from "./run-contex
 import { APPROVED_EFFECT_REPLAY_ORDER, buildApprovalContinuation } from "./run-effects.js";
 import {
   BOT_DIRECTORY_LIMIT,
+  compactInstructionsEnabled,
+  compactUserTurnInstructions,
   dockerComputerToolInstruction,
+  ownerFolderNote,
   persistentComputerInstruction,
   runIdentityInstruction,
   threadContextForRun,
   userTurnInstructions,
   voiceCallInstruction,
+  windowsShellAside,
+  wslPlaceNote,
 } from "./run-instructions.js";
 import {
   computerRetryDelay,
@@ -198,6 +204,7 @@ import {
   withRecentTurnImages,
 } from "./run-turn-images.js";
 import { loadAgentScratchpadContext } from "./scratchpad-context.js";
+import { seedScratchpadFromUserPrompt } from "./scratchpad-seed.js";
 import { inferScript } from "./scripted-runtime.js";
 import { listAgentSkillRecords } from "./skill-tools.js";
 import {
@@ -219,6 +226,7 @@ import {
 import { loadAgentTicketContext } from "./ticket-context.js";
 import { appendToolCompletionAudit } from "./tool-completion-audit.js";
 import { toolResultFingerprint } from "./tool-loop.js";
+import { voiceActionNote } from "./voice-action.js";
 import { createWebProvider } from "./web-provider-factory.js";
 
 /** Same reach as the MCP connector: usable servers assigned to the bot or shared with every bot. */
@@ -303,10 +311,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         endRunConnectorState(runId);
         return;
       }
-      if (
-        run.trigger === "follow_up" &&
-        (await helperParentStillRunning(deps, run.clientNonce))
-      ) {
+      if (run.trigger === "follow_up" && (await helperParentStillRunning(deps, run.clientNonce))) {
         await deps.prisma.run.updateMany({
           where: { id: runId, status: "queued" },
           data: { wakeAt: new Date(Date.now() + BACKGROUND_WAKE_DELAY_MS) },
@@ -923,6 +928,8 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 credential: backup.credential,
                 thinkingLevel: (choice.thinkingLevel ??
                   null) as AgentRunRequest["model"]["thinkingLevel"],
+                // A backup runs at its normal speed; the fast tier is the main model's setting.
+                modelFastTier: false as AgentRunRequest["model"]["modelFastTier"],
                 resolved: backup.resolved,
               };
             } catch {
@@ -946,6 +953,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               id: selectedModelId,
               credential: selected.credential,
               thinkingLevel: selected.thinkingLevel,
+              modelFastTier: selected.modelFastTier,
               resolved: await resolveModelKey(
                 deps,
                 run.userId,
@@ -984,6 +992,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           id: runModelId,
           credential,
           thinkingLevel,
+          modelFastTier,
           resolved,
         } = start;
         runSecrets.push(...resolved.redact);
@@ -1166,6 +1175,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           botUserId: bot.userId,
         });
         let userComputer: UserComputerState;
+        let userComputerPlatform: string | undefined;
         let userComputerScreen = false;
         if (
           userComputerOwnerId &&
@@ -1175,13 +1185,14 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           const device = await deps.userDevices.connected(userComputerOwnerId).catch(() => null);
           if (device) {
             userComputer = "connected";
-            // The macOS and Windows desktops fetch a screen driver; Linux has none yet.
-            userComputerScreen = device.platform === "darwin" || device.platform === "win32";
+            userComputerPlatform = device.platform;
+            userComputerScreen = hostScreenSupported(device.platform);
           }
           // A chat that used the computer earlier may continue from another device after it closed.
           else if (await deps.userDevices.pairedSince(userComputerOwnerId).catch(() => null))
             userComputer = "offline";
         }
+        // Online means Phone control is on: the phone only connects while it is.
         const phoneConnected = Boolean(
           userComputerOwnerId &&
             deps.userDevices &&
@@ -1251,8 +1262,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           !ownerStartedRun || Boolean(turnCheckpoint) || Boolean(checkpointLoadError);
         // The creation intro only asks what the bot is for (see selectBuiltinToolsForRun),
         // so it gets no connector tools either.
-        const tools =
+        // Small local models pay for every prompt token on every call; see compactInstructionsEnabled.
+        const compactRun = compactInstructionsEnabled(runModelProvider);
+        const offeredTools =
           run.trigger === "created" ? builtins : [...builtins, ...exposedConnectorTools];
+        const tools = compactRun ? compactToolSet(offeredTools) : offeredTools;
         const taskCatalogInstruction = tools.some((tool) => tool.name === "task_catalog")
           ? TASK_CATALOG_GUIDANCE
           : undefined;
@@ -1290,7 +1304,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 .catch(() => undefined)
             : undefined;
         const hostShell = hostEnvironment
-          ? `Home: ${JSON.stringify(hostEnvironment.home)}. Shell: ${JSON.stringify(hostEnvironment.shell)}. The shell tool executes commands with that shell. Use its native syntax, paths and installed tools; do not assume Linux or bash.`
+          ? `Home: ${JSON.stringify(hostEnvironment.home)}. Shell: ${JSON.stringify(hostEnvironment.shell)}. The shell tool executes commands with that shell. Use its native syntax, paths and installed tools; do not assume Linux or bash.${windowsShellAside(hostEnvironment.platform)}`
           : undefined;
         const hostInstruction = !hostEnvironment
           ? undefined
@@ -1510,6 +1524,61 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           // Per-turn, not in the system prompt: the timestamp changes every call and would break the cacheable prefix.
           formatCurrentTimeInstruction(new Date(), userTimeZone),
           lateRoutineNote,
+          // Per-turn too: only this turn's words decide it, and the system prompt stays cacheable.
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? optionChoiceNote(taskPrompt, {
+                askUserOffered: tools.some((tool) => tool.name === "ask_user"),
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? ownFilesNote(taskPrompt, {
+                shellOffered: tools.some((tool) => tool.name === "shell"),
+                mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          // Last, so a small model follows this instead of copying an earlier pasted-code reply.
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? doTheJobNote(taskPrompt, {
+                toolsOffered:
+                  tools.some((tool) => tool.name === "write_file") &&
+                  tools.some((tool) => tool.name === "attach_file"),
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? ownerFolderNote(taskPrompt, {
+                userComputer,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? wslPlaceNote(taskPrompt, {
+                userComputer,
+                userComputerPlatform,
+                ownShellPlatform: hostEnvironment?.platform,
+                mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          // After the copied reply in history, so the next "start it" uses the mount.
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? mountWorkNote(taskPrompt, {
+                shellOffered: tools.some((tool) => tool.name === "shell"),
+                mounts: process.env.SANDBOX_COMPUTER_MOUNTS,
+                instructions: bot.instructions,
+                userComputerPlatform,
+                voiceCall: Boolean(voiceCall),
+              })
+            : undefined,
+          voiceCall &&
+          !callEndRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging")
+            ? voiceActionNote(taskPrompt, { voiceCall: true })
+            : undefined,
         ]
           .filter(Boolean)
           .join("\n\n");
@@ -1631,6 +1700,18 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           return true;
         };
 
+        const attachAfterWrite =
+          compactRun &&
+          (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging") &&
+          Boolean(
+            doTheJobNote(taskPrompt, {
+              toolsOffered:
+                tools.some((tool) => tool.name === "write_file") &&
+                tools.some((tool) => tool.name === "attach_file"),
+              voiceCall: Boolean(voiceCall),
+            }),
+          );
+
         try {
           if (checkpointLoadError) throw checkpointLoadError;
           const runtimeEvents = deps.runtime.run(
@@ -1657,10 +1738,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 (run.trigger === "follow_up" && sourceMessage?.role === "user"))
                 ? { promptSpeaker: USER_SPEAKER }
                 : {}),
+              utterance: taskPrompt,
               // Keep an explicit executor override, but let the runtime select
               // cache-aware context for connections declaring a cache window.
               contextStrategy: deps.contextStrategy,
-              instructions: userTurnInstructions({
+              instructions: (compactRun ? compactUserTurnInstructions : userTurnInstructions)({
                 botInstructions: runIdentityInstruction(bot, run.trigger),
                 groupContext,
                 messagingContext,
@@ -1689,6 +1771,8 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 offeredFleetTools: offeredFleetTools(builtins),
                 userComputer,
                 phone: phoneConnected,
+                userComputerPlatform,
+                ownShellPlatform: hostEnvironment?.platform,
               })
                 .filter((instruction): instruction is string => Boolean(instruction))
                 .join("\n\n"),
@@ -1708,7 +1792,17 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 id: runModelId,
                 ...(credential ? { connectionId: credential.id } : {}),
                 ...resolvedModelRunFields(resolved),
-                thinkingLevel: thinkingLevel ?? resolved.thinkingLevel ?? null,
+                modelFastTier: modelFastTier ?? false,
+                thinkingLevel: localAnswerThinking({
+                  provider: runModelProvider,
+                  explicit: thinkingLevel ?? resolved.thinkingLevel ?? null,
+                  text:
+                    run.trigger === "user" ||
+                    run.trigger === "follow_up" ||
+                    run.trigger === "messaging"
+                      ? taskPrompt
+                      : undefined,
+                }),
               },
               fallbackModels: fallbackModels.map(({ provider, modelId, credentialId }) => ({
                 provider,
@@ -1767,6 +1861,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               },
               script,
               allowSilentEmpty: allowSilentEmptyRun,
+              attachAfterWrite,
               emptyResponseText,
               executeTool: scripted
                 ? undefined
@@ -1842,7 +1937,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           redactSecrets(text, runSecrets),
         );
         // An outage at the computer provider is retried like any setup failure, but is not a
-        // Rakazo bug to report.
+        // Atlas bug to report.
         const providerOutage =
           setupError instanceof SandboxUnavailableError ||
           setupError instanceof SandboxUnresponsiveError;
