@@ -156,7 +156,7 @@ describe("desktop preload bridge", () => {
     });
     const off = vi.fn();
     const { exposeInMainWorld } = runPreload("preload.cjs", { on, off });
-    const [, bridge] = exposeInMainWorld.mock.calls[0] as [string, RakazoDesktop];
+    const [, bridge] = exposeInMainWorld.mock.calls[0] as [string, AtlasDesktop];
 
     const received: unknown[] = [];
     const unsubscribe = bridge.menu!.onCommand((command) => received.push(command));
@@ -254,13 +254,13 @@ describe("setup preload bridge", () => {
     const locale = { lang: "es", dir: "ltr", messages: { Continue: "Continuar" } };
     const sendSync = vi.fn(() => locale);
     const [, bridge] = runPreload("setup-preload.cjs", { sendSync }).exposeInMainWorld.mock
-      .calls[0] as [string, RakazoSetup];
+      .calls[0] as [string, AtlasSetup];
     expect(sendSync).toHaveBeenCalledWith("desktop.setup.locale");
     expect(bridge.locale).toEqual(locale);
 
     const [, refused] = runPreload("setup-preload.cjs").exposeInMainWorld.mock.calls[0] as [
       string,
-      RakazoSetup,
+      AtlasSetup,
     ];
     expect(refused.locale).toEqual({ lang: "en", dir: "ltr", messages: {} });
   });

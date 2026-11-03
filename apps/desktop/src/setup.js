@@ -1,11 +1,15 @@
 (() => {
-  const bridge = window.rakazoSetup;
+  const bridge = window.atlasSetup;
   document.documentElement.dataset.platform = bridge?.platform ?? "browser";
   const messages = bridge?.locale?.messages ?? {};
 
   /** Core's `translate`, which this plain page cannot import: English-keyed, `{name}` placeholders. */
   function t(message, values) {
-    const template = Object.hasOwn(messages, message) ? messages[message] : message;
+    // Upstream text names the product Rakazo; this app ships as Atlas in every language.
+    const template = (Object.hasOwn(messages, message) ? messages[message] : message).replaceAll(
+      "Rakazo",
+      "Atlas",
+    );
     if (!values) return template;
     return template.replace(/\{([A-Za-z0-9_]+)\}/g, (match, key) =>
       Object.hasOwn(values, key) ? String(values[key]) : match,
@@ -95,7 +99,7 @@
 
   function selectedMode() {
     const checked = form.querySelector('input[name="mode"]:checked');
-    return checked === null ? "cloud" : checked.value;
+    return checked === null ? "existing" : checked.value;
   }
 
   function setStatus(message, tone) {
@@ -409,7 +413,7 @@
     const mode = selectedMode();
     if (mode === "new") void runStack();
     // Cloud is an existing server at a fixed address.
-    else if (mode === "cloud") void save("existing", cloudUrl);
+    else if (mode === "cloud" && cloudUrl !== "") void save("existing", cloudUrl);
     else {
       const headers = readHeaders();
       if (headers === null) setStatus(t("Invalid custom headers"), "error");
@@ -444,9 +448,12 @@
       const state = await bridge.state();
       if (state === null) throw new Error("Setup is not active");
       defaultLocalUrl = state.defaultLocalUrl;
-      cloudUrl = state.cloudUrl;
+      cloudUrl = state.cloudUrl ?? "";
+      const cloudChoice = document.getElementById("choice-cloud");
+      if (cloudUrl !== "" && cloudChoice !== null) cloudChoice.hidden = false;
       if (state.saved !== null) {
-        const savedCloud = state.saved.mode === "existing" && state.saved.serverUrl === cloudUrl;
+        const savedCloud =
+          cloudUrl !== "" && state.saved.mode === "existing" && state.saved.serverUrl === cloudUrl;
         const mode = savedCloud ? "cloud" : state.saved.mode;
         const modeInput = document.querySelector(`input[name="mode"][value="${mode}"]`);
         if (modeInput !== null) modeInput.checked = true;
@@ -457,6 +464,8 @@
             .join("\n");
           serverHeadersSection.open = true;
         }
+      } else if (state.defaultExistingUrl) {
+        serverUrl.value = state.defaultExistingUrl;
       }
       // A relaunch with the stack down starts it before this window opens; show that
       // attempt instead of the saved mode, and follow it while it is still running.

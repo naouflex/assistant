@@ -14,7 +14,7 @@ import { t } from "./i18n.js";
 import { readPrivateFile, writePrivateFile } from "./setup-store.js";
 
 export const STACK_DIR_NAME = "stack";
-export const STACK_PROJECT_NAME = "rakazo-desktop";
+export const STACK_PROJECT_NAME = "atlas-desktop";
 export const STACK_COMPOSE_FILE = "docker-compose.images.yml";
 export const STACK_ENV_TEMPLATE = ".env.images.example";
 export const STACK_ENV_FILE = ".env";
@@ -76,9 +76,13 @@ export function stackResourceDir(input: {
 
 const STABLE_VERSION = /^\d+\.\d+\.\d+$/;
 
+/** Locally built images (no registry). Desktop compose defaults here, not GHCR. */
+export const LOCAL_APP_IMAGE = "atlas/app";
+export const LOCAL_COMPUTER_IMAGE = "atlas/computer";
+
 /**
  * Installed builds pin images to their own version so the DMG and the multi-arch
- * images move together; development builds follow `edge`.
+ * images move together; development and unpackaged builds use locally built `local`.
  */
 export function resolveImageTag(input: {
   version: string;
@@ -88,7 +92,12 @@ export function resolveImageTag(input: {
   const override = input.override?.trim();
   if (override) return override;
   if (input.packaged && STABLE_VERSION.test(input.version)) return `v${input.version}`;
-  return "edge";
+  return "local";
+}
+
+/** Tags that must never hit a registry — use images already on this machine. */
+export function usesLocalOnlyImages(imageTag: string): boolean {
+  return imageTag === "local" || imageTag.startsWith("local-");
 }
 
 const GENERATED_SECRETS: Record<string, number> = {
@@ -99,7 +108,7 @@ const GENERATED_SECRETS: Record<string, number> = {
   SCREEN_PROXY_SECRET: 32,
   SANDBOX_SUPERVISOR_TOKEN: 32,
 };
-const LAUNCH_SUPPLIED = ["RAKAZO_IMAGE_TAG", "RAKAZO_COMPUTER_IMAGE_TAG"];
+const LAUNCH_SUPPLIED = ["ATLAS_IMAGE_TAG", "ATLAS_COMPUTER_IMAGE_TAG"];
 
 /**
  * Port of install-images.sh `create_env`: fills the empty secret lines with random
@@ -280,9 +289,14 @@ export function stackFailureMessage(
 ): string {
   switch (kind) {
     case "image-not-found":
-      return t("Images for {tag} are not published yet. Try again in a few minutes.", {
-        tag: imageTag,
-      });
+      return usesLocalOnlyImages(imageTag)
+        ? t(
+            "Local Docker images for {tag} were not found. Build atlas/app and atlas/computer on this machine, then retry.",
+            { tag: imageTag },
+          )
+        : t("Images for {tag} are not published yet. Try again in a few minutes.", {
+            tag: imageTag,
+          });
     case "port-in-use":
       return t("Could not bind a local port after retrying. Retry to choose another port.");
     case "address-pool-exhausted":
@@ -326,6 +340,10 @@ export interface LocalStackDeps {
   localWebUrl: string;
   allocatePort?: () => Promise<number>;
   imageTag: string;
+  /** Compose image repository (defaults to local `atlas/app`). */
+  appImage?: string;
+  /** Compose computer image repository (defaults to local `atlas/computer`). */
+  computerImage?: string;
   /** Returns the authenticated running image tag, or null for any other listener. */
   probe: (url: string, signal: AbortSignal, token: string) => Promise<string | null>;
   randomHex: (bytes: number) => string;
@@ -551,6 +569,13 @@ export class LocalStackController {
     const imagesCached = await this.hasLocalReleaseImages(binary, signal);
     if (signal.aborted) return this.push({ type: "failed", message: startInterrupted() });
     if (!imagesCached) {
+      if (usesLocalOnlyImages(this.deps.imageTag)) {
+        this.push({
+          type: "failed",
+          message: stackFailureMessage("image-not-found", "pulling", this.deps.imageTag),
+        });
+        return;
+      }
       this.push({ type: "pull-start" });
       const pulled = await this.compose(binary, ["pull"], PULL_TIMEOUT_MS, signal);
       if (interrupted(signal, pulled))
@@ -617,8 +642,12 @@ export class LocalStackController {
   }
 
   private async hasLocalReleaseImages(binary: string, signal: AbortSignal): Promise<boolean> {
-    // Moving tags must still check the registry for newer images.
-    if (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
+    // Moving registry tags must still check the registry for newer images.
+    // `local` / `local-*` only ever use images already on this machine.
+    if (
+      !usesLocalOnlyImages(this.deps.imageTag) &&
+      (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
+    )
       return false;
     const config = await this.compose(
       binary,
@@ -648,8 +677,10 @@ export class LocalStackController {
       env: dockerSpawnEnv(this.deps.platform, this.deps.env, binary, {
         SANDBOX_HOST_URL: this.deps.hostComputer?.url ?? "",
         SANDBOX_HOST_TOKEN: this.deps.hostComputer?.token ?? "",
-        RAKAZO_IMAGE_TAG: this.deps.imageTag,
-        RAKAZO_COMPUTER_IMAGE_TAG: this.deps.imageTag,
+        ATLAS_IMAGE: this.deps.appImage ?? LOCAL_APP_IMAGE,
+        ATLAS_COMPUTER_IMAGE: this.deps.computerImage ?? LOCAL_COMPUTER_IMAGE,
+        ATLAS_IMAGE_TAG: this.deps.imageTag,
+        ATLAS_COMPUTER_IMAGE_TAG: this.deps.imageTag,
         // Restricted egress needs host iptables rules. Docker Desktop keeps its
         // bridges inside its VM where the host cannot add them, and the app cannot
         // install root firewall rules on Linux either, so the stack would refuse
@@ -660,10 +691,10 @@ export class LocalStackController {
         CONTENT_ENCRYPTION: "off",
         ...(this.currentStackToken === null
           ? {}
-          : { RAKAZO_DESKTOP_STACK_TOKEN: this.currentStackToken }),
-        RAKAZO_WEB_PORT: new URL(this.currentWebUrl).port || "80",
+          : { ATLAS_DESKTOP_STACK_TOKEN: this.currentStackToken }),
+        ATLAS_WEB_PORT: new URL(this.currentWebUrl).port || "80",
         // Only web needs a stable host address. Docker allocates the API host port.
-        RAKAZO_API_PORT: "0",
+        ATLAS_API_PORT: "0",
         BETTER_AUTH_URL: this.currentWebUrl,
         WEB_ORIGIN: this.currentWebUrl,
         API_URL: this.currentWebUrl,

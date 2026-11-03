@@ -9,7 +9,7 @@ function subscribe(channel) {
   };
 }
 
-contextBridge.exposeInMainWorld("rakazoDesktop", {
+contextBridge.exposeInMainWorld("atlasDesktop", {
   platform: process.platform,
   nativeWindowFrame: process.platform === "win32",
   badge: {
@@ -37,6 +37,16 @@ contextBridge.exposeInMainWorld("rakazoDesktop", {
       const handler = (_event, command) => listener(command);
       ipcRenderer.on("desktop.menu.command", handler);
       return () => ipcRenderer.off("desktop.menu.command", handler);
+    },
+  },
+  localModel: {
+    state: () => ipcRenderer.invoke("desktop.localModel.state"),
+    start: () => ipcRenderer.invoke("desktop.localModel.start"),
+    stop: () => ipcRenderer.invoke("desktop.localModel.stop"),
+    onChange: (listener) => {
+      const handler = (_event, state) => listener(state);
+      ipcRenderer.on("desktop.localModel.change", handler);
+      return () => ipcRenderer.off("desktop.localModel.change", handler);
     },
   },
   monitoring: {

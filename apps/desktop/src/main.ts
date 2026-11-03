@@ -6,10 +6,10 @@ import path from "node:path";
 import type { HostScreen } from "@atlas/adapters/host-screen";
 import { startUserDeviceClient } from "@atlas/adapters/user-device-client";
 import type {
+  AtlasDesktopDevice,
   DesktopMenuCommand,
   DesktopReachability,
   DesktopSetup,
-  RakazoDesktopDevice,
 } from "@atlas/contracts";
 import { parseServerHeaders } from "@atlas/contracts";
 import type { Session } from "electron";
@@ -54,6 +54,7 @@ import {
   t,
   withDetail,
 } from "./i18n.js";
+import { createLocalModelHost } from "./local-model-host.js";
 import { saveLocalComputerHost } from "./local-settings.js";
 import {
   LocalStackController,
@@ -83,15 +84,16 @@ import { revealSecondInstanceWindow, secondInstanceWindow } from "./second-insta
 import { installServerHeaders } from "./server-request-headers.js";
 import { installSessionPermissions } from "./session-permissions.js";
 import {
+  ATLAS_CLOUD_URL,
+  DEFAULT_EXISTING_SERVER_URL,
   DEFAULT_LOCAL_WEB_URL,
   desktopStackImageTag,
-  isRakazoHealth,
+  isAtlasHealth,
   managedLocalOpenUrl,
   maySendDesktopStackToken,
   normalizeServerUrl,
   parseSetupInput,
   probeFailureMessage,
-  RAKAZO_CLOUD_URL,
   readProbeJson,
   resolveStartupTarget,
   safeExternalUrl,
@@ -129,10 +131,10 @@ function enableWindowsOpenAtLogin() {
 
 const PERFORMANCE_USER_DATA = process.env.RAKAZO_PERFORMANCE_USER_DATA;
 /** Test hook: where the app-managed stack answers. Mode `new` still requires loopback. */
-const LOCAL_WEB_URL = process.env.RAKAZO_LOCAL_WEB_URL?.trim() || DEFAULT_LOCAL_WEB_URL;
+const LOCAL_WEB_URL = process.env.ATLAS_LOCAL_WEB_URL?.trim() || DEFAULT_LOCAL_WEB_URL;
 const PROBE_TIMEOUT_MS = 8_000;
-const DESKTOP_STACK_PROBE_PATH = "/.well-known/rakazo-desktop-stack";
-const DESKTOP_STACK_TOKEN_HEADER = "x-rakazo-desktop-stack-token";
+const DESKTOP_STACK_PROBE_PATH = "/.well-known/atlas-desktop-stack";
+const DESKTOP_STACK_TOKEN_HEADER = "x-atlas-desktop-stack-token";
 let mainWindow: BrowserWindow | null = null;
 
 /** The server or the network refused the page; the setup window says so and the server logs its side. */
@@ -157,20 +159,21 @@ let warmWindowTimer: NodeJS.Timeout | undefined;
 // destroying the last window fires "window-all-closed" -> app.quit(); a probe
 // that runs before the first real window exists must not count as "all closed".
 let liveProbeWindows = 0;
-const WARM_WINDOW_TTL_MS = warmWindowTtlMs(process.env.RAKAZO_WARM_WINDOW_TTL_MS);
+const WARM_WINDOW_TTL_MS = warmWindowTtlMs(process.env.ATLAS_WARM_WINDOW_TTL_MS);
 
 const reportsErrors = desktopReportsErrors(app.isPackaged);
 const updaterEnvironment = {
   // A `--dir` build has no update feed to read.
   packaged: app.isPackaged && existsSync(path.join(process.resourcesPath, "app-update.yml")),
   version: app.getVersion(),
-  disabled: process.env.RAKAZO_DISABLE_AUTO_UPDATE === "1",
+  disabled: process.env.ATLAS_DISABLE_AUTO_UPDATE === "1",
 };
 /** Created once the app's language is known, so its first message is in it. */
 let desktopUpdater: DesktopUpdateController;
 let launchUpdateCheckScheduled = false;
 let localStack: LocalStackController;
 let hostComputer: Awaited<ReturnType<typeof prepareHostComputer>> | undefined;
+let localModelHost: ReturnType<typeof createLocalModelHost> | undefined;
 let requestingComputerAccess = false;
 let userDevices: UserDeviceAccess | undefined;
 let hostScreen: HostScreen | undefined;
@@ -400,7 +403,7 @@ function createWindow(url: string, partition: string | null) {
     if (
       process.platform === "darwin" &&
       !quitting &&
-      process.env.RAKAZO_DISABLE_WARM_WINDOW !== "1"
+      process.env.ATLAS_DISABLE_WARM_WINDOW !== "1"
     ) {
       event.preventDefault();
       win.hide();
@@ -573,7 +576,7 @@ async function installBundledRenderer(
   partition: string | null,
   managedLocalStack: boolean,
 ) {
-  if (!app.isPackaged || process.env.RAKAZO_DISABLE_BUNDLED_RENDERER === "1") return;
+  if (!app.isPackaged || process.env.ATLAS_DISABLE_BUNDLED_RENDERER === "1") return;
   if (!servesBundledRenderer(targetUrl, managedLocalStack)) return;
   const webUrl = new URL(targetUrl);
   const installationKey = `${partition ?? "default"}:${webUrl.protocol}`;
@@ -982,7 +985,7 @@ async function probeServer(
       };
     }
     const health = await readProbeJson(response);
-    if (!isRakazoHealth(health)) {
+    if (!isAtlasHealth(health)) {
       return {
         ok: false,
         status: response.status,
@@ -1348,6 +1351,12 @@ app.whenReady().then(async () => {
   } catch {
     /* Local access fails closed; Docker remains available. */
   }
+  localModelHost = createLocalModelHost({ userDataDir });
+  localModelHost.onChange((state) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send("desktop.localModel.change", state);
+    }
+  });
   const screenDriver = screenDriverRelease(process.platform);
   hostScreen =
     screenDriver &&
@@ -1414,12 +1423,12 @@ app.whenReady().then(async () => {
       appPath: app.getAppPath(),
     }),
     localWebUrl:
-      process.env.RAKAZO_LOCAL_WEB_URL?.trim() ||
+      process.env.ATLAS_LOCAL_WEB_URL?.trim() ||
       (await readStackWebUrl(stackDir(userDataDir), LOCAL_WEB_URL)),
     imageTag: resolveImageTag({
       version: app.getVersion(),
       packaged: app.isPackaged,
-      override: process.env.RAKAZO_IMAGE_TAG,
+      override: process.env.ATLAS_IMAGE_TAG,
     }),
     probe: (url, signal, token) => probeManagedStack(url, token, signal),
     randomHex: (bytes) => randomBytes(bytes).toString("hex"),
@@ -1431,11 +1440,11 @@ app.whenReady().then(async () => {
   });
   currentSetup = await readSetup(userDataDir);
   const target = resolveStartupTarget({
-    envUrl: process.env.RAKAZO_WEB_URL,
+    envUrl: process.env.ATLAS_WEB_URL,
     saved: currentSetup,
-    forceSetup: process.env.RAKAZO_FORCE_SETUP === "1",
+    forceSetup: process.env.ATLAS_FORCE_SETUP === "1",
   });
-  if (process.env.RAKAZO_PERFORMANCE_CLEAR_CACHE === "1") {
+  if (process.env.ATLAS_PERFORMANCE_CLEAR_CACHE === "1") {
     const cacheSessions = new Set<Session>([session.defaultSession]);
     if (target.kind === "app") {
       cacheSessions.add((await resolveSessionForTarget(target.url)).value);
@@ -1566,7 +1575,7 @@ app.whenReady().then(async () => {
       ? origin
       : null;
   };
-  const deviceState = async (origin: string | null): Promise<RakazoDesktopDevice | null> => {
+  const deviceState = async (origin: string | null): Promise<AtlasDesktopDevice | null> => {
     const state = origin === null ? null : userDevices?.state(origin);
     return state ? { ...state, name: await deviceName() } : null;
   };
@@ -1577,6 +1586,9 @@ app.whenReady().then(async () => {
     await userDevices?.setAllowed(origin, allowed);
     return deviceState(remoteDeviceOrigin(event));
   });
+  ipcMain.handle("desktop.localModel.state", () => localModelHost?.state());
+  ipcMain.handle("desktop.localModel.start", () => localModelHost?.start());
+  ipcMain.handle("desktop.localModel.stop", () => localModelHost?.stop());
   ipcMain.handle(
     "desktop.locale.set",
     createLocaleHandler(
@@ -1592,8 +1604,8 @@ app.whenReady().then(async () => {
   if (process.platform === "darwin") {
     // Installed builds ship the helper as an extra resource; `pnpm build` compiles it for development.
     const helper = app.isPackaged
-      ? path.join(process.resourcesPath, "speech", "rakazo-speech")
-      : path.join(app.getAppPath(), "build", "speech", "rakazo-speech");
+      ? path.join(process.resourcesPath, "speech", "atlas-speech")
+      : path.join(app.getAppPath(), "build", "speech", "atlas-speech");
     const speech = createSystemSpeech(permissionTarget, (language) =>
       spawn(helper, [language], { stdio: "pipe" }),
     );
@@ -1652,7 +1664,8 @@ app.whenReady().then(async () => {
     if (!fromSetupWindow(event)) return null;
     return {
       defaultLocalUrl: localStack.webUrl(),
-      cloudUrl: RAKAZO_CLOUD_URL,
+      defaultExistingUrl: DEFAULT_EXISTING_SERVER_URL,
+      cloudUrl: process.env.ATLAS_CLOUD_URL?.trim() || ATLAS_CLOUD_URL,
       saved: currentSetup,
       error: setupError ?? undefined,
     };
@@ -1794,7 +1807,21 @@ app.whenReady().then(async () => {
   });
 
   if (target.kind === "setup") {
-    showSetupWindow();
+    // First launch: if day-to-day local Atlas is already up, skip the setup form.
+    const auto = await probeServer(DEFAULT_EXISTING_SERVER_URL);
+    if (auto.ok && auto.url) {
+      const openSetup = { mode: "existing" as const, serverUrl: auto.url };
+      currentSetup = openSetup;
+      await writeSetup(userDataDir, openSetup);
+      if (await appOpener.open(openSetup.serverUrl)) {
+        commitPendingAppSwitch();
+        destroySetupWindow();
+      } else {
+        showSetupWindow();
+      }
+    } else {
+      showSetupWindow();
+    }
   } else if (target.source === "saved") {
     if (currentSetup?.mode === "new") {
       const managedUrl = managedLocalOpenUrl(target.url, localStack.webUrl());

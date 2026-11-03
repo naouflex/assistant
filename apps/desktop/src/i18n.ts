@@ -43,8 +43,9 @@ let reportedLocale: string | null = null;
 let writtenLocale: string | null = null;
 let saving: Promise<void> = Promise.resolve();
 
+/** Upstream text names the product Rakazo; this app ships as Atlas in every language. */
 export function t(message: string, values?: Record<string, string | number>): string {
-  return translate(desktopMessages(), message, values);
+  return translate(desktopMessages(), message, values).replaceAll("Rakazo", "Atlas");
 }
 
 export function desktopLocale(): DesktopLocale {
