@@ -31,3 +31,29 @@ export function applyLegacyEnvAliases(
   }
   return filled;
 }
+
+/** The legacy RAKAZO_ name for an ATLAS_ key, such as ATLAS_LOCAL_MAX_TOKENS. */
+export function legacyEnvName(atlasName: string): string | undefined {
+  const pattern = new RegExp(`(^|_)${ENV_BRAND}(_|$)`);
+  if (!pattern.test(atlasName)) return undefined;
+  return atlasName.replace(pattern, `$1${LEGACY_ENV_BRAND}$2`);
+}
+
+/**
+ * Code merged from upstream Rakazo still reads RAKAZO_ names, so each ATLAS_ value is
+ * copied onto its legacy name too. The ATLAS_ value wins when both are set. Returns the
+ * names it wrote.
+ */
+export function mirrorAtlasEnvOntoLegacy(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  const written: string[] = [];
+  for (const [key, value] of Object.entries(env)) {
+    if (value === undefined) continue;
+    const legacy = legacyEnvName(key);
+    if (!legacy || env[legacy] === value) continue;
+    env[legacy] = value;
+    written.push(legacy);
+  }
+  return written;
+}
