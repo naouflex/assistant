@@ -722,7 +722,7 @@ describe("identity confirmation", () => {
     const user = f.data.user!.find((row) => row.email === "approved@example.test")!;
     user.locale = "es";
     expect((await f.request("/request-identity-code", {}, token)).status).toBe(200);
-    expect(f.messages.at(-1)).toMatchObject({ subject: "Tu código de confirmación de Rakazo" });
+    expect(f.messages.at(-1)).toMatchObject({ subject: "Tu código de confirmación de Atlas" });
   });
 
   it("binds an emailed code to the session that requested it", async () => {
