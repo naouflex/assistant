@@ -23,6 +23,7 @@ function bot(id = "bot-1"): Bot {
     modelProvider: null,
     modelId: null,
     thinkingLevel: null,
+    modelFastTier: false,
     autoSpeak: false,
     spaceId: "space-1",
     description: "",

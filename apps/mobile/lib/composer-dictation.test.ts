@@ -10,7 +10,7 @@ import { mergeDictation, useComposerDictation } from "./composer-dictation";
 const dictation = vi.hoisted(() => {
   const state = {
     available: vi.fn(async () => true),
-    listen: vi.fn(async () => {}),
+    listen: vi.fn(async (_opts: unknown) => {}),
     commit: vi.fn(),
     stop: vi.fn(),
     staged: "",
