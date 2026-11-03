@@ -30,7 +30,7 @@ export function remoteProxyOrigin(target: string): string | null {
 function isPrivateIpv4(host: string): boolean {
   const parts = host.split(".").map((part) => Number(part));
   if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part))) return false;
-  const [a, b] = parts;
+  const [a = -1, b = -1] = parts;
   return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
 }
 
@@ -123,11 +123,7 @@ export function apiProxy(
           proxyRes.on("end", () => {
             let body = Buffer.concat(chunks);
             const type = String(proxyRes.headers["content-type"] ?? "");
-            if (
-              localOrigin &&
-              type.includes("json") &&
-              !proxyRes.headers["content-encoding"]
-            ) {
+            if (localOrigin && type.includes("json") && !proxyRes.headers["content-encoding"]) {
               body = Buffer.from(
                 rewriteAuthRedirectBody(body.toString("utf8"), browserOrigin, localOrigin),
               );

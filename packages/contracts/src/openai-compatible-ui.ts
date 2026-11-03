@@ -119,8 +119,8 @@ export function openRouterFishCatalogVoices(): { id: string; label: string }[] {
 /** Merge a provider voice list with Fish and placeholder fallbacks for the speech model. */
 export function openRouterVoicesForPicker(
   ttsModel: string,
-  listed: readonly { id: string; label: string }[],
-): { id: string; label: string }[] {
+  listed: readonly { id: string; label: string; description?: string }[],
+): { id: string; label: string; description?: string }[] {
   const model = ttsModel.trim() || DEFAULT_OPENROUTER_TTS_MODEL;
   const usable = listed.filter((voice) => !isOpenRouterPlaceholderVoiceId(voice.id));
   if (isOpenRouterFishTtsModel(model)) {
