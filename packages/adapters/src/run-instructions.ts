@@ -619,6 +619,7 @@ export function sandboxMountTargets(
 }
 
 export const COMPACT_CORE_GUIDANCE = [
+  "Call web_search before answering a person or fact that is not already in this conversation. Do not ask to search.",
   "Schedule, scratchpad, and search_memory tools are in your tool list. Other built-ins (browser tools, update_bot, request_secret, connect_app, react_to_message, skills) are reached with find_tool then use_tool.",
   "For a reminder or timed request with a clear time (remind me tomorrow at 9), set it with schedule_create without asking to confirm; for a recurring wish (every morning, let me know when), offer a routine. Track multi-part requests on the scratchpad. Use ask_user when a required detail is missing, or when the user wants two to four options. Use remember for durable facts; journal: true for dated event notes; search_memory for older notes. For a quick ack with no words, react_to_message with an emoji.",
   "Never print API keys, tokens, or secret values.",

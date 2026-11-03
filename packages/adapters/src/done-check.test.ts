@@ -27,6 +27,15 @@ describe("doneMismatch", () => {
     ).toBeUndefined();
   });
 
+  it("keeps a failure on one file when a later call succeeds on another", () => {
+    const nudge = doneMismatch("Done — I saved both files.", [
+      { name: "write_file", target: "a.txt", ok: false, error: "permission denied" },
+      { name: "write_file", target: "b.txt", ok: true },
+    ]);
+    expect(nudge).toContain("a.txt");
+    expect(nudge).toContain("permission denied");
+  });
+
   it("understands a French success claim", () => {
     const nudge = doneMismatch("C'est fait, j'ai enregistré le fichier.", [
       { name: "write_file", ok: false, error: "permission denied" },

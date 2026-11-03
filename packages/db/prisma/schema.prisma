@@ -1194,6 +1194,8 @@ model ScratchpadItem {
   botId     String
   bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
   userId    String
+  /// Chat this item belongs to. Null for items saved before chats were separate.
+  threadId  String?
   title     String
   status    String   @default("open")
   notes     String   @default("")
@@ -1201,6 +1203,7 @@ model ScratchpadItem {
   updatedAt DateTime @updatedAt
 
   @@index([spaceId, botId, status])
+  @@index([spaceId, botId, threadId, status])
   @@index([spaceId, botId, updatedAt])
   @@map("scratchpad_items")
 }

@@ -90,7 +90,9 @@ vi.mock("react-native-reanimated", () => ({
   default: { View: ({ children }: { children?: ReactNode }) => <div>{children}</div> },
   Easing: { out: (easing: unknown) => easing, cubic: "cubic" },
   ReduceMotion: { System: "system" },
+  interpolateColor: () => "#888",
   useAnimatedStyle: (style: () => unknown) => style(),
+  withRepeat: (value: unknown) => value,
   useSharedValue: (value: number) => {
     const [shared] = useState(() => {
       ui.chevronStarts.push(value);

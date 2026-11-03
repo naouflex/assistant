@@ -30,7 +30,7 @@ describe("background helpers", () => {
       { prisma: { run: { findFirst: vi.fn(), create } }, jobs: { enqueue: vi.fn() } } as never,
       { parentRun: { ...parent, trigger: "follow_up" }, name: "nested", task: "again", executionId: "1" },
     );
-    expect(result).toEqual({ error: "A background helper cannot start another helper." });
+    expect(result).toEqual({ error: "A follow-up run cannot start a background helper." });
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -53,9 +53,13 @@ describe("background helpers", () => {
 
   it("cancels queued helpers when the parent fails", async () => {
     const updateMany = vi.fn(async () => ({ count: 2 }));
-    await cancelQueuedBackgroundHelpers({ prisma: { run: { updateMany } } as never }, "run-1");
+    const findMany = vi.fn(async () => [{ id: "helper-1" }, { id: "helper-2" }]);
+    await cancelQueuedBackgroundHelpers(
+      { prisma: { run: { findMany, updateMany } } as never },
+      "run-1",
+    );
     expect(updateMany).toHaveBeenCalledWith({
-      where: { clientNonce: { startsWith: "background:run-1:" }, status: "queued" },
+      where: { id: { in: ["helper-1", "helper-2"] }, status: "queued" },
       data: { status: "cancelled", wakeAt: null },
     });
   });

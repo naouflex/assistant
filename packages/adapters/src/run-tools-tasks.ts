@@ -56,12 +56,13 @@ export const taskTools: ToolHandlers = {
     });
   },
   async scratchpad_add(ctx, call) {
-    const { deps, run, bot } = ctx;
+    const { deps, run, bot, thread } = ctx;
     const { args } = call;
     const created = await addScratchpadItemFromTool(deps, {
       spaceId: run.spaceId,
       botId: bot.id,
       userId: run.userId,
+      threadId: thread.id,
       title: String(args.title ?? ""),
       status: args.status ? String(args.status) : undefined,
       notes: args.notes !== undefined ? String(args.notes) : undefined,

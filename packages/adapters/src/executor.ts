@@ -1496,6 +1496,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             spaceId: run.spaceId,
             botId: bot.id,
             userId: run.userId,
+            threadId: thread.id,
             prompt: task.prompt,
           }).catch((error) => getLogger().error("scratchpad seed failed", error));
         }

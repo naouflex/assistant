@@ -58,7 +58,7 @@ export async function queueBackgroundHelper(
     return { error: "Parent run is no longer active." };
   }
   if (!helperMayStartAnother(input.parentRun.trigger)) {
-    return { error: "A background helper cannot start another helper." };
+    return { error: "A follow-up run cannot start a background helper." };
   }
   const clientNonce = backgroundHelperClientNonce(input.parentRun.id, input.executionId);
   const existing = await deps.prisma.run.findFirst({
@@ -111,8 +111,13 @@ export async function cancelQueuedBackgroundHelpers(
   parentRunId: string,
 ): Promise<void> {
   const prefix = `background:${parentRunId}:`;
-  await deps.prisma.run.updateMany({
+  const helpers = await deps.prisma.run.findMany({
     where: { clientNonce: { startsWith: prefix }, status: "queued" },
+    select: { id: true },
+  });
+  if (helpers.length === 0) return;
+  await deps.prisma.run.updateMany({
+    where: { id: { in: helpers.map((helper) => helper.id) }, status: "queued" },
     data: { status: "cancelled", wakeAt: null },
   });
 }

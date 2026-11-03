@@ -21,6 +21,20 @@ describe("focusTurnTools", () => {
     expect(listed.map((tool) => tool.name)).toEqual(expect.arrayContaining(["find_tool", "use_tool"]));
   });
 
+  it("matches French words that carry accents", () => {
+    const focused = focusTurnTools(
+      [
+        ...tools,
+        { name: "search_memory", description: "Search memory notes", inputSchema: {} },
+        { name: "read_file", description: "Read a file", inputSchema: {} },
+      ],
+      { prompt: "Cherche dans la mémoire et lis le fichier" },
+    );
+    const listed = focused.filter((tool) => !tool.deferred).map((tool) => tool.name);
+    expect(listed).toContain("search_memory");
+    expect(listed).toContain("read_file");
+  });
+
   it("keeps a short list whole", () => {
     const few = tools.slice(0, 6);
     expect(focusTurnTools(few, { prompt: "hello" })).toEqual(few);

@@ -361,6 +361,7 @@ export async function compactHistory(deps: CompactHistoryDeps, threadId: string)
   }
 
   if (!bootstrappingLocalSummary) {
+    // The latest window stays verbatim, including the turn in progress.
     const range = nextCompactionBatchRange(
       previousCursor,
       COMPACTION_BATCH_SIZE,
@@ -374,10 +375,12 @@ export async function compactHistory(deps: CompactHistoryDeps, threadId: string)
       take: range.take,
       select: { seq: true, role: true, botId: true, blocks: true, runId: true },
     });
-    const activeRuns = await deps.prisma.run.findMany({
-      where: { threadId, status: { in: [...ACTIVE_RUN_STATUSES] } },
-      select: { id: true },
-    });
+    const activeRuns = deps.prisma.run
+      ? await deps.prisma.run.findMany({
+          where: { threadId, status: { in: [...ACTIVE_RUN_STATUSES] } },
+          select: { id: true },
+        })
+      : [];
     const activeRunIds = new Set(activeRuns.map((run) => run.id));
     const activeAt = batch.findIndex(
       (message) => message.runId != null && activeRunIds.has(message.runId),

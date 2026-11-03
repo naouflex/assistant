@@ -73,6 +73,7 @@ export async function addScratchpadItemFromTool(
     spaceId: string;
     botId: string;
     userId: string;
+    threadId?: string;
     title: string;
     status?: string;
     notes?: string;
@@ -97,6 +98,7 @@ export async function addScratchpadItemFromTool(
       spaceId: input.spaceId,
       botId: input.botId,
       userId: input.userId,
+      ...(input.threadId ? { threadId: input.threadId } : {}),
       title,
       status,
       notes,

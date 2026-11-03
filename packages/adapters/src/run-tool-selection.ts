@@ -161,6 +161,27 @@ const TURN_TOOL_MIN = 8;
 const TURN_TOOL_MAX = 12;
 const ALWAYS_LISTED_TOOLS = ["ask_user", "message_user", "shell", "web_search", "read_file", "write_file"];
 
+const FRENCH_TOOL_WORDS: Record<string, string> = {
+  memoire: "memory",
+  fichier: "file",
+  fichiers: "file",
+  ecrire: "write",
+  creer: "write",
+  recherche: "search",
+  chercher: "search",
+  navigateur: "browser",
+  dossier: "file",
+};
+
+/** Lowercase, strip accents, and map a few French task words onto tool words. */
+function foldMatchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[a-z]{4,}/g, (word) => FRENCH_TOOL_WORDS[word] ?? word);
+}
+
 /**
  * List about 8–12 tools that match this turn. The rest stay deferred behind find_tool.
  * A short list is left whole.
@@ -168,20 +189,20 @@ const ALWAYS_LISTED_TOOLS = ["ask_user", "message_user", "shell", "web_search", 
 export function focusTurnTools<T extends { name: string; description?: string; deferred?: boolean }>(
   tools: readonly T[],
   input: { prompt: string; recentText?: string },
-): T[] {
+): Array<T & { deferred?: boolean }> {
   const candidates = tools.filter((tool) => tool.name !== "find_tool" && tool.name !== "use_tool");
   if (candidates.length <= TURN_TOOL_MAX) return [...tools];
-  const haystack = `${input.prompt}\n${input.recentText ?? ""}`.toLowerCase();
+  const haystack = foldMatchText(`${input.prompt}\n${input.recentText ?? ""}`);
   const score = (tool: T) => {
     let points = ALWAYS_LISTED_TOOLS.includes(tool.name) ? 8 : 0;
-    const spaced = tool.name.replaceAll("_", " ");
-    if (haystack.includes(spaced) || haystack.includes(tool.name)) points += 5;
+    const spaced = foldMatchText(tool.name.replaceAll("_", " "));
+    if (haystack.includes(spaced) || haystack.includes(foldMatchText(tool.name))) points += 5;
     for (const word of tool.name.split("_")) {
-      if (word.length > 3 && haystack.includes(word)) points += 2;
+      if (word.length > 3 && haystack.includes(foldMatchText(word))) points += 2;
     }
-    const description = tool.description?.toLowerCase() ?? "";
-    for (const word of haystack.split(/[^a-z0-9]+/).filter((part) => part.length > 4)) {
-      if (description.includes(word)) points += 1;
+    const description = foldMatchText(tool.description ?? "");
+    for (const word of haystack.split(/[^\p{L}\p{N}]+/u).filter((part) => part.length > 4)) {
+      if (description.includes(foldMatchText(word))) points += 1;
     }
     return points;
   };

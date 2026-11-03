@@ -68,7 +68,9 @@ vi.mock("react-native-reanimated", () => {
       styles.push(worklet);
       return onUI(worklet);
     },
+    interpolateColor: () => "#888",
     useReducedMotion: () => false,
+    withRepeat: (value: unknown) => value,
     useSharedValue: (value: unknown) => useState(() => new Shared(value))[0],
     withSpring: (value: unknown) => value,
     withTiming: (to: number, config?: { duration?: number }) => ({

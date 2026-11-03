@@ -34,10 +34,15 @@ const PLAN_TITLE = /^(?:plan|plan[: ].*)$/i;
 /** Mark open Plan items done when the turn that wrote them has finished. */
 export async function closePlanScratchpadItems(
   deps: { prisma: PrismaClient },
-  input: { spaceId: string; botId: string },
+  input: { spaceId: string; botId: string; threadId: string },
 ): Promise<number> {
   const open = await deps.prisma.scratchpadItem.findMany({
-    where: { spaceId: input.spaceId, botId: input.botId, status: { in: ["open", "parked"] } },
+    where: {
+      spaceId: input.spaceId,
+      botId: input.botId,
+      threadId: input.threadId,
+      status: { in: ["open", "parked"] },
+    },
     select: { id: true, title: true },
   });
   const ids = open.filter((item) => PLAN_TITLE.test(item.title.trim())).map((item) => item.id);
@@ -64,7 +69,7 @@ function dedupe(titles: string[]): string[] {
 
 export async function seedScratchpadFromUserPrompt(
   deps: { prisma: PrismaClient },
-  input: { spaceId: string; botId: string; userId: string; prompt: string },
+  input: { spaceId: string; botId: string; userId: string; threadId?: string; prompt: string },
 ): Promise<number> {
   const seeds = parseScratchpadSeeds(input.prompt);
   if (seeds.length < 2) return 0;
@@ -81,6 +86,7 @@ export async function seedScratchpadFromUserPrompt(
       spaceId: input.spaceId,
       botId: input.botId,
       userId: input.userId,
+      threadId: input.threadId,
       title,
       status: "open",
     });

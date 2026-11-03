@@ -499,7 +499,7 @@ function toAgentTool(
               if (tool.name === "request_secret") {
                 if (host.request.executeTool) {
                   const result = await host.request.executeTool(tool.name, args, executionId);
-                  noteToolOutcome(host, tool.name, result);
+                  noteToolOutcome(host, tool.name, result, args);
                   if (isAgentToolExecutionResult(result)) {
                     if (isToolPauseResult(result)) host.pausePending = true;
                     return result;
@@ -539,7 +539,7 @@ function toAgentTool(
                     throw new Error("Background helpers are unavailable");
                   }
                   const result = await host.request.executeTool(tool.name, args, executionId);
-                  noteToolOutcome(host, tool.name, result);
+                  noteToolOutcome(host, tool.name, result, args);
                   if (isAgentToolExecutionResult(result)) {
                     if (isToolPauseResult(result)) host.pausePending = true;
                     return result;
@@ -570,7 +570,7 @@ function toAgentTool(
                     },
                   },
                 );
-                noteToolOutcome(host, tool.name, result);
+                noteToolOutcome(host, tool.name, result, args);
                 if (isAgentToolExecutionResult(result)) {
                   if (isToolPauseResult(result)) host.pausePending = true;
                   return keepToolResultWhole(tool.name, args)
@@ -667,11 +667,26 @@ function isAgentToolExecutionResult(result: unknown): result is AgentToolExecuti
   );
 }
 
-export function noteToolOutcome(host: ToolHost, name: string, result: unknown): void {
+function toolOutcomeTarget(args: Record<string, unknown> | undefined): string | undefined {
+  if (!args) return undefined;
+  for (const key of ["path", "file", "url", "command", "query"]) {
+    const value = args[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return undefined;
+}
+
+export function noteToolOutcome(
+  host: ToolHost,
+  name: string,
+  result: unknown,
+  args?: Record<string, unknown>,
+): void {
   if (isToolPauseResult(result)) return;
   const failed = toolReportedFailure(name, result);
   (host.toolOutcomes ??= []).push({
     name,
+    target: toolOutcomeTarget(args),
     ok: !failed,
     error: failed ? toolFailureText(result) : undefined,
   });
@@ -750,7 +765,7 @@ export interface ToolHost {
   subagentGate: { acquire(): Promise<void>; release(): void };
   toolCallBudget: ToolCallBudget;
   /** Tool calls in this turn and whether each result succeeded. */
-  toolOutcomes?: Array<{ name: string; ok: boolean; error?: string }>;
+  toolOutcomes?: Array<{ name: string; ok: boolean; error?: string; target?: string }>;
   /** One correction was already sent after a claimed success. */
   doneNudged?: boolean;
   /** Shared fallback uniqueness when the model omits toolCallId (nested hosts reuse this). */

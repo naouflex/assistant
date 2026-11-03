@@ -89,6 +89,7 @@ vi.mock("react-native-reanimated", () => {
       nativeMotion.styles.push(sample);
       return {};
     },
+    interpolateColor: () => "#888",
     useReducedMotion: () => nativeMotion.reduced,
     useSharedValue: <T,>(value: T) => useRef({ value }).current,
     withRepeat: (value: unknown) => value,

@@ -61,7 +61,9 @@ vi.mock("react-native-reanimated", () => {
     ReduceMotion: { Never: "never" },
     useAnimatedProps: (worklet: () => unknown) => worklet(),
     useAnimatedStyle: (worklet: () => unknown) => worklet(),
+    interpolateColor: () => "#888",
     useReducedMotion: () => motion.reducedMotion,
+    withRepeat: (value: unknown) => value,
     useSharedValue: <T,>(value: T) => useRef({ value }).current,
     withSpring: (value: unknown, config?: Record<string, number>) => {
       motion.springs.push([value, config]);

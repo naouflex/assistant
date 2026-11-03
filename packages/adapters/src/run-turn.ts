@@ -797,7 +797,11 @@ export async function completeRun(ctx: RunContext) {
       ? botMessageOutcomeFromMidTurn(text, reply.midTurnUserTexts)
       : null;
   await ctx.settleRunningHelpers();
-  await closePlanScratchpadItems(deps, { spaceId: run.spaceId, botId: bot.id }).catch((error) => {
+  await closePlanScratchpadItems(deps, {
+    spaceId: run.spaceId,
+    botId: bot.id,
+    threadId: thread.id,
+  }).catch((error) => {
     getLogger().error("scratchpad plan close failed", error);
   });
   const completed = await deps.events.finalizeRun({
