@@ -301,43 +301,49 @@ function ShippedShapeAvatar({
         </defs>
         <g transform={shapeShift}>
           {(["idle", "working"] as const).map((mode) => (
-            <path
+            <g
               key={mode}
               className={`atlas-organic-avatar-body atlas-organic-avatar-body-${mode}`}
-              d={path}
-              fill={`url(#bot-ink-${id})`}
-              stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
-              strokeWidth={pale ? 6 : undefined}
               style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
-            />
+            >
+              <path
+                d={path}
+                fill={`url(#bot-ink-${id})`}
+                stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
+                strokeWidth={pale ? 6 : undefined}
+              />
+            </g>
           ))}
         </g>
         {/* Same pill eyes as OrganicAvatar, scaled into the shape viewBox. */}
         <g
           transform={`rotate(${(seed % 9) - 4} ${face.eyeCenterX} ${face.eyeCenterY})${shapeShift ? ` ${shapeShift}` : ""}`}
         >
-          {(["idle", "working"] as const).map((mode) => (
-            <g
-              key={mode}
-              className={`atlas-organic-avatar-eyes atlas-organic-avatar-eyes-${mode} bot-character-eyes`}
-              fill={pale ? "#141414" : tokens.background}
-            >
-              <rect
-                x={face.eyeCenterX - SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
-                y={face.eyeCenterY - SHAPE_EYE_H / 2}
-                width={SHAPE_EYE_W}
-                height={SHAPE_EYE_H}
-                rx={SHAPE_EYE_W / 2}
-              />
-              <rect
-                x={face.eyeCenterX + SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2}
-                y={face.eyeCenterY - SHAPE_EYE_H / 2}
-                width={SHAPE_EYE_W}
-                height={SHAPE_EYE_H}
-                rx={SHAPE_EYE_W / 2}
-              />
-            </g>
-          ))}
+          {(["idle", "working"] as const).map((mode) => {
+            const eyeFill = pale ? "#141414" : tokens.background;
+            const leftX = face.eyeCenterX - SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2;
+            const rightX = face.eyeCenterX + SHAPE_EYE_OFFSET_X - SHAPE_EYE_W / 2;
+            const eyeY = face.eyeCenterY - SHAPE_EYE_H / 2;
+            const eyeRx = SHAPE_EYE_W / 2;
+            const halo = face.eyeHaloWidth;
+            return (
+              <g
+                key={mode}
+                className={`atlas-organic-avatar-eyes atlas-organic-avatar-eyes-${mode} bot-character-eyes`}
+              >
+                {halo > 0 ? (
+                  <g fill="none" stroke="#FFFFFF" strokeWidth={halo} strokeLinejoin="round">
+                    <rect x={leftX} y={eyeY} width={SHAPE_EYE_W} height={SHAPE_EYE_H} rx={eyeRx} />
+                    <rect x={rightX} y={eyeY} width={SHAPE_EYE_W} height={SHAPE_EYE_H} rx={eyeRx} />
+                  </g>
+                ) : null}
+                <g fill={eyeFill}>
+                  <rect x={leftX} y={eyeY} width={SHAPE_EYE_W} height={SHAPE_EYE_H} rx={eyeRx} />
+                  <rect x={rightX} y={eyeY} width={SHAPE_EYE_W} height={SHAPE_EYE_H} rx={eyeRx} />
+                </g>
+              </g>
+            );
+          })}
         </g>
       </svg>
     </div>
@@ -491,32 +497,37 @@ function OrganicAvatar({
       }}
     >
       {(["idle", "working"] as const).map((mode) => (
-        <path
+        <g
           key={mode}
           className={`atlas-organic-avatar-body atlas-organic-avatar-body-${mode}`}
-          d={shapeA}
-          fill={color}
-          stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
-          strokeWidth={pale ? 3.5 : undefined}
           style={
             {
               "--atlas-organic-path": `path("${shapeA}")`,
+            } as CSSProperties
+          }
+        >
+          <path
+            d={shapeA}
+            fill={color}
+            stroke={pale ? "rgba(20,20,20,0.28)" : undefined}
+            strokeWidth={pale ? 3.5 : undefined}
+            style={{
               filter:
                 mode === "working"
                   ? `drop-shadow(0 0 ${Math.round(size * 0.16)}px ${color})`
                   : "drop-shadow(0 2px 3px rgba(0,0,0,.34))",
-            } as CSSProperties
-          }
-        >
-          {!reducedMotion ? (
-            <animate
-              attributeName="d"
-              values={`${shapeA};${shapeB};${shapeA}`}
-              dur={duration}
-              repeatCount="indefinite"
-            />
-          ) : null}
-        </path>
+            }}
+          >
+            {!reducedMotion ? (
+              <animate
+                attributeName="d"
+                values={`${shapeA};${shapeB};${shapeA}`}
+                dur={duration}
+                repeatCount="indefinite"
+              />
+            ) : null}
+          </path>
+        </g>
       ))}
       <g transform={`rotate(${(seed % 9) - 4})`}>
         {(["idle", "working"] as const).map((mode) => (

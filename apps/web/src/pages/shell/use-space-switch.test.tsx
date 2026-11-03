@@ -87,6 +87,16 @@ afterEach(() => {
 });
 
 describe("pending space switches", () => {
+  it("remounts when localStorage already matches the target but the shell is in another space", async () => {
+    state.select.mockReturnValue(true);
+    act(() => open("new-space", "/app/scout"));
+    expect(state.prime).toHaveBeenCalledWith("new-space", "target", undefined);
+    expect(navigate).not.toHaveBeenCalled();
+    await ready();
+    act(() => expect(commits[0]!()).toBe(true));
+    expect(navigate).toHaveBeenCalledWith("/app/scout");
+  });
+
   it("keeps a switch when an empty space automatically redirects to the same route", async () => {
     window.history.replaceState({ idx: 0 }, "", "/app");
     let redirect!: ReturnType<typeof useShellNavigation>["redirectKeepingOverlay"];

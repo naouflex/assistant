@@ -106,13 +106,26 @@ import { createUserDeviceAccess, deviceName } from "./user-device.js";
 import { oauthPopupSessionPreferences, shouldOpenInAppPopup } from "./window-open.js";
 import {
   browserWindowOptions,
-  developmentIconFile,
+  resolveDevelopmentIconPath,
   setupWindowOptions,
   warmWindowTtlMs,
 } from "./window-options.js";
 
 process.setSourceMapsEnabled(true);
 installDesktopEarlyErrorReporting();
+
+if (process.platform === "win32") {
+  app.setAppUserModelId("dev.atlas.desktop");
+}
+
+function enableWindowsOpenAtLogin() {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+  try {
+    app.setLoginItemSettings({ openAtLogin: true, name: "Atlas" });
+  } catch {
+    // Startup can be blocked by policy; the user can add a shortcut manually.
+  }
+}
 
 const PERFORMANCE_USER_DATA = process.env.RAKAZO_PERFORMANCE_USER_DATA;
 /** Test hook: where the app-managed stack answers. Mode `new` still requires loopback. */
@@ -199,11 +212,14 @@ function fromMainWindow(event: Electron.IpcMainInvokeEvent) {
   return mainWindow !== null && windowFrom(event) === mainWindow;
 }
 
-/** Dock/taskbar icon for unpackaged launches; packaged builds get theirs from electron-builder. */
-function developmentIcon() {
-  if (app.isPackaged) return undefined;
-  const icon = path.join(app.getAppPath(), "assets", developmentIconFile(process.platform));
-  return existsSync(icon) ? icon : undefined;
+function windowIcon() {
+  return resolveDevelopmentIconPath({
+    platform: process.platform,
+    appPath: app.getAppPath(),
+    resourcesPath: process.resourcesPath,
+    isPackaged: app.isPackaged,
+    exists: existsSync,
+  });
 }
 
 function sessionPartitionKey(targetUrl: string) {
@@ -307,7 +323,7 @@ async function defaultSessionHasOriginData(origin: string): Promise<boolean> {
 
 function createWindow(url: string, partition: string | null) {
   markOnce("rk:main:window-create-start");
-  const icon = developmentIcon();
+  const icon = windowIcon();
   const win = new BrowserWindow({
     ...browserWindowOptions(process.platform, screen.getPrimaryDisplay().workAreaSize),
     ...(icon ? { icon } : {}),
@@ -611,7 +627,7 @@ function oauthPopupWindowOptions(partition: string | null) {
 }
 
 function createSetupWindow() {
-  const icon = developmentIcon();
+  const icon = windowIcon();
   const win = new BrowserWindow({
     ...setupWindowOptions(process.platform, screen.getPrimaryDisplay().workAreaSize),
     ...(icon ? { icon } : {}),
@@ -1308,6 +1324,7 @@ if (!hasSingleInstanceLock) {
 
 app.whenReady().then(async () => {
   if (!hasSingleInstanceLock) return;
+  enableWindowsOpenAtLogin();
   installSessionPermissions(session.defaultSession, permissionTarget);
   const userDataDir = app.getPath("userData");
   startDesktopLocale(
@@ -1429,7 +1446,7 @@ app.whenReady().then(async () => {
     markOnce("rk:main:caches-cleared");
   }
 
-  const icon = developmentIcon();
+  const icon = windowIcon();
   if (process.platform === "darwin" && icon) app.dock?.setIcon(icon);
   installApplicationMenu();
   const browserAuthAttempts = new Map<string, AbortController>();

@@ -402,8 +402,9 @@ export function useSpaceBootstrap({
           }
           return;
         }
+        if (botId && bootstrap.bots.some((bot) => bot.id === botId)) return;
         const selectedBotId = bootstrap.thread?.botId ?? bootstrap.bots[0]?.id;
-        if (selectedBotId && selectedBotId !== botId) {
+        if (selectedBotId) {
           redirectKeepingOverlay(`/app/${selectedBotId}`);
         }
       })

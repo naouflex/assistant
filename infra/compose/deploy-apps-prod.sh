@@ -122,14 +122,17 @@ set -euo pipefail
 cd "\$HOME/${REMOTE_DIR}"
 sha="\$(git rev-parse HEAD 2>/dev/null || echo local)"
 export GIT_SHA="\$sha"
+export COMPOSE_PROJECT_NAME="\${COMPOSE_PROJECT_NAME:-atlas-prod}"
+export RAKAZO_IMAGE="\${RAKAZO_IMAGE:-ghcr.io/naouflex/assistant/app}"
+export RAKAZO_IMAGE_TAG="\${RAKAZO_IMAGE_TAG:-local}"
 # One image shared by api, worker, web, and migrate. Building all four
 # compose services at once exports the same layers in parallel and stalls.
 docker build -f infra/compose/Dockerfile --build-arg "GIT_SHA=\${sha}" \
-  -t ghcr.io/naouflex/assistant/app:local .
+  -t "\${RAKAZO_IMAGE}:\${RAKAZO_IMAGE_TAG}" .
 docker compose --env-file .env \
   -f infra/compose/docker-compose.prod.yml \
   -f infra/compose/docker-compose.prod.web-edge.yml \
-  up -d --wait --pull never
+  up -d --wait --pull never --no-build
 echo "stack up"
 EOF
 )"

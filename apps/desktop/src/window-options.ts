@@ -1,3 +1,5 @@
+import path from "node:path";
+
 export const DEFAULT_WARM_WINDOW_TTL_MS = 15 * 60_000;
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
@@ -53,11 +55,31 @@ export function browserWindowOptions(platform: NodeJS.Platform, workArea: WorkAr
 }
 
 /**
- * Unpackaged (dev) launches set the dock/taskbar icon by hand. macOS draws the file as-is,
- * so it needs the squircle-with-margins asset; packaged builds already use icon.icns.
+ * Platform icon under `apps/desktop/assets`. Windows needs `.ico` or the shell falls back to
+ * Electron's default; macOS dev uses the squircle export, Linux uses PNG.
  */
 export function developmentIconFile(platform: NodeJS.Platform) {
-  return platform === "darwin" ? "icon-macos.png" : "icon.png";
+  if (platform === "darwin") return "icon-macos.png";
+  if (platform === "win32") return "icon.ico";
+  return "icon.png";
+}
+
+/** Resolves the taskbar/window icon from bundled assets (dev and packaged). */
+export function resolveDevelopmentIconPath(input: {
+  platform: NodeJS.Platform;
+  appPath: string;
+  resourcesPath: string;
+  isPackaged: boolean;
+  exists: (filePath: string) => boolean;
+}): string | undefined {
+  const file = developmentIconFile(input.platform);
+  const candidates = input.isPackaged
+    ? [
+        path.join(input.resourcesPath, "assets", file),
+        path.join(input.appPath, "assets", file),
+      ]
+    : [path.join(input.appPath, "assets", file)];
+  return candidates.find((candidate) => input.exists(candidate));
 }
 
 /** The first-run setup window is smaller and keeps the same platform chrome. */

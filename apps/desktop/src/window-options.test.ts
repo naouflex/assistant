@@ -3,6 +3,7 @@ import {
   browserWindowOptions,
   DEFAULT_WARM_WINDOW_TTL_MS,
   developmentIconFile,
+  resolveDevelopmentIconPath,
   setupWindowOptions,
   warmWindowTtlMs,
 } from "./window-options.js";
@@ -104,10 +105,20 @@ describe("development icon", () => {
     expect(developmentIconFile("darwin")).toBe("icon-macos.png");
   });
 
-  it("keeps the full-bleed icon elsewhere", () => {
-    for (const platform of ["win32", "linux"] as const) {
-      expect(developmentIconFile(platform)).toBe("icon.png");
-    }
+  it("uses ICO on Windows and PNG on Linux", () => {
+    expect(developmentIconFile("win32")).toBe("icon.ico");
+    expect(developmentIconFile("linux")).toBe("icon.png");
+  });
+
+  it("finds packaged icons under resources/assets", () => {
+    const icon = resolveDevelopmentIconPath({
+      platform: "win32",
+      appPath: "/app",
+      resourcesPath: "/resources",
+      isPackaged: true,
+      exists: (filePath) => filePath === "/resources/assets/icon.ico",
+    });
+    expect(icon).toBe("/resources/assets/icon.ico");
   });
 });
 

@@ -21,6 +21,7 @@ describe("shipped bot avatar shapes", () => {
     expect(shippedBotAvatarShapeFace(12).eyeCenterY).toBe(
       SHIPPED_BOT_AVATAR_SHAPE_FACE.penis!.eyeCenterY,
     );
+    expect(shippedBotAvatarShapeFace(13).eyeHaloWidth).toBeGreaterThan(0);
     expect(shippedBotAvatarShapeInkY(18)).toBe(SHIPPED_BOT_AVATAR_SHAPE_FACE.crown!.inkY);
   });
 

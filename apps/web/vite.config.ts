@@ -466,7 +466,12 @@ export default defineConfig(({ command, mode }) => {
   applyLegacyEnvAliases(rootEnv);
   applyLegacyEnvAliases(process.env);
   const api = process.env.API_PROXY_TARGET ?? rootEnv.API_PROXY_TARGET ?? "http://127.0.0.1:3100";
-  const previewHost = process.env.ATLAS_HOST ?? rootEnv.ATLAS_HOST ?? "localhost";
+  const previewHost =
+    process.env.ATLAS_HOST ??
+    rootEnv.ATLAS_HOST ??
+    process.env.RAKAZO_HOST ??
+    rootEnv.RAKAZO_HOST ??
+    "localhost";
   const allowedHosts = [
     previewHost,
     ...(process.env.ATLAS_ALLOWED_HOSTS ?? rootEnv.ATLAS_ALLOWED_HOSTS ?? "")

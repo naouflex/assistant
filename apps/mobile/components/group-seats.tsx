@@ -161,7 +161,7 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
       number,
       number,
     ];
-    const { inkY, eyeCenterX, eyeCenterY } = parsed.shapeFace;
+    const { inkY, eyeCenterX, eyeCenterY, eyeHaloWidth } = parsed.shapeFace;
     const eyeScale = units / 120;
     const eyeW = 7 * eyeScale;
     const eyeH = 24 * eyeScale;
@@ -179,6 +179,24 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
           <G translateY={inkY}>
             <Path d={parsed.shapePath} fill={parsed.color} />
           </G>
+          {eyeHaloWidth > 0 ? (
+            <G fill="none" stroke="#FFFFFF" strokeWidth={eyeHaloWidth} strokeLinejoin="round">
+              <Rect
+                x={eyeCenterX - eyeOffsetX - eyeW / 2}
+                y={eyeY - eyeH / 2}
+                width={eyeW}
+                height={eyeH}
+                rx={eyeW / 2}
+              />
+              <Rect
+                x={eyeCenterX + eyeOffsetX - eyeW / 2}
+                y={eyeY - eyeH / 2}
+                width={eyeW}
+                height={eyeH}
+                rx={eyeW / 2}
+              />
+            </G>
+          ) : null}
           <G fill={botEyeColor}>
             <Rect
               x={eyeCenterX - eyeOffsetX - eyeW / 2}

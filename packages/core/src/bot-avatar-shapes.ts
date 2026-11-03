@@ -4,11 +4,16 @@ export const SHIPPED_BOT_AVATAR_CENTER = 114.2705;
 /** Default pill-eye vertical center in the shape viewBox (matches organic −8 nudge). */
 export const SHIPPED_BOT_AVATAR_DEFAULT_EYE_CENTER_Y = SHIPPED_BOT_AVATAR_CENTER - 8;
 
+/** White stroke on pill eyes when the silhouette detail would swallow them (viewBox units). */
+export const SHIPPED_BOT_AVATAR_EYE_HALO_WIDTH = 6;
+
 export type ShippedBotAvatarShapeFace = {
   /** Nudge filled body down (positive = down). Eyes use the same shift. */
   inkY: number;
   eyeCenterX: number;
   eyeCenterY: number;
+  /** White outline around each pill eye; 0 hides it. */
+  eyeHaloWidth: number;
 };
 
 export const SHIPPED_BOT_AVATAR_SHAPES: Record<string, string> = {
@@ -83,6 +88,7 @@ const DEFAULT_SHAPE_FACE: ShippedBotAvatarShapeFace = {
   inkY: 0,
   eyeCenterX: SHIPPED_BOT_AVATAR_CENTER,
   eyeCenterY: SHIPPED_BOT_AVATAR_DEFAULT_EYE_CENTER_Y,
+  eyeHaloWidth: 0,
 };
 
 /** Per-shape ink nudge and eye placement in viewBox units. */
@@ -95,7 +101,7 @@ export const SHIPPED_BOT_AVATAR_SHAPE_FACE: Partial<
   diamond: { eyeCenterY: 102 },
   gem: { inkY: 6, eyeCenterY: 102 },
   penis: { eyeCenterY: 120 },
-  vagina: { eyeCenterY: 62 },
+  vagina: { eyeCenterY: 62, eyeHaloWidth: SHIPPED_BOT_AVATAR_EYE_HALO_WIDTH },
   sun: { inkY: 4, eyeCenterY: 100 },
   moon: { inkY: 6, eyeCenterY: 102 },
   rocket: { inkY: 8, eyeCenterY: 96 },

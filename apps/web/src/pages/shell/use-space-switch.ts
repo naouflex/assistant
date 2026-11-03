@@ -45,9 +45,11 @@ export function useOpenSpaceChat({
       const startedNavigation = navigationRevision.current;
       const startedOverlay = overlayRevision.current;
       const startedIndex = window.history.state?.idx;
-      const previousEffective = selectedSpaceId() ?? bootstrapSpaceId;
+      // The shell's space wins over localStorage: a stale selected space must not skip
+      // remounting and open another space's bot in the current roster (first bot wins).
+      const displayingSpaceId = bootstrapSpaceId ?? selectedSpaceId() ?? undefined;
       // Persist the active space (including primary) so voice/RPC headers match the chat.
-      if (previousEffective === spaceId) {
+      if (displayingSpaceId === spaceId) {
         if (selectSpace(spaceId)) navigate(path);
         return;
       }

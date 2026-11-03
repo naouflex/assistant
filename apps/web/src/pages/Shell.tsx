@@ -268,10 +268,11 @@ function SpaceShell() {
     : panel === "computer" || panel === "routines" || panel === "settings" || panel === "routine";
   // Until the route names the chat reopened from cache, that chat stands in for it.
   const routeChat = botId || groupId ? undefined : startChat;
+  const routedBotId = botId ?? routeChat?.botId;
   const active =
     inGroup || routeChat?.groupId
       ? undefined
-      : (bots.find((b) => b.id === (botId ?? routeChat?.botId)) ?? bots[0]);
+      : (bots.find((b) => b.id === routedBotId) ?? (routedBotId ? undefined : bots[0]));
   const selectBot = useCallback(
     (id: string) => {
       setMobileSidebarOpen(false);

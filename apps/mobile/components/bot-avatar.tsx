@@ -401,7 +401,7 @@ function ShippedShapeAvatar({
   life: AvatarLife;
   bodyStyle: BodyStyle;
 }) {
-  const { inkY, eyeCenterX, eyeCenterY } = shapeFace;
+  const { inkY, eyeCenterX, eyeCenterY, eyeHaloWidth } = shapeFace;
   // Same 7×24 pills as OrganicAvatar, scaled into the shape view box.
   const eyeScale = SHAPE_UNITS / 120;
   const eyeW = 7 * eyeScale;
@@ -428,6 +428,28 @@ function ShippedShapeAvatar({
           <Path d={shapePath} fill={color} />
         </G>
         <G>
+          {eyeHaloWidth > 0 ? (
+            <>
+              <AnimatedRect
+                animatedProps={leftEye}
+                width={eyeW}
+                rx={eyeW / 2}
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth={eyeHaloWidth}
+                strokeLinejoin="round"
+              />
+              <AnimatedRect
+                animatedProps={rightEye}
+                width={eyeW}
+                rx={eyeW / 2}
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth={eyeHaloWidth}
+                strokeLinejoin="round"
+              />
+            </>
+          ) : null}
           <AnimatedRect animatedProps={leftEye} width={eyeW} rx={eyeW / 2} fill={botEyeColor} />
           <AnimatedRect animatedProps={rightEye} width={eyeW} rx={eyeW / 2} fill={botEyeColor} />
         </G>

@@ -59,6 +59,18 @@
       {
         "from": "../../infra/compose/.env.images.example",
         "to": "stack/.env.images.example"
+      },
+      {
+        "from": "assets/icon.ico",
+        "to": "assets/icon.ico"
+      },
+      {
+        "from": "assets/icon.png",
+        "to": "assets/icon.png"
+      },
+      {
+        "from": "assets/icon-macos.png",
+        "to": "assets/icon-macos.png"
       }
     ],
     "extraMetadata": {
@@ -114,6 +126,10 @@
         "nsis"
       ],
       "verifyUpdateCodeSignature": true
+    },
+    "nsis": {
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
     },
     "linux": {
       "executableName": "atlas",
