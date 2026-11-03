@@ -1,5 +1,6 @@
 ---
 import { richParts } from "../grok-alternative";
+import { SITE_URL } from "../site";
 
 type Props = {
   text: string;
@@ -14,7 +15,7 @@ const parts = richParts(text);
     part.kind === "link" ? (
       <a
         href={part.href}
-        {...(part.href.startsWith("http") && !part.href.startsWith("https://rakazo.com")
+        {...(part.href.startsWith("http") && !part.href.startsWith(SITE_URL)
           ? { target: "_blank", rel: "nofollow noopener noreferrer" }
           : {})}
       >

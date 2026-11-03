@@ -19,6 +19,7 @@ export const SELF_HOST_RESTRICTED_URL =
 export const SETUP_PROMPT_URL = "https://github.com/naouflex/assistant/blob/main/SETUP_PROMPT.md";
 export const SELF_HOST_GUIDE_PATH = "/self-hosted-ai-agent/";
 export const OPENCLAW_ALTERNATIVE_PATH = "/openclaw-alternative/";
+export const PLUGIN_SUBMIT_PATH = "/plugins/submit/";
 export const CHANGELOG_URL = "https://github.com/naouflex/assistant/releases";
 export const LATEST_RELEASE_URL = `${CHANGELOG_URL}/latest`;
 export const INBOX_ZERO_URL =
