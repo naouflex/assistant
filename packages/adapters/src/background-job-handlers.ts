@@ -220,7 +220,7 @@ export function createBackgroundJobHandlers(deps: {
       await runAsSystem("check a push receipt", () => deps.notifications?.checkReceipt(payload));
     },
     "memory.dream": asOwner(
-      async (payload) => {
+      async (payload: { dreamId: string }) => {
         const dream = await deps.prisma.memoryDream.findUnique({
           where: { id: payload.dreamId },
           select: { spaceId: true, userId: true },

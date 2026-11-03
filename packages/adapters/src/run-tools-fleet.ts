@@ -289,6 +289,7 @@ export const fleetTools: ToolHandlers = {
         modelProvider: true,
         modelId: true,
         thinkingLevel: true,
+        modelFastTier: true,
         autoSpeak: true,
         voiceId: true,
       },

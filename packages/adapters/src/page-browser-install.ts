@@ -10,7 +10,7 @@ const COMPUTER_DIR = path.join("infra", "sandboxes", "computer");
 const PAGE_BROWSER_WRAPPERS = ["atlas-page-browser", "rakazo-page-browser"] as const;
 
 let computerDir: string | undefined;
-let pageBrowserWrapper = PAGE_BROWSER_WRAPPERS[0];
+let pageBrowserWrapper: (typeof PAGE_BROWSER_WRAPPERS)[number] = PAGE_BROWSER_WRAPPERS[0];
 
 function computerFile(name: string): string {
   if (!computerDir) {

@@ -60,7 +60,8 @@ function looksLikeUtf16(buffer: Buffer): boolean {
   let ascii = 0;
   for (let i = 0; i + 1 < sample; i += 2) {
     pairs += 1;
-    if (buffer[i + 1] === 0 && buffer[i] >= 0x09 && buffer[i] !== 0) ascii += 1;
+    const low = buffer[i] ?? 0;
+    if (buffer[i + 1] === 0 && low >= 0x09) ascii += 1;
   }
   return pairs >= 2 && ascii / pairs >= 0.8;
 }
