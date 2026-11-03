@@ -86,7 +86,9 @@ describe("seqPastExisting", () => {
   it("keeps a claimed seq that is already past the saved rows", async () => {
     const tx = transaction();
     tx.$queryRaw.mockResolvedValueOnce([{ floor: 3 }]);
-    await expect(seqPastExisting(tx, "thread-1", 7, "event")).resolves.toBe(7);
+    await expect(
+      seqPastExisting(tx as unknown as Prisma.TransactionClient, "thread-1", 7, "event"),
+    ).resolves.toBe(7);
     expect(tx.thread.update).not.toHaveBeenCalled();
   });
 });
