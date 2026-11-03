@@ -42,7 +42,7 @@ describe("toolRequiresApproval", () => {
     expect(toolRequiresApproval("create_space", false)).toBe(true);
     expect(toolRequiresExplicitApproval("create_space")).toBe(true);
     // The wallet owner approves every purchase on the provider's side.
-    expect(toolRequiresApproval("request_purchase", false)).toBe(false);
+    expect(toolRequiresApproval("request_purchase", false)).toBe(true);
     expect(toolRequiresApproval("purchase_status", false)).toBe(false);
     expect(toolRequiresExplicitApproval("save_shared_memory")).toBe(false);
     expect(toolRequiresExplicitApproval("archive_bot")).toBe(false);

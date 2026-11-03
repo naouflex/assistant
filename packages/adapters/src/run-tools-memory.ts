@@ -8,7 +8,7 @@ import { readHistory, searchHistory } from "@atlas/db";
 import { sharedMemorySaveError } from "./builtin-tools.js";
 import { redactConnectorPayload } from "./connector-safety.js";
 import { MAX_RECALLED_MEMORIES } from "./history-compaction.js";
-import { editMemory } from "./memory-tools.js";
+import { appendJournalEntry, editMemory, journalPathForEntry } from "./memory-tools.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolCall, ToolHandlers } from "./run-tool-gate.js";
 
@@ -67,6 +67,35 @@ export const memoryTools: ToolHandlers = {
   async remember(ctx, call) {
     const { deps, runId, bot, thread, context } = ctx;
     const { args } = call;
+    if (args.journal === true) {
+      const fact = String(args.content ?? "");
+      const path = journalPathForEntry(fact);
+      for (let attempt = 1; ; attempt += 1) {
+        const snapshot = await deps.memory.read({ scope: "bot", botId: bot.id, path }, context);
+        const existing = snapshot.documents[0];
+        const edit = appendJournalEntry(existing?.content ?? "", fact);
+        if ("error" in edit) return call.finish(edit);
+        if (edit.content === (existing?.content ?? "")) return call.finish({ ok: true, path });
+        try {
+          await deps.memory.commit(
+            {
+              scope: "bot",
+              botId: bot.id,
+              path,
+              content: edit.content,
+              expectedRevision: existing?.revision ?? 0,
+              sourceRunId: runId,
+              sourceThreadId: thread.id,
+            },
+            context,
+          );
+          return call.finish({ ok: true, path });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (message !== MEMORY_REVISION_CONFLICT_ERROR || attempt >= 3) throw error;
+        }
+      }
+    }
     // One document per bot keeps the size cap meaningful.
     const path = MEMORY_INDEX_PATH;
     // A concurrent save changes the revision, so re-read and apply the edit again.
@@ -145,6 +174,47 @@ export const memoryTools: ToolHandlers = {
       },
       context,
     );
+  },
+  async read_memory(ctx, call) {
+    const { deps, bot, context } = ctx;
+    const path = String(call.args.path ?? "").trim();
+    if (!path) return call.finish({ error: "path is required" });
+    const scope = call.args.scope === "user" ? "user" : "bot";
+    const snapshot = await deps.memory.read(
+      scope === "user" ? { scope, path } : { scope, botId: bot.id, path },
+      context,
+    );
+    const document = snapshot.documents[0];
+    if (!document) return call.finish({ error: "No memory note at that path." });
+    return call.finish({
+      ok: true,
+      scope,
+      path: document.path,
+      revision: document.revision,
+      content: document.content,
+    });
+  },
+  async search_memory(ctx, call) {
+    const { deps, bot, context } = ctx;
+    const query = String(call.args.query ?? "").trim();
+    if (!query) return call.finish({ error: "query is required" });
+    const limitRaw = Number(call.args.limit ?? 8);
+    const limit = Number.isFinite(limitRaw) ? Math.min(20, Math.max(1, Math.floor(limitRaw))) : 8;
+    const scopeArg = call.args.scope;
+    const scopes: Array<"bot" | "user"> =
+      scopeArg === "bot" ? ["bot"] : scopeArg === "user" ? ["user"] : ["bot", "user"];
+    const hits: Array<{ scope: "bot" | "user"; path: string; snippet: string; score: number }> = [];
+    for (const scope of scopes) {
+      const results = await deps.memory.search(
+        { query, scope, ...(scope === "bot" ? { botId: bot.id } : {}) },
+        context,
+      );
+      for (const result of results) {
+        hits.push({ scope, path: result.path, snippet: result.snippet, score: result.score });
+      }
+    }
+    hits.sort((left, right) => right.score - left.score || left.path.localeCompare(right.path));
+    return call.finish({ ok: true, results: hits.slice(0, limit) });
   },
   search_history: readHistoryTool,
   read_history: readHistoryTool,

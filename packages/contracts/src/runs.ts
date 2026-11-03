@@ -104,6 +104,7 @@ export const RunActivityRowSchema = z.object({
   agentMessage: z
     .discriminatedUnion("kind", [
       z.strictObject({
+        fromBotId: z.string().optional(),
         fromBotName: z.string(),
         kind: z.enum(["update", "request"]),
         text: z.string().max(120),

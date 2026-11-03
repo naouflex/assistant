@@ -7,7 +7,14 @@ import { USER_DEVICE_CONNECT_PATH } from "@atlas/contracts";
 import type { PreviewServer } from "vite";
 import { preview } from "vite";
 import { afterEach, describe, expect, it } from "vitest";
-import { apiProxy, hostAllowed } from "./api-proxy.js";
+import {
+  apiProxy,
+  hostAllowed,
+  remoteProxyOrigin,
+  rewriteAuthRedirectBody,
+  rewriteProxiedSetCookie,
+  rewriteRemoteAppUrl,
+} from "./api-proxy.js";
 
 const cleanup: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -84,6 +91,56 @@ function upgrade(
     request.end();
   });
 }
+
+describe("remote API proxy origin", () => {
+  it("uses a public API origin and leaves loopback requests alone", () => {
+    expect(remoteProxyOrigin("https://atlas.example.test")).toBe("https://atlas.example.test");
+    expect(remoteProxyOrigin("http://127.0.0.1:3100")).toBeNull();
+    expect(remoteProxyOrigin("http://192.168.1.8:3100")).toBeNull();
+  });
+
+  it("makes an HTTPS session cookie usable on the HTTP dev origin", () => {
+    expect(
+      rewriteProxiedSetCookie(
+        "session=abc; Domain=atlas.example.test; Path=/; Secure; SameSite=None",
+      ),
+    ).toBe("session=abc; Path=/; SameSite=Lax");
+    expect(
+      rewriteProxiedSetCookie(
+        "__Secure-better-auth.session_token=abc; Domain=atlas.example.test; Path=/; Secure; HttpOnly; SameSite=Lax",
+      ),
+    ).toBe("better-auth.session_token=abc; Path=/; HttpOnly; SameSite=Lax");
+  });
+
+  it("sends sign-in back to the dev origin and leaves the identity provider alone", () => {
+    const remote = "https://atlas.example.test";
+    const local = "http://127.0.0.1:5173";
+    expect(rewriteRemoteAppUrl(`${remote}/app`, remote, local)).toBe(`${local}/app`);
+    expect(rewriteRemoteAppUrl("https://idp.example.test/authorize?redirect_uri=1", remote, local)).toBe(
+      "https://idp.example.test/authorize?redirect_uri=1",
+    );
+    expect(
+      rewriteAuthRedirectBody(
+        JSON.stringify({ redirect: true, url: `${remote}/app` }),
+        remote,
+        local,
+      ),
+    ).toBe(JSON.stringify({ redirect: true, url: `${local}/app` }));
+    expect(rewriteAuthRedirectBody(JSON.stringify({ token: "abc" }), remote, local)).toBe(
+      JSON.stringify({ token: "abc" }),
+    );
+  });
+
+  it("buffers auth responses only when the API is a public origin", () => {
+    expect(apiProxy("https://atlas.example.test", () => true)["/api/auth"]?.selfHandleResponse).toBe(
+      true,
+    );
+    expect(apiProxy("https://atlas.example.test", () => true)["/api"]?.selfHandleResponse).toBe(false);
+    expect(apiProxy("http://127.0.0.1:3100", () => true)["/api/auth"]?.selfHandleResponse).toBe(
+      false,
+    );
+  });
+});
 
 describe("apiProxy", () => {
   it("forwards the device socket and preserves authentication, origin and address headers", async () => {

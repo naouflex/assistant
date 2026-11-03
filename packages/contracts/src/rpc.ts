@@ -1300,6 +1300,14 @@ export const appContract = {
   },
   runs: {
     list: oc.input(z.object({ filter: z.enum(["active", "recent"]) })).output(RunsListOutputSchema),
+    /** Bots plus live and recent runs for the cubicle, in one round trip. */
+    floor: oc.output(
+      z.object({
+        bots: z.array(BotSchema),
+        active: RunsListOutputSchema.shape.runs,
+        recent: RunsListOutputSchema.shape.runs,
+      }),
+    ),
   },
   /** The signed-in user's wallet; absent when the deployment offers none. */
   paymentWallet: {

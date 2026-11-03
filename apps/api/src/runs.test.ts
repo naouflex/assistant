@@ -33,6 +33,7 @@ describe("run activity copy", () => {
       ).toEqual({
         promptSnippet: legacy,
         agentMessage: {
+          fromBotId: "peer",
           fromBotName: fromBotName.trim(),
           kind,
           text: text.replace(/\s+/g, " ").trim(),
@@ -61,7 +62,12 @@ describe("run activity copy", () => {
     });
     expect(preview).toEqual({
       promptSnippet: `Peer asked: ${"x".repeat(107)}…`,
-      agentMessage: { fromBotName: "Peer", kind: "request", text: `${"x".repeat(119)}…` },
+      agentMessage: {
+        fromBotId: "peer",
+        fromBotName: "Peer",
+        kind: "request",
+        text: `${"x".repeat(119)}…`,
+      },
     });
     expect(activityPreview({ trigger: "user", prompt: "x".repeat(130) }).promptSnippet).toBe(
       `${"x".repeat(119)}…`,
@@ -92,6 +98,7 @@ describe("run activity copy", () => {
       ],
     });
     expect(preview.agentMessage).toEqual({
+      fromBotId: "peer",
       fromBotName: "Peer",
       kind: "request",
       text: "a".repeat(118) + "\u2026",
@@ -139,6 +146,6 @@ it("hides opaque sender names in Activity previews", () => {
     }),
   ).toEqual({
     promptSnippet: "Update from Another agent: Ready",
-    agentMessage: { fromBotName: "", kind: "update", text: "Ready" },
+    agentMessage: { fromBotId: "peer", fromBotName: "", kind: "update", text: "Ready" },
   });
 });

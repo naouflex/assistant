@@ -103,6 +103,7 @@ import {
 } from "./history-speakers.js";
 import { createMediaGenerationProvider } from "./media-generation-factory.js";
 import { loadAgentMemoryContext } from "./memory-context.js";
+import { seedScratchpadFromUserPrompt } from "./scratchpad-seed.js";
 import { HostedModelCreditsRequiredError } from "./model-credit-observer.js";
 import {
   effectiveModelRole,
@@ -1392,6 +1393,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           script,
           allowSilentEmptyRun,
           emptyResponseText,
+          modelContextWindow: resolved.contextWindow,
           state,
           settleRunningHelpers: settleHelpers,
           stopHeartbeatAfterCompletion,
@@ -1468,6 +1470,14 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           } catch {
             // Lateness is optional context; a lookup failure must not prevent a run.
           }
+        }
+        if (run.trigger === "user" && task.prompt.trim()) {
+          await seedScratchpadFromUserPrompt(deps, {
+            spaceId: run.spaceId,
+            botId: bot.id,
+            userId: run.userId,
+            prompt: task.prompt,
+          }).catch((error) => getLogger().error("scratchpad seed failed", error));
         }
         const prompt = [
           replyContext,

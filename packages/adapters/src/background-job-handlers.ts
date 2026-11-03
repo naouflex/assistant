@@ -28,6 +28,7 @@ import { performComputerUpdate } from "./computer-update.js";
 import type { createRunExecutor } from "./executor.js";
 import type { ExpoPushProvider } from "./expo-push.js";
 import { compactHistory } from "./history-compaction.js";
+import { runMemoryDream } from "./memory-dream.js";
 import type { MemoryProviderResolver } from "./memory-provider-factory.js";
 import { deliverMessagingOutbound, mirrorMessagingOutbound } from "./messaging-delivery.js";
 import { pollPurchase } from "./purchase-poll.js";
@@ -218,6 +219,27 @@ export function createBackgroundJobHandlers(deps: {
     "push.receipt": async (payload) => {
       await runAsSystem("check a push receipt", () => deps.notifications?.checkReceipt(payload));
     },
+    "memory.dream": asOwner(
+      async (payload) => {
+        const dream = await deps.prisma.memoryDream.findUnique({
+          where: { id: payload.dreamId },
+          select: { spaceId: true, userId: true },
+        });
+        return dream ? { spaceId: dream.spaceId, userId: dream.userId } : null;
+      },
+      async (payload) => {
+        await runMemoryDream(
+          {
+            prisma: deps.prisma,
+            runtime: deps.runtime,
+            deploymentModelKey: deps.deploymentModelKey,
+            deploymentModelConfigured: deps.deploymentModelConfigured,
+            ...(deps.executor.resolveModel ? { resolveModel: deps.executor.resolveModel } : {}),
+          },
+          payload.dreamId,
+        );
+      },
+    ),
     "history.compact": asOwner(thread, async (payload) => {
       // Retrieval policies use stored context without paid message-count compaction.
       // Skip legacy backlog work after a policy change.

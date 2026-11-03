@@ -24,6 +24,7 @@ import {
   resolveActionApprovalForTools,
   toolRequiresApproval,
   toolRequiresExplicitApproval,
+  toolSpendsMoney,
   unattendedTriggerToolRequiresApproval,
 } from "@atlas/core";
 import { normalizedHttpUrl, urlSite } from "@atlas/core/egress";
@@ -239,15 +240,23 @@ export async function gateToolCall(
       (name === "schedule_update" && Boolean(args.prompt))) &&
     (await isRunTainted(ctx)) &&
     (await ctx.trust.routineNamesNewSite(String(args.prompt ?? "")));
-  const requiresApprovalByDefault =
-    request.heldForApproval ||
-    commandWatch ||
-    requiresUnattendedApproval ||
-    siteGate === "new" ||
-    unidentifiedAction ||
-    approvalToolNames.some((toolName) =>
-      toolRequiresApproval(toolName, viaConnector, declaredReadOnlyFor(toolName)),
-    );
+  const paidReplay =
+    name === "paid_request" &&
+    args.url === undefined &&
+    typeof args.purchase === "string" &&
+    Boolean(args.purchase.trim());
+  const spendsMoney = !paidReplay && toolSpendsMoney(name, viaConnector);
+  const requiresApprovalByDefault = paidReplay
+    ? false
+    : request.heldForApproval ||
+      commandWatch ||
+      requiresUnattendedApproval ||
+      siteGate === "new" ||
+      unidentifiedAction ||
+      spendsMoney ||
+      approvalToolNames.some((toolName) =>
+        toolRequiresApproval(toolName, viaConnector, declaredReadOnlyFor(toolName)),
+      );
   // A gated read still fails closed when its review errors, and keeps its approval key.
   const gated = requiresApprovalByDefault || connectorReadGated;
   const requiresMandatoryApproval =
@@ -319,6 +328,7 @@ export async function gateToolCall(
         reviewOnly: connectorReadGated,
         checkerConfigured,
         newDestination: siteGate === "new",
+        alwaysAsk: spendsMoney,
       });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {

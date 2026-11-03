@@ -14,6 +14,18 @@ import type {
 import { MEMORY_REVISION_CONFLICT_ERROR } from "@atlas/adapter-kit";
 import type { PrismaClient } from "@atlas/db";
 import { Prisma, withTransactionRetry } from "@atlas/db";
+import {
+  memorySearchSnippet,
+  memorySearchTermHits,
+  memorySearchTerms,
+} from "./keyword-search.js";
+
+export {
+  KEYWORD_SEARCH_MAX_TERMS,
+  memorySearchSnippet,
+  memorySearchTermHits,
+  memorySearchTerms,
+} from "./keyword-search.js";
 
 export class MarkdownMemoryStore implements MemoryStore {
   constructor(private readonly prisma: PrismaClient) {}
@@ -61,13 +73,24 @@ export class MarkdownMemoryStore implements MemoryStore {
         ...(request.botId ? { botId: request.botId } : {}),
       },
     });
-    const q = request.query.toLowerCase();
+    const terms = memorySearchTerms(request.query);
+    if (terms.length === 0) return [];
     return documents
-      .filter((doc) => doc.content.toLowerCase().includes(q) || doc.path.toLowerCase().includes(q))
       .map((doc) => ({
+        doc,
+        hits: memorySearchTermHits(doc.content, doc.path, terms),
+      }))
+      .filter((row) => row.hits > 0)
+      .sort(
+        (left, right) =>
+          right.hits - left.hits ||
+          left.doc.path.localeCompare(right.doc.path) ||
+          right.doc.revision - left.doc.revision,
+      )
+      .map(({ doc, hits }) => ({
         path: doc.path,
-        snippet: snippet(doc.content, q),
-        score: 1,
+        snippet: memorySearchSnippet(doc.content, terms),
+        score: hits / terms.length,
       }));
   }
 
@@ -172,8 +195,3 @@ export class MarkdownMemoryStore implements MemoryStore {
   }
 }
 
-function snippet(content: string, q: string): string {
-  const idx = content.toLowerCase().indexOf(q);
-  if (idx < 0) return content.slice(0, 140);
-  return content.slice(Math.max(0, idx - 40), idx + q.length + 80);
-}

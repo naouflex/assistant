@@ -7,6 +7,7 @@ import {
 } from "./agent-connections.js";
 import { messageBot } from "./bot-messages.js";
 import { endCallFromTool, requestUserCall } from "./call-request.js";
+import { queueBackgroundHelper } from "./background-helper-run.js";
 import { handoffToGroupBot } from "./group-handoff.js";
 import { publishMessage } from "./run-messages.js";
 import {
@@ -64,12 +65,31 @@ export const messagingTools: ToolHandlers = {
   async request_takeover() {
     return { ok: true };
   },
-  async run_subagent(_ctx, call) {
+  async run_subagent(ctx, call) {
+    const { deps, run, bot, thread } = ctx;
     const { args } = call;
-    return {
+    const queued = await queueBackgroundHelper(deps, {
+      parentRun: {
+        id: run.id,
+        spaceId: run.spaceId,
+        userId: run.userId,
+        botId: bot.id,
+        threadId: thread.id,
+        sourceMessageId: run.sourceMessageId,
+        status: run.status,
+      },
+      name: String(args.name ?? "helper"),
+      task: String(args.task ?? ""),
+      instructions: args.instructions ? String(args.instructions) : undefined,
+      executionId: call.executionId,
+    });
+    if ("error" in queued) return call.finish(queued);
+    return call.finish({
       ok: true,
-      result: String(args.task ?? "done."),
-    };
+      queued: true,
+      helper_run_id: queued.helperRunId,
+      note: "Background work is queued for after this turn. Reply to the owner now; finish the task in the follow-up run.",
+    });
   },
   async message_user(ctx, call) {
     const { deps, run } = ctx;

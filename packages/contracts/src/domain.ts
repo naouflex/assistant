@@ -766,8 +766,13 @@ export type MemoryPromptBudget = z.infer<typeof MemoryPromptBudgetSchema>;
 
 /** Every bot and Space keeps its MEMORY.md index; other memory documents can be deleted. */
 export const MEMORY_INDEX_PATH = "MEMORY.md";
+/** Imported owner profile; always eligible for the small in-prompt memory budget. */
+export const USER_MEMORY_PROFILE_PATH = "USER.md";
 /** What a bot may write to its memory. People can still write more by hand. */
 export const BOT_MEMORY_MAX_BYTES = 4 * 1024;
+/** Append-only daily notes from remember({ journal: true }). */
+export const MEMORY_JOURNAL_PREFIX = "journal/";
+export const MEMORY_JOURNAL_DAY_MAX_BYTES = 16 * 1024;
 export function isDeletableMemoryDocument(path: string): boolean {
   return path !== MEMORY_INDEX_PATH;
 }

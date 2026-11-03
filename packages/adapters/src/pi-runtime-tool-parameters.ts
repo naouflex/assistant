@@ -75,7 +75,11 @@ function builtinParameters(tool: ConnectorTool) {
     });
   }
   if (tool.name === "remember") {
-    return Type.Object({ content: Type.String(), old_text: Type.Optional(Type.String()) });
+    return Type.Object({
+      content: Type.String(),
+      old_text: Type.Optional(Type.String()),
+      journal: Type.Optional(Type.Boolean()),
+    });
   }
   if (tool.name === "shell" || tool.name === "user_computer_shell") {
     return Type.Object({
@@ -88,6 +92,7 @@ function builtinParameters(tool: ConnectorTool) {
       name: Type.String(),
       task: Type.String(),
       instructions: Type.Optional(Type.String()),
+      background: Type.Optional(Type.Boolean()),
       model_provider: Type.Optional(Type.String()),
       model_id: Type.Optional(Type.String()),
     });

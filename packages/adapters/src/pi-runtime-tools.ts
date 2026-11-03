@@ -28,6 +28,7 @@ import type { PiAgentRuntimeOptions } from "./pi-runtime.js";
 import { sanitizeSensitiveText } from "./pi-runtime-errors.js";
 import { clipToolResultContent, clipToolResultText } from "./pi-runtime-limits.js";
 import type { RuntimeModelTarget } from "./pi-runtime-models.js";
+import { compactToolResultForModel } from "./tool-result-format.js";
 import { executeSubagent } from "./pi-runtime-subagent.js";
 import { parametersFor, prepareFleetArguments } from "./pi-runtime-tool-parameters.js";
 import { recordPiTelemetryContent, withPiTelemetrySpan } from "./pi-telemetry.js";
@@ -528,6 +529,23 @@ function toAgentTool(
                 };
               }
               if (tool.name === "run_subagent") {
+                if (args.background === true) {
+                  if (!host.request.executeTool) {
+                    throw new Error("Background helpers are unavailable");
+                  }
+                  const result = await host.request.executeTool(tool.name, args, executionId);
+                  if (isAgentToolExecutionResult(result)) {
+                    if (isToolPauseResult(result)) host.pausePending = true;
+                    return result;
+                  }
+                  const text = serializeToolResult(
+                    result,
+                    host.request.contextStrategy,
+                    tool.name,
+                    args,
+                  );
+                  return { content: [{ type: "text", text }], details: result };
+                }
                 const result = await executeSubagent(host, executionId, args);
                 return {
                   content: [{ type: "text", text: result }],
@@ -650,7 +668,8 @@ export function serializeToolResult(
   verbatimMcpServers?: AgentRunRequest["verbatimMcpServers"],
 ) {
   try {
-    const text = JSON.stringify(result);
+    const shaped = compactToolResultForModel(result, name);
+    const text = JSON.stringify(shaped);
     if (!text) return "ok";
     // skill-tools.ts already bounds skill content; the context budget selector may still shorten it.
     if (

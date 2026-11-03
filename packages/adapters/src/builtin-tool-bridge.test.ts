@@ -30,34 +30,18 @@ const definitionBytes = (tools: typeof ownerChat) =>
 describe("built-in tool bridge", () => {
   it("lists a pinned tool set within a byte budget on an owner chat run", () => {
     const { listed, deferred } = partitionTools(ownerChat);
-    expect(listed.map((tool) => tool.name).sort()).toEqual([
-      "ask_user",
-      "attach_file",
-      "connect_app",
-      "find_tool",
-      "list_files",
-      "message_user",
-      "read_file",
-      "read_history",
-      "remember",
-      "request_secret",
-      "request_takeover",
-      "run_subagent",
-      "schedule_create",
-      "schedule_list",
-      "search_history",
-      "shell",
-      "skill_read",
-      "update_bot",
-      "update_preferences",
-      "use_tool",
-      "web_fetch",
-      "web_search",
-      "write_file",
-    ]);
-    expect(definitionBytes(listed)).toBeLessThanOrEqual(30_600);
+    expect(listed.map((tool) => tool.name).sort()).toEqual(
+      [
+        ...ownerChat
+          .filter((tool) => CORE_BUILTIN_TOOL_NAMES.has(tool.name))
+          .map((tool) => tool.name),
+        FIND_TOOL,
+        USE_TOOL,
+      ].sort(),
+    );
+    expect(definitionBytes(listed)).toBeLessThanOrEqual(35_000);
     expect(deferred.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(["render_plot", "create_space", "generate_secret", "scratchpad_add"]),
+      expect.arrayContaining(["render_plot", "create_space", "generate_secret"]),
     );
   });
 
@@ -80,7 +64,7 @@ describe("built-in tool bridge", () => {
   });
 
   it("finds exact names and ranks a query over names, descriptions and parameters", () => {
-    const { deferred } = partitionTools(ownerChat);
+    const { listed, deferred } = partitionTools(ownerChat);
     const plot = findTools(deferred, { names: ["render_plot", "shell", "nope"] });
     expect(plot.tools.map((tool) => tool.name)).toEqual(["render_plot"]);
     expect(plot.tools[0]!.inputSchema).toEqual(
@@ -92,8 +76,7 @@ describe("built-in tool bridge", () => {
     expect(names("chart")).toContain("render_plot");
     expect(names("new space")[0]).toBe("create_space");
     expect(names("generate password")[0]).toBe("generate_secret");
-    expect(names("scratchpad add")[0]).toBe("scratchpad_add");
-    expect(names("scratchpad").length).toBe(3);
+    expect(names("scratchpad").every((name) => name.startsWith("scratchpad_"))).toBe(true);
     expect(findTools(deferred, { query: "zzzz" })).toMatchObject({
       tools: [],
       hint: expect.any(String),

@@ -105,6 +105,7 @@ import type { Actor, AuthCapabilities } from "@atlas/contracts";
 import {
   isLocalhostOrLoopbackIp,
   PLUGIN_SUBMISSIONS_PATH,
+  requestedSpaceId,
   SERVER_BUILD_HEADER,
 } from "@atlas/contracts";
 import { encryptionKeyWarning, signupPolicyFromEnv } from "@atlas/core";
@@ -926,7 +927,7 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) return null;
     const actor = await actorFromMembership(
-      requireMembership(prisma, session.user.id, request.headers.get("x-rakazo-space-id")),
+      requireMembership(prisma, session.user.id, requestedSpaceId(request.headers)),
     );
     return actor && { actor, sessionId: session.session.id };
   };

@@ -1,6 +1,21 @@
 import type { ModelHeaderRow } from "./model-headers.js";
 import { ModelHeaderRowsSchema, ModelHeadersSchema } from "./model-headers.js";
 
+export const ATLAS_SPACE_ID_HEADER = "x-atlas-space-id";
+/** Legacy Rakazo clients still send this name; the API accepts both. */
+export const LEGACY_SPACE_ID_HEADER = "x-rakazo-space-id";
+
+type HeaderLookup = { get(name: string): string | null | undefined };
+
+/** Space the client is acting in, when it sent one of the supported headers. */
+export function requestedSpaceId(headers: HeaderLookup): string | null {
+  const id =
+    headers.get(ATLAS_SPACE_ID_HEADER)?.trim() ||
+    headers.get(LEGACY_SPACE_ID_HEADER)?.trim() ||
+    "";
+  return id || null;
+}
+
 /** Atlas names its own request headers; a configured header must not replace them. */
 function allowedServerHeaderName(name: string): boolean {
   const lower = name.trim().toLowerCase();

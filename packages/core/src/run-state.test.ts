@@ -8,6 +8,7 @@ import {
   isBackgroundRunTrigger,
   isConversationalRun,
   isRunWaitingOnUser,
+  isRunStopCommand,
   isRunWorking,
   messageBypassesTakeoverWait,
   messageSteersRun,
@@ -101,5 +102,14 @@ describe("run state machine", () => {
         },
       ),
     );
+  });
+});
+
+describe("isRunStopCommand", () => {
+  it("matches whole-message stop words only", () => {
+    expect(isRunStopCommand("stop")).toBe(true);
+    expect(isRunStopCommand("  arrête ")).toBe(true);
+    expect(isRunStopCommand("stop.")).toBe(true);
+    expect(isRunStopCommand("please stop")).toBe(false);
   });
 });

@@ -20,6 +20,8 @@ import {
   isUserProgressClientNonce,
   midTurnProgressBudgetAllows,
   narrationStatusLine,
+  FIRST_ACK_AFTER_MS,
+  FIRST_ACK_TEXT,
   USER_PROGRESS_MESSAGE_MAX_LENGTH,
   userProgressClientNonce,
 } from "./user-progress.js";
@@ -221,4 +223,35 @@ export async function showNarrationStatus(ctx: RunContext, note: string | undefi
     runId,
     payload: { reset: true, text: narrationStatusLine(note), activity: true },
   });
+}
+
+/** Short auto-ack when the turn is still silent; does not consume the mid-turn reply budget. */
+export async function maybePublishFirstAck(ctx: RunContext) {
+  const { deps, run } = ctx;
+  const { reply } = ctx.state;
+  if (
+    ctx.scripted ||
+    isBackgroundRunTrigger(run.trigger) ||
+    !runPromotesMidTurnNarration(run.trigger) ||
+    ctx.allowSilentEmptyRun ||
+    reply.assembled.trim() ||
+    reply.midTurnUserTexts.length > 0 ||
+    reply.publishedMidTurnUserMessage
+  )
+    return;
+  await publishMessage(
+    deps,
+    run,
+    "bot",
+    [{ kind: "text", text: FIRST_ACK_TEXT }],
+    true,
+    userProgressClientNonce(run.id, 0),
+  );
+}
+
+export function scheduleFirstAck(ctx: RunContext) {
+  const timer = setTimeout(() => {
+    void maybePublishFirstAck(ctx).catch(() => undefined);
+  }, FIRST_ACK_AFTER_MS);
+  ctx.abortController.signal.addEventListener("abort", () => clearTimeout(timer), { once: true });
 }

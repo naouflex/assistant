@@ -11,6 +11,7 @@ import {
   GenerateSecretInput,
   HISTORY_QUERIES_MAX_BYTES,
   LOGIN_FIELD_LIMIT,
+  MEMORY_INDEX_PATH,
   MESSAGE_REACTIONS,
   PAID_REQUEST_METHODS,
   PURCHASE_CARD_FIELDS,
@@ -851,13 +852,29 @@ export const builtinAgentTools: ConnectorTool[] = [
     readOnly: true,
   },
   {
+    name: "search_memory",
+    description:
+      "Search saved memory notes by keywords. Each word is matched on its own across note text and paths. Use before read_memory when you do not know the path.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "A few keywords, not a full sentence." },
+        scope: { type: "string", enum: ["bot", "user", "all"], description: "Default all." },
+        limit: { type: "number", description: "Max hits (default 8, max 20)." },
+      },
+      required: ["query"],
+    },
+    readOnly: true,
+  },
+  {
     name: "remember",
-    description: `Save one short new fact to your memory, one call per fact. To change or drop a fact, pass old_text from its entry with new or empty content. Holds ${BOT_MEMORY_MAX_BYTES / 1024} KB.`,
+    description: `Save one short new fact to your memory index (${MEMORY_INDEX_PATH}), one call per fact. To change or drop a fact, pass old_text from its entry with new or empty content. Holds ${BOT_MEMORY_MAX_BYTES / 1024} KB. Pass journal: true to append a dated note under journal/YYYY-MM-DD.md instead.`,
     inputSchema: {
       type: "object",
       properties: {
         content: { type: "string" },
         old_text: { type: "string" },
+        journal: { type: "boolean", description: "Append to today's journal file instead of MEMORY.md." },
       },
       required: ["content"],
     },
@@ -1507,7 +1524,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "run_subagent",
     description:
-      "Run a short-lived helper inside this turn only. It is not a bot: no list entry, no thread, no computer of its own, and it disappears when this turn ends. Never call this because the user asked to create a bot — that is spawn_bot, and spawn_bot alone.",
+      "Run a helper for parallel work. Default: runs inside this turn and returns a result here. Pass background: true for work that may take minutes: reply to the owner now, then finish in a follow-up run after this turn ends. Never call this because the user asked to create a bot — that is spawn_bot.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1519,6 +1536,10 @@ export const builtinAgentTools: ConnectorTool[] = [
         instructions: {
           type: "string",
           description: "Optional extra system instructions for the helper.",
+        },
+        background: {
+          type: "boolean",
+          description: "When true, queue the work for after this turn instead of blocking here.",
         },
         model_provider: {
           type: "string",

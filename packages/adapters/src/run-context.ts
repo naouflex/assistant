@@ -279,6 +279,8 @@ export interface RunContext {
   script: ReturnType<typeof inferScript> | undefined;
   allowSilentEmptyRun: boolean;
   emptyResponseText: string | undefined;
+  /** Known model context window for compaction heuristics; unset uses message-count fallback. */
+  modelContextWindow?: number;
   state: RunState;
   settleRunningHelpers: () => Promise<void>;
   stopHeartbeatAfterCompletion: () => void;

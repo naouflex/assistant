@@ -47,6 +47,28 @@ export function isBackgroundRunTrigger(trigger: string | null | undefined): bool
   return BACKGROUND_RUN_TRIGGER_SET.has(trigger ?? "");
 }
 
+const RUN_STOP_COMMANDS = new Set([
+  "stop",
+  "arrête",
+  "arrete",
+  "arrêter",
+  "arreter",
+  "arrêt",
+  "arret",
+  "halt",
+  "cancel",
+  "annule",
+  "annuler",
+]);
+
+/** Whole-message stop words cancel active runs like the stop control; not a chat message. */
+export function isRunStopCommand(text: string | undefined | null): boolean {
+  const trimmed = text?.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.replace(/[.!?…]+$/u, "").trim().toLowerCase();
+  return RUN_STOP_COMMANDS.has(normalized);
+}
+
 const allowed: Record<RunStatus, RunStatus[]> = {
   queued: ["leased", "cancelled"],
   leased: ["running", "queued", "cancelled"],

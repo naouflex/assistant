@@ -41,6 +41,7 @@ export function activityPreview(
   return {
     promptSnippet: promptSnippet(message.text.trim() ? `${label}: ${message.text}` : label, max),
     agentMessage: {
+      fromBotId: message.fromBotId,
       fromBotName: displayName(message.fromBotName, ""),
       kind,
       text: promptSnippet(message.text, max),

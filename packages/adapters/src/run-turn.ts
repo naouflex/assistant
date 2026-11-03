@@ -28,11 +28,9 @@ import { returnBotMessageOutcome } from "./bot-messages.js";
 import { scheduleComputerSleep } from "./computer-idle.js";
 import { holdComputerExecutionLeaseForTakeover } from "./computer-lifecycle.js";
 import { resolveBotWorkspacePath } from "./computer-support.js";
-import {
-  COMPACTION_BATCH_SIZE,
-  HISTORY_WINDOW_SIZE,
-  shouldEnqueueCompaction,
-} from "./history-compaction.js";
+import { releaseBackgroundHelpers } from "./background-helper-run.js";
+import { shouldEnqueueCompactionNow } from "./history-compaction.js";
+import { maybeScheduleMemoryDream } from "./memory-dream-schedule.js";
 import {
   backOffRoutineAfterAccountError,
   clearRoutineBackoff,
@@ -57,6 +55,7 @@ import {
   nextProgressNonce,
   publishMidTurnNarration,
   recordExplicitNoResponse,
+  scheduleFirstAck,
   showNarrationStatus,
   tryFlushPendingTools,
 } from "./run-progress.js";
@@ -94,7 +93,6 @@ import {
   STEERING_RESET_MIN_GAP_MS,
   STEERING_RESETS_MAX_PER_RUN,
 } from "./user-progress.js";
-
 type RuntimeEvent<T extends AgentRuntimeEvent["type"]> = Extract<AgentRuntimeEvent, { type: T }>;
 
 /**
@@ -129,6 +127,7 @@ export async function consumeRunEvents(
       if (!(error instanceof RunHistoryWriteError)) throw error;
     }
   };
+  scheduleFirstAck(ctx);
   try {
     for await (const event of withRuntimeCleanup(events, ctx.abortController)) {
       if (ctx.state.approval.pausePending) return true;
@@ -852,6 +851,18 @@ export async function completeRun(ctx: RunContext) {
   // Last, and never fatal: the run is already finalized, so a failure here must not reach
   // the failure path, where a second finalizeRun would match no rows and silently
   // skip the completion notification.
+  await releaseBackgroundHelpers(deps, runId).catch((error) => {
+    getLogger().error("background helper release failed", error);
+  });
+  await maybeScheduleMemoryDream(deps, {
+    spaceId: run.spaceId,
+    userId: run.userId,
+    botId: bot.id,
+    trigger: run.trigger,
+    status: "completed",
+  }).catch((error) => {
+    getLogger().error("memory.dream schedule failed", error);
+  });
   try {
     const updatedThread = await deps.prisma.thread.findUniqueOrThrow({
       where: { id: thread.id },
@@ -860,14 +871,21 @@ export async function completeRun(ctx: RunContext) {
         historyCompactedUpToSeq: true,
       },
     });
+    const compactedUpTo = updatedThread.historyCompactedUpToSeq ?? -1;
+    const uncompactedMessages = await deps.prisma.message.findMany({
+      where: { threadId: thread.id, seq: { gt: compactedUpTo } },
+      select: { blocks: true },
+      take: 200,
+    });
+    const uncompactedJsonChars = JSON.stringify(uncompactedMessages).length;
     if (
       (deps.contextStrategy ?? DEFAULT_CONTEXT_STRATEGY) === "current" &&
-      shouldEnqueueCompaction(
-        updatedThread.nextMessageSeq,
-        updatedThread.historyCompactedUpToSeq,
-        HISTORY_WINDOW_SIZE,
-        COMPACTION_BATCH_SIZE,
-      )
+      shouldEnqueueCompactionNow({
+        nextMessageSeq: updatedThread.nextMessageSeq,
+        historyCompactedUpToSeq: updatedThread.historyCompactedUpToSeq,
+        contextWindow: ctx.modelContextWindow,
+        uncompactedJsonChars,
+      })
     ) {
       await deps.jobs.enqueue(historyCompactJob(thread.id));
     }
@@ -1001,4 +1019,7 @@ export async function failRun(
       threadId: thread.id,
     });
   }
+  await releaseBackgroundHelpers(deps, runId).catch((releaseError) => {
+    getLogger().error("background helper release failed", releaseError);
+  });
 }

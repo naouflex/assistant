@@ -1,3 +1,4 @@
+import type { OutgoingHttpHeaders } from "node:http";
 import { isIP } from "node:net";
 import { USER_DEVICE_CONNECT_PATH } from "@atlas/contracts/user-devices";
 import type { ProxyOptions } from "vite";
@@ -5,6 +6,73 @@ import { appendForwardedFor } from "./forwarded-for.js";
 
 /** Vite treats a proxy key starting with `^` as a pattern for the request's path and query. */
 export const DEVICE_SOCKET = `^${USER_DEVICE_CONNECT_PATH}(?:\\?|$)`;
+
+/**
+ * Origin a remote API will accept when this dev server proxies to it. Loopback targets keep the
+ * browser's origin: the local API trusts the web port, not its own.
+ */
+export function remoteProxyOrigin(target: string): string | null {
+  try {
+    const url = new URL(target);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    const host = url.hostname.replace(/^\[|\]$/g, "");
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1" || isIP(host) !== 0) {
+      // Private and loopback addresses stay as the browser sent them.
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1") return null;
+      if (isPrivateIpv4(host)) return null;
+    }
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function isPrivateIpv4(host: string): boolean {
+  const parts = host.split(".").map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part))) return false;
+  const [a, b] = parts;
+  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+}
+
+/** Session cookies from an HTTPS API must stick to this HTTP dev origin. */
+export function rewriteProxiedSetCookie(cookie: string): string {
+  return cookie
+    .replace(/;\s*Domain=[^;]*/gi, "")
+    .replace(/;\s*Secure/gi, "")
+    .replace(/;\s*SameSite=None/gi, "; SameSite=Lax")
+    .replace(/^__Secure-|^__Host-/, "");
+}
+
+/** Point an app URL on the remote origin at the dev server. Other hosts stay put. */
+export function rewriteRemoteAppUrl(
+  value: string,
+  remoteOrigin: string,
+  localOrigin: string,
+): string {
+  try {
+    const url = new URL(value);
+    if (url.origin !== remoteOrigin) return value;
+    return `${localOrigin}${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return value;
+  }
+}
+
+/** Better Auth tells the browser to navigate via `url` after sign-in. */
+export function rewriteAuthRedirectBody(
+  body: string,
+  remoteOrigin: string,
+  localOrigin: string,
+): string {
+  try {
+    const data = JSON.parse(body) as { url?: unknown };
+    if (!data || typeof data !== "object" || typeof data.url !== "string") return body;
+    data.url = rewriteRemoteAppUrl(data.url, remoteOrigin, localOrigin);
+    return JSON.stringify(data);
+  } catch {
+    return body;
+  }
+}
 
 /**
  * What the web server forwards to the API, in development and in `vite preview` deployments.
@@ -15,10 +83,13 @@ export function apiProxy(
   target: string,
   allowedHosts: () => readonly string[] | true,
 ): Record<string, ProxyOptions> {
-  const options = (upgrades: boolean): ProxyOptions => ({
+  const browserOrigin = remoteProxyOrigin(target);
+  const options = (upgrades: boolean, handleAuthBody = false): ProxyOptions => ({
     target,
     changeOrigin: true,
     ws: upgrades,
+    // Auth responses carry the post-sign-in URL in JSON. Buffer only that prefix so /rpc streams.
+    selfHandleResponse: Boolean(browserOrigin) && handleAuthBody,
     ...(upgrades
       ? {
           bypass: (req) => {
@@ -32,15 +103,54 @@ export function apiProxy(
     configure: (proxy) => {
       proxy.on("proxyReq", (proxyReq, req) => {
         proxyReq.setHeader("x-forwarded-for", appendForwardedFor(req));
+        if (browserOrigin) {
+          proxyReq.setHeader("origin", browserOrigin);
+          proxyReq.setHeader("referer", `${browserOrigin}/`);
+        }
       });
+      if (browserOrigin) {
+        proxy.on("proxyRes", (proxyRes, req, res) => {
+          const localOrigin = req.headers.host ? `http://${req.headers.host}` : null;
+          const location = proxyRes.headers.location;
+          if (localOrigin && typeof location === "string") {
+            proxyRes.headers.location = rewriteRemoteAppUrl(location, browserOrigin, localOrigin);
+          }
+          const cookies = proxyRes.headers["set-cookie"];
+          if (cookies) proxyRes.headers["set-cookie"] = cookies.map(rewriteProxiedSetCookie);
+          if (!handleAuthBody || !res) return;
+          const chunks: Buffer[] = [];
+          proxyRes.on("data", (chunk: Buffer) => chunks.push(chunk));
+          proxyRes.on("end", () => {
+            let body = Buffer.concat(chunks);
+            const type = String(proxyRes.headers["content-type"] ?? "");
+            if (
+              localOrigin &&
+              type.includes("json") &&
+              !proxyRes.headers["content-encoding"]
+            ) {
+              body = Buffer.from(
+                rewriteAuthRedirectBody(body.toString("utf8"), browserOrigin, localOrigin),
+              );
+            }
+            const headers: OutgoingHttpHeaders = { ...proxyRes.headers };
+            delete headers["transfer-encoding"];
+            headers["content-length"] = String(body.length);
+            if (!res.headersSent) res.writeHead(proxyRes.statusCode ?? 502, headers);
+            res.end(body);
+          });
+        });
+      }
       if (upgrades) {
         proxy.on("proxyReqWs", (proxyReq, req) => {
           proxyReq.setHeader("x-forwarded-for", appendForwardedFor(req));
+          if (browserOrigin) proxyReq.setHeader("origin", browserOrigin);
         });
       }
     },
   });
   return {
+    // Before `/api`: Vite uses the first matching prefix, and auth responses are rewritten.
+    "/api/auth": options(false, true),
     "/api": options(false),
     // A user's own computer keeps its device socket open here, the API's only upgrade. Vite
     // matches other keys as prefixes, so this one is anchored to the exact path.

@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { parseServerHeaders, serverHeadersFromRows } from "./server-headers.js";
+import {
+  ATLAS_SPACE_ID_HEADER,
+  LEGACY_SPACE_ID_HEADER,
+  parseServerHeaders,
+  requestedSpaceId,
+  serverHeadersFromRows,
+} from "./server-headers.js";
+
+describe("requestedSpaceId", () => {
+  it("prefers the Atlas header and falls back to the legacy name", () => {
+    expect(requestedSpaceId(new Headers({ [ATLAS_SPACE_ID_HEADER]: "space-a" }))).toBe("space-a");
+    expect(requestedSpaceId(new Headers({ [LEGACY_SPACE_ID_HEADER]: "space-b" }))).toBe("space-b");
+    expect(
+      requestedSpaceId(
+        new Headers({
+          [ATLAS_SPACE_ID_HEADER]: "space-a",
+          [LEGACY_SPACE_ID_HEADER]: "space-b",
+        }),
+      ),
+    ).toBe("space-a");
+    expect(requestedSpaceId(new Headers())).toBeNull();
+  });
+});
 
 describe("server request headers", () => {
   it("keeps access proxy credentials and ignores blank rows", () => {

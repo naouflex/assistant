@@ -10,6 +10,7 @@ const APPROVAL_EXEMPT_TOOLS = new Set([
   "read_file",
   "read_history",
   "read_memory",
+  "search_memory",
   "search_history",
   "write_file",
   "shell",
@@ -27,8 +28,6 @@ const APPROVAL_EXEMPT_TOOLS = new Set([
   "schedule_cancel",
   "list_fleet",
   "organize_bot",
-  // The wallet owner approves every purchase in the wallet itself; a card here would ask twice.
-  "request_purchase",
 ]);
 
 const APPROVAL_REQUIRED_BUILTIN_TOOLS = new Set([
@@ -57,6 +56,8 @@ const APPROVAL_REQUIRED_BUILTIN_TOOLS = new Set([
   "update_group",
   "create_child_routine",
   "feedback",
+  "request_purchase",
+  "paid_request",
 ]);
 const EXPLICIT_APPROVAL_BUILTIN_TOOLS = new Set([
   "respond_agent_connection",
@@ -76,6 +77,7 @@ const UNATTENDED_SAFE_BUILTIN_TOOLS = new Set([
   "purchase_status",
   "read_file",
   "read_memory",
+  "search_memory",
   "recall_memory",
   "request_takeover",
   "run_subagent",
@@ -145,6 +147,15 @@ export function watchToolRefusal(input: {
     return `${toolName} needs approval under this space's rules, and a change check cannot ask.`;
   }
   return null;
+}
+
+const SPENDS_MONEY_BUILTIN_TOOLS = new Set(["request_purchase", "paid_request"]);
+const SPENDS_MONEY_CONNECTOR_PATTERN = /(^|_)(purchase|checkout|buy|pay|charge)(_|$)/i;
+
+/** Purchase, checkout, and wallet tools always need a chat approval card. */
+export function toolSpendsMoney(toolName: string, viaConnector: boolean): boolean {
+  if (SPENDS_MONEY_BUILTIN_TOOLS.has(toolName)) return true;
+  return viaConnector && SPENDS_MONEY_CONNECTOR_PATTERN.test(toolName);
 }
 
 export function toolRequiresApproval(
@@ -279,6 +290,7 @@ const OWN_STATE_RESULT_TOOLS = new Set([
   "message_user",
   "read_history",
   "read_memory",
+  "search_memory",
   "recall_memory",
   "remember",
   "render_plot",
@@ -295,6 +307,7 @@ const OWN_STATE_RESULT_TOOLS = new Set([
   "scratchpad_remove",
   "scratchpad_update",
   "search_history",
+  "search_memory",
   "skill_read",
   "task_catalog",
   "update_preferences",

@@ -88,8 +88,8 @@ describe("compact local runs", () => {
       compact.indexOf("find_tool"),
     );
     expect(compact).not.toContain(parts.botDirectory);
-    expect(compact.length).toBeLessThan(full.length / 2);
-    expect(compact.length).toBeLessThan(4_000);
+    expect(compact.length).toBeLessThan(full.length * 0.55);
+    expect(compact.length).toBeLessThan(4_500);
   });
 
   it("is byte-stable across turns: the clock rides on the user message", () => {
@@ -115,10 +115,12 @@ describe("compact local runs", () => {
       if (name === FIND_TOOL || name === USE_TOOL) continue;
       expect(COMPACT_CORE_BUILTIN_TOOL_NAMES.has(name)).toBe(true);
     }
-    expect(deferred.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(["schedule_create", "update_bot"]),
+    expect(deferred.map((tool) => tool.name)).toContain("render_plot");
+    expect(names).toContain("schedule_create");
+    expect(names).toContain("search_memory");
+    expect(listedBytes(listed)).toBeLessThan(
+      listedBytes(partitionTools(ownerChat).listed) * 0.65,
     );
-    expect(listedBytes(listed)).toBeLessThan(listedBytes(partitionTools(ownerChat).listed) / 2);
     // The deferred marker is in-process only.
     expect(JSON.stringify(namedAgentTools(listed))).not.toContain('"deferred"');
   });

@@ -6,6 +6,8 @@ import {
   CALL_CLIENT_NONCE_PREFIX,
   callClientNonce,
   expandSkillReferencesInPrompt,
+  ACTIVE_RUN_STATUSES,
+  isRunStopCommand,
   MODEL_REQUIRED_SEND_ERROR,
   QUEUE_HOLDING_RUN_STATUSES,
 } from "@atlas/core";
@@ -108,6 +110,25 @@ export function threadsRoutes(ctx: RouterContext) {
   ) => {
     const setup = await modelSetup(deps, actor);
     const target = await resolveThreadTarget(deps.prisma, actor, input);
+    const stopText = typeof input.text === "string" ? input.text : "";
+    if (
+      isRunStopCommand(stopText) &&
+      !(input.artifactIds?.length || input.blocks?.some((block) => block.kind === "image"))
+    ) {
+      const active = await deps.prisma.run.findFirst({
+        where: {
+          threadId: target.threadId,
+          spaceId: actor.spaceId,
+          status: { in: [...ACTIVE_RUN_STATUSES] },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, taskId: true },
+      });
+      if (active) {
+        await stopThreadRuns(deps, actor, target);
+        return { taskId: active.taskId, runId: active.id, seq: 0 };
+      }
+    }
     // A bot with its own runnable model needs no main model.
     if (
       setup.needsModel &&

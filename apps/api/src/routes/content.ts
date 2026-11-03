@@ -270,6 +270,14 @@ export function contentRoutes(ctx: RouterContext) {
       list: authed.runs.list.handler(async ({ context, input }) => ({
         runs: await listSpaceRuns(deps.prisma, context.actor, input.filter),
       })),
+      floor: authed.runs.floor.handler(async ({ context }) => {
+        const [bots, active, recent] = await Promise.all([
+          repos.listBots(context.actor),
+          listSpaceRuns(deps.prisma, context.actor, "active"),
+          listSpaceRuns(deps.prisma, context.actor, "recent"),
+        ]);
+        return { bots, active, recent };
+      }),
     },
   };
 }

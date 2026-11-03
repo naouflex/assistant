@@ -1,6 +1,27 @@
 import type { ConnectorTool } from "@atlas/adapter-kit";
-import { BOT_MEMORY_MAX_BYTES } from "@atlas/contracts";
+import { BOT_MEMORY_MAX_BYTES, MEMORY_JOURNAL_DAY_MAX_BYTES } from "@atlas/contracts";
 import { byteLength } from "./utf8.js";
+
+const JOURNAL_DATE_PREFIX = /^(\d{4}-\d{2}-\d{2})\b/;
+
+export function journalPathForEntry(content: string, now = new Date()): string {
+  const match = content.trim().match(JOURNAL_DATE_PREFIX);
+  const day = match?.[1] ?? now.toISOString().slice(0, 10);
+  return `journal/${day}.md`;
+}
+
+export function appendJournalEntry(existing: string, entry: string, maxBytes = MEMORY_JOURNAL_DAY_MAX_BYTES): { content: string } | { error: string } {
+  const line = entry.trim().replace(/\r\n/g, "\n");
+  if (!line) return { error: "content is required" };
+  const current = existing.replace(/\r\n/g, "\n");
+  const next = current.trimEnd() ? `${current.trimEnd()}\n\n${line}\n` : `${line}\n`;
+  if (byteLength(next) > maxBytes) {
+    return {
+      error: `Today's journal is full (${maxBytes} bytes). Shorten the entry or consolidate older journal files.`,
+    };
+  }
+  return { content: next };
+}
 
 const SEMANTIC_MEMORY_TOOL_NAMES = new Set(["recall_memory", "save_memory", "forget_memory"]);
 

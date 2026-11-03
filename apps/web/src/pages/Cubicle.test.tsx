@@ -8,14 +8,17 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
-  bots: { list: vi.fn() },
-  runs: { list: vi.fn() },
+  runs: { floor: vi.fn() },
 }));
 vi.mock("../lib/rpc", () => ({
   rpc: api,
   rpcForSpace: () => api,
   createSpaceRpc: () => api,
-  selectedSpaceId: () => null,
+  selectedSpaceId: () => "space-1",
+  selectSpace: vi.fn(),
+}));
+vi.mock("../components/integrations/space-availability", () => ({
+  useOwnSpaces: () => [{ id: "space-1", name: "Home" }],
 }));
 vi.mock("./WindowChrome", () => ({ WindowChrome: () => null }));
 vi.mock("@lingui/react/macro", () => {
@@ -63,17 +66,17 @@ async function renderPage() {
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  api.bots.list.mockReset();
-  api.runs.list.mockReset();
+  api.runs.floor.mockReset();
 });
 
 it("shows who needs you first and opens that agent's chat", async () => {
-  api.bots.list.mockResolvedValue([
-    bot("idle", "Ada", "idle", "Notes filed"),
-    bot("wait", "Dora", "waiting_input"),
-  ]);
-  api.runs.list.mockResolvedValue({
-    runs: [
+  api.runs.floor.mockResolvedValue({
+    bots: [
+      bot("idle", "Ada", "idle", "Notes filed"),
+      bot("wait", "Dora", "waiting_input"),
+    ],
+    recent: [],
+    active: [
       {
         runId: "run-wait",
         botId: "wait",
@@ -94,7 +97,8 @@ it("shows who needs you first and opens that agent's chat", async () => {
   const desks = [...page.container.querySelectorAll("a")].filter((link) =>
     link.getAttribute("data-testid")?.startsWith("cubicle-"),
   );
-  expect(desks.map((desk) => desk.getAttribute("data-kind"))).toEqual(["waiting", "idle"]);
+  expect(desks.map((desk) => desk.getAttribute("data-kind"))).toEqual(["waiting"]);
+  expect(page.container.textContent).toContain("quiet");
   expect(page.container.textContent).toContain("1 needs you");
   expect(page.container.textContent).toContain("Which file should I send?");
   expect(desks[0]?.getAttribute("href")).toBe("/app/wait");
