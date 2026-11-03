@@ -76,6 +76,7 @@ import { ChatHeader } from "./shell/chat-header";
 import { FALLBACK_BOT_COLOR } from "./shell/chat-shared";
 import type { CommandPaletteAction } from "./shell/command-palette";
 import { Composer } from "./shell/composer";
+import { ComposerModelControls } from "./shell/composer-model-controls";
 import { ComputerOverlay } from "./shell/computer-overlay";
 import { ComputerPanel } from "./shell/computer-panel";
 import type { CreateBotDialogInput } from "./shell/create-bot-dialog";
@@ -192,7 +193,16 @@ function SpaceShell() {
     () => false,
   );
   const rightPanel = useRightPanel({ searchParams, setSearchParams });
-  const { panel, setPanel, modelFocusRequest, setModelFocusRequest } = rightPanel;
+  const {
+    panel,
+    setPanel,
+    artifactId: panelArtifactId,
+    chart: panelChart,
+    openArtifact,
+    openChart,
+    modelFocusRequest,
+    setModelFocusRequest,
+  } = rightPanel;
   const lastBotTab = useRef<Panel>("routines");
   if (panel === "routines" || panel === "computer" || panel === "settings")
     lastBotTab.current = panel;
@@ -265,8 +275,13 @@ function SpaceShell() {
 
   const inGroup = Boolean(groupId);
   const chatPanelOpen = inGroup
-    ? panel === "group-settings"
-    : panel === "computer" || panel === "routines" || panel === "settings" || panel === "routine";
+    ? panel === "group-settings" || panel === "artifact" || panel === "chart"
+    : panel === "computer" ||
+      panel === "routines" ||
+      panel === "settings" ||
+      panel === "routine" ||
+      panel === "artifact" ||
+      panel === "chart";
   // Until the route names the chat reopened from cache, that chat stands in for it.
   const routeChat = botId || groupId ? undefined : startChat;
   const routedBotId = botId ?? routeChat?.botId;
@@ -1063,6 +1078,8 @@ function SpaceShell() {
               speakingMessageId={speakingMessageId}
               onSpeak={speakMessage}
               onOpenComputer={computerControls.onOpenComputer}
+              onOpenArtifactBeside={openArtifact}
+              onOpenChartBeside={openChart}
               onOpenImportSetup={openImportSetup}
             />
           )}
@@ -1100,6 +1117,19 @@ function SpaceShell() {
                 } else openSettings("models");
               }}
               onOpenConnections={() => openSettings("models")}
+              toolbar={
+                active && !inGroup ? (
+                  <ComposerModelControls
+                    bot={active}
+                    onSave={async (patch) => {
+                      const updated = await rpc.bots.update({ botId: active.id, ...patch });
+                      setBots((current) =>
+                        current.map((bot) => (bot.id === updated.id ? updated : bot)),
+                      );
+                    }}
+                  />
+                ) : undefined
+              }
               runError={composer.displayedRunError}
               runErrorId={composer.displayedRunErrorId}
               onRunErrorPresented={composer.handleRunErrorPresented}
@@ -1149,6 +1179,8 @@ function SpaceShell() {
         rpc={rpc}
         panel={panel}
         setPanel={setPanel}
+        artifactId={panelArtifactId}
+        chart={panelChart}
         active={active}
         activeGroup={activeGroup}
         bots={bots}
