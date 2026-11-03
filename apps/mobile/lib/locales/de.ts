@@ -593,7 +593,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Verify and add": "Prüfen und hinzufügen",
   "Working…": "Wird verarbeitet…",
   "Waiting in line…": "In der Warteschlange…",
-  "Starting…": "Startet…",
   "+{count} earlier steps": "+{count} frühere Schritte",
   "https://example.com/graphql": "https://example.com/graphql",
   "https://example.com/mcp": "https://example.com/mcp",

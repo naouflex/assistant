@@ -586,7 +586,6 @@ export const NL_MESSAGES: Record<string, string> = {
   "Verify and add": "Verifiëren en toevoegen",
   "Working…": "Bezig…",
   "Waiting in line…": "In de wachtrij…",
-  "Starting…": "Starten…",
   "+{count} earlier steps": "+{count} eerdere stappen",
   "https://example.com/graphql": "https://example.com/graphql",
   "https://example.com/mcp": "https://example.com/mcp",

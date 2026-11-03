@@ -737,7 +737,6 @@ export const RU_MESSAGES: Record<string, string> = {
   Working: "Выполняется",
   "Working…": "Выполняется…",
   "Waiting in line…": "В очереди…",
-  "Starting…": "Запускается…",
   "+{count} earlier steps": "+{count} более ранних шагов",
   "Work stopped, but the thread could not refresh: {detail}":
     "Работа остановлена, но диалог не удалось обновить: {detail}",

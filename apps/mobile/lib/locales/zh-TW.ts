@@ -694,7 +694,6 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   Working: "工作中",
   "Working…": "處理中…",
   "Waiting in line…": "排隊中…",
-  "Starting…": "正在開始…",
   "+{count} earlier steps": "更早的 {count} 步",
   "Work stopped, but the thread could not refresh: {detail}":
     "工作已停止，但無法重新整理對話串：{detail}",
