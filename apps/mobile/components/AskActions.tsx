@@ -70,7 +70,8 @@ export function AskActions({
       ) : null}
       <View style={{ flexDirection: approval ? "row" : "column", flexWrap: "wrap", gap: 6 }}>
         {displayActions.map((action) => {
-          const emphasized = action.id === "allow" || action.id === "always";
+          const emphasized =
+            action.id === "allow" || action.id === "always" || action.id === "enable_phone_control";
           if (instructions !== undefined)
             return (
               <NativeActionButton

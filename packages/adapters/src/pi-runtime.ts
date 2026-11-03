@@ -71,6 +71,8 @@ import {
   toolCallBudgetExceededMessage,
   toolCallBudgetFor,
 } from "./pi-runtime-tools.js";
+import { focusTurnTools } from "./run-tool-selection.js";
+import { doneMismatch } from "./done-check.js";
 import type { PiSessionHandle, PiSessionRecorder } from "./pi-session.js";
 import { PiJsonlSessionRecorder } from "./pi-session.js";
 import { withPiTelemetry } from "./pi-telemetry.js";
@@ -258,6 +260,7 @@ export class PiAgentRuntime implements AgentRuntime {
           nestedAgents,
           subagentGate: createGate(MAX_PARALLEL_SUBAGENTS),
           toolCallBudget: trackedBudget,
+          toolOutcomes: [],
           toolCallSeq: { value: 0 },
           abortTurn: () => undefined,
           signal,
@@ -267,7 +270,17 @@ export class PiAgentRuntime implements AgentRuntime {
           modelResponses: 0,
         };
         resumeHost = host;
-        const tools = toAgentTools(toolDefs, host);
+        const turnTools =
+          request.model.provider === "local"
+            ? focusTurnTools(toolDefs, {
+                prompt: request.prompt,
+                recentText: request.history
+                  .slice(-6)
+                  .map((message) => message.content)
+                  .join("\n"),
+              })
+            : toolDefs;
+        const tools = toAgentTools(turnTools, host);
         const seenSteeringIds: string[] = [];
         const initialSteering = request.claimSteering ? await request.claimSteering([]) : [];
         let hasCurrentImages = Boolean(
@@ -726,6 +739,13 @@ export class PiAgentRuntime implements AgentRuntime {
           }
           if (event.type === "message_end" && event.message.role === "assistant") {
             const text = assistantText(event.message);
+            if (!messageHasToolCall(event.message) && !host.doneNudged && text.trim()) {
+              const nudge = doneMismatch(text, host.toolOutcomes ?? []);
+              if (nudge) {
+                host.doneNudged = true;
+                agent.followUp({ role: "user", content: nudge, timestamp: Date.now() });
+              }
+            }
             // The completed text can hold more of a continuation than arrived as deltas, so its
             // repeat of the cut reply is judged on all of it.
             if (

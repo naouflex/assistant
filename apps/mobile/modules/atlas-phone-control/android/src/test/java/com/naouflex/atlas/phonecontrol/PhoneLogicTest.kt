@@ -56,6 +56,23 @@ class PhoneLogicTest {
   }
 
   @Test
+  fun checksNotificationTargetsAndCapsTheList() {
+    assertNull(notificationTargetProblem("list", "", ""))
+    assertEquals("Pass key from phone_notifications list.", notificationTargetProblem("open", " ", ""))
+    assertEquals(
+      "Pass button, the action title from the list.",
+      notificationTargetProblem("activate", "n1", ""),
+    )
+    assertNull(notificationTargetProblem("dismiss", "n1", ""))
+    assertEquals("Hello there", clipNotificationText(" Hello\nthere ", 20))
+    val row = notificationRow("n1", "com.example.mail", "Mail", "Hi", "There", 4, false, listOf("Reply"))
+    assertEquals("n1", row.getString("key"))
+    assertEquals("Reply", row.getJSONArray("actions").getString(0))
+    val listed = notificationList(List(MAX_NOTIFICATIONS + 5) { JSONObject().put("key", it) })
+    assertEquals(MAX_NOTIFICATIONS, listed.getJSONArray("notifications").length())
+  }
+
+  @Test
   fun capsShellOutput() {
     val buffer = OutputBuffer(4)
     buffer.append("abc".toByteArray(), 3)

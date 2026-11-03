@@ -21,6 +21,10 @@ const state = {
   idleMinutes: 15,
   termuxInstalled: false,
   termuxAllowed: false,
+  notifications: false,
+  deeperCommandsInstalled: false,
+  deeperCommandsRunning: false,
+  deeperCommandsAllowed: false,
   deviceName: "Pixel",
 };
 

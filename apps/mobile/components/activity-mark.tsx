@@ -9,9 +9,11 @@ import Animated, {
   Easing,
   FadeIn,
   FadeOut,
+  interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withRepeat,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -87,8 +89,22 @@ export function ActivityMark({
     return () => clearInterval(timer);
   }, [bots.length, reducedMotion, onScreen]);
 
+  const shimmer = useSharedValue(0);
+  useEffect(() => {
+    if (reducedMotion) return;
+    shimmer.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.linear }), -1, true);
+  }, [reducedMotion, shimmer]);
   const rowStyle = useAnimatedStyle(() => ({ height: height.value }));
   const markStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const actionStyle = useAnimatedStyle(() => ({
+    color: reducedMotion
+      ? tokens.foreground
+      : interpolateColor(
+          shimmer.value,
+          [0, 0.5, 1],
+          [tokens.mutedForeground, tokens.foreground, tokens.mutedForeground],
+        ),
+  }));
   const bot = bots[index % bots.length];
   if (!bot) return null;
   const photo = bot.color.startsWith("data:image/");
@@ -123,13 +139,13 @@ export function ActivityMark({
       {line?.action ? (
         <View style={{ flex: 1, minWidth: 0, justifyContent: "center", gap: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text
+            <Animated.Text
               numberOfLines={1}
               maxFontSizeMultiplier={MAX_FONT_SCALE}
-              style={{ flexShrink: 1, color: tokens.foreground, ...typeScale.secondary }}
+              style={[{ flexShrink: 1, ...typeScale.secondary }, actionStyle]}
             >
               {line.action}
-            </Text>
+            </Animated.Text>
             <WorkingElapsed key={`${line.action}\0${line.detail ?? ""}`} />
           </View>
           {line.detail ? (

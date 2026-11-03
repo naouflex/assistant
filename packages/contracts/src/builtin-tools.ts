@@ -42,6 +42,7 @@ export const BUILTIN_TOOL_NAMES = [
   "phone_key",
   "phone_open_app",
   "phone_shell",
+  "phone_notifications",
   "open_path",
   "launch_app",
   "request_takeover",

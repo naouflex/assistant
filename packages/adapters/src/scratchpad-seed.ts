@@ -5,17 +5,48 @@ const MAX_SEEDS = 8;
 const MIN_TITLE = 6;
 
 const LIST_LINE = /^(?:\d+[.)]|[-*•])\s+(\S.{5,})$/;
+const TASK_LINE =
+  /\b(ship|fix|add|update|tune|build|write|remove|implement|test|deploy|check|create|make|finish|complete|send|review|set up|setup|corriger|ajouter|mettre à jour|construire|écrire|supprimer|implémenter|tester|déployer|vérifier|créer|faire|finir|envoyer|relire)\b/i;
+const LOG_LINE =
+  /\b(error|exception|traceback|stack|at \w+\.\w+|enoent|failed to|erreur|exception|échoué)\b/i;
 
-/** Titles from numbered or bulleted user messages. */
+/** A bullet reads like work to do, not a log line or a note. */
+export function looksLikeTask(title: string): boolean {
+  if (title.length > 160) return false;
+  if (LOG_LINE.test(title) && !TASK_LINE.test(title)) return false;
+  return TASK_LINE.test(title);
+}
+
+/** Titles from numbered or bulleted user messages that read like tasks. */
 export function parseScratchpadSeeds(text: string): string[] {
   const trimmed = text.trim();
   if (!trimmed) return [];
   const fromLines = trimmed
     .split(/\n+/)
     .map((line) => LIST_LINE.exec(line.trim())?.[1]?.trim())
-    .filter((title): title is string => Boolean(title && title.length >= MIN_TITLE));
+    .filter((title): title is string => Boolean(title && title.length >= MIN_TITLE && looksLikeTask(title)));
   if (fromLines.length >= 2) return dedupe(fromLines);
   return [];
+}
+
+const PLAN_TITLE = /^(?:plan|plan[: ].*)$/i;
+
+/** Mark open Plan items done when the turn that wrote them has finished. */
+export async function closePlanScratchpadItems(
+  deps: { prisma: PrismaClient },
+  input: { spaceId: string; botId: string },
+): Promise<number> {
+  const open = await deps.prisma.scratchpadItem.findMany({
+    where: { spaceId: input.spaceId, botId: input.botId, status: { in: ["open", "parked"] } },
+    select: { id: true, title: true },
+  });
+  const ids = open.filter((item) => PLAN_TITLE.test(item.title.trim())).map((item) => item.id);
+  if (ids.length === 0) return 0;
+  const updated = await deps.prisma.scratchpadItem.updateMany({
+    where: { id: { in: ids } },
+    data: { status: "done" },
+  });
+  return updated.count;
 }
 
 function dedupe(titles: string[]): string[] {

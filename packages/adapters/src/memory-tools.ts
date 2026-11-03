@@ -4,9 +4,28 @@ import { byteLength } from "./utf8.js";
 
 const JOURNAL_DATE_PREFIX = /^(\d{4}-\d{2}-\d{2})\b/;
 
-export function journalPathForEntry(content: string, now = new Date()): string {
+/** Calendar day in the owner's timezone. A missing or invalid zone stays on UTC. */
+export function journalDay(now: Date, timeZone?: string | null): string {
+  const zone = timeZone?.trim() || "UTC";
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: zone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+  } catch {
+    return now.toISOString().slice(0, 10);
+  }
+}
+
+export function journalPathForEntry(
+  content: string,
+  now = new Date(),
+  timeZone?: string | null,
+): string {
   const match = content.trim().match(JOURNAL_DATE_PREFIX);
-  const day = match?.[1] ?? now.toISOString().slice(0, 10);
+  const day = match?.[1] ?? journalDay(now, timeZone);
   return `journal/${day}.md`;
 }
 

@@ -157,6 +157,52 @@ export const PAGE_BROWSER_TOOL_NAMES = new Set([
   "browser_act",
 ]);
 
+const TURN_TOOL_MIN = 8;
+const TURN_TOOL_MAX = 12;
+const ALWAYS_LISTED_TOOLS = ["ask_user", "message_user", "shell", "web_search", "read_file", "write_file"];
+
+/**
+ * List about 8–12 tools that match this turn. The rest stay deferred behind find_tool.
+ * A short list is left whole.
+ */
+export function focusTurnTools<T extends { name: string; description?: string; deferred?: boolean }>(
+  tools: readonly T[],
+  input: { prompt: string; recentText?: string },
+): T[] {
+  const candidates = tools.filter((tool) => tool.name !== "find_tool" && tool.name !== "use_tool");
+  if (candidates.length <= TURN_TOOL_MAX) return [...tools];
+  const haystack = `${input.prompt}\n${input.recentText ?? ""}`.toLowerCase();
+  const score = (tool: T) => {
+    let points = ALWAYS_LISTED_TOOLS.includes(tool.name) ? 8 : 0;
+    const spaced = tool.name.replaceAll("_", " ");
+    if (haystack.includes(spaced) || haystack.includes(tool.name)) points += 5;
+    for (const word of tool.name.split("_")) {
+      if (word.length > 3 && haystack.includes(word)) points += 2;
+    }
+    const description = tool.description?.toLowerCase() ?? "";
+    for (const word of haystack.split(/[^a-z0-9]+/).filter((part) => part.length > 4)) {
+      if (description.includes(word)) points += 1;
+    }
+    return points;
+  };
+  const ranked = [...candidates].sort(
+    (left, right) => score(right) - score(left) || left.name.localeCompare(right.name),
+  );
+  const keep = new Set<string>();
+  for (const name of ALWAYS_LISTED_TOOLS) {
+    if (candidates.some((tool) => tool.name === name)) keep.add(name);
+  }
+  for (const tool of ranked) {
+    if (keep.size >= TURN_TOOL_MAX) break;
+    keep.add(tool.name);
+  }
+  return tools.map((tool) =>
+    keep.has(tool.name) || tool.name === "find_tool" || tool.name === "use_tool"
+      ? tool
+      : { ...tool, deferred: true },
+  );
+}
+
 export function filterPageBrowserTools<T extends { name: string }>(
   tools: T[],
   pageBrowserAllowed: boolean,

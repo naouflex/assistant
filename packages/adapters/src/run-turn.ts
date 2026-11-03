@@ -28,7 +28,8 @@ import { returnBotMessageOutcome } from "./bot-messages.js";
 import { scheduleComputerSleep } from "./computer-idle.js";
 import { holdComputerExecutionLeaseForTakeover } from "./computer-lifecycle.js";
 import { resolveBotWorkspacePath } from "./computer-support.js";
-import { releaseBackgroundHelpers } from "./background-helper-run.js";
+import { cancelQueuedBackgroundHelpers, releaseBackgroundHelpers } from "./background-helper-run.js";
+import { closePlanScratchpadItems } from "./scratchpad-seed.js";
 import { shouldEnqueueCompactionNow } from "./history-compaction.js";
 import { maybeScheduleMemoryDream } from "./memory-dream-schedule.js";
 import {
@@ -796,6 +797,9 @@ export async function completeRun(ctx: RunContext) {
       ? botMessageOutcomeFromMidTurn(text, reply.midTurnUserTexts)
       : null;
   await ctx.settleRunningHelpers();
+  await closePlanScratchpadItems(deps, { spaceId: run.spaceId, botId: bot.id }).catch((error) => {
+    getLogger().error("scratchpad plan close failed", error);
+  });
   const completed = await deps.events.finalizeRun({
     spaceId: run.spaceId,
     threadId: thread.id,
@@ -869,6 +873,7 @@ export async function completeRun(ctx: RunContext) {
       select: {
         nextMessageSeq: true,
         historyCompactedUpToSeq: true,
+        historyCompactionSummary: true,
       },
     });
     const compactedUpTo = updatedThread.historyCompactedUpToSeq ?? -1;
@@ -877,14 +882,18 @@ export async function completeRun(ctx: RunContext) {
       select: { blocks: true },
       take: 200,
     });
-    const uncompactedJsonChars = JSON.stringify(uncompactedMessages).length;
+    const measuredPromptChars =
+      (bot.instructions?.length ?? 0) +
+      (updatedThread.historyCompactionSummary?.length ?? 0) +
+      JSON.stringify(uncompactedMessages).length +
+      text.length;
     if (
       (deps.contextStrategy ?? DEFAULT_CONTEXT_STRATEGY) === "current" &&
       shouldEnqueueCompactionNow({
         nextMessageSeq: updatedThread.nextMessageSeq,
         historyCompactedUpToSeq: updatedThread.historyCompactedUpToSeq,
         contextWindow: ctx.modelContextWindow,
-        uncompactedJsonChars,
+        measuredPromptChars,
       })
     ) {
       await deps.jobs.enqueue(historyCompactJob(thread.id));
@@ -906,6 +915,9 @@ export async function failRun(
 ) {
   const { deps, run, runId, bot, thread } = ctx;
   const { reply } = ctx.state;
+  await cancelQueuedBackgroundHelpers(deps, runId).catch((cancelError) => {
+    getLogger().error("background helper cancel failed", cancelError);
+  });
   let error = caughtError;
   // A refused account limit needs user/operator action, not setup-job retries.
   // Keep the provisioning error even if aborting the model masked it.

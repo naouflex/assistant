@@ -1,6 +1,6 @@
 import type { ConnectorTool } from "@atlas/adapter-kit";
 import { describe, expect, it } from "vitest";
-import { appendMemoryFact, editMemory, selectMemoryTools } from "./memory-tools.js";
+import { appendMemoryFact, editMemory, journalPathForEntry, selectMemoryTools } from "./memory-tools.js";
 
 function tool(name: string): ConnectorTool {
   return { name, description: name, inputSchema: { type: "object", properties: {} } };
@@ -142,6 +142,15 @@ describe("editMemory", () => {
       error: expect.stringContaining("Memory is full"),
       entries: ["a".repeat(30)],
     });
+  });
+
+  it("dates a journal file in the owner's timezone", () => {
+    const lateUtc = new Date("2026-11-03T23:30:00.000Z");
+    expect(journalPathForEntry("noted", lateUtc, "UTC")).toBe("journal/2026-11-03.md");
+    expect(journalPathForEntry("noted", lateUtc, "Europe/Paris")).toBe("journal/2026-11-04.md");
+    expect(journalPathForEntry("2026-01-02 already dated", lateUtc, "Europe/Paris")).toBe(
+      "journal/2026-01-02.md",
+    );
   });
 
   it("lets a save that shrinks oversized memory through", () => {

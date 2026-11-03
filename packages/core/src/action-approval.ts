@@ -52,6 +52,7 @@ const APPROVAL_REQUIRED_BUILTIN_TOOLS = new Set([
   "phone_key",
   "phone_open_app",
   "phone_shell",
+  "phone_notifications",
   "create_group",
   "update_group",
   "create_child_routine",

@@ -19,7 +19,7 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-rou
 import type { Voice } from "expo-speech";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { BotAvatar } from "../components/bot-avatar";
 import { BotContextCards } from "../components/bot-context-cards";
 import { ComputerModePicker } from "../components/computer-mode-picker";
@@ -37,9 +37,11 @@ import { rpc } from "../lib/api";
 import {
   avatarColor,
   avatarShape,
+  avatarWord,
   isAvatarPhoto,
   withAvatarColor,
   withAvatarShape,
+  withAvatarWord,
 } from "../lib/bot-avatar-edit";
 import { deviceVoices, setVoiceForBot, voiceForBot, voiceLabel } from "../lib/bot-voices";
 import { chatModelPickerChoices } from "../lib/chat-model";
@@ -70,6 +72,7 @@ export default function BotSettingsScreen() {
   const [description, setDescription] = useState("");
   const [instructions, setInstructions] = useState("");
   const [color, setColor] = useState<string>(BOT_COLORS[0]);
+  const [wordDraft, setWordDraft] = useState("");
   const [computerMode, setComputerMode] = useState<ComputerMode>("team");
   const [avatarSet, setAvatarSet] = useState<BotAvatarSet>("organic");
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -155,6 +158,7 @@ export default function BotSettingsScreen() {
         setDescription(next.description ?? "");
         setInstructions(next.instructions ?? "");
         setColor(next.color);
+        setWordDraft(avatarWord(next.color) ?? "");
         setAvatarSet(resolveBotAvatarSet(next.avatarSet));
         setComputerMode(next.computerMode);
         setModelKey(
@@ -943,6 +947,46 @@ export default function BotSettingsScreen() {
                     </Pressable>
                   ))}
                 </ScrollView>
+                <Text style={{ color: tokens.mutedForeground, marginTop: 16, fontSize: 14 }}>
+                  {t("Shape from a word")}
+                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <TextInput
+                    accessibilityLabel={t("Shape from a word")}
+                    placeholder={t("Word")}
+                    placeholderTextColor={tokens.mutedForeground}
+                    value={wordDraft}
+                    onChangeText={setWordDraft}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onSubmitEditing={() => {
+                      const next = withAvatarWord(color, wordDraft);
+                      if (!next) return;
+                      setAvatarSet("organic");
+                      setColor(next);
+                      setWordDraft(avatarWord(next) ?? "");
+                    }}
+                    style={{
+                      flex: 1,
+                      minHeight: 44,
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      color: tokens.foreground,
+                      backgroundColor: native.page,
+                    }}
+                  />
+                  <NativeActionButton
+                    label={t("Use")}
+                    disabled={!withAvatarWord(color, wordDraft)}
+                    onPress={() => {
+                      const next = withAvatarWord(color, wordDraft);
+                      if (!next) return;
+                      setAvatarSet("organic");
+                      setColor(next);
+                      setWordDraft(avatarWord(next) ?? "");
+                    }}
+                  />
+                </View>
               </>
             ) : null}
           </ScrollView>

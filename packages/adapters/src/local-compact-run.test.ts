@@ -89,7 +89,7 @@ describe("compact local runs", () => {
     );
     expect(compact).not.toContain(parts.botDirectory);
     expect(compact.length).toBeLessThan(full.length * 0.55);
-    expect(compact.length).toBeLessThan(4_500);
+    expect(compact.length).toBeLessThan(3_600);
   });
 
   it("is byte-stable across turns: the clock rides on the user message", () => {

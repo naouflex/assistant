@@ -614,14 +614,29 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "phone_shell",
     description:
-      "Run a command on the user's Android phone with /system/bin/sh, as the Atlas app (no root), in the app's own folder. termux runs it in Termux instead, when they set it up. Not this bot's computer.",
+      "Run a command on the user's Android phone with /system/bin/sh, as the Atlas app (no root), in the app's own folder. termux runs it in Termux instead, when they set it up. privileged runs it with deeper access (system settings, input, notification commands) after they allow that in Phone control. Pass termux or privileged, not both. Not this bot's computer.",
     inputSchema: {
       type: "object",
       properties: {
         command: { type: "string" },
         termux: { type: "boolean" },
+        privileged: { type: "boolean" },
       },
       required: ["command"],
+    },
+  },
+  {
+    name: "phone_notifications",
+    description:
+      "Read or act on notifications on the user's Android phone. action list returns each one's key, app, title, text, and buttons. open, dismiss, or activate uses a key from that list; activate runs the button with that title, and text fills a reply. Needs notification access in Phone control. Not this bot's own alerts.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["list", "open", "dismiss", "activate"] },
+        key: { type: "string", maxLength: 300 },
+        button: { type: "string", maxLength: 80 },
+        text: { type: "string", maxLength: 10000 },
+      },
     },
   },
   {

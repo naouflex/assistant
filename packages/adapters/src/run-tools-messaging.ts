@@ -77,6 +77,7 @@ export const messagingTools: ToolHandlers = {
         threadId: thread.id,
         sourceMessageId: run.sourceMessageId,
         status: run.status,
+        trigger: run.trigger,
       },
       name: String(args.name ?? "helper"),
       task: String(args.task ?? ""),

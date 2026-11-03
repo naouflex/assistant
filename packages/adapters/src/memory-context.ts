@@ -10,6 +10,10 @@ import { byteLength, truncateUtf8 } from "./utf8.js";
 /** Durable profile injected every turn; other notes are reached through search_memory. */
 export const AGENT_PROFILE_MAX_BYTES = 2 * 1024;
 
+/** Room for headings around a full user profile and a full bot index. */
+export const AGENT_MEMORY_PROMPT_MAX_BYTES =
+  AGENT_PROFILE_MAX_BYTES + BOT_MEMORY_MAX_BYTES + 512;
+
 /** @deprecated Use AGENT_PROFILE_MAX_BYTES; kept for callers that still import the old name. */
 export const AGENT_MEMORY_MAX_BYTES = AGENT_PROFILE_MAX_BYTES;
 
@@ -33,13 +37,18 @@ export function isProfileMemoryDocument(scope: "bot" | "user", path: string): bo
   return path === MEMORY_INDEX_PATH;
 }
 
+function documentCap(document: MemoryPromptDocument): number {
+  if (document.scope === "bot" && document.path === MEMORY_INDEX_PATH) return BOT_MEMORY_MAX_BYTES;
+  return AGENT_PROFILE_MAX_BYTES;
+}
+
 /**
  * Renders the durable memory block and reports what reached it, so a caller can
  * tell the user when memory no longer fits instead of dropping it silently.
  */
 export function buildAgentMemoryPrompt(
   input: readonly MemoryPromptDocument[],
-  maxBytes = AGENT_PROFILE_MAX_BYTES,
+  maxBytes = AGENT_MEMORY_PROMPT_MAX_BYTES,
 ): { text?: string; plan: MemoryPromptBudget } {
   const plan: MemoryPromptBudget = {
     limitBytes: maxBytes,
@@ -57,13 +66,17 @@ export function buildAgentMemoryPrompt(
   }
   if (profile.length === 0) return { plan };
 
-  const documents = [...profile].sort(
-    (left, right) =>
+  const documents = [...profile].sort((left, right) => {
+    const leftProfile = left.scope === "user" && left.path === USER_MEMORY_PROFILE_PATH;
+    const rightProfile = right.scope === "user" && right.path === USER_MEMORY_PROFILE_PATH;
+    if (leftProfile !== rightProfile) return leftProfile ? -1 : 1;
+    return (
       memoryTimestamp(right.updatedAt) - memoryTimestamp(left.updatedAt) ||
       right.revision - left.revision ||
       left.scope.localeCompare(right.scope) ||
-      left.path.localeCompare(right.path),
-  );
+      left.path.localeCompare(right.path)
+    );
+  });
 
   const hint = plan.omitted.length > 0 ? PROFILE_SEARCH_HINT : "";
   const fixedBytes = byteLength(PREAMBLE) + byteLength(CLOSING) + byteLength(hint);
@@ -76,33 +89,23 @@ export function buildAgentMemoryPrompt(
 
   const sections: string[] = [];
   let remainingBytes = maxBytes - fixedBytes;
-  let ranOut = false;
   for (const document of documents) {
-    if (ranOut) {
-      plan.omitted.push(leaveOut(document));
-      continue;
-    }
     const usage =
       document.scope === "bot" && document.path === MEMORY_INDEX_PATH
         ? `, ${byteLength(document.content)} of ${BOT_MEMORY_MAX_BYTES} bytes`
         : "";
     const heading = `${sections.length === 0 ? "" : "\n\n"}## ${document.scope}: ${document.path} (revision ${document.revision}${usage})\n`;
     const headingBytes = byteLength(heading);
-    if (headingBytes > remainingBytes) {
-      ranOut = true;
+    const room = Math.min(documentCap(document), Math.max(0, remainingBytes - headingBytes));
+    if (room <= 0) {
       plan.omitted.push(leaveOut(document));
       continue;
     }
+    const content = truncateUtf8(document.content, room, "start");
     sections.push(heading);
-    remainingBytes -= headingBytes;
-
-    const content = truncateUtf8(
-      document.content,
-      remainingBytes,
-      document.scope === "bot" ? "end" : "start",
-    );
     sections.push(content);
-    remainingBytes -= byteLength(content);
+    const used = headingBytes + byteLength(content);
+    remainingBytes -= used;
     plan.documents.push({
       scope: document.scope,
       path: document.path,
@@ -111,7 +114,6 @@ export function buildAgentMemoryPrompt(
       includedBytes: byteLength(content),
       truncated: content !== document.content,
     });
-    if (content !== document.content) ranOut = true;
   }
 
   const text = `${PREAMBLE}${hint}${sections.join("")}${CLOSING}`;
@@ -134,7 +136,7 @@ export async function loadAgentMemoryContext(
   memory: MemoryStore,
   botId: string,
   context: AdapterContext,
-  maxBytes = AGENT_PROFILE_MAX_BYTES,
+  maxBytes = AGENT_MEMORY_PROMPT_MAX_BYTES,
 ): Promise<string | undefined> {
   const documents = await readAgentMemory(memory, botId, context);
   return buildAgentMemoryPrompt(documents, maxBytes).text;

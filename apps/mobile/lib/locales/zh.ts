@@ -561,6 +561,7 @@ export const ZH_MESSAGES: Record<string, string> = {
   "No messages yet": "还没有消息",
   "No results": "没有结果",
   "Not now": "暂不",
+  "Turn on": "开启",
   Now: "现在",
   Notifications: "通知",
   "No longer active": "已失效",
@@ -722,6 +723,9 @@ export const ZH_MESSAGES: Record<string, string> = {
   "What this bot is for": "这个 Bot 的用途",
   Working: "工作中",
   "Working…": "处理中…",
+  "Waiting in line…": "排队中…",
+  "Starting…": "正在开始…",
+  "+{count} earlier steps": "更早的 {count} 步",
   "Work stopped, but the thread could not refresh: {detail}":
     "工作已停止，但线程无法刷新：{detail}",
   "You have control": "你已接管控制",
@@ -1273,6 +1277,10 @@ export const ZH_MESSAGES: Record<string, string> = {
   "1 bot now uses the space default.": "1 个 Bot 已改用空间默认。",
   "{count} bots now use the space default.": "{count} 个 Bot 已改用空间默认。",
   "Could not switch {failedNames}. Try again.": "无法切换 {failedNames}。请重试。",
+  "Deeper commands": "高级命令",
+  "Start Shizuku": "启动 Shizuku",
+  "Deeper commands need the Shizuku app.": "高级命令需要安装 Shizuku。",
+  "Start Shizuku, then allow Atlas.": "先启动 Shizuku，再允许 Atlas。",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

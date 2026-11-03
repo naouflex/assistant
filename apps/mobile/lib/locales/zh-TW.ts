@@ -538,6 +538,7 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "No messages yet": "還沒有訊息",
   "No results": "沒有結果",
   "Not now": "暫不",
+  "Turn on": "開啟",
   Now: "現在",
   Notifications: "通知",
   "No longer active": "已失效",
@@ -692,6 +693,9 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "What this bot is for": "這個機器人的用途",
   Working: "工作中",
   "Working…": "處理中…",
+  "Waiting in line…": "排隊中…",
+  "Starting…": "正在開始…",
+  "+{count} earlier steps": "更早的 {count} 步",
   "Work stopped, but the thread could not refresh: {detail}":
     "工作已停止，但無法重新整理對話串：{detail}",
   "You have control": "你已接管控制",
@@ -1270,6 +1274,10 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "1 bot now uses the space default.": "1 個機器人已改用空間預設模型。",
   "{count} bots now use the space default.": "{count} 個機器人已改用空間預設模型。",
   "Could not switch {failedNames}. Try again.": "無法切換 {failedNames}，請再試一次。",
+  "Deeper commands": "進階指令",
+  "Start Shizuku": "啟動 Shizuku",
+  "Deeper commands need the Shizuku app.": "進階指令需要 Shizuku 應用程式。",
+  "Start Shizuku, then allow Atlas.": "請先啟動 Shizuku，再允許 Atlas。",
 };
 
 export const PEER_MESSAGE_FORMS = { other: "與{peer}的 {count} 則訊息" };

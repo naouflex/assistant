@@ -43,6 +43,7 @@ import { MessageCaption } from "../message-caption";
 import { NativeSymbol } from "../native-symbol";
 import { PeerReceiptLine } from "../peer-receipt-line";
 import { AskBlock } from "./ask-block";
+import { LiveToolSteps } from "./tool-steps";
 import type { MessageRowActions } from "./message-row";
 import { isSpecialMessageBlock, SpecialMessageCard } from "./special-message-card";
 
@@ -414,7 +415,16 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
                   instructions={askBlock.instructionUpdate?.after}
                   accessibilityActions={actionProps.accessibilityActions}
                   onAccessibilityAction={actionProps.onAccessibilityAction}
-                  onAnswer={(answer) => onAnswer(message, answer)}
+                  onAnswer={async (answer) => {
+                    if (answer === "enable_phone_control") {
+                      const { openAccessibilitySettings, turnOnPhoneControl } = await import(
+                        "../../lib/phone-control"
+                      );
+                      const state = await turnOnPhoneControl();
+                      if (!state.accessibility) await openAccessibilitySettings();
+                    }
+                    await onAnswer(message, answer === "enable_phone_control" ? "allow" : answer);
+                  }}
                 />
               ) : (
                 <Text
@@ -633,6 +643,9 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
     );
   }
   const segments = messagePresentationSegments(message.blocks);
+  const liveSteps = message.id.startsWith("progress:")
+    ? message.blocks.flatMap((block) => (block.kind === "steps" ? block.steps : []))
+    : [];
   const speaker =
     message.role === "bot" ? (memberName(members, message.botId) ?? botName) : undefined;
   const speakerColor =
@@ -646,6 +659,7 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
   );
   return (
     <View style={{ gap: 8, width: "100%" }}>
+      {liveSteps.length > 0 ? <LiveToolSteps steps={liveSteps} /> : null}
       {segments.map((segment, index) => (
         <MessageTextCard
           key={`${message.id}-content-${index}`}

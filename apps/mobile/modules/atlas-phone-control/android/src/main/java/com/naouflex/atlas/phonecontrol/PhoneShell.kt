@@ -26,6 +26,10 @@ internal object PhoneShell {
         environment()["TMPDIR"] = context.cacheDir.path
       }
       .start()
+    return runProcess(process, timeoutMs, "sh")
+  }
+
+  fun runProcess(process: Process, timeoutMs: Long, runner: String): JSONObject {
     process.outputStream.close()
     val stdout = OutputBuffer()
     val stderr = OutputBuffer()
@@ -42,7 +46,7 @@ internal object PhoneShell {
     }
     readers.forEach { it.join(2_000) }
     return JSONObject()
-      .put("runner", "sh")
+      .put("runner", runner)
       .put("exitCode", exitCode ?: JSONObject.NULL)
       .put("stdout", stdout.text())
       .put("stderr", stderr.text())

@@ -15,6 +15,7 @@ export function askActionLabel(
   { approval, site }: { approval: boolean; site?: string },
   t: (message: string, values?: Record<string, string | number>) => string,
 ): string {
+  if (action.id === "enable_phone_control") return t("Turn on");
   if (!approval) return action.label;
   if (action.outcome === "created") return t("Create space");
   if (action.outcome === "cancelled") return t("Cancel");

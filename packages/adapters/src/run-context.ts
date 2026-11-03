@@ -191,6 +191,8 @@ export interface RunState {
   earlierAttempt: Promise<boolean> | undefined;
   handedOff: boolean;
   terminalCheckpointComplete: boolean;
+  /** This attempt already asked in the chat to turn phone control on. */
+  phoneControlAsked?: boolean;
 }
 
 export interface RunComputerContext {

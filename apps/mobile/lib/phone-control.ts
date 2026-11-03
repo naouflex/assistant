@@ -18,6 +18,10 @@ export interface PhoneControlState {
   idleMinutes: number;
   termuxInstalled: boolean;
   termuxAllowed: boolean;
+  notifications: boolean;
+  deeperCommandsInstalled: boolean;
+  deeperCommandsRunning: boolean;
+  deeperCommandsAllowed: boolean;
   deviceName: string;
 }
 
@@ -30,6 +34,8 @@ type NativePhoneControl = {
   forget(): Promise<boolean>;
   openAccessibilitySettings(): Promise<void>;
   requestTermuxPermission(): Promise<void>;
+  openNotificationSettings(): Promise<void>;
+  requestDeeperCommands(): Promise<void>;
 };
 
 // Optional: an update can reach an older app build without this module.
@@ -129,4 +135,12 @@ export function openAccessibilitySettings(): Promise<void> {
 
 export function allowTermux(): Promise<void> {
   return phone().requestTermuxPermission();
+}
+
+export function openNotificationAccess(): Promise<void> {
+  return phone().openNotificationSettings();
+}
+
+export function allowDeeperCommands(): Promise<void> {
+  return phone().requestDeeperCommands();
 }

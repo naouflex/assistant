@@ -578,6 +578,7 @@ export const RU_MESSAGES: Record<string, string> = {
   "No messages yet": "Сообщений пока нет",
   "No results": "Нет результатов",
   "Not now": "Не сейчас",
+  "Turn on": "Включить",
   Now: "Сейчас",
   Notifications: "Уведомления",
   "No longer active": "Больше не активно",
@@ -735,6 +736,9 @@ export const RU_MESSAGES: Record<string, string> = {
   "What this bot is for": "Для чего нужен этот бот",
   Working: "Выполняется",
   "Working…": "Выполняется…",
+  "Waiting in line…": "В очереди…",
+  "Starting…": "Запускается…",
+  "+{count} earlier steps": "+{count} более ранних шагов",
   "Work stopped, but the thread could not refresh: {detail}":
     "Работа остановлена, но диалог не удалось обновить: {detail}",
   "You have control": "Вы управляете",
@@ -1300,6 +1304,10 @@ export const RU_MESSAGES: Record<string, string> = {
     "Ботов переведено на модель пространства по умолчанию: {count}.",
   "Could not switch {failedNames}. Try again.":
     "Не удалось переключить {failedNames}. Попробуйте снова.",
+  "Deeper commands": "Расширенные команды",
+  "Start Shizuku": "Запустить Shizuku",
+  "Deeper commands need the Shizuku app.": "Для расширенных команд нужно приложение Shizuku.",
+  "Start Shizuku, then allow Atlas.": "Запустите Shizuku, затем разрешите Atlas.",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

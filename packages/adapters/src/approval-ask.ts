@@ -11,6 +11,7 @@ import {
   toolRequiresExplicitApproval,
 } from "@atlas/core";
 import { urlSite } from "@atlas/core/egress";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import { USER_COMPUTER_SCREEN_TOOLS, userComputerAppName } from "./user-computer-tools.js";
 
 export const MAX_APPROVAL_SUMMARY_LENGTH = 500;
@@ -135,6 +136,7 @@ export function buildApprovalAskBlock(
       ],
     };
   }
+  if (PHONE_TOOLS.has(toolName)) return phoneApprovalAsk(toolName, args, effectId, secrets);
   if (toolName === "user_computer_shell") {
     const cwd = typeof args.cwd === "string" && args.cwd.trim() ? `cd ${args.cwd.trim()}\n` : "";
     return {
@@ -190,6 +192,77 @@ export function buildApprovalAskBlock(
               { id: "deny", label: "Deny" },
             ],
   };
+}
+
+function phoneApprovalAsk(
+  toolName: string,
+  args: Record<string, unknown>,
+  effectId: string,
+  secrets: string[],
+): MessageBlock {
+  const shell = toolName === "phone_shell";
+  const notifications = toolName === "phone_notifications";
+  const detail = shell
+    ? String(args.command ?? "")
+    : notifications
+      ? phoneNotificationLine(args)
+      : phoneControlLine(toolName, args);
+  const text = shell
+    ? args.privileged === true
+      ? "Run a deeper command on your phone?"
+      : "Run on your phone?"
+    : notifications
+      ? "Use notifications on your phone?"
+      : "Control your phone?";
+  return {
+    kind: "ask",
+    approvalEffectId: effectId,
+    text,
+    detail: truncate(redactSecrets(detail, secrets), MAX_APPROVAL_DETAIL_LENGTH),
+    detailFormat: shell ? "code" : "text",
+    status: "pending",
+    actions: [
+      { id: "allow", label: "Allow in this space" },
+      { id: "deny", label: "Deny" },
+    ],
+  };
+}
+
+function phoneControlLine(toolName: string, args: Record<string, unknown>): string {
+  switch (toolName) {
+    case "phone_tap": {
+      const long = args.long === true ? "long " : "";
+      return typeof args.element === "number"
+        ? `${long}tap [${args.element}]`
+        : `${long}tap x=${args.x} y=${args.y}`;
+    }
+    case "phone_swipe":
+      return typeof args.direction === "string" ? `swipe ${args.direction}` : "swipe";
+    case "phone_type":
+      return `type ${String(args.text ?? "")}`;
+    case "phone_key":
+      return `press ${String(args.key ?? "")}`;
+    case "phone_open_app":
+      return `open ${String(args.app ?? "")}`;
+    case "phone_ui_tree":
+      return typeof args.query === "string" && args.query.trim()
+        ? `read ${args.query.trim()}`
+        : "read the screen";
+    default:
+      return "screenshot";
+  }
+}
+
+function phoneNotificationLine(args: Record<string, unknown>): string {
+  const action = typeof args.action === "string" ? args.action : "list";
+  if (action === "list") return "list";
+  const key = typeof args.key === "string" ? args.key : "";
+  if (action === "activate") {
+    const button = typeof args.button === "string" ? args.button : "";
+    const text = typeof args.text === "string" && args.text ? `: ${args.text}` : "";
+    return `activate ${button}${text}`;
+  }
+  return `${action} ${key}`;
 }
 
 function webFetchSite(toolName: string, args: Record<string, unknown>): string | undefined {

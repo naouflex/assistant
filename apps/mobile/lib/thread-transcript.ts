@@ -45,7 +45,12 @@ export function useThreadTranscript(messages: MobileMessage[] | undefined, inGro
           const blocks = applyLocalChoiceDismissals(message.blocks, dismissed);
           return blocks === message.blocks ? message : { ...message, blocks: [...blocks] };
         })
-        .filter((message) => hasVisibleMessagePresentation(message.blocks)),
+        .filter(
+          (message) =>
+            hasVisibleMessagePresentation(message.blocks) ||
+            (message.id.startsWith("progress:") &&
+              message.blocks.some((block) => block.kind === "steps")),
+        ),
     );
     return {
       ...projectMessageReactions(mentionView.visibleMessages),

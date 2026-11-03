@@ -9,6 +9,7 @@ import { sharedMemorySaveError } from "./builtin-tools.js";
 import { redactConnectorPayload } from "./connector-safety.js";
 import { MAX_RECALLED_MEMORIES } from "./history-compaction.js";
 import { appendJournalEntry, editMemory, journalPathForEntry } from "./memory-tools.js";
+import { userTimeZone } from "./schedule-tools.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolCall, ToolHandlers } from "./run-tool-gate.js";
 
@@ -65,11 +66,11 @@ async function readHistoryTool(ctx: RunContext, call: ToolCall) {
 /** Memory documents, semantic memory and thread history. */
 export const memoryTools: ToolHandlers = {
   async remember(ctx, call) {
-    const { deps, runId, bot, thread, context } = ctx;
+    const { deps, run, runId, bot, thread, context } = ctx;
     const { args } = call;
     if (args.journal === true) {
       const fact = String(args.content ?? "");
-      const path = journalPathForEntry(fact);
+      const path = journalPathForEntry(fact, new Date(), await userTimeZone(deps.prisma, run.userId));
       for (let attempt = 1; ; attempt += 1) {
         const snapshot = await deps.memory.read({ scope: "bot", botId: bot.id, path }, context);
         const existing = snapshot.documents[0];
@@ -131,33 +132,43 @@ export const memoryTools: ToolHandlers = {
     }
   },
   async save_shared_memory(ctx, call) {
-    const { deps, runId, thread, context } = ctx;
+    const { deps, run, context } = ctx;
     const { args } = call;
     const invalid = sharedMemorySaveError(args);
     if (invalid) return call.finish({ error: invalid });
     const path = String(args.path ?? "").trim();
-    // The save replaces the whole document. Pass the revision just read so a
-    // concurrent edit is rejected instead of overwritten.
+    const content = String(args.content ?? "");
+    // The current note stays until the owner accepts. The revision is the one just read.
     const snapshot = await deps.memory.read({ scope: "user", path }, context);
-    const expectedRevision = snapshot.documents[0]?.revision ?? 0;
-    try {
-      const saved = await deps.memory.commit(
-        {
+    const baseRevision = snapshot.documents[0]?.revision ?? 0;
+    const duplicate = await deps.prisma.memoryProposal.findFirst({
+      where: {
+        spaceId: run.spaceId,
+        userId: run.userId,
+        scope: "user",
+        path,
+        status: "pending",
+        content,
+      },
+      select: { id: true },
+    });
+    if (!duplicate) {
+      await deps.prisma.memoryProposal.create({
+        data: {
+          spaceId: run.spaceId,
+          userId: run.userId,
           scope: "user",
           path,
-          content: String(args.content ?? ""),
-          expectedRevision,
-          sourceRunId: runId,
-          sourceThreadId: thread.id,
+          content,
+          baseRevision,
+          reason: "Proposed from the chat.",
+          evidence: {},
+          source: "bot",
+          status: "pending",
         },
-        context,
-      );
-      return call.finish({ ok: true, path: saved.path, revision: saved.revision });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not save shared memory.";
-      if (message === MEMORY_REVISION_CONFLICT_ERROR) return call.finish({ error: message });
-      throw error;
+      });
     }
+    return call.finish({ ok: true, pending: true, path });
   },
   async recall_memory(ctx, call) {
     const { bot, thread, context } = ctx;

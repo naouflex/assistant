@@ -61,6 +61,11 @@ const RUN_STOP_COMMANDS = new Set([
   "annuler",
 ]);
 
+/** A waiting question should receive "cancel" as the answer, not as a stop. */
+export function runStopLeavesWaitingAnswer(status: string | null | undefined): boolean {
+  return status === "waiting_input" || status === "waiting_takeover";
+}
+
 /** Whole-message stop words cancel active runs like the stop control; not a chat message. */
 export function isRunStopCommand(text: string | undefined | null): boolean {
   const trimmed = text?.trim();

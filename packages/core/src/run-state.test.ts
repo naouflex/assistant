@@ -9,6 +9,7 @@ import {
   isConversationalRun,
   isRunWaitingOnUser,
   isRunStopCommand,
+  runStopLeavesWaitingAnswer,
   isRunWorking,
   messageBypassesTakeoverWait,
   messageSteersRun,
@@ -111,5 +112,11 @@ describe("isRunStopCommand", () => {
     expect(isRunStopCommand("  arrête ")).toBe(true);
     expect(isRunStopCommand("stop.")).toBe(true);
     expect(isRunStopCommand("please stop")).toBe(false);
+  });
+
+  it("lets cancel answer a run that is waiting", () => {
+    expect(runStopLeavesWaitingAnswer("waiting_input")).toBe(true);
+    expect(runStopLeavesWaitingAnswer("waiting_takeover")).toBe(true);
+    expect(runStopLeavesWaitingAnswer("running")).toBe(false);
   });
 });

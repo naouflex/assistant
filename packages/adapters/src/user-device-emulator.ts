@@ -1,7 +1,12 @@
 import type { ProcessEvent } from "@atlas/adapter-kit";
 import type { HostComputerEnvironment, HostComputerRequest } from "./host-computer-protocol.js";
 import type { HostScreenObservation } from "./host-screen.js";
-import type { PhoneScreen, PhoneShellResult, UserDeviceKind } from "./phone-protocol.js";
+import type {
+  PhoneNotificationResult,
+  PhoneScreen,
+  PhoneShellResult,
+  UserDeviceKind,
+} from "./phone-protocol.js";
 import type { UserDevice, UserDeviceGateway } from "./user-device-protocol.js";
 
 export const USER_DEVICE_EMULATOR_OUTPUT = "fixture-mac\n";
@@ -75,8 +80,40 @@ export class UserDeviceEmulator implements UserDeviceGateway {
           exitCode: 0,
           stdout: USER_DEVICE_EMULATOR_PHONE_OUTPUT,
           stderr: "",
-          runner: request.action.termux ? "termux" : "sh",
+          runner: request.action.termux
+            ? "termux"
+            : request.action.privileged
+              ? "privileged"
+              : "sh",
         };
+        yield result as T;
+        return;
+      }
+      if (request.action.op === "notifications") {
+        const result: PhoneNotificationResult =
+          request.action.verb === "list"
+            ? {
+                notifications: [
+                  {
+                    key: "n1",
+                    package: "com.example.mail",
+                    app: "Mail",
+                    title: "Hi",
+                    text: "There",
+                    when: 0,
+                    ongoing: false,
+                    actions: ["Reply"],
+                  },
+                ],
+              }
+            : {
+                done:
+                  request.action.verb === "open"
+                    ? "opened"
+                    : request.action.verb === "dismiss"
+                      ? "dismissed"
+                      : "activated",
+              };
         yield result as T;
         return;
       }

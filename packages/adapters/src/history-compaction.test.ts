@@ -19,7 +19,9 @@ import {
   MAX_COMPACTED_SUMMARY_CHARS,
   MAX_SUMMARIZE_PROMPT_CHARS,
   MAX_TRANSCRIPT_CHARS,
+  measuredPromptChars,
   nextCompactionBatchRange,
+  shouldEnqueueCompactionNow,
   recordHistoryCompactAttemptsExhausted,
   SUMMARIZE_TIMEOUT_BASE_CHARS,
   SUMMARIZE_TIMEOUT_MAX_MS,
@@ -46,6 +48,35 @@ describe("shouldEnqueueCompaction", () => {
   });
 });
 
+describe("shouldEnqueueCompactionNow", () => {
+  it("uses the whole prompt, not only the uncompacted tail", () => {
+    const tail = { nextMessageSeq: 200, historyCompactedUpToSeq: 0, contextWindow: 1_000 };
+    expect(shouldEnqueueCompactionNow({ ...tail, uncompactedJsonChars: 100 })).toBe(false);
+    expect(
+      shouldEnqueueCompactionNow({
+        ...tail,
+        measuredPromptChars: measuredPromptChars({
+          instructions: "x".repeat(2_000),
+          summary: "y".repeat(2_000),
+          historyText: "z".repeat(400),
+          prompt: "hello",
+        }),
+      }),
+    ).toBe(true);
+  });
+
+  it("does not enqueue when every message is still inside the latest window", () => {
+    expect(
+      shouldEnqueueCompactionNow({
+        nextMessageSeq: 40,
+        historyCompactedUpToSeq: null,
+        contextWindow: 100,
+        measuredPromptChars: 10_000,
+      }),
+    ).toBe(false);
+  });
+});
+
 describe("nextCompactionBatchRange", () => {
   it("starts before the first message when nothing has been compacted", () => {
     expect(nextCompactionBatchRange(null, 50)).toEqual({ fromSeqExclusive: -1, take: 50 });
@@ -53,6 +84,11 @@ describe("nextCompactionBatchRange", () => {
 
   it("continues from the cursor when something has already been compacted", () => {
     expect(nextCompactionBatchRange(50, 50)).toEqual({ fromSeqExclusive: 50, take: 50 });
+  });
+
+  it("leaves the latest window verbatim", () => {
+    expect(nextCompactionBatchRange(null, 50, 80, 50)).toEqual({ fromSeqExclusive: -1, take: 30 });
+    expect(nextCompactionBatchRange(null, 50, 40, 50)).toEqual({ fromSeqExclusive: -1, take: 0 });
   });
 });
 
@@ -249,6 +285,7 @@ type HarnessMessage = {
   role: string;
   botId?: string;
   blocks: MessageBlock[];
+  runId?: string | null;
 };
 
 function compactionHarness(
@@ -257,6 +294,7 @@ function compactionHarness(
     deploymentModelConfigured?: boolean;
     settings?: { defaultModelProvider: string | null; defaultModelId: string | null } | null;
     messages?: HarnessMessage[];
+    activeRunIds?: string[];
     /** Bots the space knows, archived or not; a message from any other bot id has no record. */
     bots?: Array<{ id: string; name: string }>;
     nextMessageSeq?: number;
@@ -289,7 +327,7 @@ function compactionHarness(
     spaceId: "workspace-1",
     userId: "user-1",
     nextEventSeq: 0,
-    nextMessageSeq: options.nextMessageSeq ?? messages.length,
+    nextMessageSeq: options.nextMessageSeq ?? messages.length + HISTORY_WINDOW_SIZE,
     historyCompactedUpToSeq: options.historyCompactedUpToSeq ?? (null as number | null),
     historyCompactionSummary: options.historyCompactionSummary ?? (null as string | null),
     historyCompactionGeneration: options.historyCompactionGeneration ?? 0,
@@ -348,6 +386,9 @@ function compactionHarness(
     },
     event: {
       findFirst: vi.fn(async () => (options.wasCleared ? { seq: 0 } : null)),
+    },
+    run: {
+      findMany: vi.fn(async () => (options.activeRunIds ?? []).map((id) => ({ id }))),
     },
     message: {
       findMany: vi.fn(
@@ -527,6 +568,28 @@ describe("recordHistoryCompactAttemptsExhausted", () => {
 });
 
 describe("compactHistory", () => {
+  it("stops the batch before a message from a run that is still active", async () => {
+    const messages = Array.from({ length: 50 }, (_, i) => ({
+      seq: i,
+      role: "user" as const,
+      blocks: [{ kind: "text" as const, text: `message ${i}` }],
+      ...(i >= 10 ? { runId: "run-live" } : {}),
+    }));
+    const harness = compactionHarness({
+      deploymentModelKey: "openrouter-key",
+      messages,
+      activeRunIds: ["run-live"],
+    });
+
+    await compactHistory(harness.deps, "thread-1");
+
+    const [request] = harness.runtime.run.mock.calls[0]!;
+    expect(request.prompt).toContain("message 0");
+    expect(request.prompt).toContain("message 9");
+    expect(request.prompt).not.toContain("message 10");
+    expect(harness.thread.historyCompactedUpToSeq).toBe(9);
+  });
+
   it("summarizes the next batch, saves it through the provider, and advances the cursor", async () => {
     const harness = compactionHarness({ deploymentModelKey: "openrouter-key" });
 
@@ -730,7 +793,7 @@ describe("compactHistory", () => {
         role: "user",
         blocks: [{ kind: "text", text: `new message ${i + 50}` }],
       })),
-      nextMessageSeq: 100,
+      nextMessageSeq: 150,
     });
 
     await compactHistory(harness.deps, "thread-1");
@@ -756,7 +819,7 @@ describe("compactHistory", () => {
         role: "user",
         blocks: [{ kind: "text", text: `message ${i}` }],
       })),
-      nextMessageSeq: 100,
+      nextMessageSeq: 150,
     });
     harness.runtime.run
       .mockImplementationOnce(async function* () {
@@ -1139,6 +1202,7 @@ describe("compactHistory", () => {
       historyCompactedUpToSeq: 49,
       historyCompactionSummary: "Earlier summary.",
       messages: threadMessages(0, 150),
+      nextMessageSeq: 150,
     });
   const oversized = "x".repeat(MAX_COMPACTED_SUMMARY_CHARS + 1);
   const summarizerReplies = (harness: ReturnType<typeof compactionHarness>, texts: string[]) => {
@@ -1235,6 +1299,7 @@ describe("compactHistory", () => {
 
   it("clears a retry point when a job from the same cursor compacts", async () => {
     const harness = compactedThread();
+    harness.thread.nextMessageSeq = 200;
     let call = 0;
     harness.runtime.run.mockImplementation(async function* () {
       call += 1;
@@ -1410,7 +1475,7 @@ describe("compactHistory", () => {
         role: "user",
         blocks: [{ kind: "text", text: `message ${i + 50}` }],
       })),
-      nextMessageSeq: 100,
+      nextMessageSeq: 150,
     });
     const sink = installCompactionLogger();
 

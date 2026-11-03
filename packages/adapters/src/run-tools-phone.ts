@@ -3,10 +3,18 @@ import { redactSecrets, sandboxCommandTimeoutMs } from "@atlas/core";
 import { recordSecurityEvent } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 import { MODEL_CANNOT_SEE_MESSAGE } from "./model-vision.js";
-import type { PhoneAction, PhoneScreen, PhoneShellResult } from "./phone-protocol.js";
+import type {
+  PhoneAction,
+  PhoneNotificationResult,
+  PhoneScreen,
+  PhoneShellResult,
+} from "./phone-protocol.js";
 import {
   PHONE_CONTROL_TOOLS,
   PHONE_KEY_TOOL,
+  PHONE_NOTIFICATION_KEY_MAX,
+  PHONE_NOTIFICATION_TOOL,
+  PHONE_NOTIFICATION_VERBS,
   PHONE_OPEN_APP_TOOL,
   PHONE_SCREENSHOT_TOOL,
   PHONE_SHELL_MAX_COMMAND,
@@ -18,10 +26,13 @@ import {
   phoneAction,
 } from "./phone-protocol.js";
 import type { RunContext } from "./run-context.js";
+import { publishMessage } from "./run-messages.js";
 import type { ToolCall, ToolHandler } from "./run-tool-gate.js";
 
+export const ENABLE_PHONE_CONTROL_ACTION = "enable_phone_control";
+
 export const PHONE_UNAVAILABLE =
-  "The user's phone is not connected. Ask them to turn on Phone control in the Atlas app on their phone.";
+  "The user's phone is not connected. A card in the chat asks them to turn phone control on. Wait until they allow it, then try the phone tool again. Do not send them to Settings.";
 
 /**
  * Like the user's computer, the phone asks a person first until they allow it in this space:
@@ -32,19 +43,37 @@ export async function phoneGate(
   ctx: RunContext,
   blocked: boolean,
   name: string,
+  args: Record<string, unknown> = {},
 ): Promise<"deny" | "allow" | "ask"> {
   if (blocked) return "deny";
   const { deps, run } = ctx;
   const pairedSince = await deps.userDevices?.pairedSince(run.userId, "phone");
   if (!pairedSince) return "ask";
+  const where = {
+    spaceId: run.spaceId,
+    status: { in: ["approved", "executing", "completed", "uncertain"] },
+    createdAt: { gte: pairedSince },
+    run: { userId: run.userId },
+  };
+  // A normal shell approval does not cover privileged commands. Privileged does cover a normal one.
+  if (name === PHONE_SHELL_TOOL && args.privileged === true) {
+    const shells = await deps.prisma.externalEffect.findMany({
+      where: { ...where, kind: PHONE_SHELL_TOOL },
+      select: { request: true },
+    });
+    const allowed = shells.some(
+      (effect) => (effect.request as { privileged?: unknown } | null)?.privileged === true,
+    );
+    return allowed ? "allow" : "ask";
+  }
+  const kind =
+    name === PHONE_SHELL_TOOL
+      ? [PHONE_SHELL_TOOL]
+      : name === PHONE_NOTIFICATION_TOOL
+        ? [PHONE_NOTIFICATION_TOOL]
+        : [...PHONE_CONTROL_TOOLS];
   const allowed = await deps.prisma.externalEffect.findFirst({
-    where: {
-      spaceId: run.spaceId,
-      status: { in: ["approved", "executing", "completed", "uncertain"] },
-      createdAt: { gte: pairedSince },
-      run: { userId: run.userId },
-      kind: { in: name === PHONE_SHELL_TOOL ? [PHONE_SHELL_TOOL] : [...PHONE_CONTROL_TOOLS] },
-    },
+    where: { ...where, kind: { in: kind } },
     select: { id: true },
   });
   return allowed ? "allow" : "ask";
@@ -102,13 +131,40 @@ export function phoneActionFor(
         return { op: "key", key: args.key };
       case PHONE_OPEN_APP_TOOL:
         return { op: "openApp", app: typeof args.app === "string" ? args.app : "" };
-      case PHONE_SHELL_TOOL:
+      case PHONE_SHELL_TOOL: {
+        if (args.termux === true && args.privileged === true)
+          return "phone_shell takes termux or privileged, not both.";
         return {
           op: "shell",
           command: typeof args.command === "string" ? args.command : "",
           timeoutMs: sandboxCommandTimeoutMs(),
           ...(args.termux === true ? { termux: true } : {}),
+          ...(args.privileged === true ? { privileged: true } : {}),
         };
+      }
+      case PHONE_NOTIFICATION_TOOL: {
+        const verb = args.action === undefined ? "list" : args.action;
+        if (
+          typeof verb !== "string" ||
+          !(PHONE_NOTIFICATION_VERBS as readonly string[]).includes(verb)
+        )
+          return "action must be list, open, dismiss, or activate.";
+        const key = typeof args.key === "string" ? args.key.trim() : "";
+        const button = typeof args.button === "string" ? args.button.trim() : "";
+        if (verb !== "list" && !key)
+          return "phone_notifications needs key from a previous list.";
+        if (key.length > PHONE_NOTIFICATION_KEY_MAX)
+          return `key must be at most ${PHONE_NOTIFICATION_KEY_MAX} characters.`;
+        if (verb === "activate" && !button)
+          return "phone_notifications activate needs button, the action's title.";
+        return {
+          op: "notifications",
+          verb,
+          ...(key ? { key } : {}),
+          ...(button ? { button } : {}),
+          ...(verb === "activate" && typeof args.text === "string" ? { text: args.text } : {}),
+        };
+      }
       default:
         return `${name} is not a phone tool.`;
     }
@@ -179,7 +235,10 @@ export const phoneTool: ToolHandler = async (ctx: RunContext, call: ToolCall) =>
   if ("error" in prepared) return call.finish({ error: prepared.error });
   const { action } = prepared;
   const connected = await connectedPhone(ctx);
-  if (!connected) return call.finish({ error: PHONE_UNAVAILABLE });
+  if (!connected) {
+    await askToEnablePhoneControl(ctx);
+    return call.finish({ error: PHONE_UNAVAILABLE });
+  }
   const { owner, devices, deviceId } = connected;
   const { signal } = ctx.context;
   const started = Date.now();
@@ -200,6 +259,8 @@ export const phoneTool: ToolHandler = async (ctx: RunContext, call: ToolCall) =>
       ms: Date.now() - started,
     });
     if (action.op === "shell") return call.finish(phoneShellResult(ctx, value as PhoneShellResult));
+    if (action.op === "notifications")
+      return call.finish(phoneNotificationResult(ctx, value as PhoneNotificationResult));
     return call.finish(phoneScreenResult(ctx, value as PhoneScreen, phoneNote(action)));
   } catch (error) {
     await auditPhoneAction(ctx, {
@@ -217,6 +278,24 @@ export const phoneTool: ToolHandler = async (ctx: RunContext, call: ToolCall) =>
     return call.finish({ error: `The user's phone did not finish: ${reason}` });
   }
 };
+
+/** One card per attempt, so a burst of phone tools does not stack the same question. */
+async function askToEnablePhoneControl(ctx: RunContext): Promise<void> {
+  if (ctx.state.phoneControlAsked) return;
+  ctx.state.phoneControlAsked = true;
+  await publishMessage(ctx.deps, ctx.run, "bot", [
+    {
+      kind: "ask",
+      text: "Turn on phone control so I can see and use this phone?",
+      detail: "This pairs the phone and opens Accessibility if it is still off.",
+      detailFormat: "text",
+      actions: [
+        { id: ENABLE_PHONE_CONTROL_ACTION, label: "Turn on" },
+        { id: "deny", label: "Not now" },
+      ],
+    },
+  ]).catch(() => undefined);
+}
 
 function phoneNote(action: PhoneAction): string {
   switch (action.op) {
@@ -237,8 +316,23 @@ function phoneNote(action: PhoneAction): string {
     case "openApp":
       return `opened ${action.app}`;
     case "shell":
-      return "ran";
+      return action.privileged ? "ran a deeper command" : "ran";
+    case "notifications":
+      return action.verb === "list" ? "notifications" : action.verb;
   }
+}
+
+export function phoneNotificationResult(ctx: RunContext, result: PhoneNotificationResult) {
+  const notifications = result.notifications?.map((item) => ({
+    ...item,
+    title: redactSecrets(String(item.title ?? ""), ctx.secrets),
+    text: redactSecrets(String(item.text ?? ""), ctx.secrets),
+    app: redactSecrets(String(item.app ?? ""), ctx.secrets),
+  }));
+  return {
+    ...(notifications ? { notifications } : {}),
+    ...(result.done ? { done: result.done } : {}),
+  };
 }
 
 export function phoneShellResult(ctx: RunContext, result: PhoneShellResult) {

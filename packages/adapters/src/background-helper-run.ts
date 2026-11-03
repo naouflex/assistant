@@ -1,12 +1,37 @@
 import { runContinueJob } from "@atlas/adapter-kit";
+import { ACTIVE_RUN_STATUSES } from "@atlas/core";
 import type { JobPublisher } from "@atlas/adapter-kit";
 import type { PrismaClient } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 
-const BACKGROUND_WAKE_DELAY_MS = 24 * 60 * 60 * 1000;
+/** Crash recovery only. A finished parent releases helpers immediately. */
+export const BACKGROUND_WAKE_DELAY_MS = 2 * 60 * 1000;
+
+export function helperMayStartAnother(parentTrigger: string): boolean {
+  return parentTrigger !== "follow_up";
+}
 
 export function backgroundHelperClientNonce(parentRunId: string, executionId: string): string {
   return `background:${parentRunId}:${executionId}`;
+}
+
+export function backgroundParentRunId(clientNonce: string | null | undefined): string | undefined {
+  const match = /^background:([^:]+):/.exec(clientNonce ?? "");
+  return match?.[1];
+}
+
+/** A helper stays queued while the turn that created it is still going. */
+export async function helperParentStillRunning(
+  deps: { prisma: PrismaClient },
+  clientNonce: string | null | undefined,
+): Promise<boolean> {
+  const parentId = backgroundParentRunId(clientNonce);
+  if (!parentId) return false;
+  const parent = await deps.prisma.run.findUnique({
+    where: { id: parentId },
+    select: { status: true },
+  });
+  return parent != null && (ACTIVE_RUN_STATUSES as readonly string[]).includes(parent.status);
 }
 
 /** Queue a follow_up run that starts after the parent turn finishes. */
@@ -21,6 +46,7 @@ export async function queueBackgroundHelper(
       threadId: string;
       sourceMessageId: string | null;
       status: string;
+      trigger: string;
     };
     name: string;
     task: string;
@@ -30,6 +56,9 @@ export async function queueBackgroundHelper(
 ): Promise<{ ok: true; helperRunId: string } | { error: string }> {
   if (input.parentRun.status !== "running") {
     return { error: "Parent run is no longer active." };
+  }
+  if (!helperMayStartAnother(input.parentRun.trigger)) {
+    return { error: "A background helper cannot start another helper." };
   }
   const clientNonce = backgroundHelperClientNonce(input.parentRun.id, input.executionId);
   const existing = await deps.prisma.run.findFirst({
@@ -74,6 +103,18 @@ export async function queueBackgroundHelper(
     select: { id: true },
   });
   return { ok: true, helperRunId: helper.id };
+}
+
+/** Drop helpers that never started because the parent failed or was cancelled. */
+export async function cancelQueuedBackgroundHelpers(
+  deps: { prisma: PrismaClient },
+  parentRunId: string,
+): Promise<void> {
+  const prefix = `background:${parentRunId}:`;
+  await deps.prisma.run.updateMany({
+    where: { clientNonce: { startsWith: prefix }, status: "queued" },
+    data: { status: "cancelled", wakeAt: null },
+  });
 }
 
 /** Start queued background helpers once the parent turn is done. */

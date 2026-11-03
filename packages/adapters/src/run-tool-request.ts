@@ -36,6 +36,7 @@ import {
 } from "./run-effects.js";
 import { fleetPrepareDeps } from "./run-model.js";
 import { BUILTIN_AGENT_TOOL_NAMES, FLEET_WRITE_TOOL_NAMES_SET } from "./run-tool-selection.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import { USER_COMPUTER_TOOLS } from "./run-tools-user-computer.js";
 import { argumentGiven } from "./update-bot-patch.js";
 
@@ -289,6 +290,12 @@ export async function prepareToolRequest(
       return { error: "The user's computer is not available in this run." };
     if (isSubagentToolExecution(executionId))
       return { error: "Helpers cannot use the user's computer." };
+  }
+  if (PHONE_TOOLS.has(name)) {
+    if (!ctx.source.userComputerOwner || !deps.userDevices)
+      return { error: "The user's phone is not available in this run." };
+    if (isSubagentToolExecution(executionId))
+      return { error: "Helpers cannot use the user's phone." };
   }
   const fleetWrite =
     FLEET_WRITE_TOOL_NAMES_SET.has(name) ||

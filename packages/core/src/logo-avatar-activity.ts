@@ -89,6 +89,7 @@ const COMPUTER_TOOLS = new Set([
   "phone_key",
   "phone_open_app",
   "phone_shell",
+  "phone_notifications",
   "shell",
   "open_path",
   "launch_app",

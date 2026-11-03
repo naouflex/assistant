@@ -501,6 +501,7 @@ export const JA_MESSAGES: Record<string, string> = {
   "Model id": "モデルID",
   "No matching models": "一致するモデルはありません",
   "Not now": "後で",
+  "Turn on": "オンにする",
   "OpenAI-compatible server URL": "OpenAI互換サーバーのURL",
   Optional: "任意",
   "Or connect an API key": "またはAPIキーを接続",
@@ -573,6 +574,9 @@ export const JA_MESSAGES: Record<string, string> = {
   Uninstall: "アンインストール",
   "Verify and add": "確認して追加",
   "Working…": "処理中…",
+  "Waiting in line…": "順番待ち…",
+  "Starting…": "開始しています…",
+  "+{count} earlier steps": "以前の手順 +{count}",
   "https://example.com/graphql": "https://example.com/graphql",
   "https://example.com/mcp": "https://example.com/mcp",
   "https://example.com/openapi.json": "https://example.com/openapi.json",
@@ -1293,6 +1297,10 @@ export const JA_MESSAGES: Record<string, string> = {
     "{count}個のボットがスペースのデフォルトを使用するようになりました。",
   "Could not switch {failedNames}. Try again.":
     "{failedNames}を切り替えられませんでした。もう一度お試しください。",
+  "Deeper commands": "高度なコマンド",
+  "Start Shizuku": "Shizuku を起動",
+  "Deeper commands need the Shizuku app.": "高度なコマンドには Shizuku アプリが必要です。",
+  "Start Shizuku, then allow Atlas.": "Shizuku を起動してから、Atlas を許可してください。",
 };
 
 export const PEER_MESSAGE_FORMS = { other: "{peer}とのメッセージ{count}件" };

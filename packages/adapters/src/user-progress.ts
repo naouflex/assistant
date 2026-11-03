@@ -122,6 +122,11 @@ export function assistantTurnSeparator(previous: string, next: string): string {
 /** clientNonce prefix for mid-turn progress messages (reconciler uses this). */
 export const USER_PROGRESS_CLIENT_NONCE_PREFIX = "user-progress:";
 
+/** One stable nonce so the automatic ack cannot be inserted twice. */
+export function firstAckClientNonce(runId: string): string {
+  return `${USER_PROGRESS_CLIENT_NONCE_PREFIX}${runId}:ack`;
+}
+
 export function userProgressClientNonce(runId: string, index = 0): string {
   // Include entropy so a resumed executor turn cannot reuse an earlier nonce
   // (threadId + clientNonce is unique).

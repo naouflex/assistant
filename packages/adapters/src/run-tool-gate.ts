@@ -74,6 +74,8 @@ import { resolveCompletedSecretLeftover } from "./run-secret.js";
 import type { ToolRequest } from "./run-tool-request.js";
 import { BUILTIN_AGENT_TOOL_NAMES, READ_ONLY_AGENT_TOOLS } from "./run-tool-selection.js";
 import { callMediaTool } from "./run-tools-files.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
+import { phoneGate } from "./run-tools-phone.js";
 import { USER_COMPUTER_TOOLS, userComputerGate } from "./run-tools-user-computer.js";
 import { connectorTrustKeys } from "./run-trust.js";
 import { watchFromTool } from "./schedule-tools.js";
@@ -240,11 +242,14 @@ export async function gateToolCall(
       (name === "schedule_update" && Boolean(args.prompt))) &&
     (await isRunTainted(ctx)) &&
     (await ctx.trust.routineNamesNewSite(String(args.prompt ?? "")));
+  // A purchase id alone is not approval. Only the replay of a request the owner
+  // already approved may skip the card.
   const paidReplay =
     name === "paid_request" &&
     args.url === undefined &&
     typeof args.purchase === "string" &&
-    Boolean(args.purchase.trim());
+    Boolean(args.purchase.trim()) &&
+    (nextApprovedTool === name || Boolean(approvedEffectKey));
   const spendsMoney = !paidReplay && toolSpendsMoney(name, viaConnector);
   const requiresApprovalByDefault = paidReplay
     ? false
@@ -316,7 +321,9 @@ export async function gateToolCall(
         : false));
   const plan = USER_COMPUTER_TOOLS.has(name)
     ? await userComputerGate(ctx, approvalResolved.decision === "deny", name, args)
-    : planActionGate({
+    : PHONE_TOOLS.has(name)
+      ? await phoneGate(ctx, approvalResolved.decision === "deny", name, args)
+      : planActionGate({
         resolved: approvalResolved,
         mode,
         mandatory: requiresMandatoryApproval,

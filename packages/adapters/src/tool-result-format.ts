@@ -1,79 +1,90 @@
 const MAX_TEXT = 8_000;
 const MAX_SHELL_OUT = 4_000;
 const MAX_SHELL_ERR = 1_000;
-const MAX_ITEMS = 24;
+
+const SHELL_TOOLS = new Set(["shell", "user_computer_shell", "phone_shell"]);
 
 function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, Math.max(0, max - 1))}…`;
 }
 
-function errorShape(record: Record<string, unknown>): Record<string, unknown> {
-  const shaped: Record<string, unknown> = { ok: false, error: String(record.error).trim() };
-  if (Array.isArray(record.entries)) shaped.entries = record.entries.slice(0, 12);
-  if (typeof record.note === "string") shaped.note = truncate(record.note, 400);
-  if (record.untrusted === true) shaped.untrusted = true;
-  return shaped;
+function textLimit(key: string): number {
+  if (key === "stdout" || key === "output") return MAX_SHELL_OUT;
+  if (key === "stderr") return MAX_SHELL_ERR;
+  return MAX_TEXT;
 }
 
-/** Normalize tool JSON for models: short errors, bounded text, explicit ok. */
+/** A shell result succeeded only when it reported a zero exit and was not stopped. */
+export function shellResultSucceeded(record: Record<string, unknown>): boolean {
+  if (record.timedOut === true || record.killed === true) return false;
+  if (typeof record.signal === "string" && record.signal.trim()) return false;
+  if (typeof record.exitCode !== "number") return false;
+  return record.exitCode === 0;
+}
+
+function shellFailureReason(record: Record<string, unknown>): string {
+  if (record.timedOut === true) return "The command timed out.";
+  if (record.killed === true || (typeof record.signal === "string" && record.signal.trim())) {
+    return "The command was killed.";
+  }
+  if (typeof record.exitCode !== "number") return "The command did not report an exit code.";
+  return `The command failed with exit code ${record.exitCode}.`;
+}
+
+function shortenValue(key: string, value: unknown): unknown {
+  if (typeof value === "string") return truncate(value, textLimit(key));
+  return value;
+}
+
+/**
+ * Keep every field the tool returned. Only long text is shortened.
+ * A shell-like result is not successful unless it reported a clean exit.
+ */
 export function compactToolResultForModel(result: unknown, name: string): unknown {
-  if (result === null || result === undefined) return { ok: true };
-  if (typeof result === "string") return truncate(result, MAX_TEXT);
+  if (result === null || result === undefined) {
+    return { ok: false, error: "The tool did not report a result." };
+  }
+  if (typeof result === "string") {
+    return { text: truncate(result, MAX_TEXT), ok: true };
+  }
   if (typeof result !== "object" || Array.isArray(result)) return result;
 
   const record = result as Record<string, unknown>;
-  if (typeof record.error === "string" && record.error.trim()) return errorShape(record);
-
-  if (name === "shell" || name === "user_computer_shell") {
-    const exitCode = record.exitCode ?? 0;
-    return {
-      ok: exitCode === 0,
-      exitCode,
-      ...(record.stdout !== undefined
-        ? { stdout: truncate(String(record.stdout), MAX_SHELL_OUT) }
-        : {}),
-      ...(record.stderr !== undefined
-        ? { stderr: truncate(String(record.stderr), MAX_SHELL_ERR) }
-        : {}),
-    };
+  const shaped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    shaped[key] = shortenValue(key, value);
   }
 
-  if (name === "web_fetch") {
-    return {
-      ok: true,
-      ...(record.url !== undefined ? { url: record.url } : {}),
-      ...(record.title !== undefined ? { title: record.title } : {}),
-      ...(record.content !== undefined
-        ? { content: truncate(String(record.content), MAX_TEXT) }
-        : {}),
-    };
+  const reportedError = typeof record.error === "string" && record.error.trim().length > 0;
+  if (SHELL_TOOLS.has(name)) {
+    const ok = !reportedError && shellResultSucceeded(record);
+    shaped.ok = ok;
+    if (!ok && shaped.error === undefined) shaped.error = shellFailureReason(record);
+    return shaped;
   }
 
-  if (name === "read_file" || name === "read_memory") {
-    const content = typeof record.content === "string" ? record.content : undefined;
-    return {
-      ok: true,
-      ...(record.path !== undefined ? { path: record.path } : {}),
-      ...(content !== undefined ? { content: truncate(content, MAX_TEXT) } : {}),
-      ...(record.revision !== undefined ? { revision: record.revision } : {}),
-    };
+  if (reportedError) {
+    shaped.ok = false;
+    return shaped;
   }
+  if (shaped.ok === undefined) shaped.ok = true;
+  return shaped;
+}
 
-  if (Array.isArray(record.results)) {
-    const results = record.results.slice(0, MAX_ITEMS);
-    return {
-      ok: true,
-      results,
-      ...(record.results.length > results.length ? { truncated: true } : {}),
-    };
+export function toolReportedFailure(name: string, result: unknown): boolean {
+  const shaped = compactToolResultForModel(result, name);
+  return (
+    shaped !== null &&
+    typeof shaped === "object" &&
+    !Array.isArray(shaped) &&
+    (shaped as { ok?: unknown }).ok === false
+  );
+}
+
+export function toolFailureText(result: unknown): string {
+  if (result && typeof result === "object" && !Array.isArray(result)) {
+    const error = (result as { error?: unknown }).error;
+    if (typeof error === "string" && error.trim()) return error.slice(0, 300);
   }
-
-  for (const key of ["content", "text", "body", "output"]) {
-    if (typeof record[key] === "string" && String(record[key]).length > MAX_TEXT) {
-      return { ok: record.ok ?? true, ...record, [key]: truncate(String(record[key]), MAX_TEXT) };
-    }
-  }
-
-  if (record.ok === undefined && !("error" in record)) return { ok: true, ...record };
-  return record;
+  return "The tool did not succeed.";
 }

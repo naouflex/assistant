@@ -1,7 +1,12 @@
 import type { AgentRunRequest, AgentRuntime, JobPublisher } from "@atlas/adapter-kit";
 import { historyCompactJob } from "@atlas/adapter-kit";
 import type { MessageBlock } from "@atlas/contracts";
-import { blocksToAgentHistoryText, botMessageContext, escapePromptData } from "@atlas/core";
+import {
+  ACTIVE_RUN_STATUSES,
+  blocksToAgentHistoryText,
+  botMessageContext,
+  escapePromptData,
+} from "@atlas/core";
 import type { PrismaClient } from "@atlas/db";
 import { recordUsage } from "@atlas/db";
 import { getLogger, unwrapJobPayload } from "@atlas/logging";
@@ -49,6 +54,8 @@ export function shouldEnqueueCompactionNow(options: {
   nextMessageSeq: number;
   historyCompactedUpToSeq: number | null;
   contextWindow?: number;
+  /** Length of instructions, summary, history, and the new prompt together. */
+  measuredPromptChars?: number;
   uncompactedJsonChars?: number;
 }): boolean {
   const uncompacted = uncompactedMessageCount(
@@ -56,11 +63,15 @@ export function shouldEnqueueCompactionNow(options: {
     options.historyCompactedUpToSeq,
   );
   if (uncompacted <= 0) return false;
-  if (options.contextWindow && options.uncompactedJsonChars !== undefined) {
-    return shouldCompactForContext(
-      Math.ceil(options.uncompactedJsonChars / 4),
-      options.contextWindow,
-    );
+  const reserved = nextCompactionBatchRange(
+    options.historyCompactedUpToSeq,
+    COMPACTION_BATCH_SIZE,
+    options.nextMessageSeq,
+  );
+  if (reserved.take <= 0) return false;
+  const chars = options.measuredPromptChars ?? options.uncompactedJsonChars;
+  if (options.contextWindow && chars !== undefined) {
+    return shouldCompactForContext(Math.ceil(chars / 4), options.contextWindow);
   }
   return shouldEnqueueCompaction(
     options.nextMessageSeq,
@@ -73,8 +84,30 @@ export function shouldEnqueueCompactionNow(options: {
 export function nextCompactionBatchRange(
   historyCompactedUpToSeq: number | null,
   batchSize: number,
+  nextMessageSeq?: number,
+  windowSize = HISTORY_WINDOW_SIZE,
 ): { fromSeqExclusive: number; take: number } {
-  return { fromSeqExclusive: historyCompactedUpToSeq ?? NOTHING_COMPACTED, take: batchSize };
+  const fromSeqExclusive = historyCompactedUpToSeq ?? NOTHING_COMPACTED;
+  if (nextMessageSeq === undefined) return { fromSeqExclusive, take: batchSize };
+  // seq >= nextMessageSeq - windowSize stays verbatim, including the turn in progress.
+  const lastCompactable = nextMessageSeq - windowSize - 1;
+  const available = lastCompactable - fromSeqExclusive;
+  return { fromSeqExclusive, take: Math.max(0, Math.min(batchSize, available)) };
+}
+
+/** Character length of the prompt the next turn would send, not only the uncompacted tail. */
+export function measuredPromptChars(parts: {
+  instructions?: string;
+  summary?: string | null;
+  historyText?: string;
+  prompt?: string;
+}): number {
+  return (
+    (parts.instructions?.length ?? 0) +
+    (parts.summary?.length ?? 0) +
+    (parts.historyText?.length ?? 0) +
+    (parts.prompt?.length ?? 0)
+  );
 }
 
 export const COMPACTION_BATCH_SIZE = 50;
@@ -288,7 +321,13 @@ export async function compactHistory(deps: CompactHistoryDeps, threadId: string)
   }
 
   let fromSeqExclusive = previousCursor ?? NOTHING_COMPACTED;
-  let batch: Array<{ seq: number; role: string; botId?: string | null; blocks: unknown }> = [];
+  let batch: Array<{
+    seq: number;
+    role: string;
+    botId?: string | null;
+    blocks: unknown;
+    runId?: string | null;
+  }> = [];
   let bootstrappingLocalSummary = false;
   if (needsLocalBootstrap) {
     if (previousCursor < 0) {
@@ -322,14 +361,29 @@ export async function compactHistory(deps: CompactHistoryDeps, threadId: string)
   }
 
   if (!bootstrappingLocalSummary) {
-    const range = nextCompactionBatchRange(previousCursor, COMPACTION_BATCH_SIZE);
+    const range = nextCompactionBatchRange(
+      previousCursor,
+      COMPACTION_BATCH_SIZE,
+      thread.nextMessageSeq,
+    );
+    if (range.take <= 0) return;
     fromSeqExclusive = range.fromSeqExclusive;
     batch = await deps.prisma.message.findMany({
       where: { threadId, seq: { gt: range.fromSeqExclusive } },
       orderBy: { seq: "asc" },
       take: range.take,
-      select: { seq: true, role: true, botId: true, blocks: true },
+      select: { seq: true, role: true, botId: true, blocks: true, runId: true },
     });
+    const activeRuns = await deps.prisma.run.findMany({
+      where: { threadId, status: { in: [...ACTIVE_RUN_STATUSES] } },
+      select: { id: true },
+    });
+    const activeRunIds = new Set(activeRuns.map((run) => run.id));
+    const activeAt = batch.findIndex(
+      (message) => message.runId != null && activeRunIds.has(message.runId),
+    );
+    if (activeAt === 0) return;
+    if (activeAt > 0) batch = batch.slice(0, activeAt);
     if (batch.some((message, index) => message.seq !== fromSeqExclusive + index + 1)) {
       logHistoryCompactPermanentFailure(threadId, "message_coverage_gap");
       return;

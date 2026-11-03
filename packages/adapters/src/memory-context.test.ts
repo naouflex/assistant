@@ -133,7 +133,7 @@ describe("memory prompt budget", () => {
     ]);
 
     expect(plan.omitted).toEqual([]);
-    expect(plan.documents.map((entry) => entry.path)).toEqual(["MEMORY.md", "USER.md"]);
+    expect(plan.documents.map((entry) => entry.path)).toEqual(["USER.md", "MEMORY.md"]);
     expect(plan.documents.every((entry) => !entry.truncated)).toBe(true);
     expect(plan.usedBytes).toBeLessThan(plan.limitBytes);
   });
@@ -154,6 +154,46 @@ describe("memory prompt budget", () => {
     expect(plan.omitted[0]?.includedBytes).toBe(0);
     expect(plan.omitted[0]?.totalBytes).toBeGreaterThan(0);
     expect(plan.usedBytes).toBeLessThanOrEqual(600);
+  });
+
+  it("keeps a share of the user profile when newer bot notes are larger than the budget", () => {
+    const { text, plan } = buildAgentMemoryPrompt(
+      [
+        doc("MEMORY.md", "B".repeat(4_000), 9, "2026-08-16T12:00:00.000Z"),
+        {
+          scope: "user" as const,
+          path: "USER.md",
+          revision: 1,
+          updatedAt: "2026-08-01T12:00:00.000Z",
+          content: "Owner prefers short answers.",
+        },
+      ],
+      2 * 1024,
+    );
+
+    expect(text).toContain("Owner prefers short answers.");
+    expect(text!.indexOf("Owner prefers short answers.")).toBeLessThan(text!.indexOf("B"));
+    expect(plan.documents.map((entry) => entry.path)).toEqual(["USER.md", "MEMORY.md"]);
+    expect(plan.documents.every((entry) => entry.includedBytes > 0)).toBe(true);
+    expect(plan.usedBytes).toBeLessThanOrEqual(2 * 1024);
+  });
+
+  it("keeps a full bot index that fits its own cap", () => {
+    const notes = "B".repeat(3_000);
+    const { text, plan } = buildAgentMemoryPrompt([
+      doc("MEMORY.md", notes, 4, "2026-08-16T12:00:00.000Z"),
+      {
+        scope: "user" as const,
+        path: "USER.md",
+        revision: 1,
+        updatedAt: "2026-08-01T12:00:00.000Z",
+        content: "Owner prefers short answers.",
+      },
+    ]);
+
+    expect(text).toContain(notes);
+    expect(text).toContain("Owner prefers short answers.");
+    expect(plan.documents.every((entry) => !entry.truncated)).toBe(true);
   });
 
   it("reports nothing for an empty memory", () => {

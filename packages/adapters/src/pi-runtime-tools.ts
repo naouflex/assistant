@@ -28,7 +28,11 @@ import type { PiAgentRuntimeOptions } from "./pi-runtime.js";
 import { sanitizeSensitiveText } from "./pi-runtime-errors.js";
 import { clipToolResultContent, clipToolResultText } from "./pi-runtime-limits.js";
 import type { RuntimeModelTarget } from "./pi-runtime-models.js";
-import { compactToolResultForModel } from "./tool-result-format.js";
+import {
+  compactToolResultForModel,
+  toolFailureText,
+  toolReportedFailure,
+} from "./tool-result-format.js";
 import { executeSubagent } from "./pi-runtime-subagent.js";
 import { parametersFor, prepareFleetArguments } from "./pi-runtime-tool-parameters.js";
 import { recordPiTelemetryContent, withPiTelemetrySpan } from "./pi-telemetry.js";
@@ -495,6 +499,7 @@ function toAgentTool(
               if (tool.name === "request_secret") {
                 if (host.request.executeTool) {
                   const result = await host.request.executeTool(tool.name, args, executionId);
+                  noteToolOutcome(host, tool.name, result);
                   if (isAgentToolExecutionResult(result)) {
                     if (isToolPauseResult(result)) host.pausePending = true;
                     return result;
@@ -534,6 +539,7 @@ function toAgentTool(
                     throw new Error("Background helpers are unavailable");
                   }
                   const result = await host.request.executeTool(tool.name, args, executionId);
+                  noteToolOutcome(host, tool.name, result);
                   if (isAgentToolExecutionResult(result)) {
                     if (isToolPauseResult(result)) host.pausePending = true;
                     return result;
@@ -564,6 +570,7 @@ function toAgentTool(
                     },
                   },
                 );
+                noteToolOutcome(host, tool.name, result);
                 if (isAgentToolExecutionResult(result)) {
                   if (isToolPauseResult(result)) host.pausePending = true;
                   return keepToolResultWhole(tool.name, args)
@@ -660,6 +667,16 @@ function isAgentToolExecutionResult(result: unknown): result is AgentToolExecuti
   );
 }
 
+export function noteToolOutcome(host: ToolHost, name: string, result: unknown): void {
+  if (isToolPauseResult(result)) return;
+  const failed = toolReportedFailure(name, result);
+  (host.toolOutcomes ??= []).push({
+    name,
+    ok: !failed,
+    error: failed ? toolFailureText(result) : undefined,
+  });
+}
+
 export function serializeToolResult(
   result: unknown,
   strategy: AgentRunRequest["contextStrategy"],
@@ -670,7 +687,7 @@ export function serializeToolResult(
   try {
     const shaped = compactToolResultForModel(result, name);
     const text = JSON.stringify(shaped);
-    if (!text) return "ok";
+    if (!text) return JSON.stringify({ ok: false, error: "The tool result could not be read." });
     // skill-tools.ts already bounds skill content; the context budget selector may still shorten it.
     if (
       text.length <= 12_000 ||
@@ -682,7 +699,7 @@ export function serializeToolResult(
       ? clipToolResultText(text)
       : shortenToolResultText(text, 12_000, { name, arguments: args });
   } catch {
-    return "ok";
+    return JSON.stringify({ ok: false, error: "The tool result could not be read." });
   }
 }
 
@@ -732,6 +749,10 @@ export interface ToolHost {
   nestedAgents: Set<Agent>;
   subagentGate: { acquire(): Promise<void>; release(): void };
   toolCallBudget: ToolCallBudget;
+  /** Tool calls in this turn and whether each result succeeded. */
+  toolOutcomes?: Array<{ name: string; ok: boolean; error?: string }>;
+  /** One correction was already sent after a claimed success. */
+  doneNudged?: boolean;
   /** Shared fallback uniqueness when the model omits toolCallId (nested hosts reuse this). */
   toolCallSeq: { value: number };
   abortTurn(): void;

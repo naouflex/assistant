@@ -184,6 +184,10 @@ export function createHomeStyles() {
       color: native.label,
       fontWeight: "600",
     },
+    workingPreview: {
+      color: tokens.statusWorking,
+      fontWeight: "600",
+    },
     unreadDot: {
       width: 8,
       height: 8,

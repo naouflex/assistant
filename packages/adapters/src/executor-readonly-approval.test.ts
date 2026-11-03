@@ -3213,7 +3213,12 @@ describe("phone tools", () => {
     const online = fixture({ ...ownRun, userDevices: new UserDeviceEmulator({ phone: true }) });
     await online.run();
     expect(online.offeredTools()).toEqual(
-      expect.arrayContaining(["phone_screenshot", "phone_tap", "phone_shell"]),
+      expect.arrayContaining([
+        "phone_screenshot",
+        "phone_tap",
+        "phone_shell",
+        "phone_notifications",
+      ]),
     );
     const offline = fixture({ ...ownRun, userDevices: new UserDeviceEmulator() });
     await offline.run();
@@ -3297,5 +3302,69 @@ describe("phone tools", () => {
     await f.run();
     expect(f.results[0]).toEqual({ error: expect.stringContaining("is blocked in this space") });
     expect(f.pauseRunForInput).not.toHaveBeenCalled();
+  });
+
+  it("asks separately for notifications and for a deeper command", async () => {
+    const emulator = new UserDeviceEmulator({ phone: true });
+    const f = fixture({ ...ownRun, userDevices: emulator });
+    f.setCalls([{ name: "phone_notifications", args: {}, executionId: "call-1" }]);
+    await f.run();
+    expect(f.pauseRunForInput.mock.calls[0]).toEqual([
+      expect.objectContaining({
+        blocks: [
+          expect.objectContaining({
+            text: "Use notifications on your phone?",
+            detail: "list",
+          }),
+        ],
+      }),
+    ]);
+    f.effects[0]!.status = "approved";
+    await f.run();
+    expect(f.results.at(-1)).toEqual({
+      notifications: [
+        {
+          key: "n1",
+          package: "com.example.mail",
+          app: "Mail",
+          title: "Hi",
+          text: "There",
+          when: 0,
+          ongoing: false,
+          actions: ["Reply"],
+        },
+      ],
+    });
+
+    f.setCalls([
+      {
+        name: "phone_shell",
+        args: { command: "cmd notification", privileged: true },
+        executionId: "call-2",
+      },
+    ]);
+    await f.run();
+    expect(f.pauseRunForInput.mock.calls.at(-1)).toEqual([
+      expect.objectContaining({
+        blocks: [
+          expect.objectContaining({
+            text: "Run a deeper command on your phone?",
+            detail: "cmd notification",
+          }),
+        ],
+      }),
+    ]);
+    f.effects.at(-1)!.status = "approved";
+    await f.run();
+    expect(phoneRequests(emulator).at(-1)!.request).toMatchObject({
+      action: { op: "shell", command: "cmd notification", privileged: true },
+    });
+
+    f.setCalls([{ name: "phone_shell", args: { command: "uptime" }, executionId: "call-3" }]);
+    await f.run();
+    expect(f.pauseRunForInput).toHaveBeenCalledTimes(2);
+    expect(phoneRequests(emulator).at(-1)!.request).toMatchObject({
+      action: { op: "shell", command: "uptime" },
+    });
   });
 });

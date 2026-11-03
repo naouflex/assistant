@@ -8,6 +8,7 @@ export const PHONE_TYPE_TOOL = "phone_type";
 export const PHONE_KEY_TOOL = "phone_key";
 export const PHONE_OPEN_APP_TOOL = "phone_open_app";
 export const PHONE_SHELL_TOOL = "phone_shell";
+export const PHONE_NOTIFICATION_TOOL = "phone_notifications";
 
 /** Look at or drive the phone's screen; one approval covers them all for the space. */
 export const PHONE_CONTROL_TOOLS: ReadonlySet<string> = new Set([
@@ -19,7 +20,11 @@ export const PHONE_CONTROL_TOOLS: ReadonlySet<string> = new Set([
   PHONE_KEY_TOOL,
   PHONE_OPEN_APP_TOOL,
 ]);
-export const PHONE_TOOLS: ReadonlySet<string> = new Set([...PHONE_CONTROL_TOOLS, PHONE_SHELL_TOOL]);
+export const PHONE_TOOLS: ReadonlySet<string> = new Set([
+  ...PHONE_CONTROL_TOOLS,
+  PHONE_SHELL_TOOL,
+  PHONE_NOTIFICATION_TOOL,
+]);
 
 /** Paired devices with this platform are phones; every other platform is a computer. */
 export const PHONE_PLATFORM = "android";
@@ -41,6 +46,8 @@ export const PHONE_KEYS = [
 ] as const;
 export const PHONE_SHELL_MAX_COMMAND = 64 * 1024;
 export const PHONE_TYPE_MAX_TEXT = 10_000;
+export const PHONE_NOTIFICATION_VERBS = ["list", "open", "dismiss", "activate"] as const;
+export const PHONE_NOTIFICATION_KEY_MAX = 300;
 
 const coordinate = z.number().int().min(0).max(20_000);
 const element = z.number().int().min(0).max(100_000);
@@ -82,6 +89,15 @@ export const phoneAction = z.discriminatedUnion("op", [
       .positive()
       .max(30 * 60_000),
     termux: z.boolean().optional(),
+    /** Shizuku on the phone: settings, input, and notification commands the app user cannot run. */
+    privileged: z.boolean().optional(),
+  }),
+  z.object({
+    op: z.literal("notifications"),
+    verb: z.enum(PHONE_NOTIFICATION_VERBS),
+    key: z.string().min(1).max(PHONE_NOTIFICATION_KEY_MAX).optional(),
+    button: z.string().min(1).max(80).optional(),
+    text: z.string().max(PHONE_TYPE_MAX_TEXT).optional(),
   }),
 ]);
 export type PhoneAction = z.infer<typeof phoneAction>;
@@ -103,5 +119,22 @@ export interface PhoneShellResult {
   stderr: string;
   timedOut?: boolean;
   truncated?: boolean;
-  runner: "sh" | "termux";
+  runner: "sh" | "termux" | "privileged";
+}
+
+export interface PhoneNotification {
+  key: string;
+  package: string;
+  app: string;
+  title: string;
+  text: string;
+  when: number;
+  ongoing: boolean;
+  actions: string[];
+}
+
+/** `notifications` is a list; `done` is set when one notification was opened, dismissed, or used. */
+export interface PhoneNotificationResult {
+  notifications?: PhoneNotification[];
+  done?: "opened" | "dismissed" | "activated";
 }

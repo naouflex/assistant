@@ -28,6 +28,10 @@ class AtlasPhoneControlModule : Module() {
         "idleMinutes" to storage.idleMinutes,
         "termuxInstalled" to TermuxShell.installed(context),
         "termuxAllowed" to TermuxShell.allowed(context),
+        "notifications" to PhoneNotifications.allowed(context),
+        "deeperCommandsInstalled" to PrivilegedShell.installed(context),
+        "deeperCommandsRunning" to PrivilegedShell.running(),
+        "deeperCommandsAllowed" to PrivilegedShell.allowed(),
         "deviceName" to (Build.MODEL ?: "Android phone"),
       )
     }
@@ -86,6 +90,17 @@ class AtlasPhoneControlModule : Module() {
     AsyncFunction("requestTermuxPermission") {
       val activity = appContext.currentActivity ?: throw IllegalStateException("Open Atlas first")
       if (!TermuxShell.allowed(activity)) activity.requestPermissions(arrayOf(TermuxShell.PERMISSION), 7303)
+    }
+
+    AsyncFunction("openNotificationSettings") {
+      context().startActivity(
+        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+      )
+    }
+
+    AsyncFunction("requestDeeperCommands") {
+      val activity = appContext.currentActivity ?: throw IllegalStateException("Open Atlas first")
+      PrivilegedShell.request(activity)
     }
   }
 

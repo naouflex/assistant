@@ -12,9 +12,11 @@ import { useI18n } from "../../lib/i18n";
 import { native, useThemedStyles } from "../../lib/native";
 import type { PhoneControlState } from "../../lib/phone-control";
 import {
+  allowDeeperCommands,
   allowTermux,
   getPhoneControlState,
   openAccessibilitySettings,
+  openNotificationAccess,
   PHONE_IDLE_MINUTES,
   removePhone,
   setPhoneIdleMinutes,
@@ -111,6 +113,42 @@ export default function PhoneControl() {
           title={t("Turn off after")}
           value={t("{count} min", { count: state.idleMinutes })}
           onPress={chooseIdle}
+        />
+        <SettingsRow
+          accessibilityRole="button"
+          chevron="right"
+          title={t("Notifications")}
+          value={state.notifications ? t("On") : t("Off")}
+          onPress={() => void openNotificationAccess()}
+        />
+        <SettingsRow
+          accessibilityRole="button"
+          disabled={pending || state.deeperCommandsAllowed}
+          title={t("Deeper commands")}
+          value={
+            !state.deeperCommandsInstalled
+              ? undefined
+              : state.deeperCommandsAllowed
+                ? t("Allowed")
+                : state.deeperCommandsRunning
+                  ? t("Allow")
+                  : t("Start Shizuku")
+          }
+          onPress={() => {
+            if (!state.deeperCommandsInstalled || !state.deeperCommandsRunning) {
+              Alert.alert(
+                t("Deeper commands"),
+                state.deeperCommandsInstalled
+                  ? t("Start Shizuku, then allow Atlas.")
+                  : t("Deeper commands need the Shizuku app."),
+              );
+              return;
+            }
+            run(async () => {
+              await allowDeeperCommands();
+              return getPhoneControlState();
+            });
+          }}
         />
         {state.termuxInstalled ? (
           <SettingsRow

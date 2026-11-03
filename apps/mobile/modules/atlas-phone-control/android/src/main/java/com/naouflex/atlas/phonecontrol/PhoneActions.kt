@@ -10,12 +10,13 @@ internal object PhoneActions {
     if (op == "shell") {
       val command = action.getString("command")
       val timeoutMs = action.optLong("timeoutMs", 120_000L).coerceIn(1_000L, 30 * 60_000L)
-      return if (action.optBoolean("termux")) {
-        TermuxShell.run(context, command, timeoutMs)
-      } else {
-        PhoneShell.run(context, command, timeoutMs)
+      return when {
+        action.optBoolean("privileged") -> PrivilegedShell.run(command, timeoutMs)
+        action.optBoolean("termux") -> TermuxShell.run(context, command, timeoutMs)
+        else -> PhoneShell.run(context, command, timeoutMs)
       }
     }
+    if (op == "notifications") return PhoneNotifications.perform(context, action)
     val screen = AtlasPhoneAccessibilityService.instance
       ?: throw IllegalStateException("Turn on Atlas phone control in the phone's Accessibility settings.")
     return when (op) {

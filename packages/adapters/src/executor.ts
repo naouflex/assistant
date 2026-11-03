@@ -102,6 +102,10 @@ import {
   USER_SPEAKER,
 } from "./history-speakers.js";
 import { createMediaGenerationProvider } from "./media-generation-factory.js";
+import {
+  BACKGROUND_WAKE_DELAY_MS,
+  helperParentStillRunning,
+} from "./background-helper-run.js";
 import { loadAgentMemoryContext } from "./memory-context.js";
 import { seedScratchpadFromUserPrompt } from "./scratchpad-seed.js";
 import { HostedModelCreditsRequiredError } from "./model-credit-observer.js";
@@ -297,6 +301,16 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         // worker's run-scoped state for it may end now; until a next touch, the
         // connector's own idle bound holds it.
         endRunConnectorState(runId);
+        return;
+      }
+      if (
+        run.trigger === "follow_up" &&
+        (await helperParentStillRunning(deps, run.clientNonce))
+      ) {
+        await deps.prisma.run.updateMany({
+          where: { id: runId, status: "queued" },
+          data: { wakeAt: new Date(Date.now() + BACKGROUND_WAKE_DELAY_MS) },
+        });
         return;
       }
       let { resumeCheckpoint, heldForTakeover, takeoverResume } = takeoverContinuePlan(run);
@@ -1168,6 +1182,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           else if (await deps.userDevices.pairedSince(userComputerOwnerId).catch(() => null))
             userComputer = "offline";
         }
+        const phoneConnected = Boolean(
+          userComputerOwnerId &&
+            deps.userDevices &&
+            (await deps.userDevices.connected(userComputerOwnerId, "phone").catch(() => null)),
+        );
         const builtins = [
           ...selectBuiltinToolsForRun({
             ticketBoardEnabled: deps.ticketBoardEnabled,
@@ -1190,6 +1209,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             followUpFromUser: sourceMessage?.role === "user",
             userComputer: userComputer === "connected",
             userComputerScreen,
+            phone: phoneConnected,
           }),
           // Cross-owner agent connections only exist for chat-linked bots.
           ...(hasMessagingIdentity &&
@@ -1667,6 +1687,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 disabledBuiltinTools,
                 offeredFleetTools: offeredFleetTools(builtins),
                 userComputer,
+                phone: phoneConnected,
               })
                 .filter((instruction): instruction is string => Boolean(instruction))
                 .join("\n\n"),

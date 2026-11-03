@@ -94,6 +94,43 @@ internal class OutputBuffer(private val limit: Int = MAX_SHELL_OUTPUT) {
   fun text(): String = bytes.toString(Charsets.UTF_8.name())
 }
 
+internal const val MAX_NOTIFICATIONS = 40
+
+/** One line of a notification the bot can open, dismiss, or press. */
+internal fun clipNotificationText(value: String, limit: Int): String =
+  value.replace(Regex("\\s+"), " ").trim().take(limit)
+
+/** What is missing before a notification verb can run. `list` needs nothing. */
+internal fun notificationTargetProblem(verb: String, key: String, button: String): String? = when {
+  verb == "list" -> null
+  verb !in setOf("open", "dismiss", "activate") -> "Unknown notification action."
+  key.isBlank() -> "Pass key from phone_notifications list."
+  verb == "activate" && button.isBlank() -> "Pass button, the action title from the list."
+  else -> null
+}
+
+internal fun notificationRow(
+  key: String,
+  packageName: String,
+  app: String,
+  title: String,
+  text: String,
+  whenMs: Long,
+  ongoing: Boolean,
+  actions: List<String>,
+): JSONObject = JSONObject()
+  .put("key", key)
+  .put("package", packageName)
+  .put("app", app)
+  .put("title", title)
+  .put("text", text)
+  .put("when", whenMs)
+  .put("ongoing", ongoing)
+  .put("actions", org.json.JSONArray(actions))
+
+internal fun notificationList(rows: List<JSONObject>): JSONObject =
+  JSONObject().put("notifications", org.json.JSONArray(rows.take(MAX_NOTIFICATIONS)))
+
 internal fun capText(value: String, limit: Int = MAX_SHELL_OUTPUT): Pair<String, Boolean> =
   if (value.length <= limit) value to false else value.substring(0, limit) to true
 

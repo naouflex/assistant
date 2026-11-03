@@ -1,5 +1,5 @@
 import type { BotAvatarSet } from "@atlas/contracts";
-import { resolveBotAvatarSet } from "@atlas/contracts";
+import { AVATAR_WORD_MAX_LENGTH, botAvatarWordValue, resolveBotAvatarSet } from "@atlas/contracts";
 import { SHIPPED_BOT_AVATAR_IMAGES, SHIPPED_BOT_AVATAR_SHAPE_KEYS } from "@atlas/core";
 import {
   BOT_AVATAR_COLORS,
@@ -20,6 +20,7 @@ import {
   TabsTrigger,
 } from "@atlas/ui-web";
 import { Button } from "@atlas/ui-web/components/ui/button";
+import { Input } from "@atlas/ui-web/components/ui/input";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Check, Pencil, Upload, X } from "lucide-react";
@@ -32,7 +33,7 @@ function studioPreviewAvatarSet(
   avatarSet: BotAvatarSet,
 ): BotAvatarSet {
   const parsed = parseBotAvatar(value);
-  if (parsed.shapeIndex !== undefined) return "organic";
+  if (parsed.shapeIndex !== undefined || parsed.word) return "organic";
   return avatarSet;
 }
 
@@ -78,7 +79,10 @@ export function BotLookPicker({
 }) {
   const parsed = parseBotAvatar(value);
   const currentColor = parsed.color || DEFAULT_BOT_AVATAR_COLOR;
-  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined;
+  const [wordDraft, setWordDraft] = useState<string | null>(null);
+  const wordShown = wordDraft ?? parsed.word ?? "";
+  const wordPreview = botAvatarWordValue(currentColor, wordShown);
+  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined && !parsed.word;
 
   function commitLook(next: string, nextIdentity?: string) {
     const parsedNext = parseBotAvatar(next);
@@ -89,7 +93,8 @@ export function BotLookPicker({
     const needsOriginal =
       avatarSet !== "organic" &&
       (parsedNext.shapeIndex !== undefined ||
-        (nextIdentity !== undefined && parsedNext.shapeIndex === undefined));
+        parsedNext.word !== undefined ||
+        (nextIdentity !== undefined && parsedNext.shapeIndex === undefined && !parsedNext.word));
     if (needsOriginal) {
       onAvatarSetChange?.("organic", next);
       return;
@@ -98,7 +103,17 @@ export function BotLookPicker({
   }
 
   function selectColor(color: string) {
+    if (parsed.word) {
+      commitLook(botAvatarWordValue(color, parsed.word) ?? color);
+      return;
+    }
     commitLook(parsed.shapeIndex === undefined ? color : `${color}::shape_${parsed.shapeIndex}`);
+  }
+
+  function applyWord() {
+    if (!wordPreview) return;
+    setWordDraft(null);
+    if (wordPreview !== value) commitLook(wordPreview);
   }
 
   return (
@@ -136,6 +151,7 @@ export function BotLookPicker({
               data-testid="avatar-studio-default"
               aria-pressed={isDefaultLook}
               onClick={() => {
+                setWordDraft(null);
                 const next = defaultBotAvatarValue(value);
                 if (next !== value) commitLook(next);
               }}
@@ -168,10 +184,36 @@ export function BotLookPicker({
               shapeIndex={shapeIndex}
               color={currentColor}
               selected={!parsed.isImage && parsed.shapeIndex === shapeIndex}
-              onClick={() => commitLook(`${currentColor}::shape_${shapeIndex}`)}
+              onClick={() => {
+                setWordDraft(null);
+                commitLook(`${currentColor}::shape_${shapeIndex}`);
+              }}
             />
           ))}
         </div>
+        <form
+          className="mt-3 flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            applyWord();
+          }}
+        >
+          {wordPreview ? (
+            <BotAvatar color={wordPreview} identity={identity} size={36} avatarSet="organic" />
+          ) : null}
+          <Input
+            aria-label={t`Shape from a word`}
+            placeholder={t`Word`}
+            value={wordShown}
+            maxLength={AVATAR_WORD_MAX_LENGTH}
+            data-testid="avatar-word"
+            className="min-w-0 flex-1"
+            onChange={(event) => setWordDraft(event.target.value)}
+          />
+          <Button type="submit" variant="secondary" size="sm" disabled={!wordPreview}>
+            <Trans>Use</Trans>
+          </Button>
+        </form>
       </div>
 
       <div className="border-t border-border pt-2">

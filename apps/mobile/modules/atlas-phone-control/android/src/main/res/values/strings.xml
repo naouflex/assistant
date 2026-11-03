@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="atlas_phone_accessibility_label">Atlas phone control</string>
+  <string name="atlas_phone_notifications_label">Atlas notifications</string>
   <string name="atlas_phone_accessibility_description">Lets your Atlas bots read the screen, take screenshots, tap, swipe, type and open apps, only while Phone control is on in the Atlas app. Every action is logged on your Atlas server.</string>
   <string name="atlas_phone_channel">Phone control</string>
   <string name="atlas_phone_on_title">Atlas can control this phone</string>

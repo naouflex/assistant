@@ -512,6 +512,7 @@ export const NL_MESSAGES: Record<string, string> = {
   "Model id": "Model-id",
   "No matching models": "Geen overeenkomende modellen",
   "Not now": "Niet nu",
+  "Turn on": "Inschakelen",
   "OpenAI-compatible server URL": "OpenAI-compatibele server-URL",
   Optional: "Optioneel",
   "Or connect an API key": "Of koppel een API-sleutel",
@@ -584,6 +585,9 @@ export const NL_MESSAGES: Record<string, string> = {
   Uninstall: "Verwijderen",
   "Verify and add": "Verifiëren en toevoegen",
   "Working…": "Bezig…",
+  "Waiting in line…": "In de wachtrij…",
+  "Starting…": "Starten…",
+  "+{count} earlier steps": "+{count} eerdere stappen",
   "https://example.com/graphql": "https://example.com/graphql",
   "https://example.com/mcp": "https://example.com/mcp",
   "https://example.com/openapi.json": "https://example.com/openapi.json",
@@ -1259,6 +1263,10 @@ export const NL_MESSAGES: Record<string, string> = {
   "{count} bots now use the space default.": "{count} bots gebruiken nu de spacestandaard.",
   "Could not switch {failedNames}. Try again.":
     "Kon {failedNames} niet overzetten. Probeer het opnieuw.",
+  "Deeper commands": "Uitgebreide opdrachten",
+  "Start Shizuku": "Shizuku starten",
+  "Deeper commands need the Shizuku app.": "Uitgebreide opdrachten hebben de app Shizuku nodig.",
+  "Start Shizuku, then allow Atlas.": "Start Shizuku en sta Atlas daarna toe.",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

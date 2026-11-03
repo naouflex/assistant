@@ -6,6 +6,7 @@ import type { RunContext } from "./run-context.js";
 import type { ToolHandler } from "./run-tool-gate.js";
 import { auditToolCall, gateToolCall } from "./run-tool-gate.js";
 import { prepareToolRequest, resolveToolRequest } from "./run-tool-request.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import { PAGE_BROWSER_TOOL_NAMES } from "./run-tool-selection.js";
 import { computerTools, pageBrowserTool } from "./run-tools-computer.js";
 import { feedbackTools } from "./run-tools-feedback.js";
@@ -14,6 +15,7 @@ import { fleetTools } from "./run-tools-fleet.js";
 import { cloudAgentTool, connectorTool, integrationTools } from "./run-tools-integrations.js";
 import { memoryTools } from "./run-tools-memory.js";
 import { messagingTools } from "./run-tools-messaging.js";
+import { phoneTool } from "./run-tools-phone.js";
 import { preferenceTools } from "./run-tools-preferences.js";
 import { purchaseTools } from "./run-tools-purchases.js";
 import { secretTools } from "./run-tools-secrets.js";
@@ -44,6 +46,7 @@ const TOOL_HANDLERS = new Map<string, ToolHandler>([
   ...Object.entries(preferenceTools),
   ...Object.entries(feedbackTools),
   ...[...PAGE_BROWSER_TOOL_NAMES].map((name) => [name, pageBrowserTool] as const),
+  ...[...PHONE_TOOLS].map((name) => [name, phoneTool] as const),
 ]);
 
 function toolHandler(name: string): ToolHandler {

@@ -8,6 +8,7 @@ import {
   expandSkillReferencesInPrompt,
   ACTIVE_RUN_STATUSES,
   isRunStopCommand,
+  runStopLeavesWaitingAnswer,
   MODEL_REQUIRED_SEND_ERROR,
   QUEUE_HOLDING_RUN_STATUSES,
 } from "@atlas/core";
@@ -122,9 +123,9 @@ export function threadsRoutes(ctx: RouterContext) {
           status: { in: [...ACTIVE_RUN_STATUSES] },
         },
         orderBy: { createdAt: "desc" },
-        select: { id: true, taskId: true },
+        select: { id: true, taskId: true, status: true },
       });
-      if (active) {
+      if (active && !runStopLeavesWaitingAnswer(active.status)) {
         await stopThreadRuns(deps, actor, target);
         return { taskId: active.taskId, runId: active.id, seq: 0 };
       }

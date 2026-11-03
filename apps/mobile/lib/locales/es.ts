@@ -493,6 +493,7 @@ export const ES_MESSAGES: Record<string, string> = {
   "Model id": "ID del modelo",
   "No matching models": "No hay modelos coincidentes",
   "Not now": "Ahora no",
+  "Turn on": "Activar",
   "OpenAI-compatible server URL": "URL de servidor compatible con OpenAI",
   Optional: "Opcional",
   "Or connect an API key": "O conecta una clave de API",
@@ -561,6 +562,9 @@ export const ES_MESSAGES: Record<string, string> = {
   Uninstall: "Desinstalar",
   "Verify and add": "Verificar y agregar",
   "Working…": "Trabajando…",
+  "Waiting in line…": "En espera…",
+  "Starting…": "Empezando…",
+  "+{count} earlier steps": "+{count} pasos anteriores",
   "https://example.com/graphql": "https://example.com/graphql",
   "https://example.com/mcp": "https://example.com/mcp",
   "https://example.com/openapi.json": "https://example.com/openapi.json",
@@ -1209,6 +1213,10 @@ export const ES_MESSAGES: Record<string, string> = {
     "{count} bots ahora usan el modelo predeterminado del espacio.",
   "Could not switch {failedNames}. Try again.":
     "No se pudo cambiar {failedNames}. Vuelve a intentarlo.",
+  "Deeper commands": "Comandos avanzados",
+  "Start Shizuku": "Iniciar Shizuku",
+  "Deeper commands need the Shizuku app.": "Los comandos avanzados necesitan la app Shizuku.",
+  "Start Shizuku, then allow Atlas.": "Inicia Shizuku y luego permite Atlas.",
 };
 
 export const PEER_MESSAGE_FORMS: Partial<Record<Intl.LDMLPluralRule, string>> = {

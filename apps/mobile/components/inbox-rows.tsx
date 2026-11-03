@@ -40,6 +40,7 @@ export function ConversationRow({
   time,
   avatar,
   unread,
+  previewTone,
   onPress,
   onLongPress,
   actions = [],
@@ -53,6 +54,8 @@ export function ConversationRow({
   time: string;
   avatar: ReactNode;
   unread?: boolean;
+  /** Working, starting, or queued: the preview is the status, in the working color. */
+  previewTone?: "working";
   onPress: () => void;
   onLongPress?: () => void;
   actions?: InboxRowAction[];
@@ -105,7 +108,14 @@ export function ConversationRow({
             {unread ? <View accessibilityElementsHidden style={styles.unreadDot} /> : null}
           </View>
         </View>
-        <Text style={[styles.preview, unread && styles.unreadPreview]} numberOfLines={1}>
+        <Text
+          style={[
+            styles.preview,
+            unread && styles.unreadPreview,
+            previewTone === "working" && styles.workingPreview,
+          ]}
+          numberOfLines={1}
+        >
           {preview}
         </Text>
       </View>
@@ -262,6 +272,22 @@ type RowMenuProps = {
   ) => void;
 };
 
+function workStatusLabel(
+  status: string | undefined,
+  t: (message: string) => string,
+): string | null {
+  switch (status) {
+    case "queued":
+      return t("Waiting in line…");
+    case "leased":
+      return t("Starting…");
+    case "running":
+      return t("Working…");
+    default:
+      return null;
+  }
+}
+
 export const BotRow = memo(function BotRow({
   bot,
   day,
@@ -279,13 +305,14 @@ export const BotRow = memo(function BotRow({
   onAction?: (action: InboxRowAction, bot: MobileBot | SpaceBot) => void;
 } & RowMenuProps) {
   const { t } = useI18n();
-  const preview = previewSnippet(bot.preview, 40) || t("No messages yet");
+  const workLabel = workStatusLabel(bot.status, t);
+  const preview = workLabel ?? (previewSnippet(bot.preview, 40) || t("No messages yet"));
   const time = bot.updatedAt ? formatThreadTime(bot.updatedAt, new Date(day)) : "";
   const working = isRunWorking(bot.status);
   // Spelled out because an explicit label replaces the one built from the row's children.
   const label = [
     bot.name,
-    working ? t("Working…") : null,
+    workLabel ? null : working ? t("Working…") : null,
     bot.notifyOnFinish === false ? t("notifications silenced") : null,
     bot.unread ? t("unread") : null,
     time,
@@ -299,6 +326,7 @@ export const BotRow = memo(function BotRow({
       chatId={bot.id}
       title={bot.name}
       preview={preview}
+      previewTone={workLabel ? "working" : undefined}
       time={time}
       unread={bot.unread}
       accessibilityLabel={label}
