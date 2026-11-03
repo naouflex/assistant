@@ -1,8 +1,8 @@
 import * as z from "zod";
-import { ATLAS_PUBLIC_ORIGIN } from "./client-build.js";
 import { AGENT_SECRET_NAME_PATTERN } from "./agent-secret-name.js";
 import { BotAvatarSetSchema, BotAvatarValueSchema } from "./bot-avatar.js";
 import { DisabledBuiltinToolsSchema } from "./builtin-tools.js";
+import { ATLAS_PUBLIC_ORIGIN } from "./client-build.js";
 import {
   cloudflareGatewayRoutingId,
   cloudflareModelConfigMessage,
@@ -765,6 +765,29 @@ export const MemoryPromptBudgetSchema = z.object({
   omitted: z.array(MemoryPromptDocumentUseSchema),
 });
 export type MemoryPromptBudget = z.infer<typeof MemoryPromptBudgetSchema>;
+export const MemoryProposalSchema = z.object({
+  id: Id,
+  scope: MemoryScope,
+  botId: Id.nullable(),
+  path: z.string(),
+  content: z.string(),
+  baseRevision: z.number().int(),
+  reason: z.string(),
+  source: z.enum(["dream", "bot"]),
+  status: z.enum(["pending", "accepted", "rejected"]),
+  createdAt: z.string(),
+});
+export type MemoryProposal = z.infer<typeof MemoryProposalSchema>;
+
+export const MemoryDreamSchema = z.object({
+  id: Id,
+  scope: MemoryScope,
+  botId: Id.nullable(),
+  status: z.enum(["queued", "running", "ready", "failed"]),
+  error: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type MemoryDream = z.infer<typeof MemoryDreamSchema>;
 
 /** Every bot and Space keeps its MEMORY.md index; other memory documents can be deleted. */
 export const MEMORY_INDEX_PATH = "MEMORY.md";
@@ -1078,7 +1101,7 @@ const McpOAuthClientFields = {
  * authorization server, so the client is bound to it on first use. */
 const McpOAuthClientInput = z.object(McpOAuthClientFields).nullable().optional();
 /** A stdio server has no URL to discover from, so its client names the
- * authorization server (its issuer, e.g. https://accounts.google.com). Rakazo
+ * authorization server (its issuer, e.g. https://accounts.google.com). Atlas
  * runs the OAuth flow and passes the grant through `{{oauth.*}}` env references. */
 const McpStdioOAuthClientInput = z
   .object({ ...McpOAuthClientFields, authorizationServer: McpRemoteEndpointSchema })
@@ -1748,6 +1771,8 @@ export const ModelCatalogEntrySchema = z.object({
   signIn: ModelOAuthSignInModeSchema.optional(),
   reasoning: z.boolean().optional(),
   thinkingLevels: z.array(ThinkingLevelSchema).optional(),
+  /** The level a run uses when no level is saved, when the deployment sets one. */
+  defaultThinkingLevel: ThinkingLevelSchema.optional(),
   /** The model reads images. Left out where a connection setting decides it. */
   images: z.boolean().optional(),
   /** Catalog stand-in so a provider appears before the user enters a real model id. */
@@ -1756,6 +1781,8 @@ export const ModelCatalogEntrySchema = z.object({
   catalogProbe: z.boolean().optional(),
   /** Listed by the provider's live models list but not in the bundled catalog. */
   live: z.literal(true).optional(),
+  /** Provider accepts a faster service tier (for example OpenAI Codex or xAI priority). */
+  supportsFastTier: z.boolean().optional(),
 });
 export type ModelCatalogEntry = z.infer<typeof ModelCatalogEntrySchema>;
 
@@ -1790,6 +1817,14 @@ export const VoiceCredentialSchema = z.object({
   sttModel: z.string().default(""),
 });
 export type VoiceCredential = z.infer<typeof VoiceCredentialSchema>;
+
+export const NotificationPreferencesSchema = z.object({
+  finish: z.boolean(),
+  help: z.boolean(),
+  takeover: z.boolean(),
+  computer: z.boolean(),
+});
+export type NotificationPreferences = z.infer<typeof NotificationPreferencesSchema>;
 
 export const VoiceStatusSchema = z.object({
   configured: z.boolean(),
@@ -1925,7 +1960,7 @@ export const MeSchema = z.object({
   spaceId: Id,
   /** Deprecated: app accounts never have server administrator privileges. Always false. */
   isDeploymentOwner: z.boolean(),
-  /** Listed in RAKAZO_ADMIN_EMAILS with a verified email: reviews plugins, adds stdio MCP servers, grants access. */
+  /** Listed in ATLAS_ADMIN_EMAILS with a verified email: reviews plugins, adds stdio MCP servers, grants access. */
   isAdmin: z.boolean().default(false),
   needsModel: z.boolean(),
   defaultProvider: z.string().nullable(),

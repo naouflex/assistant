@@ -87,10 +87,13 @@ import {
   GroupDetailSchema,
   GroupSchema,
   IntegrationCatalogResultSchema,
+  LocalModelsStatusSchema,
   McpServerConfigInput,
   McpServerSchema,
   MemoryDocumentSchema,
+  MemoryDreamSchema,
   MemoryPromptBudgetSchema,
+  MemoryProposalSchema,
   MemoryScopeSchema,
   MeSchema,
   MessagingAgentConnectionSchema,
@@ -107,8 +110,8 @@ import {
   ModelConnectionTargetSchema,
   ModelCredentialSchema,
   ModelCreditAmountSchema,
-  LocalModelsStatusSchema,
   ModelOAuthBeginSchema,
+  NotificationPreferencesSchema,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   PluginMarketplaceCatalogSchema,
   PluginPartSchema,
@@ -401,9 +404,11 @@ export const appContract = {
       )
       .output(ModelRoleViewSchema),
     list: oc.output(z.array(ModelCatalogEntrySchema)),
+    /** Local model servers' status; refresh rescans them so new models list at once. */
     localStatus: oc
       .input(z.object({ refresh: z.boolean().optional() }))
       .output(LocalModelsStatusSchema),
+    /** Load one model on a configured local server. A router keeps a single model in memory. */
     loadLocal: oc
       .input(z.object({ baseUrl: z.string().trim().min(1), modelId: z.string().trim().min(1) }))
       .output(LocalModelsStatusSchema),
@@ -502,6 +507,7 @@ export const appContract = {
       .output(BotSchema),
     setComputer: oc.input(z.object({ botId: Id, mode: ComputerModeSchema })).output(BotSchema),
     archive: oc.input(botId).output(z.object({ ok: z.literal(true) })),
+    /** Moves the bot, and the bots under it, to another of the caller's spaces. */
     move: oc.input(z.object({ botId: Id, spaceId: Id })).output(
       z.object({
         ok: z.literal(true),
@@ -509,6 +515,7 @@ export const appContract = {
         droppedMcpServers: z.number().int(),
       }),
     ),
+    /** Sets or clears the bot's parent in its space. */
     setParent: oc
       .input(z.object({ botId: Id, parentBotId: Id.nullable() }))
       .output(z.object({ ok: z.literal(true) })),
@@ -780,6 +787,19 @@ export const appContract = {
       .input(z.object({ defaultMemoryScope: MemoryScopeSchema }))
       .output(SpaceMemoryConfigSchema),
     disconnectProvider: oc.output(z.object({ ok: z.literal(true) })),
+    proposals: oc
+      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .output(z.array(MemoryProposalSchema)),
+    dream: oc
+      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .output(MemoryDreamSchema.nullable()),
+    startDream: oc
+      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .output(MemoryDreamSchema),
+    acceptProposal: oc.input(z.object({ proposalId: Id })).output(MemoryDocumentSchema),
+    rejectProposal: oc
+      .input(z.object({ proposalId: Id }))
+      .output(z.object({ ok: z.literal(true) })),
   },
   routines: {
     listForMentions: oc
@@ -1284,6 +1304,10 @@ export const appContract = {
       .input(z.object({ token: z.string().min(8).max(512).regex(/^\S+$/) }))
       .output(z.object({ ok: z.literal(true) })),
     unregisterPush: oc.output(z.object({ ok: z.literal(true) })),
+    preferences: oc.output(NotificationPreferencesSchema),
+    setPreferences: oc
+      .input(NotificationPreferencesSchema.partial())
+      .output(NotificationPreferencesSchema),
   },
   search: {
     query: oc.input(z.object({ q: z.string().max(200) })).output(SearchQueryOutputSchema),
@@ -1364,7 +1388,13 @@ export const appContract = {
       )
       .output(VoiceCredentialSchema),
     voices: oc
-      .input(settingsScopeInput.extend({ provider: z.string().optional() }))
+      .input(
+        settingsScopeInput.extend({
+          provider: z.string().optional(),
+          /** Lists voices for this speech model without saving it (OpenRouter / self-hosted). */
+          ttsModel: z.string().max(200).optional(),
+        }),
+      )
       .output(z.array(VoiceInfoSchema)),
     prepare: oc
       .input(

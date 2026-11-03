@@ -1,4 +1,3 @@
-import { ORPCError } from "@orpc/server";
 import {
   effectiveModelRole,
   hasHostedModelCredits,
@@ -27,6 +26,7 @@ import {
   selectVoicePreference,
   voicePreferenceTarget,
 } from "@atlas/db";
+import { ORPCError } from "@orpc/server";
 import { createAccessGrant, listAccessGrants, revokeAccessGrant } from "../access-grants.js";
 import { requireAdmin } from "../admins.js";
 import { aiConsentStatus, allowAiConsent } from "../ai-consent.js";
@@ -46,10 +46,18 @@ import {
   updateVoiceSpeechModel,
   voiceContext,
   voiceCredentialServer,
+  voiceListPlaintext,
   voiceProviderFor,
 } from "../voice.js";
 import type { RouterContext } from "./context.js";
 import { meDto } from "./shared.js";
+
+const NOTIFICATION_PREFERENCE_SELECT = {
+  finish: true,
+  help: true,
+  takeover: true,
+  computer: true,
+} as const;
 
 export function accountRoutes(ctx: RouterContext) {
   const { deps, os, authed } = ctx;
@@ -275,6 +283,30 @@ export function accountRoutes(ctx: RouterContext) {
         await deps.pushTokens.remove(context.actor.userId);
         return { ok: true as const };
       }),
+      preferences: authed.notifications.preferences.handler(async ({ context }) => {
+        const { spaceId, userId } = context.actor;
+        const saved = await deps.prisma.notificationPreference.findUnique({
+          where: { spaceId_userId: { spaceId, userId } },
+          select: NOTIFICATION_PREFERENCE_SELECT,
+        });
+        return (
+          saved ?? {
+            finish: true,
+            help: true,
+            takeover: true,
+            computer: true,
+          }
+        );
+      }),
+      setPreferences: authed.notifications.setPreferences.handler(({ context, input }) => {
+        const { spaceId, userId } = context.actor;
+        return deps.prisma.notificationPreference.upsert({
+          where: { spaceId_userId: { spaceId, userId } },
+          create: { spaceId, userId, ...input },
+          update: input,
+          select: NOTIFICATION_PREFERENCE_SELECT,
+        });
+      }),
     },
     voice: {
       catalog: authed.voice.catalog.handler(async () =>
@@ -355,8 +387,15 @@ export function accountRoutes(ctx: RouterContext) {
           ? await loadVoiceCredential(deps, context.actor, input.provider, input.scope)
           : await loadDefaultVoiceCredential(deps, context.actor, input.scope);
         if (!row) return [];
-        return (await voiceProviderFor(deps, row.cred.provider)).listVoices(
+        // Another speech model's voices can be listed before the choice is saved.
+        const apiKey = await voiceListPlaintext(
+          deps,
+          row.cred.provider,
           row.apiKey,
+          input.ttsModel,
+        );
+        return (await voiceProviderFor(deps, row.cred.provider)).listVoices(
+          apiKey,
           voiceContext(context.actor, context.signal),
         );
       }),
