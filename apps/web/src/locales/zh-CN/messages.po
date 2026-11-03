@@ -500,6 +500,10 @@ msgstr ""
 msgid "About {label}"
 msgstr "关于{label}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
 msgstr "访问令牌（可选）"
@@ -975,6 +979,11 @@ msgstr "{timeSelect}"
 msgid "Atlas"
 msgstr ""
 
+#: src/components/ModelCredits.tsx
+#: src/pages/Onboarding.tsx
+msgid "Atlas credits"
+msgstr "Atlas 额度"
+
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Atlas uses the logo below. Studio shapes switch to Original."
 msgstr ""
@@ -1426,13 +1435,10 @@ msgstr "选择文件"
 msgid "Choose folder"
 msgstr "选择文件夹"
 
+#: src/components/ModelCredits.tsx
 #: src/components/SubscriptionGate.tsx
 msgid "Choose how to use Atlas"
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-msgid "Choose how to use Rakazo"
-msgstr "选择如何使用 Rakazo"
+msgstr "选择如何使用 Atlas"
 
 #: src/lib/localized-provider-hint.ts
 msgid "Claude subscription"
@@ -1899,6 +1905,7 @@ msgid "Could not change password"
 msgstr "无法修改密码"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not change the parent."
 msgstr ""
 
@@ -2165,6 +2172,7 @@ msgid "Could not log out. Try again."
 msgstr "无法退出登录。请重试。"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not move this bot."
 msgstr ""
 
@@ -2259,6 +2267,10 @@ msgstr "无法重置密码"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2946,7 +2958,7 @@ msgid "Engage when... Ignore..."
 msgstr "在…时参与，忽略…"
 
 #: src/components/GitHubStarPrompt.tsx
-msgid "Enjoying Rakazo?"
+msgid "Enjoying Atlas?"
 msgstr ""
 
 #: src/lib/user-error.ts
@@ -3014,8 +3026,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "每{n}小时{minute}分"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "此空间中的所有机器人都会读取并更新这些笔记。"
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -4198,6 +4210,12 @@ msgstr ""
 msgid "Move up"
 msgstr "上移"
 
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
 #. placeholder {0}: bot.name
 #: src/pages/shell/chat-context-menu.tsx
 msgid "Moved {0} to {name}"
@@ -4532,6 +4550,10 @@ msgstr "无法正常工作"
 msgid "Nothing remembered yet"
 msgstr "暂无记忆"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "通知"
@@ -4790,8 +4812,8 @@ msgid "Paste a replacement key"
 msgstr "粘贴替换密钥"
 
 #: src/pages/model-settings/compatible-model-fields.tsx
-msgid "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed."
-msgstr "粘贴服务器的 OpenAI 兼容地址。需要时 Rakazo 会补上 /v1。"
+msgid "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed."
+msgstr "粘贴服务器的 OpenAI 兼容地址。需要时 Atlas 会补上 /v1。"
 
 #: src/pages/shell/agent-import.tsx
 msgid "Paste the reply"
@@ -4953,6 +4975,10 @@ msgstr "效率"
 msgid "Program: {name}"
 msgstr "程序：{name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr "受保护输入"
@@ -4982,11 +5008,6 @@ msgstr "排队中"
 #: src/pages/Cubicle.tsx
 msgid "Quiet"
 msgstr ""
-
-#: src/components/ModelCredits.tsx
-#: src/pages/Onboarding.tsx
-msgid "Rakazo credits"
-msgstr "Rakazo 额度"
 
 #: src/pages/shell/message-hover-actions.tsx
 msgid "React"
@@ -5138,6 +5159,7 @@ msgstr "正在刷新…"
 msgid "Registration is closed"
 msgstr "注册已关闭"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr "拒绝"
@@ -5406,6 +5428,14 @@ msgstr "返回与 {0} 的通话"
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "请检查提供方设置并重新测试。"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/AdminAccessPage.tsx
 #: src/pages/MessagingSettingsPanel.tsx
@@ -5771,6 +5801,10 @@ msgstr "形状"
 msgid "Shape {0}"
 msgstr "形状 {0}"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Shape from a word"
+msgstr ""
+
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Shared"
@@ -6126,8 +6160,8 @@ msgid "Subscribe for {price} / month"
 msgstr "以每月 {price} 订阅"
 
 #: src/components/ModelCredits.tsx
-msgid "Subscribe to Rakazo credits"
-msgstr "订阅 Rakazo 额度"
+msgid "Subscribe to Atlas credits"
+msgstr "订阅 Atlas 额度"
 
 #: src/components/ModelCredits.tsx
 msgid "Subscribe with your own AI"
@@ -6404,6 +6438,10 @@ msgstr "此模型的上下文窗口太小。请选择其他模型。"
 #: src/pages/Artifacts.tsx
 msgid "This month"
 msgstr "本月"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
 
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
@@ -6700,6 +6738,10 @@ msgstr "紧急"
 msgid "Usage"
 msgstr "用量"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Use"
+msgstr ""
+
 #. Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'
 #. placeholder {0}: deviceTimezone.replaceAll("_", " ")
 #: src/pages/AccountSettingsOverlay.tsx
@@ -6718,6 +6760,10 @@ msgstr "访问令牌请使用 {oauthEnvReference}。"
 #: src/pages/Onboarding.tsx
 msgid "Use a found model"
 msgstr "使用找到的模型"
+
+#: src/components/ModelCredits.tsx
+msgid "Use Atlas credits"
+msgstr "使用 Atlas 额度"
 
 #: src/lib/model-connection-preflight.ts
 msgid "Use Connect to verify the key."
@@ -6746,10 +6792,6 @@ msgstr "使用我的订阅或 API 密钥"
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Use Protected input for passwords."
 msgstr "输入密码时请用受保护输入。"
-
-#: src/components/ModelCredits.tsx
-msgid "Use Rakazo credits"
-msgstr "使用 Rakazo 额度"
 
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Use space default"
@@ -6955,6 +6997,10 @@ msgstr ""
 #: src/lib/ticket-status.ts
 msgid "Won't do"
 msgstr "不做"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Word"
+msgstr ""
 
 #: src/components/SignupSurvey.tsx
 msgid "Work"

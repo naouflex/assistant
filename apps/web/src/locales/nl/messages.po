@@ -500,6 +500,10 @@ msgstr ""
 msgid "About {label}"
 msgstr "Over {label}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
 msgstr "Toegangstoken (optioneel)"
@@ -975,6 +979,11 @@ msgstr "om {timeSelect}"
 msgid "Atlas"
 msgstr ""
 
+#: src/components/ModelCredits.tsx
+#: src/pages/Onboarding.tsx
+msgid "Atlas credits"
+msgstr ""
+
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Atlas uses the logo below. Studio shapes switch to Original."
 msgstr ""
@@ -1426,12 +1435,9 @@ msgstr "Bestand kiezen"
 msgid "Choose folder"
 msgstr "Map kiezen"
 
+#: src/components/ModelCredits.tsx
 #: src/components/SubscriptionGate.tsx
 msgid "Choose how to use Atlas"
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-msgid "Choose how to use Rakazo"
 msgstr ""
 
 #: src/lib/localized-provider-hint.ts
@@ -1899,6 +1905,7 @@ msgid "Could not change password"
 msgstr "Wachtwoord wijzigen mislukt"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not change the parent."
 msgstr ""
 
@@ -2165,6 +2172,7 @@ msgid "Could not log out. Try again."
 msgstr "Uitloggen mislukt. Probeer het opnieuw."
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not move this bot."
 msgstr ""
 
@@ -2259,6 +2267,10 @@ msgstr "Wachtwoord opnieuw instellen mislukt"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2946,7 +2958,7 @@ msgid "Engage when... Ignore..."
 msgstr "Reageren wanneer... Negeren..."
 
 #: src/components/GitHubStarPrompt.tsx
-msgid "Enjoying Rakazo?"
+msgid "Enjoying Atlas?"
 msgstr ""
 
 #: src/lib/user-error.ts
@@ -3014,8 +3026,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "Elke {n} uur om :{minute}"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "Alle bots in deze space lezen deze notities en houden ze bij."
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -4198,6 +4210,12 @@ msgstr ""
 msgid "Move up"
 msgstr "Omhoog"
 
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
 #. placeholder {0}: bot.name
 #: src/pages/shell/chat-context-menu.tsx
 msgid "Moved {0} to {name}"
@@ -4532,6 +4550,10 @@ msgstr "Werkt niet"
 msgid "Nothing remembered yet"
 msgstr "Nog niets onthouden"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "Meldingen"
@@ -4790,8 +4812,8 @@ msgid "Paste a replacement key"
 msgstr "Plak een vervangende sleutel"
 
 #: src/pages/model-settings/compatible-model-fields.tsx
-msgid "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed."
-msgstr "Plak het OpenAI-compatibele adres van je server. Rakazo voegt zo nodig /v1 toe."
+msgid "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed."
+msgstr "Plak het OpenAI-compatibele adres van je server. Atlas voegt zo nodig /v1 toe."
 
 #: src/pages/shell/agent-import.tsx
 msgid "Paste the reply"
@@ -4953,6 +4975,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "Programma: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr "Beveiligde invoer"
@@ -4981,11 +5007,6 @@ msgstr "In wachtrij"
 
 #: src/pages/Cubicle.tsx
 msgid "Quiet"
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-#: src/pages/Onboarding.tsx
-msgid "Rakazo credits"
 msgstr ""
 
 #: src/pages/shell/message-hover-actions.tsx
@@ -5138,6 +5159,7 @@ msgstr "Bezig met vernieuwen…"
 msgid "Registration is closed"
 msgstr "Registratie is gesloten"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5406,6 +5428,14 @@ msgstr "Terug naar het gesprek met {0}"
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "Controleer de aanbiedersinstellingen en test daarna opnieuw."
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/AdminAccessPage.tsx
 #: src/pages/MessagingSettingsPanel.tsx
@@ -5771,6 +5801,10 @@ msgstr "Vorm"
 msgid "Shape {0}"
 msgstr ""
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Shape from a word"
+msgstr ""
+
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Shared"
@@ -6126,8 +6160,8 @@ msgid "Subscribe for {price} / month"
 msgstr "Abonneren voor {price} / maand"
 
 #: src/components/ModelCredits.tsx
-msgid "Subscribe to Rakazo credits"
-msgstr "Abonneren op Rakazo-tegoed"
+msgid "Subscribe to Atlas credits"
+msgstr "Abonneren op Atlas-tegoed"
 
 #: src/components/ModelCredits.tsx
 msgid "Subscribe with your own AI"
@@ -6404,6 +6438,10 @@ msgstr "Het contextvenster van dit model is te klein. Kies een ander model."
 #: src/pages/Artifacts.tsx
 msgid "This month"
 msgstr "Deze maand"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
 
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
@@ -6700,6 +6738,10 @@ msgstr "Dringend"
 msgid "Usage"
 msgstr "Gebruik"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Use"
+msgstr ""
+
 #. Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'
 #. placeholder {0}: deviceTimezone.replaceAll("_", " ")
 #: src/pages/AccountSettingsOverlay.tsx
@@ -6718,6 +6760,10 @@ msgstr "Gebruik {oauthEnvReference} voor het toegangstoken."
 #: src/pages/Onboarding.tsx
 msgid "Use a found model"
 msgstr "Een gevonden model gebruiken"
+
+#: src/components/ModelCredits.tsx
+msgid "Use Atlas credits"
+msgstr ""
 
 #: src/lib/model-connection-preflight.ts
 msgid "Use Connect to verify the key."
@@ -6746,10 +6792,6 @@ msgstr ""
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Use Protected input for passwords."
 msgstr "Gebruik Beveiligde invoer voor wachtwoorden."
-
-#: src/components/ModelCredits.tsx
-msgid "Use Rakazo credits"
-msgstr ""
 
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Use space default"
@@ -6955,6 +6997,10 @@ msgstr ""
 #: src/lib/ticket-status.ts
 msgid "Won't do"
 msgstr "Wordt niet gedaan"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Word"
+msgstr ""
 
 #: src/components/SignupSurvey.tsx
 msgid "Work"

@@ -500,6 +500,10 @@ msgstr ""
 msgid "About {label}"
 msgstr "{label} 정보"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
 msgstr "액세스 토큰(선택 사항)"
@@ -975,6 +979,11 @@ msgstr "{timeSelect}에"
 msgid "Atlas"
 msgstr ""
 
+#: src/components/ModelCredits.tsx
+#: src/pages/Onboarding.tsx
+msgid "Atlas credits"
+msgstr ""
+
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Atlas uses the logo below. Studio shapes switch to Original."
 msgstr ""
@@ -1426,12 +1435,9 @@ msgstr "파일 선택"
 msgid "Choose folder"
 msgstr "폴더 선택"
 
+#: src/components/ModelCredits.tsx
 #: src/components/SubscriptionGate.tsx
 msgid "Choose how to use Atlas"
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-msgid "Choose how to use Rakazo"
 msgstr ""
 
 #: src/lib/localized-provider-hint.ts
@@ -1899,6 +1905,7 @@ msgid "Could not change password"
 msgstr "비밀번호를 변경할 수 없습니다"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not change the parent."
 msgstr ""
 
@@ -2165,6 +2172,7 @@ msgid "Could not log out. Try again."
 msgstr "로그아웃하지 못했습니다. 다시 시도해 주세요."
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not move this bot."
 msgstr ""
 
@@ -2259,6 +2267,10 @@ msgstr "비밀번호를 재설정할 수 없습니다"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2946,7 +2958,7 @@ msgid "Engage when... Ignore..."
 msgstr ""
 
 #: src/components/GitHubStarPrompt.tsx
-msgid "Enjoying Rakazo?"
+msgid "Enjoying Atlas?"
 msgstr ""
 
 #: src/lib/user-error.ts
@@ -3014,8 +3026,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "{n}시간마다 {minute}분"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "이 공간의 모든 봇이 이 메모를 읽고 최신 상태로 유지합니다."
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -4198,6 +4210,12 @@ msgstr ""
 msgid "Move up"
 msgstr "위로 이동"
 
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
 #. placeholder {0}: bot.name
 #: src/pages/shell/chat-context-menu.tsx
 msgid "Moved {0} to {name}"
@@ -4532,6 +4550,10 @@ msgstr "작동하지 않음"
 msgid "Nothing remembered yet"
 msgstr "아직 기억한 내용이 없습니다"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "알림"
@@ -4790,8 +4812,8 @@ msgid "Paste a replacement key"
 msgstr "새 API 키를 붙여넣으세요"
 
 #: src/pages/model-settings/compatible-model-fields.tsx
-msgid "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed."
-msgstr "서버의 OpenAI 호환 주소를 붙여넣으세요. 필요하면 Rakazo가 /v1을 추가합니다."
+msgid "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed."
+msgstr "서버의 OpenAI 호환 주소를 붙여넣으세요. 필요하면 Atlas가 /v1을 추가합니다."
 
 #: src/pages/shell/agent-import.tsx
 msgid "Paste the reply"
@@ -4953,6 +4975,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "프로그램: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr ""
@@ -4981,11 +5007,6 @@ msgstr "대기 중"
 
 #: src/pages/Cubicle.tsx
 msgid "Quiet"
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-#: src/pages/Onboarding.tsx
-msgid "Rakazo credits"
 msgstr ""
 
 #: src/pages/shell/message-hover-actions.tsx
@@ -5138,6 +5159,7 @@ msgstr "새로고침 중…"
 msgid "Registration is closed"
 msgstr "가입이 마감되었습니다"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5406,6 +5428,14 @@ msgstr ""
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "서비스 설정을 확인한 뒤 다시 테스트하세요."
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/AdminAccessPage.tsx
 #: src/pages/MessagingSettingsPanel.tsx
@@ -5771,6 +5801,10 @@ msgstr "모양"
 msgid "Shape {0}"
 msgstr ""
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Shape from a word"
+msgstr ""
+
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Shared"
@@ -6126,8 +6160,8 @@ msgid "Subscribe for {price} / month"
 msgstr "월 {price}에 구독"
 
 #: src/components/ModelCredits.tsx
-msgid "Subscribe to Rakazo credits"
-msgstr "Rakazo 크레딧 구독"
+msgid "Subscribe to Atlas credits"
+msgstr "Atlas 크레딧 구독"
 
 #: src/components/ModelCredits.tsx
 msgid "Subscribe with your own AI"
@@ -6403,6 +6437,10 @@ msgstr "이 모델의 컨텍스트 창이 너무 작습니다. 다른 모델을 
 
 #: src/pages/Artifacts.tsx
 msgid "This month"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
 msgstr ""
 
 #: src/components/AccountAccess.tsx
@@ -6700,6 +6738,10 @@ msgstr ""
 msgid "Usage"
 msgstr "사용량"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Use"
+msgstr ""
+
 #. Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'
 #. placeholder {0}: deviceTimezone.replaceAll("_", " ")
 #: src/pages/AccountSettingsOverlay.tsx
@@ -6718,6 +6760,10 @@ msgstr "액세스 토큰에는 {oauthEnvReference}를 사용하세요."
 #: src/pages/Onboarding.tsx
 msgid "Use a found model"
 msgstr "찾은 모델 중에서 선택"
+
+#: src/components/ModelCredits.tsx
+msgid "Use Atlas credits"
+msgstr ""
 
 #: src/lib/model-connection-preflight.ts
 msgid "Use Connect to verify the key."
@@ -6745,10 +6791,6 @@ msgstr ""
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Use Protected input for passwords."
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-msgid "Use Rakazo credits"
 msgstr ""
 
 #: src/pages/model-settings/space-bots-model.tsx
@@ -6954,6 +6996,10 @@ msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"
+msgstr ""
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Word"
 msgstr ""
 
 #: src/components/SignupSurvey.tsx

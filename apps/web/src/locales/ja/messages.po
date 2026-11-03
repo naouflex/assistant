@@ -500,6 +500,10 @@ msgstr ""
 msgid "About {label}"
 msgstr "{label}について"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Accept"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Access token (optional)"
 msgstr "アクセストークン（任意）"
@@ -975,6 +979,11 @@ msgstr "{timeSelect}に"
 msgid "Atlas"
 msgstr ""
 
+#: src/components/ModelCredits.tsx
+#: src/pages/Onboarding.tsx
+msgid "Atlas credits"
+msgstr "Atlasクレジット"
+
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Atlas uses the logo below. Studio shapes switch to Original."
 msgstr ""
@@ -1426,13 +1435,10 @@ msgstr "ファイルを選択"
 msgid "Choose folder"
 msgstr "フォルダを選択"
 
+#: src/components/ModelCredits.tsx
 #: src/components/SubscriptionGate.tsx
 msgid "Choose how to use Atlas"
-msgstr ""
-
-#: src/components/ModelCredits.tsx
-msgid "Choose how to use Rakazo"
-msgstr "Rakazoの使い方を選択"
+msgstr "Atlasの使い方を選択"
 
 #: src/lib/localized-provider-hint.ts
 msgid "Claude subscription"
@@ -1899,6 +1905,7 @@ msgid "Could not change password"
 msgstr "パスワードを変更できませんでした"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not change the parent."
 msgstr ""
 
@@ -2165,6 +2172,7 @@ msgid "Could not log out. Try again."
 msgstr "ログアウトできませんでした。もう一度お試しください。"
 
 #: src/pages/shell/chat-context-menu.tsx
+#: src/pages/shell/use-space-roster.ts
 msgid "Could not move this bot."
 msgstr ""
 
@@ -2259,6 +2267,10 @@ msgstr "パスワードをリセットできませんでした"
 
 #: src/pages/Routines.tsx
 msgid "Could not resume this routine"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Could not review recent runs"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -2946,7 +2958,7 @@ msgid "Engage when... Ignore..."
 msgstr "対応する場合… 無視する場合…"
 
 #: src/components/GitHubStarPrompt.tsx
-msgid "Enjoying Rakazo?"
+msgid "Enjoying Atlas?"
 msgstr ""
 
 #: src/lib/user-error.ts
@@ -3014,8 +3026,8 @@ msgid "Every {n} hours at :{minute}"
 msgstr "{n}時間ごと、{minute}分"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Every bot in this space reads these notes and keeps them up to date."
-msgstr "このスペースのすべてのボットがこのメモを読み、最新の状態に保ちます。"
+msgid "Every bot reads these notes. A change waits until you accept it."
+msgstr ""
 
 #: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
@@ -3405,7 +3417,7 @@ msgstr "チームの規模は？"
 
 #: src/components/SignupSurvey.tsx
 msgid "How did you hear about us?"
-msgstr "Rakazoを何で知りましたか？"
+msgstr "Atlasを何で知りましたか？"
 
 #: src/pages/RoutineSchedule.tsx
 msgid "How often"
@@ -4198,6 +4210,12 @@ msgstr ""
 msgid "Move up"
 msgstr "上へ移動"
 
+#. placeholder {0}: move.bot.name
+#. placeholder {1}: move.spaceName
+#: src/pages/shell/use-space-roster.ts
+msgid "Moved {0} to {1}"
+msgstr ""
+
 #. placeholder {0}: bot.name
 #: src/pages/shell/chat-context-menu.tsx
 msgid "Moved {0} to {name}"
@@ -4532,6 +4550,10 @@ msgstr "動作していません"
 msgid "Nothing remembered yet"
 msgstr "記憶はまだありません"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Nothing to change"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Notifications"
 msgstr "通知"
@@ -4790,8 +4812,8 @@ msgid "Paste a replacement key"
 msgstr "新しいキーを貼り付け"
 
 #: src/pages/model-settings/compatible-model-fields.tsx
-msgid "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed."
-msgstr "サーバーのOpenAI互換アドレスを貼り付けてください。必要に応じてRakazoが/v1を追加します。"
+msgid "Paste the OpenAI-compatible address from your server. Atlas adds /v1 if needed."
+msgstr "サーバーのOpenAI互換アドレスを貼り付けてください。必要に応じてAtlasが/v1を追加します。"
 
 #: src/pages/shell/agent-import.tsx
 msgid "Paste the reply"
@@ -4953,6 +4975,10 @@ msgstr ""
 msgid "Program: {name}"
 msgstr "プログラム: {name}"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Proposed notes"
+msgstr ""
+
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Protected input"
 msgstr "保護された入力"
@@ -4982,11 +5008,6 @@ msgstr "待機中"
 #: src/pages/Cubicle.tsx
 msgid "Quiet"
 msgstr ""
-
-#: src/components/ModelCredits.tsx
-#: src/pages/Onboarding.tsx
-msgid "Rakazo credits"
-msgstr "Rakazoクレジット"
 
 #: src/pages/shell/message-hover-actions.tsx
 msgid "React"
@@ -5138,6 +5159,7 @@ msgstr "更新中…"
 msgid "Registration is closed"
 msgstr "新規登録は締め切られています"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5406,6 +5428,14 @@ msgstr "{0}との通話に戻る"
 #: src/lib/model-connection-preflight.ts
 msgid "Review provider settings and test again."
 msgstr "プロバイダー設定を確認して、もう一度テストしてください。"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Review recent runs"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Reviewing recent runs"
+msgstr ""
 
 #: src/pages/AdminAccessPage.tsx
 #: src/pages/MessagingSettingsPanel.tsx
@@ -5771,6 +5801,10 @@ msgstr "形"
 msgid "Shape {0}"
 msgstr "形 {0}"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Shape from a word"
+msgstr ""
+
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Shared"
@@ -6126,8 +6160,8 @@ msgid "Subscribe for {price} / month"
 msgstr "月額 {price} で登録"
 
 #: src/components/ModelCredits.tsx
-msgid "Subscribe to Rakazo credits"
-msgstr "Rakazo クレジットに申し込む"
+msgid "Subscribe to Atlas credits"
+msgstr "Atlas クレジットに申し込む"
 
 #: src/components/ModelCredits.tsx
 msgid "Subscribe with your own AI"
@@ -6404,6 +6438,10 @@ msgstr "このモデルのコンテキストウィンドウは小さすぎます
 #: src/pages/Artifacts.tsx
 msgid "This month"
 msgstr "今月"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "This note changed."
+msgstr ""
 
 #: src/components/AccountAccess.tsx
 msgid "This permanently deletes your account and data."
@@ -6700,6 +6738,10 @@ msgstr "緊急"
 msgid "Usage"
 msgstr "使用量"
 
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Use"
+msgstr ""
+
 #. Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'
 #. placeholder {0}: deviceTimezone.replaceAll("_", " ")
 #: src/pages/AccountSettingsOverlay.tsx
@@ -6718,6 +6760,10 @@ msgstr "アクセストークンには{oauthEnvReference}を使用してくだ�
 #: src/pages/Onboarding.tsx
 msgid "Use a found model"
 msgstr "見つかったモデルを使用"
+
+#: src/components/ModelCredits.tsx
+msgid "Use Atlas credits"
+msgstr "Atlasクレジットを使用"
 
 #: src/lib/model-connection-preflight.ts
 msgid "Use Connect to verify the key."
@@ -6746,10 +6792,6 @@ msgstr "自分のサブスクリプションまたはAPIキーを使用"
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Use Protected input for passwords."
 msgstr "パスワードには保護された入力を使用してください。"
-
-#: src/components/ModelCredits.tsx
-msgid "Use Rakazo credits"
-msgstr "Rakazoクレジットを使用"
 
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Use space default"
@@ -6955,6 +6997,10 @@ msgstr ""
 #: src/lib/ticket-status.ts
 msgid "Won't do"
 msgstr "対応しない"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Word"
+msgstr ""
 
 #: src/components/SignupSurvey.tsx
 msgid "Work"

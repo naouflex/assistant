@@ -5,9 +5,9 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import type { RakazoDesktop } from "@atlas/contracts";
 import type { ElectronApplication, Page } from "@playwright/test";
 import { _electron as electron, expect, test } from "@playwright/test";
-import type { RakazoDesktop } from "@atlas/contracts";
 
 const APP_MARKER = "Existing Rakazo instance ready";
 /** Outlasts the shell's 20s wait for a mounted app before it rejects the server. */
@@ -397,11 +397,11 @@ for (const { name, surface } of [
   },
   {
     name: "logged-out welcome",
-    surface: '<div data-rakazo-surface="welcome"><button>Sign up</button></div>',
+    surface: '<div data-atlas-surface="welcome"><button>Sign up</button></div>',
   },
   {
     name: "translated logged-out welcome",
-    surface: '<div data-rakazo-surface="welcome"><button>Créer un compte</button></div>',
+    surface: '<div data-atlas-surface="welcome"><button>Créer un compte</button></div>',
   },
 ]) {
   test(`a post-session ${name} mount is accepted`, async () => {

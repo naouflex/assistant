@@ -1,4 +1,3 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type { MessagingChannelMembership, MessagingInstallationsStatus } from "@atlas/contracts";
 import { isRetryableError, messagingConnectOptions } from "@atlas/core";
 import { fetchFresh, writeSaved } from "@atlas/core/query";
@@ -12,6 +11,7 @@ import {
   NativeSelectOption,
   SectionHeading,
 } from "@atlas/ui-web";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDownIcon, PlusIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -217,7 +217,7 @@ export function MessagingSettingsPanel() {
   }
 
   function installSlack() {
-    const popup = window.open("about:blank", "rakazo-slack-install");
+    const popup = window.open("about:blank", "atlas-slack-install");
     if (popup) popup.opener = null;
     void act(async () => {
       try {
