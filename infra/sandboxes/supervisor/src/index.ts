@@ -5,7 +5,6 @@ import http from "node:http";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { serve } from "@hono/node-server";
 import {
   boundedSandboxCommandTimeoutMs,
   readBoundedJsonResponse,
@@ -16,6 +15,7 @@ import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import { getLogger, SERVICE_NAMES } from "@atlas/logging";
 import { createRootLogger } from "@atlas/logging/axiom";
 import { requestLogging } from "@atlas/logging/hono";
+import { serve } from "@hono/node-server";
 import Docker from "dockerode";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
@@ -1687,7 +1687,7 @@ async function setInteractiveScreen(
     interactiveScreenCommand(interactive, controlToken, layout),
   ]);
   if (result.code !== 0) throw new Error(result.stderr || "control screen failed to start");
-  return interactive || !controlToken || result.stdout.includes("RAKAZO_CONTROL_RELEASED\n");
+  return interactive || !controlToken || /(?:ATLAS|RAKAZO)_CONTROL_RELEASED\n/.test(result.stdout);
 }
 
 // Each bot's computer gets its own Docker network so containers cannot reach

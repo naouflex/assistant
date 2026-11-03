@@ -702,7 +702,7 @@ describe("sandbox supervisor input containment", () => {
     expect(terminalCommand("control", "terminal", "/work")).toContain("0.0.0.0:6080 8>&-");
     expect(interactiveScreenCommand(true, "lease-new")).not.toContain("sockets/view-1-");
     expect(interactiveScreenCommand(false, "lease-old")).toContain("= 'lease-old'");
-    expect(interactiveScreenCommand(false, "lease-old")).toContain("RAKAZO_CONTROL_RELEASED");
+    expect(interactiveScreenCommand(false, "lease-old")).toContain("ATLAS_CONTROL_RELEASED");
   });
 
   it("assigns distinct screen indexes per Team bot and starts extra displays", () => {

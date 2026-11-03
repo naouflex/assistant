@@ -15,7 +15,7 @@ export const BROWSER_APPLICATIONS = new Set([
   "firefox",
   "google-chrome",
   "google-chrome-stable",
-  "rakazo-browser",
+  "atlas-browser",
 ]);
 export interface DesktopEnvironment {
   homeDir: string;
@@ -27,9 +27,9 @@ export interface DesktopEnvironment {
   bindHost?: string;
 }
 export const DEFAULT_DESKTOP_ENV: DesktopEnvironment = {
-  homeDir: "/home/rakazo",
-  workspaceDir: "/home/rakazo",
-  browserProfilesDir: "/home/rakazo/.browser-profiles",
+  homeDir: "/home/atlas",
+  workspaceDir: "/home/atlas",
+  browserProfilesDir: "/home/atlas/.browser-profiles",
   displayStart: 1,
   bindHost: "127.0.0.1",
   preservePrimaryDisplay: true,
@@ -198,7 +198,7 @@ function browserLauncherCommand(
       ? // biome-ignore lint/suspicious/noTemplateCurlyInString: generated shell parameter expansion
         ['desktop_display="${0##*-}"', "desktop_debug=$((9221 + desktop_display))"]
       : []),
-    "browser=$(command -v rakazo-browser || command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)",
+    "browser=$(command -v atlas-browser || command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)",
     `export DISPLAY=${layout.display} HOME=${shellQuote(env.homeDir)}`,
     // Docker exec does not inherit the session bus exported by container startup.
     // biome-ignore lint/suspicious/noTemplateCurlyInString: generated shell parameter expansion
@@ -314,7 +314,7 @@ export function stopBrowserProfileCommand(profile: string, pidFile: string) {
 }
 
 function stopProfileDirectoriesCommand(profileList: string) {
-  const placeholder = "RAKAZO_INTERNAL_PROFILE";
+  const placeholder = "ATLAS_INTERNAL_PROFILE";
   const stop = stopBrowserProfileCommand(placeholder, '"$pid_file"')
     .replaceAll(shellQuote(`--user-data-dir=${placeholder}`), '"--user-data-dir=$profile"')
     .replaceAll(shellQuote(placeholder), '"$profile"');
@@ -568,8 +568,8 @@ function renderEnsureScreenCommand(
           `  nohup Xvfb ${layout.display} -screen 0 1280x800x24 -ac +extension RANDR +render -noreset -nolisten tcp 8>&- 9>&- </dev/null >${log}-xvfb.log 2>&1 &`,
           `  for i in $(seq 1 100); do xdpyinfo -display ${layout.display} >/dev/null 2>&1 && break; sleep 0.1; done`,
           `  if ! xdpyinfo -display ${layout.display} >/dev/null 2>&1; then echo 'computer display did not start' >&2; tail -c 2000 ${log}-xvfb.log >&2 || true; exit 1; fi`,
-          `  if [ -f /etc/rakazo/fluxbox/init ]; then cp /etc/rakazo/fluxbox/init ${fluxHome}/.fluxbox/init; else printf "session.screen0.toolbar.visible: false\\n" >${fluxHome}/.fluxbox/init; fi`,
-          `  cp /etc/rakazo/fluxbox/apps ${fluxHome}/.fluxbox/apps 2>/dev/null || true`,
+          `  if [ -f /etc/atlas/fluxbox/init ]; then cp /etc/atlas/fluxbox/init ${fluxHome}/.fluxbox/init; else printf "session.screen0.toolbar.visible: false\\n" >${fluxHome}/.fluxbox/init; fi`,
+          `  cp /etc/atlas/fluxbox/apps ${fluxHome}/.fluxbox/apps 2>/dev/null || true`,
           `  printf '\\nsession.menuFile: %s\\n' ${fluxHome}/.fluxbox/menu >>${fluxHome}/.fluxbox/init`,
           `  HOME=${shellQuote(env.homeDir)} CHROME_USER_DATA_DIR=${shellQuote(profile)} BROWSER=${browserLauncherPath(layout.displayNumber)} DISPLAY=${layout.display} nohup fluxbox -rc ${fluxHome}/.fluxbox/init 8>&- 9>&- </dev/null >${log}-fluxbox.log 2>&1 &`,
           "fi",
@@ -662,7 +662,7 @@ export function interactiveScreenCommand(
     return [
       `if [ -f ${tokenFile} ] && [ "$(cat ${tokenFile})" = ${shellQuote(controlToken)} ]; then`,
       stopProcesses,
-      "printf 'RAKAZO_CONTROL_RELEASED\\n'",
+      "printf 'ATLAS_CONTROL_RELEASED\\n'",
       "fi",
     ].join("\n");
   }
@@ -746,7 +746,7 @@ export function startTerminalCommand(
 }
 
 const REGISTRY = "/tmp/atlas/desktop-assignments";
-const TOKEN_PLACEHOLDER = "RAKAZO_INTERNAL_VIEW_TOKEN";
+const TOKEN_PLACEHOLDER = "ATLAS_INTERNAL_VIEW_TOKEN";
 
 function registryLockCommand(screenId: string) {
   return [
@@ -814,7 +814,7 @@ print(index)
     'mv "$slot.next" "$slot"',
     "flock -u 9; exec 9>&-",
     `bash -eu -c ${shellQuote(renderEnsureScreenCommand(undefined, screenId, TOKEN_PLACEHOLDER, env).replace(shellQuote(TOKEN_PLACEHOLDER), '"$2"'))} desktop "$index" "$view_token"`,
-    'printf "RAKAZO_DESKTOP=%s:%s\\n" "$index" "$view_token"',
+    'printf "ATLAS_DESKTOP=%s:%s\\n" "$index" "$view_token"',
   ].join("\n");
 }
 
@@ -849,7 +849,7 @@ export function releaseDesktopCommand(
     // lock or removal failure is not read as a browser that is still running.
     // set -e leaves that failure non-zero, and the slot is removed only while
     // the shared registry lock is held.
-    'printf "RAKAZO_DESKTOP_RELEASED=%s\\n" "$index"',
+    'printf "ATLAS_DESKTOP_RELEASED=%s\\n" "$index"',
     'exec 9>"$dir/.lock"',
     "flock -w 120 9",
     'rm -f -- "$slot"',
