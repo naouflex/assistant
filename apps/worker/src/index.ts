@@ -4,6 +4,7 @@ import type { JobPublisher, JobWorkerHost } from "@atlas/adapter-kit";
 import {
   ComposioConnector,
   IntegrationProviderSettings,
+  startLocalModelDiscovery,
   unwrapEnvFromKeyManager,
 } from "@atlas/adapters";
 import { phoneCallSettings } from "@atlas/core";
@@ -106,6 +107,8 @@ const logger = createRootLogger(SERVICE_NAMES.worker);
 
 async function main() {
   const stopStallWatch = watchEventLoopStalls();
+  // Runs can pick a discovered local model, so the worker needs the same list.
+  startLocalModelDiscovery();
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const poolMax = parsePositiveInteger(process.env.DB_POOL_MAX, 8);

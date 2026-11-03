@@ -48,8 +48,8 @@ function validHttpUrl(value: string): boolean {
  * is configured, so installs without local models behave as before.
  */
 export function localDiscoveryUrls(env: Env = process.env): string[] {
-  const configured = env.ATLAS_LOCAL_MODELS_URL?.trim();
-  const ids = env.ATLAS_LOCAL_MODELS?.trim();
+  const configured = env.ATLAS_LOCAL_MODELS_URL?.trim() || env.RAKAZO_LOCAL_MODELS_URL?.trim();
+  const ids = env.ATLAS_LOCAL_MODELS?.trim() || env.RAKAZO_LOCAL_MODELS?.trim();
   const extraRaw = env[LOCAL_DISCOVERY_URLS_ENV]?.trim();
   if (extraRaw?.toLowerCase() === "off") return [];
   if (!configured && !ids && !extraRaw) return [];
