@@ -39,6 +39,7 @@ import { recordPiTelemetryContent, withPiTelemetrySpan } from "./pi-telemetry.js
 import { VERBATIM_TOOL_RESULTS } from "./runtime-context.js";
 import { SCHEDULE_TOOL_NAMES } from "./schedule-tools.js";
 import type { FinishedShellCommand } from "./shell-command-stream.js";
+import { declaredArgumentKeys, unwrapToolArguments } from "./tool-argument-repair.js";
 import { textContentArg } from "./tool-text.js";
 import { isVerbatimMcpResult } from "./verbatim-mcp-result.js";
 
@@ -108,7 +109,9 @@ function useToolAgentTool(
         });
         throw new Error(`${name} is not available. Use a name find_tool lists.`);
       }
-      const prepared = tool.prepareArguments?.(args ?? {}) ?? args ?? {};
+      // A small model may send the inner arguments as a JSON string; read them as an object.
+      const inner = unwrapToolArguments(args, declaredArgumentKeys(tool.parameters));
+      const prepared = tool.prepareArguments?.(inner) ?? inner;
       const validated = validateToolArguments(tool, {
         type: "toolCall",
         id: toolCallId,
@@ -315,6 +318,8 @@ function toAgentTool(
   exposedName: string,
   { deferred = [], viaUseTool = false }: { deferred?: ConnectorTool[]; viaUseTool?: boolean } = {},
 ): AgentTool {
+  const parameters = parametersFor(tool);
+  const declaredKeys = declaredArgumentKeys(parameters);
   return {
     name: exposedName,
     label: tool.name,
@@ -326,9 +331,9 @@ function toAgentTool(
     ...(SCHEDULE_TOOL_NAMES.has(tool.name) || tool.name === "remember"
       ? { executionMode: "sequential" as const }
       : {}),
-    parameters: parametersFor(tool),
+    parameters,
     prepareArguments: (args: unknown) => {
-      const raw = args && typeof args === "object" ? (args as Record<string, unknown>) : {};
+      const raw = unwrapToolArguments(args, declaredKeys);
       if (tool.name === "remember") {
         return {
           content: String(raw.content ?? ""),
