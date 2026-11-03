@@ -111,6 +111,9 @@ importers:
       '@atlas/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@atlas/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@atlas/logging':
         specifier: workspace:*
         version: link:../../packages/logging
