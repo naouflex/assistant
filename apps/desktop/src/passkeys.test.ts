@@ -11,8 +11,8 @@ const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")) as
 const base = readFileSync(path.join(root, pkg.build.mac.entitlements), "utf8");
 
 describe("associatedPasskeyRpIds", () => {
-  const resourcesPath = "/Applications/Rakazo.app/Contents/Resources";
-  const profile = "/Applications/Rakazo.app/Contents/embedded.provisionprofile";
+  const resourcesPath = "/Applications/Atlas.app/Contents/Resources";
+  const profile = "/Applications/Atlas.app/Contents/embedded.provisionprofile";
 
   it("lists the hosted domain only for a packaged macOS app with an embedded profile", () => {
     const exists = (file: string) => file === profile;
@@ -79,8 +79,8 @@ describe("self-hosted passkey domain", () => {
     vi.resetModules();
   });
 
-  async function load(rpId: string) {
-    vi.stubEnv("RAKAZO_PASSKEY_RP_ID", rpId);
+  async function load(rpId: string, name = "ATLAS_PASSKEY_RP_ID") {
+    vi.stubEnv(name, rpId);
     vi.resetModules();
     return import("./passkeys.js");
   }
@@ -92,20 +92,25 @@ describe("self-hosted passkey domain", () => {
     );
   });
 
-  it("associates the build with RAKAZO_PASSKEY_RP_ID", async () => {
-    const passkeys = await load(" Rakazo.Example.org ");
-    expect(passkeys.PASSKEY_RP_ID).toBe("rakazo.example.org");
+  it("associates the build with ATLAS_PASSKEY_RP_ID", async () => {
+    const passkeys = await load(" Atlas.Example.org ");
+    expect(passkeys.PASSKEY_RP_ID).toBe("atlas.example.org");
     expect(passkeys.passkeyEntitlements(base, "ABCDE12345", pkg.build.appId)).toContain(
-      "<string>webcredentials:rakazo.example.org</string>",
+      "<string>webcredentials:atlas.example.org</string>",
     );
   });
 
-  it.each(["https://rakazo.example.org", "localhost", "192.168.1.20", "rakazo.example.org:8443"])(
+  it("still reads the upstream RAKAZO_PASSKEY_RP_ID name", async () => {
+    const passkeys = await load("atlas.example.org", "RAKAZO_PASSKEY_RP_ID");
+    expect(passkeys.PASSKEY_RP_ID).toBe("atlas.example.org");
+  });
+
+  it.each(["https://atlas.example.org", "localhost", "192.168.1.20", "atlas.example.org:8443"])(
     "refuses to sign entitlements for %s",
     async (rpId) => {
       const passkeys = await load(rpId);
       expect(() => passkeys.passkeyEntitlements(base, "ABCDE12345", pkg.build.appId)).toThrow(
-        "RAKAZO_PASSKEY_RP_ID",
+        "ATLAS_PASSKEY_RP_ID",
       );
     },
   );

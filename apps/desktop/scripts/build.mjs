@@ -14,12 +14,14 @@ await build({
   external: ["electron", "electron-updater", "koffi", "@sentry/electron"],
   // Only the release workflow's builds report errors; local and agent builds never do.
   define: {
-    "process.env.RAKAZO_DESKTOP_RELEASE": JSON.stringify(process.env.RAKAZO_DESKTOP_RELEASE ?? ""),
-    // monitoring.ts reads the Atlas name; the release workflow still sets the upstream one.
+    // monitoring.ts reads the Atlas name; the upstream name still works for older scripts.
     "process.env.ATLAS_DESKTOP_RELEASE": JSON.stringify(
       process.env.ATLAS_DESKTOP_RELEASE ?? process.env.RAKAZO_DESKTOP_RELEASE ?? "",
     ),
     // Self-hosted builds associated with their own passkey domain (see src/passkeys.ts).
+    "process.env.ATLAS_PASSKEY_RP_ID": JSON.stringify(
+      process.env.ATLAS_PASSKEY_RP_ID ?? process.env.RAKAZO_PASSKEY_RP_ID ?? "",
+    ),
     "process.env.RAKAZO_PASSKEY_RP_ID": JSON.stringify(process.env.RAKAZO_PASSKEY_RP_ID ?? ""),
   },
 });

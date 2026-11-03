@@ -3,9 +3,10 @@ import { ATLAS_CLOUD_URL } from "./setup-config.js";
 
 /**
  * The only relying party a build is associated with (`webcredentials:` entitlement). The bundler
- * inlines `RAKAZO_PASSKEY_RP_ID`, so the app and its entitlements must be built with the same value.
+ * inlines `ATLAS_PASSKEY_RP_ID` (or the upstream `RAKAZO_PASSKEY_RP_ID`), so the app and its entitlements must be built with the same value.
  */
 export const PASSKEY_RP_ID =
+  process.env.ATLAS_PASSKEY_RP_ID?.trim().toLowerCase() ||
   process.env.RAKAZO_PASSKEY_RP_ID?.trim().toLowerCase() ||
   (ATLAS_CLOUD_URL ? new URL(ATLAS_CLOUD_URL).hostname : "localhost");
 
@@ -43,7 +44,7 @@ export function passkeyEntitlements(
   if (!TEAM_ID.test(teamId))
     throw new Error("Apple Team ID must be 10 uppercase letters or digits");
   if (!BUNDLE_ID.test(bundleId)) throw new Error("Invalid bundle identifier");
-  if (!DOMAIN.test(PASSKEY_RP_ID)) throw new Error("RAKAZO_PASSKEY_RP_ID must be a domain name");
+  if (!DOMAIN.test(PASSKEY_RP_ID)) throw new Error("ATLAS_PASSKEY_RP_ID must be a domain name");
   const end = base.lastIndexOf("</dict>");
   if (end === -1 || base.includes("com.apple.developer.associated-domains")) {
     throw new Error("Unexpected base entitlements");
