@@ -21,8 +21,8 @@ import { readUiLocale, writeUiLocale } from "./setup-store.js";
 const srcDir = import.meta.dirname;
 /** Product and vendor names the setup page shows as they are. */
 const UNTRANSLATED = new Set([
-  "Rakazo",
-  "Rakazo Cloud",
+  "Atlas",
+  "Atlas Cloud",
   "Docker Desktop",
   "OrbStack",
   "Docker Engine",
