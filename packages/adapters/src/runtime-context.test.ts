@@ -705,8 +705,8 @@ describe("runtime context policy", () => {
     context.messages[11] = {
       role: "assistant",
       content: [{ type: "text", text: request.history[11]!.content }],
-      rakazoHistory: true,
-      rakazoMessageId: "message-11",
+      atlasHistory: true,
+      atlasMessageId: "message-11",
     } as unknown as Message;
     const prepared = createRuntimeContextPolicy({
       ...request,
@@ -724,7 +724,7 @@ describe("runtime context policy", () => {
       role: "user",
       content: `Assistant: ${request.history[3]!.content}`,
       timestamp: 0,
-      rakazoHistory: true,
+      atlasHistory: true,
     } as Message;
     const prepared = createRuntimeContextPolicy({
       ...request,

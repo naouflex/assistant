@@ -1,6 +1,3 @@
-import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
-import type { Api, Model, Models } from "@earendil-works/pi-ai";
-import { validateToolArguments } from "@earendil-works/pi-ai";
 import type {
   AdapterContext,
   AgentRunRequest,
@@ -10,8 +7,11 @@ import type {
   ConnectorTool,
   ModelCallObserver,
 } from "@atlas/adapter-kit";
-import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
+import { DEFAULT_CONTEXT_STRATEGY, SandboxUnreachableError } from "@atlas/adapter-kit";
 import { FLEET_TOOL_NAMES } from "@atlas/contracts";
+import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
+import type { Api, Model, Models } from "@earendil-works/pi-ai";
+import { validateToolArguments } from "@earendil-works/pi-ai";
 import {
   isInternalTermination,
   isTerminatingReplyResult,
@@ -28,11 +28,6 @@ import type { PiAgentRuntimeOptions } from "./pi-runtime.js";
 import { sanitizeSensitiveText } from "./pi-runtime-errors.js";
 import { clipToolResultContent, clipToolResultText } from "./pi-runtime-limits.js";
 import type { RuntimeModelTarget } from "./pi-runtime-models.js";
-import {
-  compactToolResultForModel,
-  toolFailureText,
-  toolReportedFailure,
-} from "./tool-result-format.js";
 import { executeSubagent } from "./pi-runtime-subagent.js";
 import { parametersFor, prepareFleetArguments } from "./pi-runtime-tool-parameters.js";
 import { recordPiTelemetryContent, withPiTelemetrySpan } from "./pi-telemetry.js";
@@ -40,6 +35,11 @@ import { VERBATIM_TOOL_RESULTS } from "./runtime-context.js";
 import { SCHEDULE_TOOL_NAMES } from "./schedule-tools.js";
 import type { FinishedShellCommand } from "./shell-command-stream.js";
 import { declaredArgumentKeys, unwrapToolArguments } from "./tool-argument-repair.js";
+import {
+  compactToolResultForModel,
+  toolFailureText,
+  toolReportedFailure,
+} from "./tool-result-format.js";
 import { textContentArg } from "./tool-text.js";
 import { isVerbatimMcpResult } from "./verbatim-mcp-result.js";
 
@@ -612,6 +612,12 @@ function toAgentTool(
             return boundAgentToolResult(result as AgentToolResult<unknown>);
           } catch (error) {
             failure = error;
+            // Pi turns a thrown tool into a result and asks the model to continue. A computer
+            // that cannot be reached is not a command the model should explain.
+            if (error instanceof SandboxUnreachableError) {
+              host.computerUnreachable = error;
+              host.abortTurn();
+            }
             throw error;
           } finally {
             // Pi only terminates a parallel batch when every result terminates.
@@ -776,6 +782,8 @@ export interface ToolHost {
   /** Shared fallback uniqueness when the model omits toolCallId (nested hosts reuse this). */
   toolCallSeq: { value: number };
   abortTurn(): void;
+  /** Set when a tool finds that nothing is accepting computer connections. */
+  computerUnreachable?: SandboxUnreachableError;
   signal: AbortSignal;
   depth: number;
   agentNamespace?: string;

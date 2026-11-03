@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
 import type { AdapterContext, AgentRunRequest, AgentUsage } from "@atlas/adapter-kit";
 import { DEFAULT_CONTEXT_STRATEGY } from "@atlas/adapter-kit";
 import { getLogger } from "@atlas/logging";
+import type { Api, Context, Message, Model } from "@earendil-works/pi-ai";
 import { imagePartCount, normalizedImageLimit, pruneForRebuild } from "./context-pruning.js";
 import type { CacheRequest, ContextBudget } from "./context-selection.js";
 import {
@@ -92,10 +92,24 @@ interface SentTranscript {
   appends: number;
 }
 interface OriginalMetadata {
+  atlasHistory?: boolean;
+  atlasMessageId?: string;
+  atlasCreatedAt?: string;
+  /** Names written by checkpoints saved before the Atlas rename. */
   rakazoHistory?: boolean;
   rakazoMessageId?: string;
-  rakazoCreatedAt?: string;
 }
+function historyMetadata(message: Message) {
+  const metadata = message as Message & OriginalMetadata;
+  return {
+    fromHistory: Boolean(metadata.atlasHistory ?? metadata.rakazoHistory),
+    messageId: metadata.atlasMessageId ?? metadata.rakazoMessageId,
+  };
+}
+const COMPACTED_CONTEXT_PREFIXES = [
+  "Atlas-owned compacted context through message sequence ",
+  "Rakazo-owned compacted context through message sequence ",
+];
 function text(message: Message): string {
   if (typeof message.content === "string") return message.content;
   return message.content
@@ -196,9 +210,9 @@ export function createRuntimeContextPolicy(
     request.history.filter((message) => message.id).map((message) => [message.id!, message]),
   );
   function original(message: Message) {
-    const metadata = message as Message & OriginalMetadata;
-    if (metadata.rakazoMessageId) return historyById.get(metadata.rakazoMessageId);
-    if (metadataPresent && !metadata.rakazoHistory) return undefined;
+    const metadata = historyMetadata(message);
+    if (metadata.messageId) return historyById.get(metadata.messageId);
+    if (metadataPresent && !metadata.fromHistory) return undefined;
     const content = text(message);
     // Older persisted checkpoints replay own replies as user text "Assistant: ...".
     return request.history.find(
@@ -280,9 +294,7 @@ export function createRuntimeContextPolicy(
       retention > 0
         ? "cache-aware"
         : DEFAULT_CONTEXT_STRATEGY);
-    metadataPresent = ctx.messages.some((message) =>
-      Boolean((message as Message & OriginalMetadata).rakazoHistory),
-    );
+    metadataPresent = ctx.messages.some((message) => historyMetadata(message).fromHistory);
     const fullPrefix = providerContextPrefix(ctx.systemPrompt ?? "", ctx.tools ?? [], ctx.messages);
     const cacheRequest: CacheRequest = cache.stamp({
       accountScope,
@@ -435,9 +447,9 @@ export function createRuntimeContextPolicy(
     }
     const summaries = ctx.messages.filter(
       (message) =>
-        (message as Message & OriginalMetadata).rakazoHistory &&
-        !(message as Message & OriginalMetadata).rakazoMessageId &&
-        (text(message).startsWith("Rakazo-owned compacted context through message sequence ") ||
+        historyMetadata(message).fromHistory &&
+        !historyMetadata(message).messageId &&
+        (COMPACTED_CONTEXT_PREFIXES.some((prefix) => text(message).startsWith(prefix)) ||
           text(message).startsWith(
             "Memory recalled from earlier conversations that fell outside the visible history.",
           )),

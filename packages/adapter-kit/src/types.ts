@@ -536,6 +536,11 @@ export interface AgentRunRequest {
   routineId?: string | null;
   sourceMessageId?: string | null;
   prompt: string;
+  /**
+   * The user's own words, without the dated turn notes added around them.
+   * Arithmetic is read from this so a timestamp is not treated as a sum.
+   */
+  utterance?: string;
   /** Group threads: the label ("User") the model sees on the prompt, the same as on history. */
   promptSpeaker?: string;
   instructions: string;
@@ -585,6 +590,8 @@ export interface AgentRunRequest {
    * When set, skip synthetic empty-turn fallbacks (including after tools).
    */
   allowSilentEmpty?: boolean;
+  /** Nudge attach_file after a successful write_file on show-in-chat turns (compact local). */
+  attachAfterWrite?: boolean;
   /** Contextual fallback when a non-silent run produces no written response. */
   emptyResponseText?: string;
   executeTool?: (
