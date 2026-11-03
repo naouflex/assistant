@@ -911,8 +911,9 @@ export class PiAgentRuntime implements AgentRuntime {
             }
             restoringCalls = false;
             if (!host.pausePending && !replayTerminated) {
-              const addedHistory = withoutSteeringMessages(request.history, initialSteering).filter(
-                (message) => message.id && !representedHistoryIds.has(message.id),
+              const addedHistory = userMessagesSincePause(
+                withoutSteeringMessages(request.history, initialSteering),
+                representedHistoryIds,
               );
               agent.state.messages.push(...toHistory(addedHistory, ""));
               for (const message of addedHistory)
@@ -1225,6 +1226,22 @@ function withLeadingUser(context: Context): Context {
     ...context,
     messages: [...context.messages.slice(0, first), start, ...context.messages.slice(first)],
   };
+}
+
+/**
+ * Rows written while a turn was paused. Assistant rows are this run's own cards, such as
+ * the approval ask. The checkpoint already holds the tool call, and the tool result has to
+ * stay last: continue() rejects a transcript that ends on the assistant, and a card between
+ * the call and its result breaks providers that require that order. New user rows stay.
+ */
+export function userMessagesSincePause<T extends { id?: string; role: string }>(
+  history: readonly T[],
+  representedIds: ReadonlySet<string>,
+): T[] {
+  return history.filter(
+    (message): message is T =>
+      Boolean(message.id) && !representedIds.has(message.id!) && message.role === "user",
+  );
 }
 
 function withoutSteeringMessages(

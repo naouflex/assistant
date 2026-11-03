@@ -112,10 +112,8 @@ export function threadsRoutes(ctx: RouterContext) {
     const setup = await modelSetup(deps, actor);
     const target = await resolveThreadTarget(deps.prisma, actor, input);
     const stopText = typeof input.text === "string" ? input.text : "";
-    if (
-      isRunStopCommand(stopText) &&
-      !(input.artifactIds?.length || input.blocks?.some((block) => block.kind === "image"))
-    ) {
+    // Images arrive as attachments, so a "stop" with any attachment is a real message.
+    if (isRunStopCommand(stopText) && !input.artifactIds?.length) {
       const active = await deps.prisma.run.findFirst({
         where: {
           threadId: target.threadId,

@@ -138,7 +138,9 @@ describe("Docker sandbox", () => {
   });
 
   it("sends a mounted working directory unchanged", async () => {
-    const fetchMock = vi.fn(async () => Response.json({ stdout: "", stderr: "", code: 0 }));
+    const fetchMock = vi.fn(async (_input: string | URL | Request, _init?: RequestInit) =>
+      Response.json({ stdout: "", stderr: "", code: 0 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     const provider = new DockerSandboxProvider("http://supervisor.test", "test-token");
     const events: ProcessEvent[] = [];

@@ -29,6 +29,11 @@ import type { RouterDeps } from "./router.js";
 import { resolveThreadTarget } from "./thread-target.js";
 import { voiceCredentialServer } from "./voice.js";
 
+type ConsentModel = Pick<
+  ReturnType<typeof selectConfiguredModel>,
+  "provider" | "id" | "credential" | "thinkingLevel"
+>;
+
 export async function aiConsentStatus(
   deps: RouterDeps,
   actor: Actor,
@@ -118,7 +123,8 @@ export async function aiConsentStatus(
     const deployment = deps.env.deploymentModelConfigured
       ? { provider: deps.env.defaultProvider, model: deps.env.defaultModel }
       : null;
-    const selected = await Promise.all(
+    // Consent only needs who receives content, so run options such as the fast tier stay out.
+    const selected: ConsentModel[] = await Promise.all(
       (target ? [...bots, ...routines] : [null, ...bots, ...routines]).map(async (override) => {
         const overrideCredential =
           override?.modelProvider && override.modelId
