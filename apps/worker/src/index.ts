@@ -26,6 +26,7 @@ import {
   createAuditLogReconciler,
   createBackgroundJobHandlers,
   createCloudAgentConnection,
+  createComputerHealthSweeper,
   createConnectorStack,
   createDeadJobPruner,
   createIdleComputerSweeper,
@@ -58,6 +59,7 @@ import {
   mcpStdioOptionsFromEnv,
   messagingEnvFromProcess,
   messagingPlatformsFromEnv,
+  notificationPreferenceGate,
   PiAgentRuntime,
   PipedreamConnector,
   PostgresRealtimeFanout,
@@ -121,7 +123,7 @@ async function main() {
   // A larger max competes for Postgres max_connections (53300).
   const created = createDb(databaseUrl, {
     poolMax,
-    applicationName: "rakazo-worker",
+    applicationName: workerApplicationName(),
     keyProvider: contentKeyProviderFromEnv(),
   });
   const { pool } = created;
@@ -266,6 +268,8 @@ async function main() {
     sessionExpiresAt: (sessionId) => pushSessionExpiresAt(prisma, sessionId),
     jobs,
     accessToken: process.env.EXPO_ACCESS_TOKEN,
+    // Honours each member's notification settings before a push is sent.
+    allows: notificationPreferenceGate(prisma),
   });
   const executor = createRunExecutor({
     maxUploadSizeBytes: uploadSizeFromEnv(process.env),
@@ -377,6 +381,7 @@ async function main() {
     reconcileAuditLog: createAuditLogReconciler(prisma, auditLogConfig()),
     reconcileHomeStorage: homeStorageSweeper(home),
     reconcileIdleComputers: createIdleComputerSweeper({ prisma, jobs }),
+    reconcileComputerHealth: createComputerHealthSweeper({ prisma, jobs, notifications }),
     reconcileDeadJobs: inMemoryJobs ? undefined : createDeadJobPruner(pool),
   });
   let stopHealth: (() => Promise<void>) | undefined;
@@ -456,3 +461,15 @@ runAsSystem("worker process", main).catch(async (error) => {
   // that step does not reach here. Other startup failures still exit.
   process.exit(1);
 });
+
+/**
+ * Name the worker's Postgres connections show in pg_stat_activity. ATLAS_ settings are read
+ * first; the RAKAZO_ name from older .env files still works.
+ */
+function workerApplicationName(env: NodeJS.ProcessEnv = process.env): string {
+  return (
+    env.ATLAS_WORKER_DB_APPLICATION_NAME?.trim() ||
+    env.RAKAZO_WORKER_DB_APPLICATION_NAME?.trim() ||
+    "atlas-worker"
+  );
+}

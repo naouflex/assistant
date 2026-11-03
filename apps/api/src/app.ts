@@ -73,6 +73,7 @@ import {
   McpConnector,
   McpOAuthBroker,
   messagingPlatformsFromEnv,
+  notificationPreferenceGate,
   PiAgentRuntime,
   PiOAuthLogins,
   PipedreamConnector,
@@ -521,6 +522,8 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
       sessionExpiresAt: (sessionId) => pushSessionExpiresAt(prisma, sessionId),
       jobs,
       accessToken: env.expoAccessToken,
+      // Honours each member's notification settings before a push is sent.
+      allows: notificationPreferenceGate(prisma),
     });
   const auth = createAuth(prisma, {
     analytics,
