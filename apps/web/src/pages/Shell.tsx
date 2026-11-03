@@ -1,4 +1,3 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   AgentSkillCatalogEntry,
   Bot,
@@ -21,6 +20,7 @@ import { fetchFresh, writeSaved } from "@atlas/core/query";
 import type { GroupAvatarMember } from "@atlas/ui-web";
 import { Button } from "@atlas/ui-web";
 import { useIsMobile } from "@atlas/ui-web/hooks/use-mobile";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Lock, Monitor, Moon, Plug, Plus, ScrollText, Sun, Users } from "lucide-react";
 import {
@@ -79,6 +79,7 @@ import { Composer } from "./shell/composer";
 import { ComputerOverlay } from "./shell/computer-overlay";
 import { ComputerPanel } from "./shell/computer-panel";
 import type { CreateBotDialogInput } from "./shell/create-bot-dialog";
+import { MoveBotToSpaceDialog } from "./shell/dialogs";
 import type { ImportSetupTarget } from "./shell/import-setup-card";
 import { ShellDialogs, useShellDialogs } from "./shell/shell-dialogs";
 import { AppOverlays, SettingsOverlays } from "./shell/shell-overlays";
@@ -643,6 +644,7 @@ function SpaceShell() {
   const rosterDrop = useRosterDrop({
     rpc,
     bots,
+    setBots,
     reorderRosterBot: roster.reorderRosterBot,
     refreshBots,
     refreshGroupThread: (id) => refreshGroupThreadRef.current(id),
@@ -864,6 +866,7 @@ function SpaceShell() {
     contextBot || contextGroup ? (
       <ChatContextMenu
         rpc={rpc}
+        bots={bots}
         bot={contextBot}
         group={contextGroup}
         sections={botSections}
@@ -1208,6 +1211,14 @@ function SpaceShell() {
       />
 
       <Suspense fallback={null}>
+        {rosterDrop.pendingSpaceMove ? (
+          <MoveBotToSpaceDialog
+            botName={rosterDrop.pendingSpaceMove.bot.name}
+            spaceName={rosterDrop.pendingSpaceMove.spaceName}
+            onCancel={rosterDrop.cancelSpaceMove}
+            onConfirm={rosterDrop.confirmSpaceMove}
+          />
+        ) : null}
         <ShellDialogs
           dialogs={dialogs}
           rpc={rpc}

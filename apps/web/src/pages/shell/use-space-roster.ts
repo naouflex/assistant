@@ -1,4 +1,3 @@
-import { useLingui } from "@lingui/react/macro";
 import type {
   AppBootstrap,
   Bot,
@@ -10,6 +9,8 @@ import type {
   ThreadSnapshot,
 } from "@atlas/contracts";
 import { isRetryableError, reorderBotTo } from "@atlas/core";
+import { toast } from "@atlas/ui-web";
+import { useLingui } from "@lingui/react/macro";
 import { replaceEqualDeep } from "@tanstack/react-query";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -21,7 +22,7 @@ import { lastChatKey, queryClient, seedOnLeave, spaceSeedKey } from "../../lib/q
 import type { createSpaceRpc } from "../../lib/rpc";
 import { errorText } from "../../lib/user-error";
 import type { RosterDropTarget } from "./roster-drop";
-import { resolveRosterDrop } from "./roster-drop";
+import { isBotDescendant, resolveRosterDrop } from "./roster-drop";
 import type { useShellNavigation } from "./use-shell-navigation";
 import { firstThreadRoute } from "./use-shell-navigation";
 import type { ThreadState } from "./use-thread-state";
@@ -445,10 +446,14 @@ export function useSpaceBootstrap({
   }, []);
 }
 
-/** Dragging a bot in the roster: reorder it, move it to a section, or add it to a group. */
+/**
+ * Dragging a bot in the roster: reorder it, move it to a section, add it to a
+ * group, nest it under another bot, or move it to another space (confirmed).
+ */
 export function useRosterDrop({
   rpc,
   bots,
+  setBots,
   reorderRosterBot,
   refreshBots,
   refreshGroupThread,
@@ -457,6 +462,7 @@ export function useRosterDrop({
 }: {
   rpc: ReturnType<typeof createSpaceRpc>;
   bots: Bot[];
+  setBots: (update: (current: Bot[]) => Bot[]) => void;
   reorderRosterBot: SpaceRoster["reorderRosterBot"];
   refreshBots: () => Promise<void>;
   refreshGroupThread: (groupId: string) => Promise<ThreadSnapshot>;
@@ -466,12 +472,17 @@ export function useRosterDrop({
   const { t } = useLingui();
   const [draggedBotId, setDraggedBotId] = useState<string | null>(null);
   const [rosterDropKey, setRosterDropKey] = useState<string | null>(null);
+  const [pendingSpaceMove, setPendingSpaceMove] = useState<{
+    bot: Bot;
+    spaceId: string;
+    spaceName: string;
+  } | null>(null);
   // Drags only act on bots of the active space; other spaces are read-only here.
   const draggedBot = draggedBotId ? bots.find((bot) => bot.id === draggedBotId) : undefined;
   const rosterDropAction = useCallback(
     (target: RosterDropTarget, sameList: boolean) =>
-      draggedBot ? resolveRosterDrop({ dragged: draggedBot, target, sameList }) : null,
-    [draggedBot],
+      draggedBot ? resolveRosterDrop({ dragged: draggedBot, target, sameList, bots }) : null,
+    [bots, draggedBot],
   );
   const applyRosterDrop = useCallback(
     (target: RosterDropTarget, sameList: boolean, groupBotIds: string[]) => {
@@ -482,6 +493,26 @@ export function useRosterDrop({
       setSendError(null);
       if (action.action === "reorder") {
         reorderRosterBot(draggedBot.id, action.targetBotId, groupBotIds);
+        return;
+      }
+      if (action.action === "space") {
+        setPendingSpaceMove({ bot: draggedBot, ...action });
+        return;
+      }
+      if (action.action === "parent") {
+        const botId = draggedBot.id;
+        setBots((current) =>
+          current.map((bot) =>
+            bot.id === botId ? { ...bot, parentBotId: action.parentBotId } : bot,
+          ),
+        );
+        void rpc.bots
+          .setParent({ botId, parentBotId: action.parentBotId })
+          .then(() => refreshBots())
+          .catch((error: unknown) => {
+            toast.error(errorText(error, t`Could not change the parent.`));
+            void refreshBots().catch(() => undefined);
+          });
         return;
       }
       const request =
@@ -504,9 +535,34 @@ export function useRosterDrop({
           void refreshBots().catch(() => undefined);
         });
     },
-    [draggedBot, refreshBots, reorderRosterBot, rosterDropAction, t],
+    [draggedBot, refreshBots, reorderRosterBot, rosterDropAction, rpc, setBots, t],
   );
+  const confirmSpaceMove = useCallback(() => {
+    const move = pendingSpaceMove;
+    setPendingSpaceMove(null);
+    if (!move) return;
+    // Children travel with their parent, so hide the whole subtree right away.
+    const moving = new Set(
+      bots
+        .filter((bot) => bot.id === move.bot.id || isBotDescendant(bots, bot.id, move.bot.id))
+        .map((bot) => bot.id),
+    );
+    setBots((current) => current.filter((bot) => !moving.has(bot.id)));
+    void rpc.bots
+      .move({ botId: move.bot.id, spaceId: move.spaceId })
+      .then(async () => {
+        toast.success(t`Moved ${move.bot.name} to ${move.spaceName}`);
+        await refreshBots();
+      })
+      .catch((error: unknown) => {
+        toast.error(errorText(error, t`Could not move this bot.`));
+        void refreshBots().catch(() => undefined);
+      });
+  }, [bots, pendingSpaceMove, refreshBots, rpc, setBots, t]);
   return {
+    pendingSpaceMove,
+    cancelSpaceMove: () => setPendingSpaceMove(null),
+    confirmSpaceMove,
     draggedBotId,
     setDraggedBotId,
     rosterDropKey,
