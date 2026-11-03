@@ -17,8 +17,9 @@ export const SCREEN_LOCKED_MESSAGE =
   "The user's screen is locked, so their apps can't be seen or used. Ask them to unlock it, then try again.";
 export const SCREEN_DRIVER_DOWNLOAD_MESSAGE =
   "Screen control couldn't be set up on this computer. Ask the user to check their internet connection, then try again.";
+export const SCREEN_DRIVER_START_MESSAGE = "Screen control couldn't start on this computer.";
 export const SCREEN_PERMISSION_MESSAGE =
-  "Rakazo needs Accessibility and Screen Recording access on this Mac. Ask the user to allow Rakazo in System Settings > Privacy & Security, quit and reopen Rakazo, then try again.";
+  "Atlas needs Accessibility and Screen Recording access on this Mac. Ask the user to allow Atlas in System Settings > Privacy & Security, quit and reopen Atlas, then try again.";
 
 /** The parts of Electron's macOS permission API this uses. */
 export interface ScreenPermissionApi {
@@ -65,11 +66,32 @@ export const SCREEN_DRIVER_RELEASES = {
   },
 } satisfies Partial<Record<NodeJS.Platform, ScreenDriverRelease>>;
 
-/** The screen driver this platform runs, if it has one. */
-export function screenDriverRelease(platform: NodeJS.Platform): ScreenDriverRelease | undefined {
-  return platform === "darwin" || platform === "win32"
-    ? SCREEN_DRIVER_RELEASES[platform]
-    : undefined;
+const CUA_DRIVER_BASE = "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0";
+
+/** Linux runs the same cua driver as macOS, one build per CPU. */
+export const LINUX_SCREEN_DRIVER_RELEASES: Partial<Record<string, ScreenDriverRelease>> = {
+  x64: {
+    url: `${CUA_DRIVER_BASE}/cua-driver-rs-0.38.0-linux-x86_64-binary.tar.gz`,
+    sha256: "31ab9709dd91ce73677e49b9f3e75c6f0d3e4d9625c286c9e58262bfbea698dd",
+    driver: "cua-driver",
+    driverSha256: "bf57b2f3778a0a7daa9388e241f20ce948b32a7a2f4dd102e497f34e54137934",
+  },
+  arm64: {
+    url: `${CUA_DRIVER_BASE}/cua-driver-rs-0.38.0-linux-arm64-binary.tar.gz`,
+    sha256: "80c9ae66bc7322052dd426c6133c96086b33894bf06c972bca8215384400b33d",
+    driver: "cua-driver",
+    driverSha256: "26e9eee8165e9ce7b614b5e3d68e5d963231385a82b65236406718b5ce1ff936",
+  },
+};
+
+/** The screen driver this desktop runs, or nothing when this platform or CPU has no build. */
+export function screenDriverRelease(
+  platform: NodeJS.Platform,
+  arch: string = process.arch,
+): ScreenDriverRelease | undefined {
+  if (platform === "darwin" || platform === "win32") return SCREEN_DRIVER_RELEASES[platform];
+  if (platform === "linux") return LINUX_SCREEN_DRIVER_RELEASES[arch];
+  return undefined;
 }
 
 // Both ship bsdtar: macOS in /usr/bin, Windows 10 1803 and later in System32.
@@ -158,7 +180,7 @@ async function renameSoon(from: string, to: string) {
   }
 }
 
-/** Screen control for this Mac or Windows PC, or undefined on other platforms. */
+/** Screen control for this Mac, Windows PC or Linux desktop, or undefined on other platforms. */
 export function createDesktopHostScreen(options: {
   platform: NodeJS.Platform;
   /** Resolves to the driver executable, fetching it first if needed. */
@@ -183,6 +205,23 @@ export function createDesktopHostScreen(options: {
       run: agentDesktopCli({ command: options.driver, home: options.home }),
       selfPid: process.pid,
       fitImage: options.fitImage,
+    });
+  else if (options.platform === "linux")
+    screen = createCuaHostScreen({
+      connect: async () => {
+        try {
+          return await cuaDriverConnector({
+            command: await options.driver(),
+            home: options.home,
+          })();
+        } catch (error) {
+          if (error instanceof HostScreenError) throw error;
+          throw new HostScreenError(SCREEN_DRIVER_START_MESSAGE);
+        }
+      },
+      // Linux asks no permission to read and drive apps at the user's own level.
+      permissions: () => Promise.resolve(),
+      selfPid: process.pid,
     });
   else return undefined;
   const unlocked = () => {

@@ -1357,7 +1357,7 @@ app.whenReady().then(async () => {
       if (!win.isDestroyed()) win.webContents.send("desktop.localModel.change", state);
     }
   });
-  const screenDriver = screenDriverRelease(process.platform);
+  const screenDriver = screenDriverRelease(process.platform, process.arch);
   hostScreen =
     screenDriver &&
     createDesktopHostScreen({
