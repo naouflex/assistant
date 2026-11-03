@@ -1,64 +1,71 @@
 /** @jsxRuntime automatic */
 import type { TransactionalEmail } from "@atlas/adapter-kit";
 import { ANDROID_APK_URL, MOBILE_RELEASES_URL } from "@atlas/contracts";
-import { displayName } from "@atlas/core";
 import { Link, Text } from "react-email";
-import { linkStyle, message } from "./email.js";
+import { emailText, greeting, linkStyle, message } from "./email.js";
 
-const APPS = [
-  ["Android", ANDROID_APK_URL],
-  ["Mac", MOBILE_RELEASES_URL],
-  ["Windows", MOBILE_RELEASES_URL],
-  ["Linux", MOBILE_RELEASES_URL],
-] as const;
+const APPS: Readonly<Record<string, string>> = {
+  Android: ANDROID_APK_URL,
+  Mac: MOBILE_RELEASES_URL,
+  Windows: MOBILE_RELEASES_URL,
+  Linux: MOBILE_RELEASES_URL,
+};
 
+// The catalogues are keyed by upstream's copy; emailText writes Atlas wherever it says Rakazo.
 export function welcomeEmail(
   user: { email: string; name: string },
   unsubscribeUrl: string,
+  locale = "en",
 ): Promise<TransactionalEmail> {
+  const say = emailText(locale);
   return message(
     user.email,
-    "Welcome to Atlas",
+    locale,
+    say("Welcome to Rakazo"),
     <>
-      <Text>Hi {displayName(user.name, "there")},</Text>
-      <Text>Thanks for signing up for Atlas.</Text>
+      <Text>{greeting(say, user.name)}</Text>
+      <Text>{say("Thanks for signing up for Rakazo.")}</Text>
       <Text>
-        Atlas also has apps for{" "}
-        {APPS.map(([name, href], index) => (
-          <span key={name}>
-            {index === APPS.length - 1 ? "and " : ""}
-            <Link href={href} style={linkStyle}>
-              {name}
-            </Link>
-            {index === APPS.length - 1 ? "." : ", "}
-          </span>
-        ))}
+        {say("Rakazo also has apps for")}{" "}
+        {/* The language's own list ("A, B, and C", "A, B y C"), with each app a link. */}
+        {new Intl.ListFormat(locale, { type: "conjunction" })
+          .formatToParts(Object.keys(APPS))
+          .map((part, index) =>
+            part.type === "element" ? (
+              <Link key={part.value} href={APPS[part.value]} style={linkStyle}>
+                {part.value}
+              </Link>
+            ) : (
+              <span key={`${index}${part.value}`}>{part.value}</span>
+            ),
+          )}
+        .
       </Text>
       <Text>
-        Questions or ideas?{" "}
+        {say("Questions or ideas?")}{" "}
         <Link href="https://discord.gg/RWwKa2Sn7h" style={linkStyle}>
-          Join us on Discord
+          {say("Join us on Discord")}
         </Link>
         .
       </Text>
       <Text>
-        Atlas is open source. If you like it,{" "}
+        {say("Rakazo is open source. If you like it,")}{" "}
         <Link href="https://github.com/naouflex/assistant" style={linkStyle}>
-          a star on GitHub
+          {say("a star on GitHub")}
         </Link>{" "}
-        helps others find it.
+        {say("helps others find it.")}
       </Text>
       <Text>
-        Want to run it on your own servers?{" "}
+        {say("Want to run it on your own servers?")}{" "}
         <Link
           href="https://github.com/naouflex/assistant/blob/main/docs/self-host.md"
           style={linkStyle}
         >
-          Self-host Atlas
+          {say("Self-host Rakazo")}
         </Link>
         .
       </Text>
-      <Text>Have any questions? Reply to this email.</Text>
+      <Text>{say("Have any questions? Reply to this email.")}</Text>
       <Text>Elie</Text>
     </>,
     unsubscribeUrl,

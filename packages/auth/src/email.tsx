@@ -69,11 +69,14 @@ export type EmailLocaleOf = (
   headers?: Headers | null,
 ) => Promise<string>;
 
+/** The product name emails use. The shared catalogues are keyed by upstream's copy, which says Rakazo. */
+const PRODUCT_NAME = "Atlas";
+
 /** Translates email copy into `locale`, filling `{name}` placeholders. */
 export function emailText(locale: string) {
   const catalog = CATALOGS[locale];
   return (text: string, values?: Record<string, string | number>) =>
-    translate(catalog, text, values);
+    translate(catalog, text, values).replaceAll("Rakazo", PRODUCT_NAME);
 }
 
 export function greeting(say: ReturnType<typeof emailText>, name: string): string {
