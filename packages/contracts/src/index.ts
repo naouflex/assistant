@@ -30,6 +30,7 @@ export * from "./model-provider.js";
 export * from "./model-roles.js";
 export * from "./nav-links.js";
 export * from "./network-host.js";
+export * from "./night-shift.js";
 export * from "./openai-compatible-ui.js";
 export * from "./payments.js";
 export * from "./reactions.js";

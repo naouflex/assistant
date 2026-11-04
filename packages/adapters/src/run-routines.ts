@@ -6,6 +6,7 @@ import {
   runContinueJob,
   TransientModelError,
 } from "@atlas/adapter-kit";
+import { NIGHT_SHIFT_REPORT_MARKER } from "@atlas/contracts";
 import {
   displayName,
   expandSkillReferencesInPrompt,
@@ -17,6 +18,7 @@ import { sanitizedError } from "@atlas/logging/monitoring";
 import { protectedComputerLifecycleRefusal } from "./desktop-command-guard.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import { routineRunModelPin } from "./model-selection.js";
+import { loadNightShift, NIGHT_SHIFT_REPORT_HOURS, nightShiftReportText } from "./night-shift.js";
 import { findPendingRoutineTick, routineTimerNonce } from "./routine-coalescing.js";
 import { tickRoutineWatch } from "./routine-watch.js";
 import { isUniqueViolation } from "./run-messages.js";
@@ -112,6 +114,33 @@ async function notifyFailedRoutineRun(
   );
 }
 
+/** Replaces the Night Shift marker with the report of the hours before the routine fired. */
+async function expandNightShiftReport(
+  deps: ExecutorDeps,
+  routine: { spaceId: string; userId: string; timezone: string },
+  prompt: string,
+  scheduledAt: Date,
+): Promise<string> {
+  if (!prompt.includes(NIGHT_SHIFT_REPORT_MARKER)) return prompt;
+  let report: string;
+  try {
+    const timeline = await loadNightShift(
+      deps.prisma,
+      { spaceId: routine.spaceId, userId: routine.userId },
+      {
+        from: new Date(scheduledAt.getTime() - NIGHT_SHIFT_REPORT_HOURS * 60 * 60_000),
+        to: scheduledAt,
+        bucketMinutes: 60,
+      },
+    );
+    report = nightShiftReportText(timeline, routine.timezone);
+  } catch (error) {
+    getLogger().error("night shift report", error);
+    report = "The Night Shift report could not be loaded this time.";
+  }
+  return prompt.split(NIGHT_SHIFT_REPORT_MARKER).join(report);
+}
+
 export async function wakeRoutine(deps: ExecutorDeps, routineId: string, scheduledFor: string) {
   const scheduledAt = new Date(scheduledFor);
   if (!Number.isFinite(scheduledAt.getTime())) return;
@@ -181,9 +210,13 @@ export async function wakeRoutine(deps: ExecutorDeps, routineId: string, schedul
     spaceId: routine.spaceId,
     userId: routine.userId,
   });
-  const routinePrompt =
+  const routinePrompt = await expandNightShiftReport(
+    deps,
+    routine,
     expandSkillReferencesInPrompt(routine.prompt, skillRecords) +
-    (watchTick?.run ? watchTick.note : "");
+      (watchTick?.run ? watchTick.note : ""),
+    scheduledAt,
+  );
   const claimed = await deps.prisma.$transaction(async (tx) => {
     const updated = await tx.routine.updateMany({
       where: {

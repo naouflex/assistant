@@ -159,6 +159,11 @@ import {
 } from "./integration-settings.js";
 import { ModelHeadersSchema } from "./model-headers.js";
 import { ModelRoleSchema, ModelRoleUpdateSchema, ModelRoleViewSchema } from "./model-roles.js";
+import {
+  AgentTimesSchema,
+  NightShiftInputSchema,
+  NightShiftTimelineSchema,
+} from "./night-shift.js";
 import { PaymentWalletStatusSchema } from "./payments.js";
 import { MessageReactionSchema } from "./reactions.js";
 import { RoutineWatchSchema } from "./routine-watch.js";
@@ -800,6 +805,10 @@ export const appContract = {
     rejectProposal: oc
       .input(z.object({ proposalId: Id }))
       .output(z.object({ ok: z.literal(true) })),
+  },
+  nightShift: {
+    timeline: oc.input(NightShiftInputSchema).output(NightShiftTimelineSchema),
+    agentTimes: oc.output(AgentTimesSchema),
   },
   routines: {
     listForMentions: oc
