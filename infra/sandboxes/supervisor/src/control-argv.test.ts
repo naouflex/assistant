@@ -104,7 +104,7 @@ describe.each([undefined, profile])(
             ((action.kind === "launch" || action.kind === "focus") &&
               action.application === "chromium"))
         ) {
-          expect(argv[2]).toBe(`RAKAZO_BROWSER_PROFILE=${browserProfile}`);
+          expect(argv[2]).toBe(`ATLAS_BROWSER_PROFILE=${browserProfile}`);
         }
         expect(check(argv), JSON.stringify(action)).toEqual({
           allowed: true,
@@ -123,58 +123,58 @@ describe.each([undefined, profile])(
 
 describe("controller argv restrictions", () => {
   const unauthorized = [
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}`],
-    ["env", `DISPLAY=${display}`, "RAKAZO_BROWSER_PROFILE=", "rakazo-browser"],
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}a`, "rakazo-browser"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}`],
+    ["env", `DISPLAY=${display}`, "ATLAS_BROWSER_PROFILE=", "atlas-browser"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}a`, "atlas-browser"],
     [
       "env",
       `DISPLAY=${display}`,
-      `RAKAZO_BROWSER_PROFILE=${profile.toUpperCase()}`,
-      "rakazo-browser",
+      `ATLAS_BROWSER_PROFILE=${profile.toUpperCase()}`,
+      "atlas-browser",
     ],
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}`, "xterm"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}`, "xterm"],
     [
       "env",
       `DISPLAY=${display}`,
-      `RAKAZO_BROWSER_PROFILE=${profile}`,
+      `ATLAS_BROWSER_PROFILE=${profile}`,
       "/usr/bin/xdg-open",
       "https://example.com",
     ],
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}`, "xdg-open"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}`, "xdg-open"],
     [
       "env",
       `DISPLAY=${display}`,
-      `RAKAZO_BROWSER_PROFILE=${profile}`,
-      "rakazo-browser",
+      `ATLAS_BROWSER_PROFILE=${profile}`,
+      "atlas-browser",
       "one",
       "two",
     ],
-    ["env", "DISPLAY=:8", `RAKAZO_BROWSER_PROFILE=${profile}`, "rakazo-browser"],
+    ["env", "DISPLAY=:8", `ATLAS_BROWSER_PROFILE=${profile}`, "atlas-browser"],
     ["env", "DISPLAY=:8", "xdg-open", "https://example.com"],
-    ["env", `DISPLAY=${display}`, "rakazo-focus-or-launch"],
-    ["env", `DISPLAY=${display}`, "rakazo-focus-or-launch", "sh"],
-    ["env", `DISPLAY=${display}`, "rakazo-focus-or-launch", "rakazo-focus-or-launch"],
-    ["env", `DISPLAY=${display}`, "rakazo-focus-or-launch", "/usr/bin/xterm"],
-    ["env", `DISPLAY=${display}`, "rakazo-focus-or-launch", "xterm", "one", "two"],
+    ["env", `DISPLAY=${display}`, "atlas-focus-or-launch"],
+    ["env", `DISPLAY=${display}`, "atlas-focus-or-launch", "sh"],
+    ["env", `DISPLAY=${display}`, "atlas-focus-or-launch", "atlas-focus-or-launch"],
+    ["env", `DISPLAY=${display}`, "atlas-focus-or-launch", "/usr/bin/xterm"],
+    ["env", `DISPLAY=${display}`, "atlas-focus-or-launch", "xterm", "one", "two"],
     [
       "env",
       `DISPLAY=${display}`,
-      `RAKAZO_BROWSER_PROFILE=${profile}`,
-      "rakazo-focus-or-launch",
+      `ATLAS_BROWSER_PROFILE=${profile}`,
+      "atlas-focus-or-launch",
       "xterm",
     ],
-    ["env", "DISPLAY=:8", "rakazo-focus-or-launch", "xterm"],
+    ["env", "DISPLAY=:8", "atlas-focus-or-launch", "xterm"],
     ["env", `DISPLAY=${display}`, "LD_PRELOAD=/tmp/unsafe", "xdg-open", "https://example.com"],
-    ["env", `DISPLAY=${display}`, "RAKAZO_BROWSER_PROFILE=/tmp/unsafe", "rakazo-browser"],
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}/../other`, "rakazo-browser"],
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}`, "sh", "-c", "true"],
-    ["env", `DISPLAY=${display}`, `RAKAZO_BROWSER_PROFILE=${profile}`, "xdotool", "key", "Return"],
+    ["env", `DISPLAY=${display}`, "ATLAS_BROWSER_PROFILE=/tmp/unsafe", "atlas-browser"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}/../other`, "atlas-browser"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}`, "sh", "-c", "true"],
+    ["env", `DISPLAY=${display}`, `ATLAS_BROWSER_PROFILE=${profile}`, "xdotool", "key", "Return"],
     [
       "env",
       `DISPLAY=${display}`,
-      `RAKAZO_BROWSER_PROFILE=${profile}`,
-      `RAKAZO_BROWSER_PROFILE=${profile}`,
-      "rakazo-browser",
+      `ATLAS_BROWSER_PROFILE=${profile}`,
+      `ATLAS_BROWSER_PROFILE=${profile}`,
+      "atlas-browser",
     ],
   ].map(register);
 

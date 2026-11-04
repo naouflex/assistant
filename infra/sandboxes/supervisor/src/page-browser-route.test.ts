@@ -398,8 +398,8 @@ async function browserRequest(body: Record<string, unknown>) {
     headers: {
       authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
       "content-type": "application/json",
-      "x-rakazo-bot-id": "home",
-      "x-rakazo-space-id": "space",
+      "x-atlas-bot-id": "home",
+      "x-atlas-space-id": "space",
     },
     body: JSON.stringify(body),
   });

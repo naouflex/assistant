@@ -11,7 +11,9 @@ export interface ScreenRelayConfig {
 }
 
 /** A public host:port the browser's screen proxy can open. Unset keeps the in-network address. */
-export function screenRelayConfig(env: NodeJS.ProcessEnv = process.env): ScreenRelayConfig | undefined {
+export function screenRelayConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): ScreenRelayConfig | undefined {
   const host = env.SANDBOX_SCREEN_PUBLIC_HOST?.trim() ?? "";
   if (!host) return undefined;
   const port = Number(env.SANDBOX_SCREEN_PUBLIC_PORT ?? DEFAULT_PORT);
@@ -59,9 +61,9 @@ export class ScreenRelay {
   start(): Promise<void> {
     if (this.started) return Promise.resolve();
     this.started = true;
-    return Promise.all(
-      this.owners.map((_, index) => this.listen(this.config.port + index)),
-    ).then(() => undefined);
+    return Promise.all(this.owners.map((_, index) => this.listen(this.config.port + index))).then(
+      () => undefined,
+    );
   }
 
   advertise(containerId: string, host: string, port: number): string {

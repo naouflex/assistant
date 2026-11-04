@@ -18,9 +18,12 @@ describe("screen relay", () => {
   });
 
   it("rejects a port the screen proxy would refuse", () => {
-    expect(() => screenRelayConfig({ SANDBOX_SCREEN_PUBLIC_HOST: "172.17.0.1", SANDBOX_SCREEN_PUBLIC_PORT: "80" })).toThrow(
-      /1024/,
-    );
+    expect(() =>
+      screenRelayConfig({
+        SANDBOX_SCREEN_PUBLIC_HOST: "172.17.0.1",
+        SANDBOX_SCREEN_PUBLIC_PORT: "80",
+      }),
+    ).toThrow(/1024/);
   });
 
   it("keeps one port per computer and refuses a ninth", () => {

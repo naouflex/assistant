@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
-loader = importlib.machinery.SourceFileLoader("page_browser", str(HERE / "rakazo-page-browser"))
+loader = importlib.machinery.SourceFileLoader("page_browser", str(HERE / "atlas-page-browser"))
 spec = importlib.util.spec_from_loader(loader.name, loader)
 helper = importlib.util.module_from_spec(spec)
 loader.exec_module(helper)
@@ -131,7 +131,7 @@ class FakeAgentBrowser:
                 return {"result": {"timeOrigin": 1, "href": "https://portal.example.test/"}}
             if script.startswith("({ timeOrigin"):
                 return {"result": {"timeOrigin": 1 if self.stuck else 2, "href": self.state["url"], "ready": "complete"}}
-            if "__rakazoTyping = " in script:
+            if "__atlasTyping = " in script:
                 return self.typing
             if "Typing stopped" in script:
                 self.checks.append(script)
@@ -636,19 +636,19 @@ class ActTest(unittest.TestCase):
     def test_a_dialog_open_when_the_page_is_read_is_reported_in_place_of_the_failure(self):
         browser = FakeAgentBrowser()
         browser.dialog = {"type": "confirm", "message": "Delete this?"}
-        with patch.dict(os.environ, {"RAKAZO_CDP_PORT": "1"}), patch.object(helper, "wait_for_cdp"), \
+        with patch.dict(os.environ, {"ATLAS_CDP_PORT": "1"}), patch.object(helper, "wait_for_cdp"), \
                 patch.object(helper, "http_get_json", return_value=[{"type": "page", "id": "tab-1",
                                                                       "url": "https://portal.example.test/"}]), \
                 patch.object(helper, "AgentBrowser", return_value=browser), \
                 patch.object(browser, "use_tab", create=True), \
                 patch.object(helper.time, "sleep"), patch("builtins.print") as printed:
-            helper.run(["rakazo-page-browser", "snapshot"])
+            helper.run(["atlas-page-browser", "snapshot"])
         self.assertEqual(json.loads(printed.call_args.args[0]), {
             "ok": False, "error": 'A confirm dialog is open on the screen: "Delete this?"', "dialog": "confirm",
             "fallback": "computer_act"})
 
     def test_the_snapshot_command_passes_its_query_on(self):
-        with patch.dict(os.environ, {"RAKAZO_CDP_PORT": "1", "RAKAZO_BROWSER_ARGS_STDIN": "1"}), \
+        with patch.dict(os.environ, {"ATLAS_CDP_PORT": "1", "ATLAS_BROWSER_ARGS_STDIN": "1"}), \
                 patch.object(helper, "wait_for_cdp"), \
                 patch.object(helper, "read_stdin_line", return_value='{"command": "snapshot", "query": " zip "}'), \
                 patch.object(helper, "http_get_json", return_value=[{"type": "page", "id": "tab-1",
@@ -656,7 +656,7 @@ class ActTest(unittest.TestCase):
                 patch.object(helper, "AgentBrowser"), \
                 patch.object(helper.PageBrowser, "snapshot", return_value={"ok": True}) as snapshot, \
                 patch("builtins.print"):
-            helper.run(["rakazo-page-browser", "snapshot"])
+            helper.run(["atlas-page-browser", "snapshot"])
         snapshot.assert_called_once_with(query="zip")
 
     def test_uploads_only_files_inside_the_trusted_roots(self):
@@ -828,10 +828,10 @@ class AgentBrowserTest(unittest.TestCase):
 
 class RunTest(unittest.TestCase):
     def test_without_a_browser_falls_back_to_the_desktop_without_doubt(self):
-        with patch.dict(os.environ, {"RAKAZO_CDP_PORT": "1"}), patch.object(helper, "wait_for_cdp",
+        with patch.dict(os.environ, {"ATLAS_CDP_PORT": "1"}), patch.object(helper, "wait_for_cdp",
                                                                               side_effect=RuntimeError("CDP not ready on port 1: refused")), \
                 patch("builtins.print") as printed:
-            self.assertEqual(helper.run(["rakazo-page-browser", "act", '{"actions": []}']), 0)
+            self.assertEqual(helper.run(["atlas-page-browser", "act", '{"actions": []}']), 0)
         self.assertEqual(json.loads(printed.call_args.args[0]), {
             "ok": False, "error": "CDP not ready on port 1: refused", "fallback": "computer_act", "uncertain": False})
 
@@ -848,8 +848,8 @@ class RunTest(unittest.TestCase):
             os.close(read)
 
     def test_closed_stdin_cancels_helper_without_a_browser(self):
-        env = {**os.environ, "RAKAZO_BROWSER_WATCH_STDIN": "1", "RAKAZO_CDP_PORT": "1"}
-        with subprocess.Popen([sys.executable, str(HERE / "rakazo-page-browser"), "snapshot", "{}"], env=env,
+        env = {**os.environ, "ATLAS_BROWSER_WATCH_STDIN": "1", "ATLAS_CDP_PORT": "1"}
+        with subprocess.Popen([sys.executable, str(HERE / "atlas-page-browser"), "snapshot", "{}"], env=env,
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE) as process:
             process.stdin.close()
             self.assertEqual(process.wait(timeout=5), 130)
@@ -883,13 +883,13 @@ class RunTest(unittest.TestCase):
         opened = [{"type": "page", "id": "site", "url": "https://portal.example.test/"}]
         browser = FakeAgentBrowser(requests=[])
         browser.stuck = True
-        with patch.dict(os.environ, {"RAKAZO_CDP_PORT": "1"}), patch.object(helper, "wait_for_cdp"), \
+        with patch.dict(os.environ, {"ATLAS_CDP_PORT": "1"}), patch.object(helper, "wait_for_cdp"), \
                 patch.object(helper, "http_get_json", side_effect=[listing, opened]), \
                 patch.object(helper.urllib.request, "urlopen"), \
                 patch.object(helper, "AgentBrowser", return_value=browser), \
                 patch.object(browser, "use_tab", create=True), \
                 patch.object(helper.time, "sleep"), patch("builtins.print") as printed:
-            self.assertEqual(helper.run(["rakazo-page-browser", "navigate", '{"url": "https://portal.example.test/"}']), 0)
+            self.assertEqual(helper.run(["atlas-page-browser", "navigate", '{"url": "https://portal.example.test/"}']), 0)
         self.assertEqual(json.loads(printed.call_args.args[0])["ok"], True)
         self.assertEqual(browser.sent[0], ["tab", "new", "https://portal.example.test/"])
         self.assertFalse(any("location.assign(" in " ".join(command) for command in browser.sent))
@@ -1472,7 +1472,7 @@ class DownloadTest(unittest.TestCase):
     def test_finish_command_reports_placement_failure(self):
         with patch.object(helper, "finish_later", side_effect=RuntimeError(helper.DOWNLOAD_FAILED)), \
                 patch("builtins.print") as output:
-            self.assertEqual(helper.run(["rakazo-page-browser", "finish", '{"downloads": []}']), 1)
+            self.assertEqual(helper.run(["atlas-page-browser", "finish", '{"downloads": []}']), 1)
         self.assertEqual(json.loads(output.call_args.args[0]),
                          {"downloads": [{"error": helper.DOWNLOAD_FAILED}]})
 
@@ -1585,8 +1585,8 @@ class DownloadTest(unittest.TestCase):
         self.assertTrue(options["start_new_session"] and options["close_fds"])
         for stream in ("stdin", "stdout", "stderr"):
             self.assertEqual(options[stream], helper.subprocess.DEVNULL)
-        self.assertNotIn("RAKAZO_BROWSER_ARGS_STDIN", options["env"])
-        self.assertNotIn("RAKAZO_BROWSER_WATCH_STDIN", options["env"])
+        self.assertNotIn("ATLAS_BROWSER_ARGS_STDIN", options["env"])
+        self.assertNotIn("ATLAS_BROWSER_WATCH_STDIN", options["env"])
         self.assertFalse(Path(self.folder, "slow.pdf").exists())
 
     def test_the_finisher_names_a_download_only_once_it_is_complete_and_cancels_one_over_the_limit(self):
@@ -1636,7 +1636,7 @@ class DownloadTest(unittest.TestCase):
                 patch.object(helper.PageBrowser, command, side_effect=perform), \
                 patch.dict(os.environ, {"HOME": self.home}), patch("builtins.print") as output:
             os.makedirs(self.folder, exist_ok=True)
-            self.assertEqual(helper.run(["rakazo-page-browser", command, json.dumps(args)]), 0)
+            self.assertEqual(helper.run(["atlas-page-browser", command, json.dumps(args)]), 0)
         return json.loads(output.call_args.args[0])
 
     def test_without_a_folder_the_helper_leaves_chromium_downloads_alone(self):

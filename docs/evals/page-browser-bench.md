@@ -5,7 +5,7 @@
 drivers can be compared on equal terms. It is a manual tool: it needs Docker and never runs in unit
 tests or PR CI.
 
-It starts a fresh `rakazo/computer:local` container (`pnpm sandbox:build`), serves the fixture pages
+It starts a fresh `atlas/computer:local` container (`pnpm sandbox:build`), serves the fixture pages
 in `packages/testkit/src/page-browser-bench/fixtures` inside it over HTTPS on two sites (`localhost`
 and `127.0.0.1`, so the partner frame is cross-site), and restarts its Chromium with a throwaway
 profile that accepts their self-signed certificate. The driver is called exactly as the supervisor
