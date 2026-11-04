@@ -694,7 +694,7 @@ describe("LocalStackController", () => {
             ProgramFiles: "C:\\Program Files",
             PATH: "C:\\Windows\\System32;C:\\custom-helpers",
             USERPROFILE: "C:\\Users\\example",
-            RAKAZO_DOCKER_BINARY: binary,
+            ATLAS_DOCKER_BINARY: binary,
           },
           exists: (file) => file === binary,
         },

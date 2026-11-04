@@ -2,9 +2,9 @@ import type { ChildProcess } from "node:child_process";
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import type { CDPSession } from "@playwright/test";
 import { abortableDelay } from "@atlas/core";
 import { createPool } from "@atlas/db";
+import type { CDPSession } from "@playwright/test";
 import { disposableDatabaseEnv, startPostgres } from "./postgres.js";
 
 export const repositoryRoot = path.resolve(import.meta.dirname, "../../../..");
@@ -30,7 +30,7 @@ export function benchmarkEnvironment(options: {
     SANDBOX_PROVIDER: "fake",
     AGENT_RUNTIME: "scripted",
     CLOUD_AGENT_PROVIDER: "emulator",
-    RAKAZO_LIVE_MODEL_CATALOG: "off",
+    ATLAS_LIVE_MODEL_CATALOG: "off",
     ANALYTICS_PROVIDER: "none",
     LOG_LEVEL: "off",
     COMPOSIO_API_KEY: "",
@@ -39,18 +39,18 @@ export function benchmarkEnvironment(options: {
     DAYTONA_API_KEY: "",
     SENTRY_DSN: "",
     SENTRY_BROWSER_DSN: "",
-    BETTER_AUTH_SECRET: "rakazo-benchmark-auth-secret-over-32-characters",
-    ENCRYPTION_KEY: "rakazo-benchmark-encryption-key-over-32-characters",
-    SANDBOX_SUPERVISOR_TOKEN: "rakazo-benchmark-supervisor-token-over-32-characters",
-    SCREEN_PROXY_SECRET: "rakazo-benchmark-screen-proxy-secret-over-32-characters",
+    BETTER_AUTH_SECRET: "atlas-benchmark-auth-secret-over-32-characters",
+    ENCRYPTION_KEY: "atlas-benchmark-encryption-key-over-32-characters",
+    SANDBOX_SUPERVISOR_TOKEN: "atlas-benchmark-supervisor-token-over-32-characters",
+    SCREEN_PROXY_SECRET: "atlas-benchmark-screen-proxy-secret-over-32-characters",
     BETTER_AUTH_URL: webOrigin,
     WEB_ORIGIN: webOrigin,
     API_PORT: String(options.apiPort),
     API_URL: apiOrigin,
     API_PROXY_TARGET: apiOrigin,
     WEB_PORT: String(options.webPort),
-    RAKAZO_HOST: "127.0.0.1",
-    RAKAZO_WEB_URL: webOrigin,
+    ATLAS_HOST: "127.0.0.1",
+    ATLAS_WEB_URL: webOrigin,
     DATA_DIR: options.dataDir,
     SIGNUPS_ENABLED: "true",
     SIGNUP_ALLOWLIST: "",
@@ -70,7 +70,7 @@ export async function startBenchmarkDatabase(serverUrl: string | undefined) {
   }
   const admin = new URL(serverUrl);
   const url = new URL(serverUrl);
-  const name = `rakazo_bench_${randomUUID().replaceAll("-", "")}`;
+  const name = `atlas_bench_${randomUUID().replaceAll("-", "")}`;
   url.pathname = `/${name}`;
   await adminQuery(admin.href, `CREATE DATABASE "${name}"`);
   return {

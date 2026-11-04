@@ -334,7 +334,7 @@ describe("Telegram groups", () => {
   }
 
   const webhook = (secret: string, update: unknown) =>
-    new Request("https://rakazo.test/api/v1/messaging/webhook/x", {
+    new Request("https://atlas.test/api/v1/messaging/webhook/x", {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -671,7 +671,7 @@ describe("Telegram redelivery", () => {
         if (inbound.length === 1) throw new Error("database unavailable");
       });
       const update = () =>
-        new Request("https://rakazo.test/api/v1/messaging/webhook/telegram", {
+        new Request("https://atlas.test/api/v1/messaging/webhook/telegram", {
           method: "POST",
           headers: {
             "content-type": "application/json",

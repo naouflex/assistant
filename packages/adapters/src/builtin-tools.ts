@@ -889,7 +889,10 @@ export const builtinAgentTools: ConnectorTool[] = [
       properties: {
         content: { type: "string" },
         old_text: { type: "string" },
-        journal: { type: "boolean", description: "Append to today's journal file instead of MEMORY.md." },
+        journal: {
+          type: "boolean",
+          description: "Append to today's journal file instead of MEMORY.md.",
+        },
       },
       required: ["content"],
     },
@@ -1891,7 +1894,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "feedback",
     description:
-      "Send a bug report or product feedback about Rakazo to the people who run this server. Only when the user asks you to report something. Describe what happened and what was expected in general terms; leave out names, contact details, message text, credentials and other personal details. The report already identifies this chat, bot and run.",
+      "Send a bug report or product feedback about Atlas to the people who run this server. Only when the user asks you to report something. Describe what happened and what was expected in general terms; leave out names, contact details, message text, credentials and other personal details. The report already identifies this chat, bot and run.",
     inputSchema: {
       type: "object",
       properties: {

@@ -1,6 +1,6 @@
 # Page-browser benchmark
 
-`pnpm bench:page-browser` measures the computer's page-browser driver (`rakazo-page-browser`, behind
+`pnpm bench:page-browser` measures the computer's page-browser driver (`atlas-page-browser`, behind
 `browser_navigate`, `browser_snapshot` and `browser_act`) on a fixed suite of scripted tasks, so two
 drivers can be compared on equal terms. It is a manual tool: it needs Docker and never runs in unit
 tests or PR CI.

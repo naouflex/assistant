@@ -1,13 +1,6 @@
 import { lookup } from "node:dns/promises";
 import type { LookupFunction } from "node:net";
 import { isDeepStrictEqual } from "node:util";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import {
-  StreamableHTTPClientTransport,
-  StreamableHTTPError,
-} from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConnectorTool } from "@atlas/adapter-kit";
 import {
   ipVersion,
@@ -21,6 +14,13 @@ import {
   normalizeHost,
 } from "@atlas/contracts";
 import { cancelResponseBody } from "@atlas/core";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import {
+  StreamableHTTPClientTransport,
+  StreamableHTTPError,
+} from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { Agent } from "undici";
 import { composioToolBatch } from "./composio-batch.js";
 import { sensitiveQueryParameter } from "./connector-http.js";
@@ -278,7 +278,7 @@ async function withRemoteMcpClient<T>(
     },
     fetch: safeFetch,
   });
-  const client = new Client({ name: "rakazo", version: "0.1.0" }, { capabilities: {} });
+  const client = new Client({ name: "atlas", version: "0.1.0" }, { capabilities: {} });
   try {
     await client.connect(transport, { signal, timeout: MCP_TIMEOUT_MS });
     return await run(client, signal);
@@ -471,7 +471,7 @@ export class RemoteMcpSessionCache {
         }
       },
     });
-    const client = new Client({ name: "rakazo", version: "0.1.0" }, { capabilities: {} });
+    const client = new Client({ name: "atlas", version: "0.1.0" }, { capabilities: {} });
     const session: ScopedMcpSession = {
       key,
       client,

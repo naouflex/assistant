@@ -99,7 +99,7 @@ bash install-images.sh
 [docs/self-host-production.md](./docs/self-host-production.md#public-single-vm-deployment) で説明しています。デスクトップアプリでは
 **Existing instance**（既存のインスタンス）を選び、`https://` のアドレスを入力します。
 
-または [Railway にデプロイ](https://railway.com/new/template/rakazo-template)することもできます。[Railway セットアップガイド](./infra/railway/README.md)を参照してください。
+または [Railway にデプロイ](https://railway.com/new/template/atlas-template)することもできます。[Railway セットアップガイド](./infra/railway/README.md)を参照してください。
 
 ## ローカル開発（ソースから実行）
 

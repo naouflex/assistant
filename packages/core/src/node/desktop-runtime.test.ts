@@ -731,7 +731,7 @@ describe("shared Linux desktop lifecycle", () => {
       };
       const { debugPort } = screenPorts(0, screenEnv);
       writeFileSync(
-        path.join(bin, "rakazo-browser"),
+        path.join(bin, "atlas-browser"),
         [
           "#!/usr/bin/env python3",
           "import os, socket, sys, time",
@@ -744,9 +744,9 @@ describe("shared Linux desktop lifecycle", () => {
           "",
         ].join("\n"),
       );
-      chmodSync(path.join(bin, "rakazo-browser"), 0o755);
+      chmodSync(path.join(bin, "atlas-browser"), 0o755);
       const command = ensureScreenCommand(0, "bot", "token", screenEnv)
-        .replaceAll("/tmp/rakazo", path.join(root, "runtime"))
+        .replaceAll("/tmp/atlas", path.join(root, "runtime"))
         .replaceAll("/usr/share/novnc", root);
       const cdpChecked = command.indexOf("\nfi\n", command.indexOf("CDP not ready")) + 4;
       const profile = browserProfilePathForScreen("bot", screenEnv);

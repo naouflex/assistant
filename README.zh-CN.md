@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/dccdeddb-2134-4a56-8eed-b2e591736b1c
 
 ## 部署到 Railway
 
-[![部署到 Railway](https://railway.com/button.svg)](https://railway.com/new/template/rakazo-template)
+[![部署到 Railway](https://railway.com/button.svg)](https://railway.com/new/template/atlas-template)
 
 部署包含 PostgreSQL、持久化存储和 Railway 计算机的私有 Atlas 实例。
 填写邮箱和 Railway API 令牌，登录后再连接模型。

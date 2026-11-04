@@ -18,17 +18,17 @@ export function referralEmail(
       <Text>{greeting(say, user.name)}</Text>
       <Text>
         {say(
-          "Invite a friend to Rakazo and earn a free month when they start a qualifying subscription with a new card.",
+          "Invite a friend to Atlas and earn a free month when they start a qualifying subscription with a new card.",
         )}{" "}
         <Link href={invitePageUrl} style={linkStyle}>
-          {say("Open Rakazo")}
+          {say("Open Atlas")}
         </Link>{" "}
         {say("and choose Invite friends for your link.")}
       </Text>
       <Text>{say("Have any questions? Just reply to this email.")}</Text>
       <Text>
-        {say("If you're enjoying Rakazo,")}{" "}
-        <Link href="https://github.com/elie222/rakazo" style={linkStyle}>
+        {say("If you're enjoying Atlas,")}{" "}
+        <Link href="https://github.com/naouflex/assistant" style={linkStyle}>
           {say("give us a star on GitHub")}
         </Link>
         .

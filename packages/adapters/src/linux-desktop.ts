@@ -257,11 +257,11 @@ export class LinuxDesktop {
       computer,
       [
         `DISPLAY=${layout.display}`,
-        `RAKAZO_CDP_PORT=${layout.debugPort}`,
+        `ATLAS_CDP_PORT=${layout.debugPort}`,
         // Uploads are confined to the bot's home, which is the workspace here.
         `HOME=${shellQuote(env.workspaceDir)}`,
-        "RAKAZO_BROWSER_ARGS_STDIN=1",
-        "/usr/local/bin/rakazo-page-browser",
+        "ATLAS_BROWSER_ARGS_STDIN=1",
+        "/usr/local/bin/atlas-page-browser",
         request.command,
       ].join(" "),
       // Origin-bound fills carry saved logins and cards.

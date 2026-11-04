@@ -20,7 +20,7 @@ describe.runIf(process.platform === "win32" && process.env.CI)("Windows screen c
   let notepad: ReturnType<typeof spawn>;
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), "rakazo-screen-"));
+    dir = await mkdtemp(path.join(tmpdir(), "atlas-screen-"));
     screen = createDesktopHostScreen({
       platform: "win32",
       driver: screenDriverInstaller({
@@ -65,8 +65,8 @@ describe.runIf(process.platform === "win32" && process.env.CI)("Windows screen c
     console.log(JSON.stringify({ completed: selected.completed, error: selected.error }));
     expect(selected).toMatchObject({ completed: 1 });
     expect(selected.error).toBeUndefined();
-    await expect(screen.observe(scope, "rakazo-missing-app")).rejects.toThrow(
-      'No app named "rakazo-missing-app" is open.',
+    await expect(screen.observe(scope, "atlas-missing-app")).rejects.toThrow(
+      'No app named "atlas-missing-app" is open.',
     );
   }, 120_000);
 });

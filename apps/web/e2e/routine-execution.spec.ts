@@ -172,7 +172,7 @@ test("a routine run that failed to start shows the error in Details", async ({
 
 test("run history links runs that replied and marks silent ones", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `routine-states-${stamp}@rakazo.test`, "password12", "Routine");
+  await signup(page, `routine-states-${stamp}@atlas.test`, "password12", "Routine");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   await rpc<Routine>(page, "routines/create", {

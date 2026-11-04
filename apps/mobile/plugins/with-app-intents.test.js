@@ -7,10 +7,10 @@ const mobile = join(import.meta.dirname, "..");
 const read = (file) => readFileSync(join(mobile, file), "utf8");
 const constant = (file, name) => read(file).match(new RegExp(`${name} = "([^"]+)"`))?.[1];
 
-describe("RakazoIntents", () => {
+describe("AtlasIntents", () => {
   // The intents read what the app saved; renaming a key on one side would break them silently.
   it("reads the secure-store keys the app writes", () => {
-    const swift = read("ios-intents/RakazoIntents.swift");
+    const swift = read("ios-intents/AtlasIntents.swift");
     for (const [file, name] of [
       ["lib/session.ts", "SESSION_KEY"],
       ["lib/server-config.ts", "API_BASE_STORAGE_KEY"],
@@ -26,12 +26,12 @@ describe("RakazoIntents", () => {
   });
 
   it("hands a voice chat to the module that reads it", () => {
-    const swift = read("ios-intents/RakazoIntents.swift");
-    const module = read("modules/rakazo-voice-chat/ios/RakazoVoiceChatModule.swift");
-    expect(swift).toContain('"rakazo.pending_voice_chat"');
-    expect(module).toContain('"rakazo.pending_voice_chat"');
+    const swift = read("ios-intents/AtlasIntents.swift");
+    const module = read("modules/atlas-voice-chat/ios/AtlasVoiceChatModule.swift");
+    expect(swift).toContain('"atlas.pending_voice_chat"');
+    expect(module).toContain('"atlas.pending_voice_chat"');
     for (const source of [swift, module]) {
-      expect(source).toContain('Notification.Name("RakazoPendingVoiceChat")');
+      expect(source).toContain('Notification.Name("AtlasPendingVoiceChat")');
     }
   });
 
@@ -58,7 +58,7 @@ describe("withAppIntents prebuild", () => {
       process: { env: { EXPO_PUBLIC_API_URL: "https://api.example.test" } },
       require: (name) => {
         if (name === "node:fs") return { copyFileSync: (...args) => copied.push(args) };
-        if (name === "node:path") return { join, basename: () => "RakazoIntents.swift" };
+        if (name === "node:path") return { join, basename: () => "AtlasIntents.swift" };
         if (name === "expo/config-plugins")
           return {
             withInfoPlist: (value, mod) => {
@@ -68,7 +68,7 @@ describe("withAppIntents prebuild", () => {
             withXcodeProject: (value, mod) => mod(value),
             IOSConfig: {
               XcodeUtils: {
-                getProjectName: () => "Rakazo",
+                getProjectName: () => "Atlas",
                 addBuildSourceFileToGroup: (input) => {
                   added.push(input);
                   files.add(input.filepath);
@@ -81,12 +81,12 @@ describe("withAppIntents prebuild", () => {
     });
     module.exports(config);
     module.exports(config);
-    expect(plist.modResults.RakazoDefaultApiBase).toBe("https://api.example.test");
+    expect(plist.modResults.AtlasDefaultApiBase).toBe("https://api.example.test");
     expect(copied).toEqual([
-      [join(mobile, "ios-intents/RakazoIntents.swift"), "/project/ios/Rakazo/RakazoIntents.swift"],
-      [join(mobile, "ios-intents/RakazoIntents.swift"), "/project/ios/Rakazo/RakazoIntents.swift"],
+      [join(mobile, "ios-intents/AtlasIntents.swift"), "/project/ios/Atlas/AtlasIntents.swift"],
+      [join(mobile, "ios-intents/AtlasIntents.swift"), "/project/ios/Atlas/AtlasIntents.swift"],
     ]);
     expect(added).toHaveLength(1);
-    expect(added[0]).toMatchObject({ filepath: "Rakazo/RakazoIntents.swift", groupName: "Rakazo" });
+    expect(added[0]).toMatchObject({ filepath: "Atlas/AtlasIntents.swift", groupName: "Atlas" });
   });
 });

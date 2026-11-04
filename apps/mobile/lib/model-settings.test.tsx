@@ -531,7 +531,7 @@ it("moves bots off their own model onto the main model, keeping failed ones list
       [
         "bots/update",
         { botId: "bot-inbox", modelProvider: null, modelId: null, thinkingLevel: null },
-        { requestContext: { headers: { "x-rakazo-space-id": "space-fixture" } } },
+        { requestContext: { headers: { "x-atlas-space-id": "space-fixture" } } },
       ],
     ]);
     expect(container.textContent).toContain("1 bot now uses the space default.");

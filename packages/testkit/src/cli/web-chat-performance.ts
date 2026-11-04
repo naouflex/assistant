@@ -3,14 +3,14 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { serve } from "@hono/node-server";
-import type { Browser, BrowserContext, CDPSession, Page } from "@playwright/test";
-import { chromium } from "@playwright/test";
 import type { createApp } from "@atlas/api/app";
 import { abortableDelay, RESPONSE_STREAMING_STORAGE_KEY } from "@atlas/core";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import type { PrismaClient, ThreadEvents } from "@atlas/db";
 import { createThreadEvents, createThreadMessage, runAsSystem } from "@atlas/db";
+import { serve } from "@hono/node-server";
+import type { Browser, BrowserContext, CDPSession, Page } from "@playwright/test";
+import { chromium } from "@playwright/test";
 import type { NumericSummary } from "../performance-report.js";
 import {
   parseTcpPort,
@@ -106,7 +106,7 @@ async function benchmark() {
   const reportPath =
     argument("--out") ??
     path.join(root, ".context/performance", `web-chat-${safeName(label)}.json`);
-  const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "rakazo-web-chat-performance-"));
+  const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-web-chat-performance-"));
   const database = await startBenchmarkDatabase(
     argument("--database-url") ?? process.env.PERF_DATABASE_URL,
   );
@@ -256,7 +256,7 @@ async function prepareAccount(bench: Bench, sizes: number[]): Promise<Account> {
   const context = await newContext(bench);
   try {
     const page = await context.newPage();
-    const email = `benchmark-${Date.now()}@rakazo.test`;
+    const email = `benchmark-${Date.now()}@atlas.test`;
     const response = await page.request.post("/api/auth/sign-up/email", {
       data: { email, password: "password12", name: "Benchmark User" },
       headers: { origin: bench.webOrigin },

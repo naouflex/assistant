@@ -446,7 +446,7 @@ describePostgres("Team Computer takeover recovery (PostgreSQL)", () => {
 
   it("updates under its maintenance while a later run waits, but not while a run holds a lease", async () => {
     const { spaceId, botId, threadId, userId } = identity;
-    const dataDir = await mkdtemp(path.join(tmpdir(), "rakazo-maintenance-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "atlas-maintenance-"));
     const deps = {
       prisma,
       sandbox: new FakeSandboxProvider(),

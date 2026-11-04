@@ -16,7 +16,7 @@ export { LOCAL_PROVIDER_ID, localCacheCapabilities } from "./local-provider-iden
 function localEnv(suffix: string): string | undefined {
   const atlas = process.env[`ATLAS_${suffix}`]?.trim();
   if (atlas) return atlas;
-  return process.env[`RAKAZO_${suffix}`]?.trim() || undefined;
+  return process.env[`ATLAS_${suffix}`]?.trim() || undefined;
 }
 
 /** Model ids the local server serves with vision, declared by the operator. */
@@ -45,7 +45,7 @@ export function localModelThinks(
 export function localVisionModelIds(): ReadonlySet<string> {
   return new Set([
     ...declaredVisionModelIds(LOCAL_VISION_MODELS_ENV),
-    ...declaredVisionModelIds("RAKAZO_LOCAL_VISION_MODELS"),
+    ...declaredVisionModelIds("ATLAS_LOCAL_VISION_MODELS"),
   ]);
 }
 

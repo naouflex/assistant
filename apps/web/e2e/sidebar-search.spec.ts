@@ -60,12 +60,7 @@ test("sidebar search opens from its icon and closes without moving chats mid-cli
 });
 
 test("a failed space search says so instead of No results", async ({ page }, testInfo) => {
-  await signup(
-    page,
-    `sidebar-search-failed-${Date.now()}@rakazo.test`,
-    "password12",
-    "Search Fail",
-  );
+  await signup(page, `sidebar-search-failed-${Date.now()}@atlas.test`, "password12", "Search Fail");
   await completeOnboarding(page);
   let failSearch = true;
   await page.route("**/rpc/search/query", (route) =>

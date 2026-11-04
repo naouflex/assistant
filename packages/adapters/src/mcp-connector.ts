@@ -1,15 +1,6 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
-import { StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import {
-  OAuthError,
-  ServerError,
-  TemporarilyUnavailableError,
-  TooManyRequestsError,
-} from "@modelcontextprotocol/sdk/server/auth/errors.js";
-import { McpError } from "@modelcontextprotocol/sdk/types.js";
 import type {
   AdapterContext,
   ConnectorCall,
@@ -30,6 +21,15 @@ import type { McpServer, PrismaClient, ThreadEvents } from "@atlas/db";
 import { availableInSpace, itemSecretIn } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 import { sanitizedError } from "@atlas/logging/monitoring";
+import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
+import { StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import {
+  OAuthError,
+  ServerError,
+  TemporarilyUnavailableError,
+  TooManyRequestsError,
+} from "@modelcontextprotocol/sdk/server/auth/errors.js";
+import { McpError } from "@modelcontextprotocol/sdk/types.js";
 import { catalogToolPrefix } from "./approval-effect.js";
 import { composioToolBatch } from "./composio-batch.js";
 import {
@@ -209,7 +209,7 @@ function recoveredSince(
 }
 
 /** Route name of the stand-in tool for an assigned server whose discovery failed. */
-const UNAVAILABLE_TOOL = "__rakazo_unavailable";
+const UNAVAILABLE_TOOL = "__atlas_unavailable";
 /** Skip rewriting an unchanged health observation more often than this. */
 const HEALTH_REWRITE_MS = 60_000;
 
@@ -1017,7 +1017,7 @@ export class McpConnector implements ConnectorProvider {
     credentialDir?: string;
     launchSecrets?: string[];
   }> {
-    let session = new McpSession({ name: `rakazo-${server.slug}` });
+    let session = new McpSession({ name: `atlas-${server.slug}` });
     let credentialDir: string | undefined;
     const launchSecrets: string[] = [];
     // Hoisted so a throw after the secret is decoded can still hand the material out.
@@ -1157,7 +1157,7 @@ export class McpConnector implements ConnectorProvider {
           // One private directory per launched process. A file path replaces an env value of
           // the same name; the API rejects such overlaps, so this is only a safe fallback.
           credentialDir = await mkdtemp(
-            join(this.options.credentialTempRoot ?? tmpdir(), "rakazo-mcp-"),
+            join(this.options.credentialTempRoot ?? tmpdir(), "atlas-mcp-"),
           );
           const dir = credentialDir;
           const previousOnClose = session.client.onclose;
@@ -1226,7 +1226,7 @@ export class McpConnector implements ConnectorProvider {
           if (!authProvider || !isRejectedTokenError(error)) throw error;
           await authProvider.replaceRejectedToken();
           await session.close();
-          session = new McpSession({ name: `rakazo-${server.slug}` });
+          session = new McpSession({ name: `atlas-${server.slug}` });
           await connect();
         }
       }

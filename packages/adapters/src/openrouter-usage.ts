@@ -3,7 +3,7 @@ import { z } from "zod";
 
 /**
  * OpenRouter identifies an app by this URL. Legacy Rakazo hostnames are not this deployment, so sending them
- * keeps this fork listed as Rakazo no matter what display name is attached.
+ * keeps this fork listed as Atlas no matter what display name is attached.
  */
 export function openRouterReferer(origin = process.env.WEB_ORIGIN): string | undefined {
   const trimmed = origin?.trim();

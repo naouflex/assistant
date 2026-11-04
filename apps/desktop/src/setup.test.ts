@@ -17,7 +17,7 @@ import { HE_MESSAGES } from "./locales/he.js";
 type DesktopSetupResult = Awaited<ReturnType<AtlasSetup["save"]>>;
 
 const DEFAULT_LOCAL_URL = "http://127.0.0.1:6130";
-const CLOUD_URL = "https://cloud.rakazo.example";
+const CLOUD_URL = "https://cloud.atlas.example";
 const ENGLISH: AtlasSetup["locale"] = { lang: "en", dir: "ltr", messages: {} };
 
 // The jsdom environment replaces the global URL, so resolve the sibling files via Node's.

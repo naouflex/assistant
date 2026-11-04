@@ -76,8 +76,8 @@ describe("embeddableScreenUrl", () => {
       "http://127.0.0.1:5173/novnc/session/view/1.t/embed.html?view_only=true",
       "https://192.168.1.20/novnc/session/view/1.t/embed.html?view_only=true",
     ]) {
-      expect(embeddableScreenUrl(sealed, "https://rakazo.example.test")).toBe(
-        "https://rakazo.example.test/novnc/session/view/1.t/embed.html?view_only=true",
+      expect(embeddableScreenUrl(sealed, "https://atlas.example.test")).toBe(
+        "https://atlas.example.test/novnc/session/view/1.t/embed.html?view_only=true",
       );
     }
   });

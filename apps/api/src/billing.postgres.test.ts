@@ -20,10 +20,10 @@ describePostgres("billing service (PostgreSQL)", () => {
   const owner: Actor = {
     userId: ownerId,
     spaceId,
-    email: `${ownerId}@rakazo.test`,
+    email: `${ownerId}@atlas.test`,
     isDeploymentOwner: false,
   };
-  const member: Actor = { ...owner, userId: memberId, email: `${memberId}@rakazo.test` };
+  const member: Actor = { ...owner, userId: memberId, email: `${memberId}@atlas.test` };
   const emulator = new BillingEmulator();
   const events: Array<[string, AnalyticsEvent]> = [];
   const analytics: ProductAnalytics = {
@@ -45,7 +45,7 @@ describePostgres("billing service (PostgreSQL)", () => {
     const createdAt = new Date();
     for (const id of [ownerId, memberId]) {
       await prisma.user.create({
-        data: { id, name: id, email: `${id}@rakazo.test`, emailVerified: false },
+        data: { id, name: id, email: `${id}@atlas.test`, emailVerified: false },
       });
     }
     await prisma.organization.create({

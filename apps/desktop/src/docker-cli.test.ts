@@ -259,7 +259,7 @@ describe("runDocker", () => {
   const options = { cwd: process.cwd(), env: { PATH: process.env.PATH ?? "" }, timeoutMs: 10_000 };
 
   it("preserves the Windows plugin discovery directory when running Compose", async () => {
-    const root = mkdtempSync(path.join(tmpdir(), "rakazo-compose-discovery-"));
+    const root = mkdtempSync(path.join(tmpdir(), "atlas-compose-discovery-"));
     roots.push(root);
     const programFiles = path.join(root, "Program Files");
     const plugins = path.join(programFiles, "Docker", "cli-plugins");

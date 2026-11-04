@@ -14,8 +14,8 @@ const helper = path.resolve(
 
 // The helper drives Chromium through agent-browser; CI installs the pinned binary and sets this.
 test.skip(
-  !process.env.CI && !process.env.RAKAZO_AGENT_BROWSER,
-  "set RAKAZO_AGENT_BROWSER (infra/sandboxes/computer/install-agent-browser.sh)",
+  !process.env.CI && !(process.env.ATLAS_AGENT_BROWSER ?? process.env.RAKAZO_AGENT_BROWSER),
+  "set ATLAS_AGENT_BROWSER (infra/sandboxes/computer/install-agent-browser.sh)",
 );
 
 // The helper reads the tab the person sees through Chromium's target list, which only the full
@@ -274,7 +274,7 @@ test("live page helper reaches a form past the control limit by query or by scro
     }).toPass({ timeout: 5_000 });
     async function command(name: string, args: Record<string, unknown> = {}) {
       const { stdout } = await execute("python3", [helper, name, JSON.stringify(args)], {
-        env: { ...process.env, RAKAZO_CDP_PORT: port },
+        env: { ...process.env, ATLAS_CDP_PORT: port },
         timeout: 30_000,
       });
       return JSON.parse(stdout);

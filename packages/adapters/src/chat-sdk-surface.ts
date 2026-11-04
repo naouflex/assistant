@@ -84,7 +84,7 @@ export interface MessagingPlatform {
    */
   acceptsGroup?: (raw: unknown) => boolean;
   /**
-   * Rewrites the adapter's native thread id for Rakazo thread identity when
+   * Rewrites the adapter's native thread id for Atlas thread identity when
    * the SDK's granularity differs from the platform's conversations: Telegram
    * marks a non-forum reply with the reply root as its message thread id,
    * which is still the group's own conversation.

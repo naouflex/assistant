@@ -26,7 +26,7 @@ const UNTRANSLATED = new Set([
   "Docker Desktop",
   "OrbStack",
   "Docker Engine",
-  "https://rakazo.example.com",
+  "https://atlas.example.com",
 ]);
 
 /** Literal `t("…")` ids; the formatter keeps every string double-quoted. */
@@ -78,7 +78,7 @@ describe("desktop language", () => {
   it("starts in the saved language, ignoring a saved value that is not a language tag", () => {
     expect(startDesktopLocale("es-MX", "en-US")).toBe("es");
     expect(t("Check for Updates…")).toBe("Buscar actualizaciones…");
-    expect(t("Rakazo {version} is ready to install.", { version: "1.2.0" })).toBe(
+    expect(t("Atlas {version} is ready to install.", { version: "1.2.0" })).toBe(
       "Atlas 1.2.0 está listo para instalarse.",
     );
     expect(desktopMessages()).toBe(ES_MESSAGES);
@@ -209,7 +209,7 @@ describe("desktop language", () => {
   });
 
   it("opens the next launch in the language the app window last reported", async () => {
-    const userData = await mkdtemp(path.join(tmpdir(), "rakazo-locale-"));
+    const userData = await mkdtemp(path.join(tmpdir(), "atlas-locale-"));
     try {
       await expect(readUiLocale(userData)).resolves.toBeNull();
       const { event, target } = appFrame();

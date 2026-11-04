@@ -17,9 +17,7 @@ function computerFile(name: string): string {
     // Source, tests and the bundled server all sit somewhere below the repository root.
     for (let dir = path.dirname(fileURLToPath(import.meta.url)); ; dir = path.dirname(dir)) {
       const candidate = path.join(dir, COMPUTER_DIR);
-      const wrapper = PAGE_BROWSER_WRAPPERS.find((file) =>
-        existsSync(path.join(candidate, file)),
-      );
+      const wrapper = PAGE_BROWSER_WRAPPERS.find((file) => existsSync(path.join(candidate, file)));
       if (wrapper) {
         computerDir = candidate;
         pageBrowserWrapper = wrapper;
@@ -57,25 +55,24 @@ export function installPageBrowserFilesCommand(): string {
   const version = createHash("sha256").update(wrapper).update("\0").update(secrets).digest("hex");
   const installPath = `/usr/local/bin/${wrapperName}`;
   // One archive, so both files change together.
-  const archive = gzipSync(
-    JSON.stringify({ [wrapperName]: wrapper, "page_secrets.py": secrets }),
-    { level: 9 },
-  ).toString("base64");
+  const archive = gzipSync(JSON.stringify({ [wrapperName]: wrapper, "page_secrets.py": secrets }), {
+    level: 9,
+  }).toString("base64");
   const unpack = [
     "import gzip, json, os, sys",
     "files = json.loads(gzip.decompress(sys.stdin.buffer.read()))",
-    "os.makedirs('/usr/local/lib/rakazo', exist_ok=True)",
-    `for name, mode, target in (('page_secrets.py', 0o644, '/usr/local/lib/rakazo/page_secrets.py'),`,
+    "os.makedirs('/usr/local/lib/atlas', exist_ok=True)",
+    `for name, mode, target in (('page_secrets.py', 0o644, '/usr/local/lib/atlas/page_secrets.py'),`,
     `                           ('${wrapperName}', 0o755, '${installPath}')):`,
     "    with open(target + '.new', 'w', encoding='utf-8') as file:",
     "        file.write(files[name])",
     "    os.chmod(target + '.new', mode)",
     "    os.replace(target + '.new', target)",
-    `open('/usr/local/lib/rakazo/page-browser.version', 'w').write(${JSON.stringify(version)})`,
+    `open('/usr/local/lib/atlas/page-browser.version', 'w').write(${JSON.stringify(version)})`,
   ].join("\n");
   return [
     "set -eu",
-    `if [ "$(cat /usr/local/lib/rakazo/page-browser.version 2>/dev/null)" = ${version} ]; then exit 0; fi`,
+    `if [ "$(cat /usr/local/lib/atlas/page-browser.version 2>/dev/null)" = ${version} ]; then exit 0; fi`,
     asRoot,
     `printf '%s' ${shellQuote(archive)} | base64 -d | $root python3 -c ${shellQuote(unpack)}`,
   ].join("\n");

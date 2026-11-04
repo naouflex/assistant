@@ -10,8 +10,8 @@ or `off` (default `info`). Production defaults to `LOG_FORMAT=json`; development
 unless you set `json` or `pretty`.
 
 Axiom is optional. Set both `AXIOM_TOKEN` and `AXIOM_DATASET` for ingest to one shared dataset.
-Services set `service.name` (`rakazo-api`, `rakazo-worker`, `rakazo-sandbox-supervisor`,
-`rakazo-updater`). A partial Axiom config logs a one-time warning and stays off. `AXIOM_EDGE` is a
+Services set `service.name` (`atlas-api`, `atlas-worker`, `atlas-sandbox-supervisor`,
+`atlas-updater`). A partial Axiom config logs a one-time warning and stays off. `AXIOM_EDGE` is a
 regional hostname; `AXIOM_EDGE_URL` must be https and wins when both are set.
 
 ## Computer usage events
@@ -92,13 +92,13 @@ child commands do not receive them.
 Set `OTEL_EXPORTER_OTLP_ENDPOINT` on the worker to enable optional OpenTelemetry traces
 (for example, `http://otel-collector:4318`). The OTLP/HTTP exporter appends `/v1/traces`
 to the base endpoint and honors standard `OTEL_EXPORTER_OTLP_HEADERS` (comma-separated
-`key=value` pairs) and `OTEL_SERVICE_NAME` (default `rakazo-worker`). Compose workers
+`key=value` pairs) and `OTEL_SERVICE_NAME` (default `atlas-worker`). Compose workers
 read these settings from `.env`. With an empty or unset endpoint, no tracing SDK loads
-or initializes. No collector or hosted service is required to run Rakazo.
+or initializes. No collector or hosted service is required to run Atlas.
 
-Traces contain a `rakazo.agent.run` span with `pi.ai.request` model-call spans and
+Traces contain a `atlas.agent.run` span with `pi.ai.request` model-call spans and
 `pi.agent.tool` steps, including duration, token usage, cost when known, and success/error
-status. Each span carries `rakazo.bot.id`, `rakazo.run.id`, and `rakazo.routine.id`
+status. Each span carries `atlas.bot.id`, `atlas.run.id`, and `atlas.routine.id`
 when the run belongs to a routine. Helper model calls inherit the same correlation.
 Pi 0.87.1 exposes built-in telemetry through its newer harness; Rakazo’s legacy Agent
 adapter maps its model and tool lifecycle through the same Pi telemetry contract.
@@ -158,7 +158,7 @@ Operators read recent events through server-side database/log tooling. For examp
 
 ```bash
 docker compose --env-file .env -f infra/compose/docker-compose.prod.yml exec postgres \
-  psql -U rakazo -d rakazo -c 'SELECT "createdAt", type, ip, "userId", "userAgent", metadata
+  psql -U atlas -d atlas -c 'SELECT "createdAt", type, ip, "userId", "userAgent", metadata
   FROM security_events ORDER BY "createdAt" DESC LIMIT 50'
 ```
 
@@ -231,48 +231,48 @@ Monitoring is opt-in. Install `host-alert.py` as `/usr/local/sbin/atlas-host-ale
 and timer and enable `atlas-host-check.timer`. Checks run every five minutes and report low disk
 space, failed backups, a verified backup older than 36 hours, missing configured IPv4 SSH rules, or
 installed updates waiting for a reboot.
-To also check API and worker containers, set `RAKAZO_MONITOR_COMPOSE_PROJECT` in `backup.env` to
-the Compose project name (`rakazo-prod` for production). The worker probe checks heartbeat and
+To also check API and worker containers, set `ATLAS_MONITOR_COMPOSE_PROJECT` in `backup.env` to
+the Compose project name (`atlas-prod` for production). The worker probe checks heartbeat and
 reconciliation freshness. Leave the variable unset if container monitoring is managed elsewhere.
 
-The dedicated-volume check is enabled only by `RAKAZO_BACKUP_REQUIRE_VOLUME=1` in `backup.env`.
+The dedicated-volume check is enabled only by `ATLAS_BACKUP_REQUIRE_VOLUME=1` in `backup.env`.
 Identical alerts are suppressed for a day; recovery sends a separate notification.
 
 Alerts go to the system journal by default; no external service is required. For optional Slack
-delivery, create a root-only `/etc/rakazo/alerts.json` containing
+delivery, create a root-only `/etc/atlas/alerts.json` containing
 `{"slack_webhook":"https://hooks.slack.com/services/REPLACE/ME/SECRET"}`. Never commit this file.
-To notify immediately on backup failure, also install `rakazo-backup-alert.service` and copy
-`infra/systemd/rakazo-backup-alerts.conf.example` to
-`/etc/systemd/system/rakazo-backup.service.d/alerts.conf`. Run `systemctl daemon-reload` after
+To notify immediately on backup failure, also install `atlas-backup-alert.service` and copy
+`infra/systemd/atlas-backup-alerts.conf.example` to
+`/etc/systemd/system/atlas-backup.service.d/alerts.conf`. Run `systemctl daemon-reload` after
 installing units or drop-ins. The base backup service does not require the monitoring tools.
 
 ## Host audit trail
 
-`harden-host.sh` installs audit rules for writes to SSH keys, sudoers, accounts, `/etc/rakazo`, the
+`harden-host.sh` installs audit rules for writes to SSH keys, sudoers, accounts, `/etc/atlas`, the
 deployment's `.env`, `/usr/local/sbin`, systemd units, cron, and the Docker daemon config. A rule
 whose directory does not exist yet, such as the `.env` before the first clone, is skipped with a
 notice; rerun the script once it exists. Anyone with root can wipe local logs, so the record only
 helps once it has left the host.
 
-To ship it, create a root-only `/etc/rakazo/audit-ship.env` and put the sink's token in
-`/etc/rakazo/audit-ship.token`, then rerun `harden-host.sh`. Only then does it install `audit-ship.py`
-as `/usr/local/sbin/rakazo-audit-ship` and enable `rakazo-audit-ship.service`. The sink is any HTTPS
+To ship it, create a root-only `/etc/atlas/audit-ship.env` and put the sink's token in
+`/etc/atlas/audit-ship.token`, then rerun `harden-host.sh`. Only then does it install `audit-ship.py`
+as `/usr/local/sbin/atlas-audit-ship` and enable `atlas-audit-ship.service`. The sink is any HTTPS
 endpoint that accepts a JSON array of events with a bearer token, for example Axiom's
 `https://api.axiom.co/v1/datasets/<dataset>/ingest`.
 
 ```env
-RAKAZO_AUDIT_SINK_URL=https://ingest.example.com/v1/events
+ATLAS_AUDIT_SINK_URL=https://ingest.example.com/v1/events
 # Optional: name the SSH keys you expect (fingerprints from `ssh-keygen -lf key.pub`).
-RAKAZO_AUDIT_KNOWN_KEYS=SHA256:replace-with-fingerprint=laptop SHA256:replace-with-fingerprint=ci
-# Optional: RAKAZO_AUDIT_TOKEN_FILE (default /etc/rakazo/audit-ship.token), RAKAZO_AUDIT_HOST
-# (default: the hostname), and RAKAZO_AUDIT_HEARTBEAT_SECONDS (default 10800, three hours).
+ATLAS_AUDIT_KNOWN_KEYS=SHA256:replace-with-fingerprint=laptop SHA256:replace-with-fingerprint=ci
+# Optional: ATLAS_AUDIT_TOKEN_FILE (default /etc/atlas/audit-ship.token), ATLAS_AUDIT_HOST
+# (default: the hostname), and ATLAS_AUDIT_HEARTBEAT_SECONDS (default 10800, three hours).
 ```
 
 Use a token that can only write to that one destination, so a compromised host cannot read or delete
 what it already sent. The shipper follows `/var/log/auth.log` and the audit log and sends `ssh.login`
 (with `key_name`, `unknown` for keys not listed), `ssh.failed`, `sudo.command`, `su`,
 `identity.change`, and `file.change` (with the rule's `watch` key and the changed `paths`), plus a
-`shipper.heartbeat` on start and every `RAKAZO_AUDIT_HEARTBEAT_SECONDS`. Every
+`shipper.heartbeat` on start and every `ATLAS_AUDIT_HEARTBEAT_SECONDS`. Every
 event carries `event`, `host`, `source`, `message`, and `_time`. Offsets advance only after the sink
 accepts a batch, and failures retry with backoff, so events arrive at least once. On first start it
 ships the current auth log and starts the audit log at its end. With monitoring installed, the host

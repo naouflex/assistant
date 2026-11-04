@@ -61,7 +61,7 @@ struct AskBotIntent: AppIntent {
     }
     let sent = try await send(message, file: file, to: bot)
     guard let reply = try await reply(to: sent), !reply.isEmpty else {
-      return .result(value: "", dialog: "Sent. The reply will be in Rakazo.")
+      return .result(value: "", dialog: "Sent. The reply will be in Atlas.")
     }
     return .result(value: reply, dialog: "\(reply)")
   }
@@ -77,7 +77,7 @@ struct RunRoutineIntent: AppIntent {
   var routine: RoutineEntity
 
   func perform() async throws -> some IntentResult & ProvidesDialog {
-    let session = try RakazoSession.load()
+    let session = try AtlasSession.load()
     try await session.requireConsent(["routineId": routine.routineId], spaceId: routine.spaceId)
     let _: Started = try await session.rpc(
       "routines/testRun", ["routineId": routine.routineId, "clientNonce": UUID().uuidString],
@@ -89,7 +89,7 @@ struct RunRoutineIntent: AppIntent {
 /// Opens a bot's chat through the app's own link, the same route a notification opens.
 struct OpenBotIntent: AppIntent {
   static let title: LocalizedStringResource = "Open Bot"
-  static let description = IntentDescription("Open a bot's chat in Rakazo.")
+  static let description = IntentDescription("Open a bot's chat in Atlas.")
   static let openAppWhenRun = true
 
   @Parameter(title: "Bot")
@@ -103,10 +103,10 @@ struct OpenBotIntent: AppIntent {
 }
 
 /// Opens a bot's chat and starts a voice call. The call request goes through
-/// modules/rakazo-voice-chat, since the chat link alone must never open the microphone.
+/// modules/atlas-voice-chat, since the chat link alone must never open the microphone.
 struct StartVoiceChatIntent: AppIntent {
   static let title: LocalizedStringResource = "Start Voice Chat"
-  static let description = IntentDescription("Open Rakazo and start a voice call with a bot.")
+  static let description = IntentDescription("Open Atlas and start a voice call with a bot.")
   static let openAppWhenRun = true
 
   @Parameter(title: "Bot", description: "Leave empty to use the chat you opened last.")
@@ -118,8 +118,8 @@ struct StartVoiceChatIntent: AppIntent {
     let botId = target.botId
     UserDefaults.standard.set(
       ["botId": botId, "at": String(Date().timeIntervalSince1970)],
-      forKey: "rakazo.pending_voice_chat")
-    NotificationCenter.default.post(name: Notification.Name("RakazoPendingVoiceChat"), object: nil)
+      forKey: "atlas.pending_voice_chat")
+    NotificationCenter.default.post(name: Notification.Name("AtlasPendingVoiceChat"), object: nil)
     await openChat(botId: botId, spaceId: target.spaceId)
     return .result()
   }
@@ -128,21 +128,21 @@ struct StartVoiceChatIntent: AppIntent {
 /// The chosen bot, or the one whose chat was opened last, with the Space it was opened in.
 private func target(_ bot: BotEntity?) -> (botId: String, spaceId: String?)? {
   if let bot { return (bot.botId, bot.spaceId) }
-  guard let last = secureStoreItem("rakazo.last_bot_id"), !last.isEmpty else { return nil }
-  let space = secureStoreItem("rakazo.last_bot_space_id")
+  guard let last = secureStoreItem("atlas.last_bot_id"), !last.isEmpty else { return nil }
+  let space = secureStoreItem("atlas.last_bot_space_id")
   return (last, space?.isEmpty == false ? space : nil)
 }
 
 @MainActor
 private func openChat(botId: String, spaceId: String?) async {
-  var link = URLComponents(string: "rakazo://thread")
+  var link = URLComponents(string: "atlas://thread")
   link?.queryItems = [URLQueryItem(name: "botId", value: botId)]
   if let spaceId { link?.queryItems?.append(URLQueryItem(name: "spaceId", value: spaceId)) }
   if let url = link?.url { await UIApplication.shared.open(url) }
 }
 
 private struct Delivery {
-  let session: RakazoSession
+  let session: AtlasSession
   let botId: String
   let spaceId: String?
   let runId: String
@@ -153,7 +153,7 @@ private struct Delivery {
 private func send(_ message: String, file: IntentFile?, to bot: BotEntity?) async throws -> Delivery {
   guard let target = target(bot) else { throw MessageBotError.noBot }
   let botId = target.botId
-  let session = try RakazoSession.load()
+  let session = try AtlasSession.load()
   let spaceId = target.spaceId ?? session.selectedSpaceId
   try await session.requireConsent(["botId": botId], spaceId: spaceId)
   var input: [String: Any] = [
@@ -207,7 +207,7 @@ private func reply(to sent: Delivery) async throws -> String? {
 }
 
 /// Puts the actions in Shortcuts, Spotlight and the Action button without the user building one.
-struct RakazoShortcuts: AppShortcutsProvider {
+struct AtlasShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: MessageBotIntent(),
@@ -253,9 +253,9 @@ struct BotEntity: AppEntity {
 /// Looks entities up Space by Space, since each id starts with its Space.
 private func findEntities<Entity: AppEntity>(
   _ identifiers: [String],
-  in list: (String, RakazoSession) async throws -> [Entity]
+  in list: (String, AtlasSession) async throws -> [Entity]
 ) async throws -> [Entity] where Entity.ID == String {
-  let session = try RakazoSession.load()
+  let session = try AtlasSession.load()
   var found: [Entity] = []
   for spaceId in Set(identifiers.compactMap { $0.split(separator: "/").first.map(String.init) }) {
     found += try await list(spaceId, session).filter { identifiers.contains($0.id) }
@@ -269,11 +269,11 @@ struct BotQuery: EntityQuery {
   }
 
   func suggestedEntities() async throws -> [BotEntity] {
-    let session = try RakazoSession.load()
+    let session = try AtlasSession.load()
     return try await bots(in: session.selectedSpaceId, session: session)
   }
 
-  private func bots(in spaceId: String?, session: RakazoSession) async throws -> [BotEntity] {
+  private func bots(in spaceId: String?, session: AtlasSession) async throws -> [BotEntity] {
     let navigation: SpaceNavigation = try await session.rpc("spaces/list", [:], spaceId: spaceId)
     return navigation.current.bots.map {
       BotEntity(botId: $0.id, spaceId: navigation.current.id, name: $0.name)
@@ -299,11 +299,11 @@ struct RoutineQuery: EntityQuery {
   }
 
   func suggestedEntities() async throws -> [RoutineEntity] {
-    let session = try RakazoSession.load()
+    let session = try AtlasSession.load()
     return try await routines(in: session.selectedSpaceId, session: session)
   }
 
-  private func routines(in spaceId: String?, session: RakazoSession) async throws -> [RoutineEntity] {
+  private func routines(in spaceId: String?, session: AtlasSession) async throws -> [RoutineEntity] {
     let navigation: SpaceNavigation = try await session.rpc("spaces/list", [:], spaceId: spaceId)
     let botIds = navigation.current.bots.prefix(100).map(\.id)
     guard !botIds.isEmpty else { return [] }
@@ -326,7 +326,7 @@ private final class RejectRedirects: NSObject, URLSessionTaskDelegate {
   }
 }
 
-private struct RakazoSession {
+private struct AtlasSession {
   private static let transport = URLSession(
     configuration: .ephemeral, delegate: RejectRedirects(), delegateQueue: nil)
 
@@ -336,16 +336,16 @@ private struct RakazoSession {
   let headers: [String: String]
 
   // The keys lib/session.ts, lib/server-config.ts and lib/api.ts keep in expo-secure-store.
-  static func load() throws -> RakazoSession {
-    guard let token = secureStoreItem("rakazo.session_token"), !token.isEmpty else {
+  static func load() throws -> AtlasSession {
+    guard let token = secureStoreItem("atlas.session_token"), !token.isEmpty else {
       throw MessageBotError.signedOut
     }
-    let fallback = Bundle.main.object(forInfoDictionaryKey: "RakazoDefaultApiBase") as? String
-    guard let apiBase = secureStoreItem("rakazo.api_base") ?? fallback else {
+    let fallback = Bundle.main.object(forInfoDictionaryKey: "AtlasDefaultApiBase") as? String
+    guard let apiBase = secureStoreItem("atlas.api_base") ?? fallback else {
       throw MessageBotError.signedOut
     }
-    let space = secureStoreItem("rakazo.space_id")
-    return RakazoSession(
+    let space = secureStoreItem("atlas.space_id")
+    return AtlasSession(
       apiBase: apiBase.hasSuffix("/") ? String(apiBase.dropLast()) : apiBase,
       token: token,
       selectedSpaceId: space?.isEmpty == false ? space : nil,
@@ -354,7 +354,7 @@ private struct RakazoSession {
 
   /// The headers lib/server-headers.ts saved for this server, such as an access proxy's.
   private static func serverHeaders(for apiBase: String) -> [String: String] {
-    guard let stored = secureStoreItem("rakazo.server_headers")?.data(using: .utf8),
+    guard let stored = secureStoreItem("atlas.server_headers")?.data(using: .utf8),
       let saved = try? JSONDecoder().decode(SavedHeaders.self, from: stored),
       saved.apiBase == apiBase
     else { return [:] }
@@ -435,9 +435,9 @@ private struct RakazoSession {
     request.httpMethod = "POST"
     for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
     request.setValue("application/json", forHTTPHeaderField: "content-type")
-    request.setValue("rakazo://", forHTTPHeaderField: "origin")
+    request.setValue("atlas://", forHTTPHeaderField: "origin")
     request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
-    if let spaceId { request.setValue(spaceId, forHTTPHeaderField: "x-rakazo-space-id") }
+    if let spaceId { request.setValue(spaceId, forHTTPHeaderField: "x-atlas-space-id") }
     request.httpBody = try JSONSerialization.data(withJSONObject: ["json": input])
     return request
   }
@@ -494,9 +494,9 @@ private enum MessageBotError: Error, CustomLocalizedStringResourceConvertible {
 
   var localizedStringResource: LocalizedStringResource {
     switch self {
-    case .signedOut: "Sign in to Rakazo first."
-    case .noBot: "Open a chat in Rakazo first."
-    case .needsYou: "It needs you in Rakazo."
+    case .signedOut: "Sign in to Atlas first."
+    case .noBot: "Open a chat in Atlas first."
+    case .needsYou: "It needs you in Atlas."
     case .consentRequired: "Review AI data sharing in Account settings before continuing."
     case .server(let message?): "\(message)"
     case .server(nil): "Something went wrong. Try again."

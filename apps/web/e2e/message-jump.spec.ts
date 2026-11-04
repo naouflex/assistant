@@ -100,7 +100,7 @@ test("the chat follows your sends and a reader at the bottom, not a reader who s
 }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   const stamp = Date.now();
-  await signup(page, `follow-${stamp}@rakazo.test`, "password12", "Follow Tester");
+  await signup(page, `follow-${stamp}@atlas.test`, "password12", "Follow Tester");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   await rpc(page, "onboarding/dismissFocus", { botId });

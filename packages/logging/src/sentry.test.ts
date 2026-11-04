@@ -280,8 +280,8 @@ describe("sentry sink", () => {
   it("titles a failed request report by its method, route and status", async () => {
     const { events, transport } = recordingTransport();
     const logger = createLogger({
-      service: "rakazo-api",
-      sinks: [createSentrySink("rakazo-api", { dsn: DSN }, transport)],
+      service: "atlas-api",
+      sinks: [createSentrySink("atlas-api", { dsn: DSN }, transport)],
     });
     logger.error("http.request.completed", {
       "http.method": "POST",

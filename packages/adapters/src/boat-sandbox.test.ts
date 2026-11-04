@@ -1617,7 +1617,7 @@ describe("BoatSandboxProvider", () => {
 
   it("restores over read-only files a kept disk already holds", async () => {
     const { api, provider, computer } = await boat();
-    const pack = "/home/user/rakazo-home/repo/.git/objects/pack/pack-1.idx";
+    const pack = "/home/user/atlas-home/repo/.git/objects/pack/pack-1.idx";
     api.files(computer.id).set(pack, {
       content: Uint8Array.from([1]),
       executable: false,
@@ -1991,7 +1991,7 @@ describe("BoatSandboxProvider", () => {
     expect(seen).toEqual([
       {
         command: expect.stringMatching(
-          /^DISPLAY=:20 RAKAZO_CDP_PORT=9241 HOME='\/home\/user\/rakazo-home' RAKAZO_BROWSER_ARGS_STDIN=1 \/usr\/local\/bin\/rakazo-page-browser act$/,
+          /^DISPLAY=:20 ATLAS_CDP_PORT=9241 HOME='\/home\/user\/atlas-home' ATLAS_BROWSER_ARGS_STDIN=1 \/usr\/local\/bin\/atlas-page-browser act$/,
         ),
         input: `${JSON.stringify({ command: "act", actions: [fill] })}\n`,
       },
@@ -2204,7 +2204,7 @@ describe("Boat computer snapshot", () => {
     await new BoatSandboxProvider({ apiKey: "test-key" }, api).buildComputerSnapshot();
     const setup = scripts(command).join("\n");
     expect(setup).toContain("agent-browser-linux-");
-    expect(setup).not.toContain("rakazo-page-browser");
+    expect(setup).not.toContain("atlas-page-browser");
   });
 
   it("starts new computers from the ready snapshot with only their own env", async () => {

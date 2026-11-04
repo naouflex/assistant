@@ -130,7 +130,7 @@ describe("hono request logging", () => {
 
   it("completes an expected 5xx as a warning", async () => {
     const sink = createTestSink();
-    const app = appWith(createLogger({ service: "rakazo-api", sinks: [sink] }));
+    const app = appWith(createLogger({ service: "atlas-api", sinks: [sink] }));
     expect((await app.request("/outage")).status).toBe(503);
     expect((await app.request("/crash")).status).toBe(500);
     expect(sink.events.map((event) => [event.level, event["http.route"]])).toEqual([
