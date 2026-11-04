@@ -1,5 +1,5 @@
-import type * as KmsSdk from "@aws-sdk/client-kms";
 import type { KeyProvider, KeyWrapContext, WrappedDataKey } from "@atlas/adapter-kit";
+import type * as KmsSdk from "@aws-sdk/client-kms";
 
 export type AwsKmsKeyProviderConfig = {
   /** Key ARN, not an alias, which can be repointed without stored keys noticing. */
@@ -114,14 +114,21 @@ export class AwsKmsKeyProvider implements KeyProvider {
       throw new Error(`Master key ${wrapped.masterKeyId} is not configured`);
     const keyId = wrapped.masterKeyId.slice(MASTER_KEY_PREFIX.length);
     const { sdk, client } = await this.connect();
-    const { KeyId, Plaintext } = await client
-      .send(
+    const decrypt = (prefix: ContextPrefix) =>
+      client.send(
         new sdk.DecryptCommand({
           KeyId: wrapped.masterKeyId === this.masterKeyId ? this.config.keyArn : undefined,
           CiphertextBlob: Buffer.from(wrapped.wrappedKey, "base64url"),
-          EncryptionContext: encryptionContext(context),
+          EncryptionContext: encryptionContext(context, prefix),
         }),
-      )
+      );
+    // Keys wrapped while the code named the context rakazo:* stay readable as they are;
+    // nothing is rewrapped. Only a context mismatch earns the second try.
+    const { KeyId, Plaintext } = await decrypt("atlas")
+      .catch((error: unknown) => {
+        if (!isContextMismatch(error)) throw error;
+        return decrypt("rakazo");
+      })
       .catch((error: unknown) => {
         throw new Error(`Space key could not be unwrapped with master key ${wrapped.masterKeyId}`, {
           cause: error,
@@ -134,10 +141,25 @@ export class AwsKmsKeyProvider implements KeyProvider {
   }
 }
 
-function encryptionContext(context: KeyWrapContext): Record<string, string> {
+/** Atlas wraps under atlas:*; keys wrapped after the upstream merge carry rakazo:*. */
+type ContextPrefix = "atlas" | "rakazo";
+
+function encryptionContext(
+  context: KeyWrapContext,
+  prefix: ContextPrefix = "atlas",
+): Record<string, string> {
   return {
-    "rakazo:purpose": "space-key/v1",
-    "rakazo:space": context.spaceId,
-    "rakazo:version": String(context.version),
+    [`${prefix}:purpose`]: "space-key/v1",
+    [`${prefix}:space`]: context.spaceId,
+    [`${prefix}:version`]: String(context.version),
   };
+}
+
+/** KMS reports a wrong encryption context as an invalid ciphertext. */
+function isContextMismatch(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { name?: unknown }).name === "InvalidCiphertextException"
+  );
 }
