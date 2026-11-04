@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   Link2,
   LogOut,
+  Moon,
   Plug,
   ScrollText,
   Settings,
@@ -53,6 +54,8 @@ type Props = {
   onRoutines?: () => void;
   /** Opens the floor of agent desks. */
   onCubicle?: () => void;
+  /** Opens the overnight timelapse of bot activity. */
+  onNightShift?: () => void;
   onSettings: () => void;
   onUsage: () => void;
   onInvite?: () => void;
@@ -83,6 +86,7 @@ export function SidebarFooter({
   onArtifacts,
   onRoutines,
   onCubicle,
+  onNightShift,
   onSettings,
   onUsage,
   onInvite,
@@ -211,6 +215,16 @@ export function SidebarFooter({
               >
                 <LayoutGrid className="text-muted-foreground" strokeWidth={1.75} />
                 <Trans>Cubicle</Trans>
+              </Button>
+            ) : null}
+            {onNightShift ? (
+              <Button
+                variant="ghost"
+                className="h-9 w-full justify-start gap-2.5 font-normal"
+                onClick={onNightShift}
+              >
+                <Moon className="text-muted-foreground" strokeWidth={1.75} />
+                <Trans>Night Shift</Trans>
               </Button>
             ) : null}
             {onBoard ? (

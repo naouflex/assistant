@@ -381,6 +381,11 @@ function ShellSidebarFooter({
           closeMobileSidebar();
           navigate("/app/cubicle");
         }}
+        onNightShift={() => {
+          setMenuOpen(false);
+          closeMobileSidebar();
+          navigate("/app/night-shift");
+        }}
         onSettings={() => {
           setMenuOpen(false);
           openSettings("general");

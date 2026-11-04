@@ -101,10 +101,20 @@ msgstr "{0} {unitLabel}"
 msgid "{0} connection"
 msgstr "Connexion {0}"
 
+#. placeholder {0}: counters.decided
+#: src/pages/NightShift.tsx
+msgid "{0} decided without you"
+msgstr "{0} d?cid?es sans vous"
+
 #. placeholder {0}: bot.name
 #: src/pages/ExternalConversationSettings.tsx
 msgid "{0} default"
 msgstr "Défaut de {0}"
+
+#. placeholder {0}: visibleLog.length
+#: src/pages/NightShift.tsx
+msgid "{0} events"
+msgstr "{0} ?v?nements"
 
 #. placeholder {0}: parts.amount
 #: src/components/ArtifactFileCard.tsx
@@ -115,6 +125,11 @@ msgstr "{0} Go"
 #: src/pages/ExternalConversationSettings.tsx
 msgid "{0} handling"
 msgstr "Gestion de {0}"
+
+#. placeholder {0}: counters.handoffs
+#: src/pages/NightShift.tsx
+msgid "{0} handoffs"
+msgstr "{0} passages de relais"
 
 #. placeholder {0}: bot.name
 #: src/components/call/IncomingCall.tsx
@@ -161,6 +176,11 @@ msgstr ""
 msgid "{0} rollup hours"
 msgstr "{0} heures de regroupement"
 
+#. placeholder {0}: counters.shipped
+#: src/pages/NightShift.tsx
+msgid "{0} shipped"
+msgstr "{0} livr?es"
+
 #. placeholder {0}: targets.length
 #: src/pages/Cubicle.tsx
 msgid "{0} spaces"
@@ -175,6 +195,11 @@ msgstr ""
 #: src/components/ArtifactFileCard.tsx
 msgid "{0} TB"
 msgstr "{0} To"
+
+#. placeholder {0}: compact.format(counters.tokens)
+#: src/pages/NightShift.tsx
+msgid "{0} tokens"
+msgstr "{0} jetons"
 
 #. placeholder {0}: bot.name
 #: src/pages/ExternalConversationSettings.tsx
@@ -296,9 +321,45 @@ msgstr "{name} échoué"
 msgid "{name} finished"
 msgstr "{name} terminé"
 
+#: src/pages/NightShift.tsx
+msgid "{name} finished a run"
+msgstr "{name} a termin? une ex?cution"
+
+#: src/pages/NightShift.tsx
+msgid "{name} handed work to a subagent"
+msgstr "{name} a confi? du travail ? un sous-agent"
+
+#: src/pages/NightShift.tsx
+msgid "{name} hit an error"
+msgstr "{name} a rencontr? une erreur"
+
+#: src/pages/NightShift.tsx
+msgid "{name} napped while its context was compacted"
+msgstr "{name} a fait une sieste pendant la compaction de son contexte"
+
+#: src/pages/NightShift.tsx
+msgid "{name} needed you"
+msgstr "{name} avait besoin de vous"
+
 #: src/pages/ModelRoleSettings.tsx
 msgid "{name} options"
 msgstr "Options de {name}"
+
+#: src/pages/NightShift.tsx
+msgid "{name} picked up work from another bot"
+msgstr "{name} a repris le travail d'un autre bot"
+
+#: src/pages/NightShift.tsx
+msgid "{name} ran {detail} without asking"
+msgstr "{name} a ex?cut? {detail} sans demander"
+
+#: src/pages/NightShift.tsx
+msgid "{name} started a routine"
+msgstr "{name} a lanc? une routine"
+
+#: src/pages/NightShift.tsx
+msgid "{name} started the routine {detail}"
+msgstr "{name} a lanc? la routine {detail}"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
@@ -462,6 +523,10 @@ msgstr "@{0}"
 msgid "/ month"
 msgstr "/ mois"
 
+#: src/pages/NightShift.tsx
+msgid "1 event"
+msgstr "1 ?v?nement"
+
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "1 model"
 msgstr ""
@@ -477,6 +542,10 @@ msgstr ""
 #: src/pages/shell/message-cards.tsx
 msgid "A bit of everything"
 msgstr "Un peu de tout"
+
+#: src/pages/NightShift.tsx
+msgid "A bot"
+msgstr "Un bot"
 
 #: src/pages/RoutineEditor.tsx
 msgid "A command's output"
@@ -1179,6 +1248,7 @@ msgstr ""
 
 #: src/pages/Artifacts.tsx
 #: src/pages/Cubicle.tsx
+#: src/pages/NightShift.tsx
 #: src/pages/Routines.tsx
 msgid "Bots"
 msgstr "Bots"
@@ -1207,6 +1277,10 @@ msgstr "Parcourir les serveurs MCP"
 #: src/pages/shell/agent-import.tsx
 msgid "Built-in"
 msgstr "Intégré"
+
+#: src/pages/NightShift.tsx
+msgid "Busy night: some rows were left out, so counts are a minimum."
+msgstr "Nuit charg?e : certaines lignes ont ?t? omises, les chiffres sont donc un minimum."
 
 #: src/pages/shell/chat-header.tsx
 msgid "Call"
@@ -2590,6 +2664,10 @@ msgstr "Travail quotidien"
 msgid "days"
 msgstr "jours"
 
+#: src/pages/NightShift.tsx
+msgid "Daytime"
+msgstr "Journ?e"
+
 #: src/components/call/IncomingCall.tsx
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Decline"
@@ -2904,6 +2982,10 @@ msgstr "Dupliquer"
 msgid "Each name can be used once."
 msgstr "Chaque nom ne peut être utilisé qu’une fois."
 
+#: src/pages/NightShift.tsx
+msgid "Early morning"
+msgstr "Petit matin"
+
 #: src/components/AskCard.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -3000,6 +3082,10 @@ msgstr "Variables d’environnement : {names}"
 #: src/pages/shell/sidebar-roster.tsx
 msgid "Error"
 msgstr ""
+
+#: src/pages/NightShift.tsx
+msgid "Evening"
+msgstr "Soir?e"
 
 #: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
@@ -3612,6 +3698,10 @@ msgstr "Isolé"
 msgid "Isolated preview — no access to your account"
 msgstr "Aperçu isolé — aucun accès à votre compte"
 
+#: src/pages/NightShift.tsx
+msgid "Isometric office with one desk per bot"
+msgstr "Bureau isom?trique avec un poste par bot"
+
 #: src/pages/shell/shell-dialogs.tsx
 msgid "Its bots and groups are kept and leave the section."
 msgstr "Ses bots et groupes sont conservés et quittent la section."
@@ -3669,6 +3759,10 @@ msgstr "Dernière vérification {0} : aucun changement"
 #: src/pages/Routines.tsx
 msgid "Last run"
 msgstr ""
+
+#: src/pages/NightShift.tsx
+msgid "Late night"
+msgstr "Tard dans la nuit"
 
 #: src/components/DesktopUpdates.tsx
 msgid "Later"
@@ -4182,6 +4276,10 @@ msgstr ""
 msgid "More computer actions"
 msgstr "Plus d'actions pour l'ordinateur"
 
+#: src/pages/NightShift.tsx
+msgid "Morning digest of overnight work, sent to your phone"
+msgstr "R?sum? matinal du travail de la nuit, envoy? sur votre t?l?phone"
+
 #: src/pages/shell/dialogs.tsx
 msgid "Move"
 msgstr ""
@@ -4352,6 +4450,10 @@ msgstr "Nouvel espace"
 msgid "New ticket"
 msgstr ""
 
+#: src/pages/NightShift.tsx
+msgid "Next edition {next}"
+msgstr "Prochaine ?dition {next}"
+
 #: src/components/markdown-copy.tsx
 msgid "Next page"
 msgstr "Page suivante"
@@ -4363,6 +4465,15 @@ msgstr ""
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr ""
+
+#: src/pages/NightShift.tsx
+msgid "Night log"
+msgstr "Journal de nuit"
+
+#: src/components/SidebarFooter.tsx
+#: src/pages/NightShift.tsx
+msgid "Night Shift"
+msgstr "?quipe de nuit"
 
 #: src/pages/Cubicle.tsx
 msgid "No agents"
@@ -4392,6 +4503,14 @@ msgstr ""
 #: src/pages/shell/bot-picker.tsx
 msgid "No bots match"
 msgstr "Aucun bot ne correspond"
+
+#: src/pages/NightShift.tsx
+msgid "No bots yet."
+msgstr "Aucun bot pour l'instant."
+
+#: src/pages/NightShift.tsx
+msgid "No edition yet. The first one arrives at the next scheduled time."
+msgstr "Pas encore d'?dition. La premi?re arrivera ? la prochaine heure pr?vue."
 
 #: src/pages/DevicesSettingsPanel.tsx
 msgid "No local model server"
@@ -4546,6 +4665,10 @@ msgstr ""
 msgid "Not working"
 msgstr "Ne fonctionne pas"
 
+#: src/pages/NightShift.tsx
+msgid "Nothing happened yet at this time."
+msgstr "Rien ne s'est encore pass? ? cette heure."
+
 #: src/pages/KnowledgeSection.tsx
 msgid "Nothing remembered yet"
 msgstr "Rien n'est mémorisé pour le moment"
@@ -4680,6 +4803,10 @@ msgstr ""
 #: src/components/markdown-link-prompt.tsx
 msgid "Open external link?"
 msgstr "Ouvrir le lien externe ?"
+
+#: src/pages/NightShift.tsx
+msgid "Open in chat"
+msgstr "Ouvrir dans le chat"
 
 #: src/pages/shell/computer-panel.tsx
 msgid "Open in full window"
@@ -4827,10 +4954,12 @@ msgstr "Collez votre clé API"
 msgid "Paste your API key, then test again."
 msgstr "Collez votre clé API, puis testez à nouveau."
 
+#: src/pages/NightShift.tsx
 #: src/pages/Routines.tsx
 msgid "Pause"
-msgstr ""
+msgstr "Pause"
 
+#: src/pages/NightShift.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/Routines.tsx
 #: src/pages/shell/import-status.ts
@@ -4896,9 +5025,17 @@ msgstr "Épingler"
 msgid "Pinned"
 msgstr "Épinglés"
 
+#: src/pages/NightShift.tsx
+msgid "Play"
+msgstr "Lecture"
+
 #: src/components/ArtifactFileCard.tsx
 msgid "Play {name}"
 msgstr "Lire {name}"
+
+#: src/pages/NightShift.tsx
+msgid "Playback speed"
+msgstr "Vitesse de lecture"
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Playing…"
@@ -5600,6 +5737,10 @@ msgstr "Enregistrement en cours…"
 msgid "Say yes or no, or answer in a sentence."
 msgstr "Dites oui ou non, ou répondez en une phrase."
 
+#: src/pages/NightShift.tsx
+msgid "Schedule daily at 8:00"
+msgstr "Programmer chaque jour ? 8 h"
+
 #: src/components/ModelCredits.tsx
 msgid "Scheduled routines"
 msgstr ""
@@ -6264,6 +6405,10 @@ msgstr ""
 msgid "Testing…"
 msgstr "Test en cours…"
 
+#: src/pages/NightShift.tsx
+msgid "The Agent Times"
+msgstr "The Agent Times"
+
 #: src/pages/shell/composer-error.tsx
 msgid "The bot can use the file but won't see the picture."
 msgstr "Le bot peut utiliser le fichier, mais ne verra pas l'image."
@@ -6500,6 +6645,7 @@ msgstr "Cette semaine"
 msgid "Thursday"
 msgstr "jeudi"
 
+#: src/pages/NightShift.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"
 msgstr "Heure de la journée"
@@ -6965,6 +7111,10 @@ msgstr "Que retourner"
 #: src/pages/RoutineEditor.tsx
 msgid "What to watch"
 msgstr "Élément à surveiller"
+
+#: src/pages/NightShift.tsx
+msgid "What your bots did while you were away"
+msgstr "Ce que vos bots ont fait pendant votre absence"
 
 #: src/pages/RoutineEditor.tsx
 msgid "When a webhook fires"

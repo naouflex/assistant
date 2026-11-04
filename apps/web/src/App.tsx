@@ -66,6 +66,9 @@ const BoardPage = lazyComponent(() => import("./pages/Board").then((module) => m
 const CubiclePage = lazyComponent(() =>
   import("./pages/Cubicle").then((module) => module.CubiclePage),
 );
+const NightShiftPage = lazyComponent(() =>
+  import("./pages/NightShift").then((module) => module.NightShiftPage),
+);
 const AdminPluginsPage = lazyComponent(() =>
   import("./pages/AdminPluginsPage").then((module) => module.AdminPluginsPage),
 );
@@ -284,6 +287,7 @@ function SessionApp() {
                 <Route path="/app/artifacts" element={<ArtifactsPage />} />
                 <Route path="/app/routines" element={<RoutinesPage />} />
                 <Route path="/app/cubicle" element={<CubiclePage />} />
+                <Route path="/app/night-shift" element={<NightShiftPage />} />
                 <Route path="/app/artifacts/:artifactId" element={<ArtifactsPage />} />
                 {ticketBoardEnabled ? <Route path="/app/board" element={<BoardPage />} /> : null}
                 <Route path="/app/x/:linkId" element={<NavLinkPage />} />
