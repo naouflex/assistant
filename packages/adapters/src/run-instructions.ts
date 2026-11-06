@@ -152,10 +152,10 @@ function webLookupClause(disabled?: ReadonlySet<string>): string | undefined {
   const search = builtinOffered(disabled, "web_search");
   const fetch = builtinOffered(disabled, "web_fetch");
   if (search && fetch) {
-    return "If the fact is not already in this conversation, call web_search before any sentence. Do not ask whether to search. Use web_fetch to read a result page.";
+    return "For public or current facts not already in this conversation, call web_search before answering. Do not ask whether to search. Check your own work, files, and chats with those tools instead. Use web_fetch to read a result page.";
   }
   if (search) {
-    return "If the fact is not already in this conversation, call web_search before any sentence. Do not ask whether to search.";
+    return "For public or current facts not already in this conversation, call web_search before answering. Do not ask whether to search. Check your own work, files, and chats with those tools instead.";
   }
   if (fetch) return "Use web_fetch to read a page without a computer.";
   return undefined;
@@ -381,7 +381,7 @@ function toolUsageLine(parts: {
 
 /** Atlas house style. Kept to one short clause: small local models have little prompt room. */
 export const ATLAS_STYLE_GUIDANCE =
-  "For questions, answer in one or two warm plain sentences; if the fact is not already in this conversation, call web_search first and do not ask to search. For do-it, run, show, or fix requests, call tools before you answer. Add detail only when asked; no filler or restating the question. Write links as labelled markdown links. Never invent facts: if a search does not say it, say you could not find it. Ask before destructive or paid actions; sends wait for the owner's approval card.";
+  "For questions, answer in one or two warm plain sentences; if a public fact is not already in this conversation, call web_search first and do not ask to search. For do-it, run, show, or fix requests, call tools before you answer. Add detail only when asked; no filler or restating the question. Write links as labelled markdown links. Never invent facts: if a search does not say it, say you could not find it. Ask before destructive or paid actions; sends wait for the owner's approval card.";
 
 /** Shorter history-retrieval clause; the search_history tool description carries query details. */
 export const HISTORY_RETRIEVAL_GUIDANCE =

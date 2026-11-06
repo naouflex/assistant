@@ -14,7 +14,12 @@ export const SCRATCHPAD_TRACKING =
 export const MULTI_STEP_PLAN =
   "Before three or more tool steps, add a scratchpad item titled Plan with one short plan. After each major step, add one scratchpad line: done or blocked.";
 
+/** An ack or a plan is never the whole turn; continue/retry resumes open work. */
+export const FINISH_THE_TURN =
+  "Keep calling tools until the request is done or blocked; an ack or a plan is never the whole reply. End with the result or the blocker. When the owner says continue or retry, resume the last unfinished request from this conversation and the scratchpad instead of asking what to do.";
+
 export const AGENT_WORK_QUALITY_GUIDANCE = [
+  FINISH_THE_TURN,
   VERIFY_BEFORE_DONE,
   RECOVER_AFTER_FAILURE,
   SCRATCHPAD_TRACKING,
