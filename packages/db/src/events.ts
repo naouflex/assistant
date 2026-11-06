@@ -2073,6 +2073,11 @@ export async function createPendingSteeringRun(
     where: { id: { in: batch.map((item) => item.id) }, runId: null },
     data: { runId: run.id, claimedAt: null },
   });
+  // Sent while an earlier run was busy, these carry its id; the continuation is what answers them.
+  await tx.message.updateMany({
+    where: { id: { in: batch.map((item) => item.message.id) } },
+    data: { runId: run.id },
+  });
   return run.id;
 }
 

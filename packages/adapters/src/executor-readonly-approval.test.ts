@@ -614,6 +614,7 @@ function fixture({
         message: {
           create: vi.fn(async () => inboundMessage),
           update: vi.fn(async () => inboundMessage),
+          updateMany: vi.fn(async () => ({ count: 1 })),
         },
         event: { create: vi.fn(async ({ data }: { data: object }) => ({ ...data, seq: 1 })) },
         task: {

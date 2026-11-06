@@ -311,6 +311,11 @@ describePostgres("steering after a run ends without completing (PostgreSQL)", ()
         where: { id: { in: rows.map((row) => row.id) }, runId: continuationRunId },
       }),
     ).toBe(2);
+    expect(
+      await system.message.count({
+        where: { id: { in: [directLine.id, app.id] }, runId: continuationRunId },
+      }),
+    ).toBe(2);
   });
 
   it("keeps a channel message queued before origins were recorded a messaging run", async () => {

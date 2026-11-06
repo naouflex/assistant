@@ -314,7 +314,7 @@ describe("finalizeRun", () => {
         ]),
         updateMany: vi.fn(async () => ({ count: 1 })),
       },
-      message: { findFirst: vi.fn(async () => null) },
+      message: { findFirst: vi.fn(async () => null), updateMany: vi.fn() },
       bot: { update: vi.fn(async () => ({})) },
     };
     const prisma = {
@@ -385,7 +385,7 @@ describe("finalizeRun", () => {
         ]),
         updateMany: vi.fn(async () => ({ count: 1 })),
       },
-      message: { findFirst: vi.fn(async () => null) },
+      message: { findFirst: vi.fn(async () => null), updateMany: vi.fn() },
       bot: { update: vi.fn(async () => ({})) },
     };
     const prisma = {
@@ -478,7 +478,7 @@ describe("finalizeRun", () => {
         ]),
         updateMany: vi.fn(async () => ({ count: 1 })),
       },
-      message: { findFirst: vi.fn(async () => null) },
+      message: { findFirst: vi.fn(async () => null), updateMany: vi.fn() },
       bot: { update: vi.fn(async () => ({})) },
     };
     const prisma = {
@@ -1095,7 +1095,10 @@ describe("pauseRunForInput", () => {
             .mockResolvedValueOnce({ nextEventSeq: 8 })
             .mockResolvedValueOnce({ nextEventSeq: 9 }),
         },
-        message: { create: vi.fn().mockResolvedValue({ id: "message-1" }) },
+        message: {
+          create: vi.fn().mockResolvedValue({ id: "message-1" }),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
         event: {
           create: vi.fn(async ({ data }: { data: { seq: number; type: string } }) => ({
             ...event(data.seq),
@@ -3490,6 +3493,7 @@ describe("queue admission beside pending cards", () => {
         ]),
         updateMany: vi.fn(),
       },
+      message: { updateMany: vi.fn() },
       task: { create: vi.fn().mockResolvedValue({ id: "task-new" }) },
     };
     await expect(
@@ -3502,6 +3506,10 @@ describe("queue admission beside pending cards", () => {
     expect(tx.steeringMessage.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["steering-1"] }, runId: null },
       data: { runId: "continuation", claimedAt: null },
+    });
+    expect(tx.message.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["new-message"] } },
+      data: { runId: "continuation" },
     });
   });
 });
