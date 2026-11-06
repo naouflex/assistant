@@ -1,6 +1,6 @@
 import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import { ATTACHMENT_MAX_BYTES } from "@atlas/contracts";
-import { inferAttachmentMimeType, isBackgroundRunTrigger } from "@atlas/core";
+import { isBackgroundRunTrigger } from "@atlas/core";
 import { resolveBotWorkspacePath } from "./computer-support.js";
 import { desktopProtectionGuardMessage } from "./desktop-command-guard.js";
 import { protectedActivateScriptWriteRefusal } from "./desktop-guard-words.js";
@@ -9,7 +9,12 @@ import type { RunContext } from "./run-context.js";
 import { persistMessageInTransaction, publishMessage } from "./run-messages.js";
 import type { ToolCall, ToolHandlers } from "./run-tool-gate.js";
 import { recordComputerAction } from "./run-tools-computer.js";
-import { attachWorkspaceFileToThread } from "./thread-artifacts.js";
+import {
+  attachWorkspaceFileToThread,
+  svgAttachmentPng,
+  unsupportedAttachmentError,
+  workspaceAttachmentMimeType,
+} from "./thread-artifacts.js";
 import { textContentArg } from "./tool-text.js";
 import type { RunWorkspace } from "./workspace-file-tools.js";
 import { listFilesFromTool, readFileFromTool, renderPlotFromTool } from "./workspace-file-tools.js";
@@ -173,8 +178,18 @@ export const fileTools: ToolHandlers = {
       if (error instanceof SandboxUnreachableError) throw error;
       return failAttach("file not found or unreadable");
     }
-    const mimeType = inferAttachmentMimeType(filePath);
-    if (!mimeType) return failAttach("unsupported attachment type");
+    const svg = /\.svg$/i.test(filePath);
+    if (svg) {
+      try {
+        bytes = await svgAttachmentPng(bytes);
+      } catch {
+        return failAttach("could not render this SVG; check that the file is valid SVG markup");
+      }
+    }
+    const attachedPath = svg ? filePath.replace(/\.svg$/i, ".png") : filePath;
+    const fileName = attachedPath.split("/").pop() || attachedPath;
+    if (!workspaceAttachmentMimeType(fileName, bytes))
+      return failAttach(unsupportedAttachmentError(fileName));
     try {
       const attached = await attachWorkspaceFileToThread(
         {
@@ -188,10 +203,15 @@ export const fileTools: ToolHandlers = {
           botId: bot.id,
           groupId: thread.groupId ?? undefined,
           runId: run.id,
-          filePath,
+          filePath: attachedPath,
           bytes,
           operationId: executionId,
-          name: typeof args.name === "string" ? args.name : undefined,
+          name:
+            typeof args.name === "string"
+              ? svg
+                ? args.name.replace(/\.svg$/i, ".png")
+                : args.name
+              : undefined,
           description: typeof args.description === "string" ? args.description : undefined,
         },
       );

@@ -32,6 +32,44 @@ export type MaterializedThreadFile = {
   path: string;
 };
 
+const UTF8 = new TextDecoder("utf-8", { fatal: true });
+
+/**
+ * Code, config and log files have no attachment type of their own. Readable text still
+ * attaches as plain text under its own name; binary files need a supported format.
+ */
+export function workspaceAttachmentMimeType(fileName: string, bytes: Uint8Array) {
+  const known = inferAttachmentMimeType(fileName);
+  if (known) return known;
+  if (bytes.includes(0)) return null;
+  try {
+    UTF8.decode(bytes);
+    return "text/plain" as const;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every client draws a PNG, and an SVG served as is can carry script, so an attached SVG is
+ * rendered first. Flattened onto white: transparent line art vanishes on a dark chat theme.
+ */
+export async function svgAttachmentPng(svg: Uint8Array): Promise<Buffer> {
+  // sharp is a native addon; load it only when an image is processed.
+  const { default: sharp } = await import("sharp");
+  return sharp(Buffer.from(svg), { density: 144, limitInputPixels: 40_000_000 })
+    .resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true })
+    .flatten({ background: "#ffffff" })
+    .png()
+    .toBuffer();
+}
+
+export function unsupportedAttachmentError(fileName: string): string {
+  const dot = fileName.lastIndexOf(".");
+  const extension = dot > 0 ? `${fileName.slice(dot)} ` : "";
+  return `unsupported attachment type ${extension}for ${fileName}. Attach images, PDF, audio, MP4, text, CSV, spreadsheets, HTML, JSON or ZIP: convert the file (for example to PDF or PNG) or zip it.`;
+}
+
 export async function attachWorkspaceFileToThread(
   deps: {
     prisma: PrismaClient;
@@ -54,10 +92,8 @@ export async function attachWorkspaceFileToThread(
   },
 ): Promise<{ artifactId: string; block: Extract<MessageBlock, { kind: "image" | "file" }> }> {
   const fileName = path.basename(input.filePath) || input.filePath;
-  const mimeType = inferAttachmentMimeType(fileName);
-  if (!mimeType) {
-    throw new Error(`Unsupported attachment type for ${fileName}`);
-  }
+  const mimeType = workspaceAttachmentMimeType(fileName, input.bytes);
+  if (!mimeType) throw new Error(unsupportedAttachmentError(fileName));
   const name = (input.name?.trim() || fileName).slice(0, ARTIFACT_NAME_MAX_LENGTH);
   validateAttachmentMimeType(mimeType);
   if (input.bytes.byteLength > (deps.maxUploadSizeBytes ?? ATTACHMENT_MAX_BYTES)) {

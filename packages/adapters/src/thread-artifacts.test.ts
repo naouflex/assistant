@@ -14,7 +14,41 @@ import {
   materializeCurrentTurnFiles,
   materializeRecentThreadFiles,
   recentThreadFilesInstruction,
+  svgAttachmentPng,
+  unsupportedAttachmentError,
+  workspaceAttachmentMimeType,
 } from "./thread-artifacts.js";
+
+describe("workspace attachment types", () => {
+  const text = (value: string) => new TextEncoder().encode(value);
+
+  it("attaches readable code and config files as plain text", () => {
+    expect(workspaceAttachmentMimeType("main.py", text("print('hi')\n"))).toBe("text/plain");
+    expect(workspaceAttachmentMimeType("app.yaml", text("name: café\n"))).toBe("text/plain");
+    expect(workspaceAttachmentMimeType("report.pdf", text("%PDF"))).toBe("application/pdf");
+  });
+
+  it("refuses binary files without a supported type and says what to do", () => {
+    expect(workspaceAttachmentMimeType("deck.pptx", new Uint8Array([0x50, 0x4b, 0, 4]))).toBe(null);
+    expect(workspaceAttachmentMimeType("blob.bin", new Uint8Array([0xff, 0xfe, 0xfd]))).toBe(null);
+    expect(unsupportedAttachmentError("deck.pptx")).toMatch(/\.pptx .*convert .* or zip it/);
+  });
+
+  it("renders an SVG to an opaque PNG", async () => {
+    const png = await svgAttachmentPng(
+      text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><circle cx="10" cy="10" r="8" fill="blue"/></svg>',
+      ),
+    );
+    const { default: sharp } = await import("sharp");
+    const meta = await sharp(png).metadata();
+    expect(meta).toMatchObject({ format: "png", width: 80, height: 40, hasAlpha: false });
+  });
+
+  it("refuses markup that is not an SVG", async () => {
+    await expect(svgAttachmentPng(text("<html>nope</html>"))).rejects.toThrow();
+  });
+});
 
 describe("current-turn thread files", () => {
   it("rejects generated output above a lower configured attachment limit before storage", async () => {
