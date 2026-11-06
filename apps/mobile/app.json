@@ -4,7 +4,7 @@
     "slug": "atlas",
     "owner": "inbox-zero",
     "scheme": "atlas",
-    "version": "1.0.18",
+    "version": "1.0.19",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -105,7 +105,7 @@
     },
     "android": {
       "package": "com.naouflex.atlas.app",
-      "versionCode": 18,
+      "versionCode": 19,
       "softwareKeyboardLayoutMode": "resize",
       "icon": "./assets/icon.png",
       "adaptiveIcon": {

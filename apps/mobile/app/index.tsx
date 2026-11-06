@@ -743,15 +743,18 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
   );
   const organizeBot = useCallback(
     (bot: MobileBot | SpaceBot) => {
-      void organize("bot", bot);
+      // The menu acts through the current Space; enter the chat's Space first.
+      if (bot.spaceId && bot.spaceId !== me?.spaceId) openBot(bot);
+      else void organize("bot", bot);
     },
-    [organize],
+    [organize, openBot, me?.spaceId],
   );
   const organizeGroup = useCallback(
     (group: MobileGroup | SpaceGroup) => {
-      void organize("group", group);
+      if (group.spaceId && group.spaceId !== me?.spaceId) openGroup(group);
+      else void organize("group", group);
     },
-    [organize],
+    [organize, openGroup, me?.spaceId],
   );
 
   const [avatarViewport] = useState(createAvatarViewport);
