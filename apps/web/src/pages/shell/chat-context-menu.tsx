@@ -1,16 +1,12 @@
 import type { Bot, BotSection, Group } from "@atlas/contracts";
 import { toast } from "@atlas/ui-web";
 import { useLingui } from "@lingui/react/macro";
-import { lazyOverlay } from "../../components/ErrorBoundary";
 import { useOwnSpaces } from "../../components/integrations/space-availability";
 import type { createSpaceRpc } from "../../lib/rpc";
 import { errorText } from "../../lib/user-error";
+import { BotContextMenu } from "../BotContextMenu";
 import type { ShellDialogsState } from "./shell-dialogs";
 import type { useChatRead } from "./use-chat-read";
-
-const BotContextMenu = lazyOverlay(() =>
-  import("../BotContextMenu").then((module) => module.BotContextMenu),
-);
 
 type ChatRead = ReturnType<typeof useChatRead>;
 

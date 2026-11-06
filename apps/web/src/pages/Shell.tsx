@@ -1,6 +1,7 @@
 import type {
   AgentSkillCatalogEntry,
   Bot,
+  BotSection,
   SpaceMemoryConfig,
   ThreadMessage,
   VoiceStatus,
@@ -878,6 +879,12 @@ function SpaceShell() {
     botMenu?.kind === "group" ? groups.find((group) => group.id === botMenu.id) : undefined;
   const contextMenuSpaceId =
     contextBot?.spaceId ?? contextGroup?.spaceId ?? currentSpaceId ?? undefined;
+  const contextMenuSections: BotSection[] = useMemo(() => {
+    if (!contextMenuSpaceId) return botSections;
+    const id = shellSpaceId ?? bootstrapMe?.spaceId;
+    if (contextMenuSpaceId === id) return botSections;
+    return spaces.find((space) => space.id === contextMenuSpaceId)?.botSections ?? botSections;
+  }, [botSections, bootstrapMe?.spaceId, contextMenuSpaceId, shellSpaceId, spaces]);
   const botMenuContent =
     contextBot || contextGroup ? (
       <ChatContextMenu
@@ -885,7 +892,7 @@ function SpaceShell() {
         bots={bots}
         bot={contextBot}
         group={contextGroup}
-        sections={botSections}
+        sections={contextMenuSections}
         spaceId={contextMenuSpaceId}
         onClose={closeBotMenu}
         refreshBots={refreshBots}
