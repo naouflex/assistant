@@ -14,6 +14,7 @@ const MAX_BOT_MEMORY_CHARS = 32_000;
 const MAX_PROPOSALS = 8;
 const MAX_TRANSCRIPT_CHARS = 24_000;
 const RUN_LOOKBACK_MS = 14 * 24 * 60 * 60 * 1000;
+const REVIEW_TIMEOUT_MS = 5 * 60_000;
 const PATH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.md$/;
 
 export type DreamProposalDraft = {
@@ -226,7 +227,7 @@ async function reviewDream(
       traceId: `dream:${dream.id}`,
       spaceId: dream.spaceId,
       userId: dream.userId,
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(REVIEW_TIMEOUT_MS),
     },
   )) {
     if (event.type === "usage" && !event.accounted) {
