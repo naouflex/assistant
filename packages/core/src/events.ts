@@ -319,9 +319,16 @@ export function reduceLiveMessageBlocks(
   const priorText = liveMessageText(blocks);
   const flushedLength =
     tail?.kind === "progress" ? priorText.length - tail.text.length : priorText.length;
+  const activity =
+    update.type === "progress"
+      ? update.payload?.activity === true
+      : tail?.kind === "progress" && tail.activity === true;
+  // An activity line replaces the status as a whole; it does not continue the reply text.
   const tailText =
     update.type === "progress"
-      ? progressMessageText(update.payload, priorText).slice(flushedLength)
+      ? activity
+        ? progressMessageText(update.payload)
+        : progressMessageText(update.payload, priorText).slice(flushedLength)
       : tail?.kind === "progress"
         ? tail.text
         : "";
@@ -329,10 +336,6 @@ export function reduceLiveMessageBlocks(
     ...(tail?.kind === "progress" ? (tail.pendingToolNames ?? []) : []),
     ...(update.type === "tool" ? [update.name] : []),
   ];
-  const activity =
-    update.type === "progress"
-      ? update.payload?.activity === true
-      : tail?.kind === "progress" && tail.activity === true;
 
   if (pendingToolNames.length > 0 && endsSentence(tailText)) {
     let next = activity ? [...segments] : appendTextSegment(segments, tailText);

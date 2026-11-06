@@ -25,6 +25,7 @@ import {
   rosterWorkStatusLabel,
 } from "../../lib/roster-status";
 import type { RosterDropAction, RosterDropTarget } from "./roster-drop";
+import { useBotsSidebarWidth } from "./sidebar-layout";
 import type { sidebarGroupsForSpaces } from "./space-sidebar";
 import { useRedrawAtMidnight } from "./use-redraw-at-midnight";
 
@@ -97,10 +98,12 @@ export function SidebarRoster({
   useRedrawAtMidnight();
   const { t } = useLingui();
   const activeShellSpaceId = shellSpaceId ?? bootstrapMe?.spaceId;
+  const pinnedAvatarSize = pinnedTileAvatarSize(useBotsSidebarWidth());
   return (
     <>
       {sidebarGroups.map((group, groupIndex) => {
         const collapsed = Boolean(group.title) && collapsedSidebarSections.has(group.key);
+        const tiles = !mini && (group.key === "pinned" || group.key.endsWith(":pinned"));
         const groupBotIds = group.bots.flatMap((item) =>
           item.kind === "bot" ? [item.chat.id] : [],
         );
@@ -267,7 +270,9 @@ export function SidebarRoster({
                 ) : null}
               </div>
             ) : null}
-            <CollapsibleContent className="flex flex-col gap-0.5">
+            <CollapsibleContent
+              className={tiles ? "grid grid-cols-4 gap-2 px-1" : "flex flex-col gap-0.5"}
+            >
               {group.bots.map((item) => {
                 const selected =
                   (item.kind === "bot" && !inGroup && active?.id === item.chat.id) ||
@@ -280,7 +285,7 @@ export function SidebarRoster({
                   (rosterHasUndismissedRunError(item.chat.runErrorId, dismissedRunErrorIds) ||
                     (active?.id === item.chat.id && Boolean(displayedRunError)));
                 const compactStatusLabel =
-                  (compact || mini) && item.kind === "bot"
+                  (compact || mini || tiles) && item.kind === "bot"
                     ? rowError
                       ? t`Error`
                       : compactRosterStatusLabel(item.chat.status)
@@ -325,13 +330,14 @@ export function SidebarRoster({
                     : null;
                 };
                 const rowDropActive = rosterDropKey === rowDropKey || rosterDropKey === nestDropKey;
+                const avatarSize = mini ? 40 : tiles ? pinnedAvatarSize : compact ? 28 : 38;
                 const avatar =
                   item.kind === "bot" ? (
                     <BotAvatar
                       avatarSet={item.chat.avatarSet}
                       color={item.chat.color}
                       identity={item.chat.id}
-                      size={mini ? 40 : compact ? 28 : 38}
+                      size={avatarSize}
                       status={item.chat.status}
                     />
                   ) : (
@@ -341,7 +347,7 @@ export function SidebarRoster({
                           ? (activeSnapshot.members ?? item.chat.members)
                           : item.chat.members
                       }
-                      size={mini ? 40 : compact ? 28 : 38}
+                      size={avatarSize}
                     />
                   );
                 const chatTrigger = (
@@ -350,7 +356,7 @@ export function SidebarRoster({
                     draggable={item.kind === "bot"}
                     data-roster-bot-id={item.kind === "bot" ? item.chat.id : undefined}
                     data-roster-unread={item.chat.unread ? "true" : undefined}
-                    data-roster-error={rowError && (compact || mini) ? "true" : undefined}
+                    data-roster-error={rowError && (compact || mini || tiles) ? "true" : undefined}
                     aria-current={selected ? "page" : undefined}
                     aria-label={mini ? item.chat.name : undefined}
                     aria-describedby={
@@ -439,7 +445,9 @@ export function SidebarRoster({
                     className={`flex items-center ${
                       mini
                         ? "mx-auto size-12 justify-center rounded-xl"
-                        : compact
+                        : tiles
+                          ? "w-full min-w-0 flex-col gap-1 rounded-xl p-1"
+                          : compact
                           ? "w-full min-h-11 gap-2 rounded-xl px-2.5 py-1.5"
                           : "w-full gap-3 rounded-xl px-2.5 py-[10px]"
                     } text-start ${
@@ -448,7 +456,7 @@ export function SidebarRoster({
                       selected || rowDropActive ? "bg-sidebar-accent" : "group-hover/row:bg-accent"
                     } ${rosterDropKey === nestDropKey ? "ring-2 ring-primary ring-inset" : ""}`}
                   >
-                    {mini ? (
+                    {mini || tiles ? (
                       <span className="relative shrink-0">
                         {avatar}
                         {rowError ? (
@@ -484,7 +492,18 @@ export function SidebarRoster({
                     ) : (
                       avatar
                     )}
-                    {!mini ? (
+                    {tiles ? (
+                      <span
+                        dir="auto"
+                        data-roster-bot-name={item.kind === "bot" ? "" : undefined}
+                        className={`w-full truncate text-center text-label text-foreground ${
+                          item.chat.unread ? "font-semibold" : "font-medium"
+                        }`}
+                      >
+                        {item.chat.name}
+                      </span>
+                    ) : null}
+                    {!mini && !tiles ? (
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1.5">
                           <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
@@ -612,6 +631,12 @@ export function SidebarRoster({
       })}
     </>
   );
+}
+
+/** Pinned chats sit four to a row and scale with the sidebar width. */
+export function pinnedTileAvatarSize(sidebarWidth: number): number {
+  const cell = (sidebarWidth - 32 - 3 * 8) / 4;
+  return Math.max(32, Math.floor(cell - 8));
 }
 
 /** A space section header's name as one phrase, for accessible labels. */

@@ -135,6 +135,22 @@ describe("reduceLiveMessageBlocks", () => {
     ).toEqual([{ kind: "progress", text: "Using browser", activity: true }]);
   });
 
+  it("keeps the whole activity line after earlier reply text", () => {
+    let blocks = reduceLiveMessageBlocks([], {
+      type: "progress",
+      payload: { text: "Let me check." },
+    });
+    blocks = reduceLiveMessageBlocks(blocks, { type: "tool", name: "web_search" });
+    blocks = reduceLiveMessageBlocks(blocks, {
+      type: "progress",
+      payload: { text: "Searching the web for flights", activity: true },
+    });
+
+    expect(liveActivityLine([{ id: "progress:run-1", blocks }])).toBe(
+      "Searching the web for flights",
+    );
+  });
+
   it("replaces punctuated activity text with its tool step", () => {
     const activity = reduceLiveMessageBlocks([], {
       type: "progress",
