@@ -41,11 +41,13 @@ import {
 } from "./approval-effect.js";
 import { ATTACH_AFTER_WRITE_PROMPT } from "./attach-after-write.js";
 import { automated, withAutomatedLabels } from "./automated-messages.js";
+import { partitionTools } from "./builtin-tool-bridge.js";
 import { LOCAL_PAYLOAD_DUMP_ENV } from "./chat-completions-compat.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
 import { doneMismatch } from "./done-check.js";
 import { exactArithmetic } from "./exact-arithmetic.js";
 import { neutralizeSpeakerLabels } from "./history-speakers.js";
+import { withDeferredCallsRouted } from "./pi-deferred-tool-calls.js";
 import { estimatePiImageTokens } from "./pi-image-context.js";
 import {
   assistantText,
@@ -310,6 +312,9 @@ export class PiAgentRuntime implements AgentRuntime {
               })
             : toolDefs;
         const tools = toAgentTools(turnTools, host);
+        const deferredToolNames = new Set(
+          partitionTools(turnTools).deferred.map((tool) => tool.name),
+        );
         const seenSteeringIds: string[] = [];
         const initialSteering = request.claimSteering ? await request.claimSteering([]) : [];
         let hasCurrentImages = Boolean(
@@ -505,14 +510,17 @@ export class PiAgentRuntime implements AgentRuntime {
           sessionId: conversationSessionId(request.threadId, request.botId),
           steeringMode: "all",
           streamFn: (_m, ctx, options) =>
-            fallbackAwareModelStream(
-              fallbackState,
-              ctx,
-              withAutomatedLabels({
-                ...options,
-                fetch: this.modelFetch ?? options?.fetch,
-                serviceTier: runServiceTier(request.model.modelFastTier),
-              }),
+            withDeferredCallsRouted(
+              fallbackAwareModelStream(
+                fallbackState,
+                ctx,
+                withAutomatedLabels({
+                  ...options,
+                  fetch: this.modelFetch ?? options?.fetch,
+                  serviceTier: runServiceTier(request.model.modelFastTier),
+                }),
+              ),
+              deferredToolNames,
             ),
           getApiKey: hasBackups
             ? async () => activeStreamTarget.credentials?.accessToken ?? activeStreamTarget.apiKey

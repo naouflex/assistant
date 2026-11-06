@@ -9,6 +9,7 @@ import type {
 } from "@atlas/adapter-kit";
 import { DEFAULT_CONTEXT_STRATEGY, SandboxUnreachableError } from "@atlas/adapter-kit";
 import { FLEET_TOOL_NAMES } from "@atlas/contracts";
+import { humanizeToolName } from "@atlas/core";
 import type { Agent, AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
 import type { Api, Model, Models } from "@earendil-works/pi-ai";
 import { validateToolArguments } from "@earendil-works/pi-ai";
@@ -231,8 +232,8 @@ export function describeToolActivity(toolName: string, args: unknown): string {
   if (toolName === "skill_delete")
     return `Deleting skill: ${detail(record.name ?? record.skillId)}`;
   const mcp = toolName.match(/^mcp__(.+?)__(.+)$/);
-  if (mcp) return `Using ${mcp[1]}: ${mcp[2]}`;
-  return `Using ${toolName}`;
+  if (mcp?.[1] && mcp[2]) return `Using ${mcp[1]}: ${humanizeToolName(mcp[2])}`;
+  return `Using ${humanizeToolName(toolName)}`;
 }
 
 /**
