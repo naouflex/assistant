@@ -876,6 +876,8 @@ function SpaceShell() {
     botMenu?.kind === "bot" ? bots.find((bot) => bot.id === botMenu.id) : undefined;
   const contextGroup =
     botMenu?.kind === "group" ? groups.find((group) => group.id === botMenu.id) : undefined;
+  const contextMenuSpaceId =
+    contextBot?.spaceId ?? contextGroup?.spaceId ?? currentSpaceId ?? undefined;
   const botMenuContent =
     contextBot || contextGroup ? (
       <ChatContextMenu
@@ -884,7 +886,7 @@ function SpaceShell() {
         bot={contextBot}
         group={contextGroup}
         sections={botSections}
-        spaceId={currentSpaceId ?? undefined}
+        spaceId={contextMenuSpaceId}
         onClose={closeBotMenu}
         refreshBots={refreshBots}
         read={read}
@@ -934,7 +936,7 @@ function SpaceShell() {
             mini={miniSidebar}
             sidebarGroups={sidebarGroups}
             collapsedSidebarSections={collapsedSidebarSections}
-            rosterSpaceId={currentSpaceId}
+            shellSpaceId={shellSpaceId}
             bootstrapMe={bootstrapMe}
             botSections={botSections}
             spaces={spaces}
