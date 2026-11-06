@@ -33,6 +33,7 @@ import {
   recordComputerRunEnd,
   recordSecurityEvent,
   restoreBotUnderComputerQuota,
+  runAsSystem,
   SpaceDeletionInProgressError,
   setBotParent,
   settingsTarget,
@@ -340,6 +341,20 @@ export function botsRoutes(ctx: RouterContext) {
           });
           if (!section) throw new IsolationError();
         }
+        if (input.userDeviceId) {
+          const device = await runAsSystem("check a bot's computer", () =>
+            deps.prisma.userDevice.findFirst({
+              where: {
+                id: input.userDeviceId!,
+                userId: context.actor.userId,
+                revokedAt: null,
+                platform: { not: "android" },
+              },
+              select: { id: true },
+            }),
+          );
+          if (!device) throw new IsolationError();
+        }
         const modelChange = await validateBotModelChange(botModelValidation(context.actor), {
           userId: context.actor.userId,
           spaceId: context.actor.spaceId,
@@ -391,6 +406,7 @@ export function botsRoutes(ctx: RouterContext) {
             ...(input.disabledBuiltinTools !== undefined
               ? { disabledBuiltinTools: input.disabledBuiltinTools }
               : {}),
+            ...(input.userDeviceId !== undefined ? { userDeviceId: input.userDeviceId } : {}),
           },
         }).catch((error) => {
           if (input.expectedSettings && isRecordNotFound(error))

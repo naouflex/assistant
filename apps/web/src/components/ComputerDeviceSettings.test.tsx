@@ -4,7 +4,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { listUserDevices, removeUserDevice } from "../lib/user-devices";
+import { listUserDevices, pairUserDevice, removeUserDevice } from "../lib/user-devices";
 import { ComputerDeviceSettings } from "./ComputerDeviceSettings";
 
 vi.mock("@lingui/react/macro", () => ({
@@ -15,6 +15,7 @@ vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@atlas/ui-web", () => ({
+  Input: (props: ComponentProps<"input">) => <input {...props} />,
   Button: ({
     variant: _variant,
     size: _size,
@@ -38,7 +39,11 @@ vi.mock("@atlas/ui-web", () => ({
     />
   ),
 }));
-vi.mock("../lib/user-devices", () => ({ listUserDevices: vi.fn(), removeUserDevice: vi.fn() }));
+vi.mock("../lib/user-devices", () => ({
+  listUserDevices: vi.fn(),
+  pairUserDevice: vi.fn(),
+  removeUserDevice: vi.fn(),
+}));
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -81,7 +86,7 @@ it("lists computers with their status and removes one", async () => {
   await act(async () => root.render(<ComputerDeviceSettings />));
   expect(host.textContent).toContain("LaptopConnected");
   expect(host.textContent).toContain("Desk PCOffline");
-  expect(host.querySelector("input")).toBeNull();
+  expect(host.querySelector('[data-testid="this-computer-toggle"]')).toBeNull();
 
   await act(async () =>
     host.querySelector<HTMLButtonElement>('[aria-label="Remove Desk PC"]')?.click(),
@@ -145,4 +150,24 @@ it("stays off and reports it when turning this computer on fails", async () => {
   expect(device.setAllowed).toHaveBeenCalledWith(true);
   expect(toggle.checked).toBe(false);
   expect(host.querySelector('[role="alert"]')?.textContent).toBe("Could not change");
+});
+
+it("adds a computer by name and shows its token once", async () => {
+  vi.mocked(listUserDevices).mockResolvedValue([]);
+  vi.mocked(pairUserDevice).mockResolvedValue({ deviceId: "dev-pi", token: "fake-device-token" });
+  await act(async () => root.render(<ComputerDeviceSettings alwaysShow />));
+  const name = host.querySelector<HTMLInputElement>('input[aria-label="New computer name"]')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(name, "Pi");
+    name.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => {
+    host
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  expect(pairUserDevice).toHaveBeenCalledWith("Pi");
+  expect(host.querySelector<HTMLInputElement>('[data-testid="new-computer-token"]')?.value).toBe(
+    "fake-device-token",
+  );
 });

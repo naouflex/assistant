@@ -85,6 +85,11 @@ msgstr ""
 msgid "{0} (max {ATTACHMENT_MAX_COUNT} attachments)"
 msgstr "{0} (en fazla {ATTACHMENT_MAX_COUNT} ek)"
 
+#. placeholder {0}: device.name
+#: src/pages/shell/bot-device-picker.tsx
+msgid "{0} (offline)"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {1}: attachmentSizeLabel(attachmentMaxBytes(bootstrapMe))
 #: src/pages/shell/use-composer-actions.ts
@@ -625,6 +630,7 @@ msgstr ""
 msgid "Activity"
 msgstr "Etkinlik"
 
+#: src/components/ComputerDeviceSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -644,6 +650,10 @@ msgstr "Çalıştırılacak bir komut ekleyin"
 #: src/pages/RoutineEditor.tsx
 msgid "Add a file or folder to watch"
 msgstr "İzlenecek bir dosya veya klasör ekleyin"
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Add a Linux computer"
+msgstr ""
 
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Add a model in Settings to use this."
@@ -1946,6 +1956,8 @@ msgstr "Satırları kopyala"
 msgid "Cost"
 msgstr "Maliyet"
 
+#: src/components/ComputerDeviceSettings.tsx
+#: src/lib/user-devices.ts
 #: src/pages/ScratchpadSection.tsx
 msgid "Could not add"
 msgstr "Eklenemedi"
@@ -4406,6 +4418,10 @@ msgstr ""
 msgid "New bot"
 msgstr "Yeni bot"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "New computer name"
+msgstr ""
+
 #: src/pages/GroupPanel.tsx
 msgid "New group"
 msgstr "Yeni grup"
@@ -4448,6 +4464,10 @@ msgstr ""
 
 #: src/pages/Board.tsx
 msgid "New ticket"
+msgstr ""
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Newest connected"
 msgstr ""
 
 #: src/pages/NightShift.tsx
@@ -5353,6 +5373,10 @@ msgstr "{secretName} kaldırılsın mı? Botlar artık bunu kullanamayacak."
 #: src/components/TrustedLinkSitesSettings.tsx
 msgid "Remove {site}"
 msgstr "Kaldır: {site}"
+
+#: src/lib/user-devices.ts
+msgid "Remove a computer before adding another"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Remove change trigger"
@@ -6684,6 +6708,14 @@ msgstr "Kime:"
 msgid "Today"
 msgstr "Bugün"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token for {newName}, shown once"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Tokens"
 msgstr "Token"
@@ -7220,6 +7252,10 @@ msgstr "Anthropic sağlayıcınız"
 #: src/components/ModelCredits.tsx
 msgid "Your card is charged {annualPrice} today, less the unused part of this month."
 msgstr "Bugün kartından {annualPrice} tahsil edilir, bu ayın kullanılmayan kısmı düşülür."
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Your computer"
+msgstr ""
 
 #: src/components/AccountDataSettings.tsx
 msgid "Your data"

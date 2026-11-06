@@ -1,4 +1,10 @@
-import type { Bot, BotAvatarSet, ComputerMode, ThinkingLevel } from "@atlas/contracts";
+import type {
+  Bot,
+  BotAvatarSet,
+  ComputerMode,
+  ThinkingLevel,
+  UserDeviceSummary,
+} from "@atlas/contracts";
 import {
   BOT_AVATAR_SHAPE_COUNT,
   BOT_COLORS,
@@ -19,7 +25,17 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-rou
 import type { Voice } from "expo-speech";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { BotAvatar } from "../components/bot-avatar";
 import { BotContextCards } from "../components/bot-context-cards";
 import { ComputerModePicker } from "../components/computer-mode-picker";
@@ -33,7 +49,7 @@ import { NativeSymbol } from "../components/native-symbol";
 import { ProfileEditDialog } from "../components/profile-edit-dialog";
 import { Chevron } from "../components/row-accessories";
 import type { MobileMe, MobileModel, MobileModelCredential } from "../lib/api";
-import { rpc } from "../lib/api";
+import { listUserComputers, rpc } from "../lib/api";
 import {
   avatarColor,
   avatarShape,
@@ -74,6 +90,10 @@ export default function BotSettingsScreen() {
   const [color, setColor] = useState<string>(BOT_COLORS[0]);
   const [wordDraft, setWordDraft] = useState("");
   const [computerMode, setComputerMode] = useState<ComputerMode>("team");
+  const [computers, setComputers] = useState<UserDeviceSummary[]>([]);
+  useEffect(() => {
+    void listUserComputers().then(setComputers);
+  }, []);
   const [avatarSet, setAvatarSet] = useState<BotAvatarSet>("organic");
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(focus === "model" || pickedModel !== undefined);
@@ -345,6 +365,15 @@ export default function BotSettingsScreen() {
     }
   }
 
+  async function chooseComputer(userDeviceId: string | null) {
+    try {
+      await rpc("bots/update", { botId, userDeviceId });
+      setBot((prev) => (prev ? { ...prev, userDeviceId } : prev));
+    } catch (error) {
+      Alert.alert(t("Could not save"), errorText(error, t("Could not save")));
+    }
+  }
+
   async function save() {
     if (!botId || !bot || pending) return;
     setPending(true);
@@ -610,6 +639,23 @@ export default function BotSettingsScreen() {
 
             <SettingsGroup label={t("Computer")}>
               <ComputerModePicker plain value={computerMode} onChange={setComputerMode} />
+              {computers.length > 1 || bot?.userDeviceId ? (
+                <MenuPicker
+                  plain
+                  label={t("Your computer")}
+                  choices={[
+                    { key: "", label: t("Newest connected") },
+                    ...computers.map((device) => ({
+                      key: device.deviceId,
+                      label: device.connected
+                        ? device.name
+                        : t("{name} (offline)", { name: device.name }),
+                    })),
+                  ]}
+                  value={bot?.userDeviceId ?? ""}
+                  onChange={(key) => void chooseComputer(key || null)}
+                />
+              ) : null}
             </SettingsGroup>
             <SettingsGroup label={t("Voice")}>
               <View style={styles.row}>

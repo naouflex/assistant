@@ -85,6 +85,11 @@ msgstr ""
 msgid "{0} (max {ATTACHMENT_MAX_COUNT} attachments)"
 msgstr "{0} (첨부 파일 최대 {ATTACHMENT_MAX_COUNT}개)"
 
+#. placeholder {0}: device.name
+#: src/pages/shell/bot-device-picker.tsx
+msgid "{0} (offline)"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {1}: attachmentSizeLabel(attachmentMaxBytes(bootstrapMe))
 #: src/pages/shell/use-composer-actions.ts
@@ -625,6 +630,7 @@ msgstr "활성"
 msgid "Activity"
 msgstr "활동"
 
+#: src/components/ComputerDeviceSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -644,6 +650,10 @@ msgstr "실행할 명령 추가"
 #: src/pages/RoutineEditor.tsx
 msgid "Add a file or folder to watch"
 msgstr "감시할 파일 또는 폴더 추가"
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Add a Linux computer"
+msgstr ""
 
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Add a model in Settings to use this."
@@ -1946,6 +1956,8 @@ msgstr "행 복사"
 msgid "Cost"
 msgstr "비용"
 
+#: src/components/ComputerDeviceSettings.tsx
+#: src/lib/user-devices.ts
 #: src/pages/ScratchpadSection.tsx
 msgid "Could not add"
 msgstr "추가하지 못했습니다."
@@ -4406,6 +4418,10 @@ msgstr ""
 msgid "New bot"
 msgstr "새 Bot 만들기"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "New computer name"
+msgstr ""
+
 #: src/pages/GroupPanel.tsx
 msgid "New group"
 msgstr "새 그룹 만들기"
@@ -4448,6 +4464,10 @@ msgstr "새 스페이스"
 
 #: src/pages/Board.tsx
 msgid "New ticket"
+msgstr ""
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Newest connected"
 msgstr ""
 
 #: src/pages/NightShift.tsx
@@ -5353,6 +5373,10 @@ msgstr "{secretName}을(를) 제거할까요? 봇이 더 이상 사용할 수 �
 #: src/components/TrustedLinkSitesSettings.tsx
 msgid "Remove {site}"
 msgstr "{site} 삭제"
+
+#: src/lib/user-devices.ts
+msgid "Remove a computer before adding another"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Remove change trigger"
@@ -6684,6 +6708,14 @@ msgstr "받는 사람:"
 msgid "Today"
 msgstr "오늘"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token for {newName}, shown once"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Tokens"
 msgstr "토큰"
@@ -7220,6 +7252,10 @@ msgstr "사용 중인 Anthropic"
 #: src/components/ModelCredits.tsx
 msgid "Your card is charged {annualPrice} today, less the unused part of this month."
 msgstr "오늘 카드에서 {annualPrice}이 결제되며, 이번 달 사용하지 않은 금액은 차감됩니다."
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Your computer"
+msgstr ""
 
 #: src/components/AccountDataSettings.tsx
 msgid "Your data"

@@ -28,8 +28,11 @@ export interface UserDevice {
 
 /** How runs reach the requesting user's connected device, from any API or worker process. */
 export interface UserDeviceGateway {
-  /** The newest connected device of that kind; computers unless `kind` is "phone". */
-  connected(userId: string, kind?: UserDeviceKind): Promise<UserDevice | null>;
+  /**
+   * The newest connected device of that kind; computers unless `kind` is "phone". With
+   * `deviceId`, only that device, so a bot pinned to one computer never runs on another.
+   */
+  connected(userId: string, kind?: UserDeviceKind, deviceId?: string): Promise<UserDevice | null>;
   /** When the oldest device of that kind still paired was paired, connected or not; null when none is. */
   pairedSince(userId: string, kind?: UserDeviceKind): Promise<Date | null>;
   /**

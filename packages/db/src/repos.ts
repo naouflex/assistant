@@ -110,6 +110,7 @@ function mapBot(
     disabledBuiltinTools?: string[];
     webhookSecretId?: string | null;
     spawnKey?: string | null;
+    userDeviceId?: string | null;
   },
   preview = "",
   status = "idle",
@@ -142,6 +143,7 @@ function mapBot(
     status,
     runErrorId,
     computerMode: bot.computer ? parseComputerMode(bot.computer.scope) : "team",
+    userDeviceId: bot.userDeviceId ?? null,
     createdAt: bot.createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
     voiceId: bot.voiceId ?? null,

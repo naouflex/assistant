@@ -22,6 +22,8 @@ export const userDeviceListSchema = z.object({
     z.object({
       deviceId: z.string(),
       name: z.string(),
+      /** Optional so clients still read lists from servers that predate it. */
+      platform: z.string().optional(),
       connected: z.boolean(),
     }),
   ),

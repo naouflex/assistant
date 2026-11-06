@@ -49,6 +49,7 @@ import { lazyComponent } from "../../lib/preload-recovery";
 import { useSpaceQueries } from "../../lib/query";
 import { errorText } from "../../lib/user-error";
 import { AvatarStudioPopover } from "./avatar-studio-popover";
+import { BotDevicePicker } from "./bot-device-picker";
 import { ChatModelPicker } from "./chat-model-picker";
 import { selectableThinkingLevels } from "./composer-thinking";
 import { useLocalModelStatus } from "./local-model-status";
@@ -144,6 +145,7 @@ export function BotSettings({
     modelId?: string | null;
     thinkingLevel?: ThinkingLevel | null;
     disabledBuiltinTools?: string[];
+    userDeviceId?: string | null;
   }) => Promise<void>;
   onExport: () => Promise<void>;
   onClear: () => void;
@@ -661,6 +663,11 @@ export function BotSettings({
             </div>
             <SettingsGroup label={t`Computer`} plain>
               <ComputerModePicker value={computerMode} onChange={setComputerMode} />
+              <BotDevicePicker
+                id={`${ids}-device`}
+                value={bot.userDeviceId ?? null}
+                onChange={(userDeviceId) => onSave({ userDeviceId })}
+              />
               {memoryProviderConfigured ? (
                 <div className="mt-4 text-sm text-foreground">
                   <Trans>Memory scope</Trans>

@@ -140,7 +140,9 @@ async function lastValue<T>(values: AsyncIterable<T>): Promise<T> {
 async function connectedUserComputer(ctx: RunContext) {
   const owner = ctx.source.userComputerOwner;
   const devices = ctx.deps.userDevices;
-  const device = owner && devices ? await devices.connected(owner).catch(() => null) : null;
+  const pinned = ctx.bot.userDeviceId ?? undefined;
+  const device =
+    owner && devices ? await devices.connected(owner, "computer", pinned).catch(() => null) : null;
   return owner && devices && device ? { owner, devices, deviceId: device.deviceId } : undefined;
 }
 

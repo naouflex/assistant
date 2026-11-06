@@ -1182,7 +1182,9 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           deps.userDevices &&
           !disabledBuiltinTools.has(USER_COMPUTER_SHELL_TOOL)
         ) {
-          const device = await deps.userDevices.connected(userComputerOwnerId).catch(() => null);
+          const device = await deps.userDevices
+            .connected(userComputerOwnerId, "computer", bot.userDeviceId ?? undefined)
+            .catch(() => null);
           if (device) {
             userComputer = "connected";
             userComputerPlatform = device.platform;

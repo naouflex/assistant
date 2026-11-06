@@ -1,10 +1,10 @@
 import type { AtlasDesktopDevice, UserDeviceSummary } from "@atlas/contracts";
-import { Button, Label, Switch } from "@atlas/ui-web";
+import { Button, Input, Label, Switch } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Trash2 } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { desktopBridge } from "../lib/desktop";
-import { listUserDevices, removeUserDevice } from "../lib/user-devices";
+import { listUserDevices, pairUserDevice, removeUserDevice } from "../lib/user-devices";
 import { SettingsGroup, SettingsRow } from "./SettingsRows";
 
 export function ComputerDeviceSettings({ alwaysShow = false }: { alwaysShow?: boolean }) {
@@ -15,6 +15,9 @@ export function ComputerDeviceSettings({ alwaysShow = false }: { alwaysShow?: bo
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const switchId = useId();
+  const nameId = useId();
+  const [newName, setNewName] = useState("");
+  const [newToken, setNewToken] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [listed, local] = await Promise.all([
@@ -101,6 +104,53 @@ export function ComputerDeviceSettings({ alwaysShow = false }: { alwaysShow?: bo
           }
         />
       ) : null}
+      {newToken ? (
+        <SettingsRow
+          label={<Trans>Token for {newName}, shown once</Trans>}
+          control={
+            <Input
+              readOnly
+              aria-label={t`Token`}
+              data-testid="new-computer-token"
+              value={newToken}
+              onFocus={(event) => event.currentTarget.select()}
+              className="w-56 font-mono"
+            />
+          }
+        />
+      ) : (
+        <form
+          className="flex items-center gap-2 px-4 py-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const name = newName.trim();
+            if (!name) return;
+            setPending(true);
+            setError(null);
+            pairUserDevice(name)
+              .then((paired) => setNewToken(paired.token))
+              .catch((cause: unknown) =>
+                setError(cause instanceof Error ? cause.message : t`Could not add`),
+              )
+              .finally(() => {
+                setPending(false);
+                void load();
+              });
+          }}
+        >
+          <Input
+            id={nameId}
+            aria-label={t`New computer name`}
+            placeholder={t`Add a Linux computer`}
+            value={newName}
+            maxLength={128}
+            onChange={(event) => setNewName(event.target.value)}
+          />
+          <Button type="submit" variant="outline" size="sm" disabled={pending || !newName.trim()}>
+            <Trans>Add</Trans>
+          </Button>
+        </form>
+      )}
       {error ? (
         <p role="alert" className="px-4 py-3 text-[12.5px] text-destructive">
           {error}

@@ -18,6 +18,7 @@ import type {
   SpaceNavigation,
   ThreadMessage,
   ThreadSnapshot,
+  UserDeviceSummary,
 } from "@atlas/contracts";
 import {
   accountSecuritySchema,
@@ -25,6 +26,8 @@ import {
   CLIENT_UPDATE_REQUIRED_STATUS,
   legacyAccountSecurity,
   legacyAuthCapabilitiesSchema,
+  USER_DEVICE_PATH,
+  userDeviceListSchema,
 } from "@atlas/contracts";
 import type { ThreadHistory } from "@atlas/core";
 import {
@@ -1856,3 +1859,17 @@ export const requestIdentityCode = () => postSignedInAuth("/request-identity-cod
 /** Confirms this session's identity for the next few minutes. */
 export const confirmIdentity = (proof: { password: string } | { code: string }) =>
   postSignedInAuth("/confirm-identity", proof);
+
+/** The owner's computers bots can use; phones are excluded. */
+export async function listUserComputers(): Promise<UserDeviceSummary[]> {
+  const { response, body } = await fetchMobileJson<unknown>(
+    `${currentApiBase()}${USER_DEVICE_PATH}`,
+    { headers: { origin: "atlas://", ...(await authHeaders()) } },
+    null,
+  );
+  if (!response.ok) return [];
+  const parsed = userDeviceListSchema.safeParse(body);
+  return parsed.success
+    ? parsed.data.devices.filter((device) => device.platform !== "android")
+    : [];
+}

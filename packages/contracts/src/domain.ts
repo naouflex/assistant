@@ -120,6 +120,8 @@ export const BotSchema = z.object({
   status: z.string(),
   runErrorId: Id.nullable().default(null),
   computerMode: ComputerModeSchema,
+  /** The owner's paired computer this bot uses; null means the newest connected one. */
+  userDeviceId: Id.nullable().optional(),
   updatedAt: z.string(),
   createdAt: z.string(),
   voiceId: z.string().nullable(),
@@ -428,6 +430,7 @@ export const UpdateBotInput = z
     crossSpaceCommunication: z.boolean().optional(),
     fleetManagement: z.boolean().optional(),
     disabledBuiltinTools: DisabledBuiltinToolsSchema.optional(),
+    userDeviceId: Id.nullable().optional(),
     /** Write only while these settings still hold, as an undo does. */
     expectedSettings: BotSettingsValuesSchema.optional(),
   })

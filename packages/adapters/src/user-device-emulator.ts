@@ -26,12 +26,17 @@ export class UserDeviceEmulator implements UserDeviceGateway {
     this.#phone = options.phone ?? false;
   }
 
-  async connected(_userId: string, kind: UserDeviceKind = "computer"): Promise<UserDevice | null> {
-    if (kind === "phone")
-      return this.#phone
+  async connected(
+    _userId: string,
+    kind: UserDeviceKind = "computer",
+    deviceId?: string,
+  ): Promise<UserDevice | null> {
+    const device: UserDevice =
+      kind === "phone"
         ? { deviceId: "emulated-phone", name: "Fixture Pixel", platform: "android" }
-        : null;
-    return { deviceId: "emulated-device", name: "Fixture Mac", platform: "darwin" };
+        : { deviceId: "emulated-device", name: "Fixture Mac", platform: "darwin" };
+    if (kind === "phone" && !this.#phone) return null;
+    return deviceId && deviceId !== device.deviceId ? null : device;
   }
 
   async pairedSince(_userId: string, kind: UserDeviceKind = "computer"): Promise<Date | null> {

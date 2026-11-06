@@ -86,6 +86,11 @@ msgstr "{0, plural, one {等待登入中 — 連結將在約 # 分鐘後失效�
 msgid "{0} (max {ATTACHMENT_MAX_COUNT} attachments)"
 msgstr "{0}（最多 {ATTACHMENT_MAX_COUNT} 個附件）"
 
+#. placeholder {0}: device.name
+#: src/pages/shell/bot-device-picker.tsx
+msgid "{0} (offline)"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {1}: attachmentSizeLabel(attachmentMaxBytes(bootstrapMe))
 #: src/pages/shell/use-composer-actions.ts
@@ -626,6 +631,7 @@ msgstr "啟用"
 msgid "Activity"
 msgstr "動態"
 
+#: src/components/ComputerDeviceSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -645,6 +651,10 @@ msgstr "新增要執行的命令"
 #: src/pages/RoutineEditor.tsx
 msgid "Add a file or folder to watch"
 msgstr "新增要監視的檔案或資料夾"
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Add a Linux computer"
+msgstr ""
 
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Add a model in Settings to use this."
@@ -1947,6 +1957,8 @@ msgstr "複製列"
 msgid "Cost"
 msgstr "費用"
 
+#: src/components/ComputerDeviceSettings.tsx
+#: src/lib/user-devices.ts
 #: src/pages/ScratchpadSection.tsx
 msgid "Could not add"
 msgstr "無法新增"
@@ -4407,6 +4419,10 @@ msgstr "新增"
 msgid "New bot"
 msgstr "新增機器人"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "New computer name"
+msgstr ""
+
 #: src/pages/GroupPanel.tsx
 msgid "New group"
 msgstr "新增群組"
@@ -4450,6 +4466,10 @@ msgstr "新增空間"
 #: src/pages/Board.tsx
 msgid "New ticket"
 msgstr "新增工作項目"
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Newest connected"
+msgstr ""
 
 #: src/pages/NightShift.tsx
 msgid "Next edition {next}"
@@ -5354,6 +5374,10 @@ msgstr "要移除 {secretName} 嗎？機器人將無法再使用它。"
 #: src/components/TrustedLinkSitesSettings.tsx
 msgid "Remove {site}"
 msgstr "移除 {site}"
+
+#: src/lib/user-devices.ts
+msgid "Remove a computer before adding another"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Remove change trigger"
@@ -6685,6 +6709,14 @@ msgstr "收件人："
 msgid "Today"
 msgstr "今天"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token for {newName}, shown once"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Tokens"
 msgstr "Token"
@@ -7221,6 +7253,10 @@ msgstr "你的 Anthropic"
 #: src/components/ModelCredits.tsx
 msgid "Your card is charged {annualPrice} today, less the unused part of this month."
 msgstr "今天將從你的卡中扣款 {annualPrice}，並抵扣本月未使用的部分。"
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Your computer"
+msgstr ""
 
 #: src/components/AccountDataSettings.tsx
 msgid "Your data"

@@ -1,0 +1,18 @@
+# Headless Atlas computer. Install apps/device/dist/atlas-device.mjs to /opt/atlas-device/,
+# put the pairing token in ~/.config/atlas-device/token (mode 600), then:
+#   systemctl --user enable --now atlas-device   (and `loginctl enable-linger` so it runs at boot)
+[Unit]
+Description=Atlas computer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=ATLAS_SERVER_URL=https://atlas.example.com
+ExecStart=/usr/bin/node /opt/atlas-device/atlas-device.mjs
+Restart=on-failure
+RestartSec=10
+# A removed device stays stopped until it is paired again.
+RestartPreventExitStatus=78
+
+[Install]
+WantedBy=default.target

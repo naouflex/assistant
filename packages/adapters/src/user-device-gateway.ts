@@ -422,8 +422,12 @@ export class UserDevices implements UserDeviceGateway {
     this.fetch = deps.fetch ?? fetch;
   }
 
-  async connected(userId: string, kind: UserDeviceKind = "computer"): Promise<UserDevice | null> {
-    const route = await this.route(userId, undefined, kind);
+  async connected(
+    userId: string,
+    kind: UserDeviceKind = "computer",
+    deviceId?: string,
+  ): Promise<UserDevice | null> {
+    const route = await this.route(userId, deviceId, kind);
     return route && { deviceId: route.deviceId, name: route.name, platform: route.platform };
   }
 
@@ -436,6 +440,7 @@ export class UserDevices implements UserDeviceGateway {
         select: {
           id: true,
           name: true,
+          platform: true,
           connections: {
             where: { heartbeatAt: { gt: new Date(Date.now() - STALE_AFTER_MS) } },
             select: { deviceId: true },
@@ -446,6 +451,7 @@ export class UserDevices implements UserDeviceGateway {
     return devices.map((device) => ({
       deviceId: device.id,
       name: device.name,
+      platform: device.platform,
       connected: device.connections.length > 0,
     }));
   }

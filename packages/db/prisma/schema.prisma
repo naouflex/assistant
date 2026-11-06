@@ -705,6 +705,8 @@ model Bot {
   color             String
   avatarSet         String            @default("organic")
   notifyOnFinish    Boolean           @default(true)
+  /// The owner's paired computer this bot uses; null means the newest connected one.
+  userDeviceId      String?
   pinned            Boolean           @default(false)
   position          Int               @default(0)
   sectionId         String?

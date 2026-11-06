@@ -85,6 +85,11 @@ msgstr "{0, plural, one {Waiting for sign-in — the link expires in about # min
 msgid "{0} (max {ATTACHMENT_MAX_COUNT} attachments)"
 msgstr "{0} (max {ATTACHMENT_MAX_COUNT} attachments)"
 
+#. placeholder {0}: device.name
+#: src/pages/shell/bot-device-picker.tsx
+msgid "{0} (offline)"
+msgstr "{0} (offline)"
+
 #. placeholder {0}: file.name
 #. placeholder {1}: attachmentSizeLabel(attachmentMaxBytes(bootstrapMe))
 #: src/pages/shell/use-composer-actions.ts
@@ -625,6 +630,7 @@ msgstr "Active"
 msgid "Activity"
 msgstr "Activity"
 
+#: src/components/ComputerDeviceSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -644,6 +650,10 @@ msgstr "Add a command to run"
 #: src/pages/RoutineEditor.tsx
 msgid "Add a file or folder to watch"
 msgstr "Add a file or folder to watch"
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Add a Linux computer"
+msgstr "Add a Linux computer"
 
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Add a model in Settings to use this."
@@ -1946,6 +1956,8 @@ msgstr "Copy rows"
 msgid "Cost"
 msgstr "Cost"
 
+#: src/components/ComputerDeviceSettings.tsx
+#: src/lib/user-devices.ts
 #: src/pages/ScratchpadSection.tsx
 msgid "Could not add"
 msgstr "Could not add"
@@ -4406,6 +4418,10 @@ msgstr "New"
 msgid "New bot"
 msgstr "New bot"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "New computer name"
+msgstr "New computer name"
+
 #: src/pages/GroupPanel.tsx
 msgid "New group"
 msgstr "New group"
@@ -4449,6 +4465,10 @@ msgstr "New space"
 #: src/pages/Board.tsx
 msgid "New ticket"
 msgstr "New ticket"
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Newest connected"
+msgstr "Newest connected"
 
 #: src/pages/NightShift.tsx
 msgid "Next edition {next}"
@@ -5353,6 +5373,10 @@ msgstr "Remove {secretName}? Bots will no longer be able to use it."
 #: src/components/TrustedLinkSitesSettings.tsx
 msgid "Remove {site}"
 msgstr "Remove {site}"
+
+#: src/lib/user-devices.ts
+msgid "Remove a computer before adding another"
+msgstr "Remove a computer before adding another"
 
 #: src/pages/RoutineEditor.tsx
 msgid "Remove change trigger"
@@ -6684,6 +6708,14 @@ msgstr "To:"
 msgid "Today"
 msgstr "Today"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token"
+msgstr "Token"
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token for {newName}, shown once"
+msgstr "Token for {newName}, shown once"
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Tokens"
 msgstr "Tokens"
@@ -7220,6 +7252,10 @@ msgstr "Your Anthropic"
 #: src/components/ModelCredits.tsx
 msgid "Your card is charged {annualPrice} today, less the unused part of this month."
 msgstr "Your card is charged {annualPrice} today, less the unused part of this month."
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Your computer"
+msgstr "Your computer"
 
 #: src/components/AccountDataSettings.tsx
 msgid "Your data"

@@ -85,6 +85,11 @@ msgstr "{0, plural, one {Esperando el inicio de sesión: el enlace vence en apro
 msgid "{0} (max {ATTACHMENT_MAX_COUNT} attachments)"
 msgstr "{0} (máx. {ATTACHMENT_MAX_COUNT} archivos adjuntos)"
 
+#. placeholder {0}: device.name
+#: src/pages/shell/bot-device-picker.tsx
+msgid "{0} (offline)"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {1}: attachmentSizeLabel(attachmentMaxBytes(bootstrapMe))
 #: src/pages/shell/use-composer-actions.ts
@@ -625,6 +630,7 @@ msgstr "Activo"
 msgid "Activity"
 msgstr "Actividad"
 
+#: src/components/ComputerDeviceSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -644,6 +650,10 @@ msgstr "Añade un comando para ejecutar"
 #: src/pages/RoutineEditor.tsx
 msgid "Add a file or folder to watch"
 msgstr "Añade un archivo o carpeta para observar"
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Add a Linux computer"
+msgstr ""
 
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Add a model in Settings to use this."
@@ -1946,6 +1956,8 @@ msgstr "Copiar filas"
 msgid "Cost"
 msgstr "Coste"
 
+#: src/components/ComputerDeviceSettings.tsx
+#: src/lib/user-devices.ts
 #: src/pages/ScratchpadSection.tsx
 msgid "Could not add"
 msgstr "No se pudo agregar"
@@ -4406,6 +4418,10 @@ msgstr "Nuevo"
 msgid "New bot"
 msgstr "Nuevo bot"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "New computer name"
+msgstr ""
+
 #: src/pages/GroupPanel.tsx
 msgid "New group"
 msgstr "Nuevo grupo"
@@ -4449,6 +4465,10 @@ msgstr "Nuevo space"
 #: src/pages/Board.tsx
 msgid "New ticket"
 msgstr "Nuevo ticket"
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Newest connected"
+msgstr ""
 
 #: src/pages/NightShift.tsx
 msgid "Next edition {next}"
@@ -5353,6 +5373,10 @@ msgstr "¿Quitar {secretName}? Los bots ya no podrán usarlo."
 #: src/components/TrustedLinkSitesSettings.tsx
 msgid "Remove {site}"
 msgstr "Quitar {site}"
+
+#: src/lib/user-devices.ts
+msgid "Remove a computer before adding another"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Remove change trigger"
@@ -6684,6 +6708,14 @@ msgstr "Para:"
 msgid "Today"
 msgstr "Hoy"
 
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token"
+msgstr ""
+
+#: src/components/ComputerDeviceSettings.tsx
+msgid "Token for {newName}, shown once"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Tokens"
 msgstr "Tokens"
@@ -7220,6 +7252,10 @@ msgstr "Tu Anthropic"
 #: src/components/ModelCredits.tsx
 msgid "Your card is charged {annualPrice} today, less the unused part of this month."
 msgstr "Hoy se cobrará {annualPrice} a tu tarjeta, menos la parte no usada de este mes."
+
+#: src/pages/shell/bot-device-picker.tsx
+msgid "Your computer"
+msgstr ""
 
 #: src/components/AccountDataSettings.tsx
 msgid "Your data"
