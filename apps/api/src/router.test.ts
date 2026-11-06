@@ -3809,6 +3809,7 @@ describe("computer screen url", () => {
   const callScreenUrl = async (
     connectScreen: () => Promise<unknown>,
     updateMany = vi.fn().mockResolvedValue({ count: 1 }),
+    state = computerRow.state,
   ) => {
     const endRun = vi.fn().mockResolvedValue(1);
     const prisma = {
@@ -3817,7 +3818,7 @@ describe("computer screen url", () => {
           id: "bot-1",
           screenGeneration: 2,
           thread: { id: "thread-1" },
-          computer: computerRow,
+          computer: { ...computerRow, state },
         }),
       },
       computer: { updateMany },
@@ -3849,6 +3850,14 @@ describe("computer screen url", () => {
     );
     return { response, updateMany, endRun };
   };
+
+  it("streams the screen while the computer saves its workspace", async () => {
+    const connectScreen = vi.fn(async () => ({ url: "https://screen.example/vnc.html" }));
+    const { response } = await callScreenUrl(connectScreen, undefined, "suspending");
+    expect(response.status).toBe(200);
+    expect((await response.json()).json.url).toEqual(expect.any(String));
+    expect(connectScreen).toHaveBeenCalledOnce();
+  });
 
   it("issues lifecycle-bound capabilities for managed-provider screens too", async () => {
     const { response } = await callScreenUrl(async () => ({

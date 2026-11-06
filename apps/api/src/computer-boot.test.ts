@@ -172,6 +172,32 @@ describe("computer boot", () => {
     expect(lifecycle.provisionComputer).not.toHaveBeenCalled();
   });
 
+  it("shows a computer that is saving its workspace mid-run instead of refusing it as busy", async () => {
+    const prisma = {
+      bot: {
+        findFirst: vi.fn().mockResolvedValue({
+          ...stoppedBot,
+          computer: {
+            ...stoppedBot.computer,
+            state: "suspending",
+            providerRef: "sandbox-1",
+            kind: "e2b",
+            controlHolder: "bot",
+            homeRevision: "rev-1",
+          },
+        }),
+      },
+      computerExecutionLease: { findUnique: vi.fn().mockResolvedValue(null) },
+    } as unknown as PrismaClient;
+
+    const response = await boot(prisma);
+
+    expect(response?.status).toBe(200);
+    expect((await response!.json()).json).toMatchObject({ state: "running" });
+    expect(lifecycle.acquireComputerExecutionLease).not.toHaveBeenCalled();
+    expect(lifecycle.provisionComputer).not.toHaveBeenCalled();
+  });
+
   it("reports a computer removed while the boot waited as not found", async () => {
     lifecycle.provisionComputer.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError("No record was found for a query.", {

@@ -67,6 +67,9 @@ import { computerContext, isRecordNotFound } from "./shared.js";
 
 const MAX_COMPUTER_TEXT_FILE_BYTES = 2 * 1024 * 1024;
 
+/** A suspending computer is still up while its workspace is saved, often for minutes mid-run. */
+const SCREEN_STATES = new Set(["running", "booting", "suspending"]);
+
 /** Each command writes a running and a done event, so this keeps about 100 commands. */
 const COMPUTER_COMMAND_HISTORY_EVENTS = 200;
 
@@ -94,6 +97,10 @@ export function computerRoutes(ctx: RouterContext) {
           } catch (error) {
             await clearGoneSandbox(deps, bot.computer, error);
           }
+        }
+        // Still up while its workspace is saved; booting would only collide with that save.
+        if (bot.computer.state === "suspending" && bot.computer.providerRef) {
+          return computerStatus(deps, context.actor, input.botId);
         }
         const ctx = computerContext(context.actor, bot.id, "boot");
         const manualRunId = `boot:${randomUUID()}`;
@@ -755,7 +762,7 @@ export function computerRoutes(ctx: RouterContext) {
         }
         if (
           !bot.computer?.providerRef ||
-          (bot.computer.state !== "running" && bot.computer.state !== "booting")
+          !SCREEN_STATES.has(bot.computer.state)
         ) {
           return { url: null };
         }
