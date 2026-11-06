@@ -884,7 +884,7 @@ function SpaceShell() {
         bot={contextBot}
         group={contextGroup}
         sections={botSections}
-        spaceId={bootstrapMe?.spaceId}
+        spaceId={currentSpaceId ?? undefined}
         onClose={closeBotMenu}
         refreshBots={refreshBots}
         read={read}
@@ -934,6 +934,7 @@ function SpaceShell() {
             mini={miniSidebar}
             sidebarGroups={sidebarGroups}
             collapsedSidebarSections={collapsedSidebarSections}
+            rosterSpaceId={currentSpaceId}
             bootstrapMe={bootstrapMe}
             botSections={botSections}
             spaces={spaces}
