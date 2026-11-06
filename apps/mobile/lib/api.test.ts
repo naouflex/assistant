@@ -61,6 +61,7 @@ import {
 } from "./session.js";
 import type { UnsentDisk } from "./thread-feedback.js";
 import { configureUnsentSends } from "./thread-feedback.js";
+import { directChatRunStatus } from "./thread-snapshot.js";
 
 vi.mock("expo-secure-store", () => ({
   getItemAsync: vi.fn(),
@@ -3420,6 +3421,29 @@ describe("mobile thread event reduction", () => {
 
     expect(next?.run).toEqual({ id: "peer-run", botId: "bot-2", status: "waiting_input" });
     expect(next?.members?.[0]?.status).toBe("waiting_input");
+  });
+
+  it("keeps a one-to-one chat working while another run outlives a failed one", () => {
+    const event = (seq: number, type: string, runId: string, payload = {}) => ({
+      type,
+      seq,
+      botId: "bot-1",
+      runId,
+      payload,
+    });
+    let next = applyMobileThreadEvent(
+      {
+        ...snapshot(),
+        run: { id: "run-1", botId: "bot-1", status: "running" },
+        activeRuns: [{ id: "run-1", botId: "bot-1", status: "running" }],
+      },
+      event(4, "run.started", "run-2", { trigger: "schedule" }),
+    );
+    next = applyMobileThreadEvent(next, event(5, "run.failed", "run-1", { error: "Stopped." }));
+    expect(next?.run).toMatchObject({ id: "run-1", status: "failed" });
+    expect(directChatRunStatus(next!)).toBe("running");
+    next = applyMobileThreadEvent(next, event(6, "run.completed", "run-2"));
+    expect(directChatRunStatus(next!)).toBe("failed");
   });
 
   it.each(["run.completed", "run.failed", "run.cancelled"])(

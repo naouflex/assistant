@@ -279,7 +279,7 @@ function measure(retain: boolean) {
   }
   const idle = ui.previews - mount;
   const fetched = structuredClone(bots);
-  fetched[0]!.status = "running";
+  fetched[0]!.preview = "Done";
   fetched[0]!.unread = true;
   bots = retain ? retainInboxValue(bots, fetched) : fetched;
   render(<List items={items(bots)} />);
@@ -414,12 +414,7 @@ it("says working only while the bot works, and shows nothing beside the time", (
     )),
   );
   // A "Needs you" computer card or an ask card is the state; the row must not claim work.
-  expect(rowLabels()).toEqual([
-    "Helper, Working…",
-    "Helper, Hi",
-    "Helper, Hi",
-    "Helper, Hi",
-  ]);
+  expect(rowLabels()).toEqual(["Helper, Working…", "Helper, Hi", "Helper, Hi", "Helper, Hi"]);
   expect(Array.from(container.querySelectorAll("button"), (row) => row.textContent)).toEqual([
     "HelperWorking…",
     "HelperHi",

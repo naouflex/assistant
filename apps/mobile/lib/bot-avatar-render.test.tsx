@@ -341,7 +341,8 @@ describe("BotAvatar", () => {
   it("keeps a shape picked in Avatar Studio", () => {
     const view = render("#8B5CF6::shape_3");
     expect(bodies(view)).toEqual([shippedBotAvatarShapePath(3)]);
-    expect(view.querySelectorAll("rect")).toHaveLength(2);
+    // Two eyes, each with its halo.
+    expect(view.querySelectorAll("rect")).toHaveLength(4);
   });
   it("draws the explicitly selected Atlas set as paths and gradients without a raster image", () => {
     const view = render("#3EC5A8", "atlas");

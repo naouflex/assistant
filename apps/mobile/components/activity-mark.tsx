@@ -91,9 +91,10 @@ export function ActivityMark({
 
   const shimmer = useSharedValue(0);
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !onScreen) return;
     shimmer.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.linear }), -1, true);
-  }, [reducedMotion, shimmer]);
+    return () => cancelAnimation(shimmer);
+  }, [reducedMotion, onScreen, shimmer]);
   const rowStyle = useAnimatedStyle(() => ({ height: height.value }));
   const markStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const actionStyle = useAnimatedStyle(() => ({

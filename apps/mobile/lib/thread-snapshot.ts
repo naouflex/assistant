@@ -1,3 +1,4 @@
+import { isRunWaitingOnUser, isRunWorking } from "@atlas/core";
 import type { MobileGroup, MobileSnapshot } from "./api";
 
 function equalValue(previous: unknown, next: unknown): boolean {
@@ -33,6 +34,25 @@ export function reconcileVisibleThreadSnapshot(
   const { cursor: _previousCursor, ...previousVisible } = previous;
   const { cursor: _nextCursor, ...nextVisible } = next;
   return equalValue(previousVisible, nextVisible) ? previous : next;
+}
+
+/**
+ * A one-to-one chat's run status, ranked as a fresh load ranks it: a takeover, live work, then
+ * anything else still active. A failure stays in `run` for its notice while another run of the
+ * bot keeps going, so it only shows once nothing is active.
+ */
+export function directChatRunStatus(
+  snap: Pick<MobileSnapshot, "run" | "activeRuns">,
+): string | undefined {
+  const active = (snap.activeRuns ?? []).filter(
+    (run) => isRunWorking(run.status) || isRunWaitingOnUser(run.status),
+  );
+  const primary =
+    active.find((run) => run.status === "waiting_takeover") ??
+    active.find((run) => run.status === "running") ??
+    active.find((run) => run.status === "leased") ??
+    active[0];
+  return (primary ?? snap.run)?.status;
 }
 
 /** A group chat's members in its order, once the chat or its group list has loaded them. */

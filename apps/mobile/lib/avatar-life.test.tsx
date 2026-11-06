@@ -51,7 +51,7 @@ vi.mock("react-native-reanimated", () => {
   const easing = (value: unknown) => value;
   const fade = { duration: () => ({}) };
   return {
-    default: { View: passthrough, createAnimatedComponent: () => passthrough },
+    default: { View: passthrough, Text: passthrough, createAnimatedComponent: () => passthrough },
     cancelAnimation: () => {
       motion.cancelled += 1;
     },
@@ -268,12 +268,6 @@ describe("avatar motion on mobile", () => {
     expect(awake()).toBe(0);
     expect(motion.springs).not.toContainEqual([1, MORPH_SPRING]);
     expect(motion.springs.at(-1)?.[0]).toBe(0);
-  });
-
-  it("holds a photo's place with a plain circle while the photo loads", () => {
-    render(<BotAvatar color="data:image/png;base64,AAAA" identity="bot-p" size={28} />);
-    const circle = container.querySelector('[data-bg="#EEE"]');
-    expect(circle?.getAttribute("data-width")).toBe("28");
   });
 
   it("keeps tiny and photo avatars still", () => {

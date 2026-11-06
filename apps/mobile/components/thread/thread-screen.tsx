@@ -46,7 +46,7 @@ import {
   latestThreadRowKey,
 } from "../../lib/thread-scroll";
 import { useThreadSend } from "../../lib/thread-send";
-import { threadGroupMembers } from "../../lib/thread-snapshot";
+import { directChatRunStatus, threadGroupMembers } from "../../lib/thread-snapshot";
 import { useThreadSync } from "../../lib/thread-sync";
 import { useThreadTranscript } from "../../lib/thread-transcript";
 import { useAutoSpeakReply, useSpeakMessages, useThreadVoiceCall } from "../../lib/thread-voice";
@@ -232,7 +232,11 @@ export function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId:
   const composerPrompt = displayName ? t("Message {name}", { name: displayName }) : t("Message…");
   const notificationThreadId = snap?.threadId ?? requestedThreadId ?? currentBot?.threadId;
   activeThreadId.current = notificationThreadId;
-  const currentBotStatus = snap ? snap.run?.status : titleBot?.status;
+  const currentBotStatus = snap
+    ? inGroup
+      ? snap.run?.status
+      : directChatRunStatus(snap)
+    : titleBot?.status;
   // The group's members in its order, once the chat or its group list has loaded them; the
   // title seats the inbox's copy until then.
   const groupMembers = threadGroupMembers(groupId, snap, mentionGroups);

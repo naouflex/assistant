@@ -1,7 +1,7 @@
 import { reduceLiveMessageBlocks, withLiveStreamingProgress } from "@atlas/core";
 import { describe, expect, it } from "vitest";
 import type { MobileSnapshot } from "./api";
-import { reconcileVisibleThreadSnapshot } from "./thread-snapshot";
+import { directChatRunStatus, reconcileVisibleThreadSnapshot } from "./thread-snapshot";
 
 function snapshot(): MobileSnapshot {
   return {
@@ -114,5 +114,19 @@ describe("visible thread snapshot publication", () => {
     expect(reconcileVisibleThreadSnapshot(messages, edited)).toBe(edited);
     expect(reconcileVisibleThreadSnapshot(null, previous)).toBe(previous);
     expect(reconcileVisibleThreadSnapshot(previous, null)).toBeNull();
+  });
+});
+
+describe("one-to-one chat run status", () => {
+  it("ranks a takeover, then live work, ahead of a queued run or an ask", () => {
+    const status = (...statuses: string[]) =>
+      directChatRunStatus({
+        run: null,
+        activeRuns: statuses.map((value, index) => ({ id: `run-${index}`, status: value })),
+      });
+    expect(status("queued", "waiting_input", "running")).toBe("running");
+    expect(status("running", "waiting_takeover")).toBe("waiting_takeover");
+    expect(status("waiting_input", "queued")).toBe("waiting_input");
+    expect(status()).toBeUndefined();
   });
 });
