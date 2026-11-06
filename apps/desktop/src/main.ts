@@ -28,6 +28,7 @@ import {
   session,
   shell,
   systemPreferences,
+  Tray,
 } from "electron";
 import type { AppDocumentState } from "./app-document-state.js";
 import { waitForMountedAppDocument } from "./app-document-state.js";
@@ -154,6 +155,7 @@ const appOpener = createAppOpener(openAppOnce);
 /** Prior app window kept until setup is persisted (or the switch is abandoned). */
 let pendingPreviousWindow: BrowserWindow | null = null;
 let quitting = false;
+let tray: Tray | null = null;
 let warmWindowTimer: NodeJS.Timeout | undefined;
 // Number of short-lived hidden probe windows currently alive. On Windows/Linux,
 // destroying the last window fires "window-all-closed" -> app.quit(); a probe
@@ -400,6 +402,12 @@ function createWindow(url: string, partition: string | null) {
     popup.webContents.on("will-navigate", (details) => capture(details));
   });
   win.on("close", (event) => {
+    // Windows and Linux keep running in the tray so bots can still reach this computer.
+    if (process.platform !== "darwin" && !quitting && tray) {
+      event.preventDefault();
+      win.hide();
+      return;
+    }
     if (
       process.platform === "darwin" &&
       !quitting &&
@@ -1457,6 +1465,22 @@ app.whenReady().then(async () => {
 
   const icon = windowIcon();
   if (process.platform === "darwin" && icon) app.dock?.setIcon(icon);
+  if (process.platform !== "darwin" && icon) {
+    const reveal = () => {
+      const win = secondInstanceWindow(setupWindow, mainWindow);
+      if (win) revealSecondInstanceWindow(win);
+    };
+    tray = new Tray(icon);
+    tray.setToolTip(app.name);
+    tray.on("click", reveal);
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: app.name, click: reveal },
+        { type: "separator" },
+        { role: "quit", label: process.platform === "win32" ? t("Exit") : t("Quit") },
+      ]),
+    );
+  }
   installApplicationMenu();
   const browserAuthAttempts = new Map<string, AbortController>();
   const cancelBrowserAuth = () => {
