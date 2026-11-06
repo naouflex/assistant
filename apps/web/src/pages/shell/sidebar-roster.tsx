@@ -425,7 +425,17 @@ export function SidebarRoster({
                       );
                     }}
                     // Focus the row so closing the menu returns focus here.
-                    onContextMenu={(event) => event.currentTarget.focus()}
+                    onContextMenu={(event) => {
+                      event.currentTarget.focus();
+                      // The menu acts through the shell's Space; enter the chat's Space first.
+                      if (item.chat.spaceId !== activeShellSpaceId) {
+                        event.preventDefault();
+                        openSpaceChat(
+                          item.chat.spaceId,
+                          item.kind === "bot" ? `/app/${item.chat.id}` : `/app/g/${item.chat.id}`,
+                        );
+                      }
+                    }}
                     className={`flex items-center ${
                       mini
                         ? "mx-auto size-12 justify-center rounded-xl"
@@ -562,7 +572,7 @@ export function SidebarRoster({
                     }}
                   >
                     <ContextMenu
-                      disabled={item.chat.spaceId !== group.spaceId}
+                      disabled={item.chat.spaceId !== activeShellSpaceId}
                       open={botMenu?.kind === item.kind && botMenu.id === item.chat.id}
                       // A sibling row's menu may already own the state; only clear our own.
                       onOpenChange={(open) =>
