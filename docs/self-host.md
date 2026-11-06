@@ -116,6 +116,8 @@ Compose bot homes mount only their own subdirectory of the application volume us
   limited.
 - [Storage and encryption](./self-host-storage.md): content encryption, object storage and upload
   limits.
+- [Admin bot CLI](./self-host-admin-bot.md): list/export and safely update bot instructions,
+  markdown memory, and space AgentSkills from the server (no direct SQL).
 - [Production deployment](./self-host-production.md): a public single-VM install with automatic
   HTTPS.
 - [Backup and restore](./self-host-backups.md) and [upgrading](./self-host-upgrading.md).
