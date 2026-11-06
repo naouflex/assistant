@@ -12,7 +12,6 @@ const SETTINGS_SECTIONS = [
   "usage",
   "computer",
   "billing",
-  "updates",
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];

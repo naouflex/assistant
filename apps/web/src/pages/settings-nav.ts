@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   Brain,
-  CloudDownload,
   Cpu,
   CreditCard,
   Gauge,
@@ -29,7 +28,6 @@ export function useSettingsNavItems(available: {
   wallet: boolean;
   computer: boolean;
   billing: boolean;
-  updates: boolean;
 }): SettingsNavItem[] {
   const { t } = useLingui();
   return [
@@ -47,8 +45,5 @@ export function useSettingsNavItems(available: {
     { id: "usage", label: t`Usage`, icon: Gauge },
     ...(available.computer ? [{ id: "computer" as const, label: t`Computer`, icon: Monitor }] : []),
     ...(available.billing ? [{ id: "billing" as const, label: t`Billing`, icon: CreditCard }] : []),
-    ...(available.updates
-      ? [{ id: "updates" as const, label: t`Updates`, icon: CloudDownload }]
-      : []),
   ];
 }

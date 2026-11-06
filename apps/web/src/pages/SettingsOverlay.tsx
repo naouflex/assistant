@@ -7,12 +7,10 @@ import { ApprovalRulesSettings } from "../components/ApprovalRulesSettings";
 import { computersAreUnavailable } from "../components/ComputersUnavailableHint";
 import { SETTINGS_CONTENT_WIDTH, SettingsGroup, SettingsRow } from "../components/SettingsRows";
 import { VaultSettings } from "../components/VaultSettings";
-import { desktopBridge } from "../lib/desktop";
 import { SpaceRpcProvider } from "../lib/space-rpc";
 import {
   ComputerSettingsPanel,
   GeneralSettingsPanels,
-  UpdatesSettingsPanel,
   UsageSettingsPanel,
 } from "./AccountSettingsOverlay";
 import { BillingSettingsPanel } from "./BillingSettingsPanel";
@@ -92,14 +90,12 @@ export function SettingsOverlay({
   const [keepComputerRecovery, setKeepComputerRecovery] = useState(false);
   const recoveryHoldTimer = useRef<number | undefined>(undefined);
   const showComputer = keepComputerRecovery || computersAreUnavailable(sandboxProvider);
-  const showUpdates = Boolean(desktopBridge()?.update);
   // A section that isn't available yet (billing before its flag loads) shows General until it is.
   const section =
     (requestedSection === "computer" && !showComputer) ||
     (requestedSection === "billing" && !billingEnabled) ||
     (requestedSection === "messaging" && !messagingEnabled) ||
-    (requestedSection === "wallet" && !paymentWalletProvider) ||
-    (requestedSection === "updates" && !showUpdates)
+    (requestedSection === "wallet" && !paymentWalletProvider)
       ? "general"
       : requestedSection;
   const panelBusy = memoryBusy || voiceBusy;
@@ -137,7 +133,6 @@ export function SettingsOverlay({
     wallet: Boolean(paymentWalletProvider),
     computer: showComputer,
     billing: billingEnabled,
-    updates: showUpdates,
   });
 
   useEffect(() => {
@@ -168,15 +163,7 @@ export function SettingsOverlay({
       nav.removeEventListener("scroll", measure);
       observer?.disconnect();
     };
-  }, [
-    section,
-    showComputer,
-    billingEnabled,
-    messagingEnabled,
-    paymentWalletProvider,
-    showUpdates,
-    i18n.locale,
-  ]);
+  }, [section, showComputer, billingEnabled, messagingEnabled, paymentWalletProvider, i18n.locale]);
 
   function scrollSections(direction: number) {
     const nav = navRef.current;
@@ -406,7 +393,6 @@ export function SettingsOverlay({
                     />
                   ) : null}
                   {section === "billing" && billingEnabled ? <BillingSettingsPanel /> : null}
-                  {section === "updates" && showUpdates ? <UpdatesSettingsPanel /> : null}
                   {section === "models" ? (
                     <ModelSettingsOverlay embedded scope="account" onClose={requestClose} />
                   ) : null}

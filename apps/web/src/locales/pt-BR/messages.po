@@ -1484,7 +1484,6 @@ msgid "Checking connection…"
 msgstr "Verificando a conexão…"
 
 #: src/components/ComputersUnavailableHint.tsx
-#: src/components/DesktopUpdates.tsx
 #: src/pages/HostComputerPrompt.tsx
 msgid "Checking…"
 msgstr ""
@@ -2807,8 +2806,8 @@ msgid "Design"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-msgid "Desktop app"
-msgstr ""
+#~ msgid "Desktop app"
+#~ msgstr ""
 
 #: src/components/DesktopUpdates.tsx
 msgid "Desktop update"
@@ -2975,8 +2974,8 @@ msgid "Download the Android APK"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-msgid "Downloading…"
-msgstr ""
+#~ msgid "Downloading…"
+#~ msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Draft skill"
@@ -6843,8 +6842,8 @@ msgid "Unsupported file type: {0}"
 msgstr "Tipo de arquivo não suportado: {0}"
 
 #: src/components/DesktopUpdates.tsx
-msgid "Up to date"
-msgstr ""
+#~ msgid "Up to date"
+#~ msgstr ""
 
 #: src/components/ModelCredits.tsx
 msgid "Update"
@@ -6879,8 +6878,8 @@ msgid "Updated {updated}"
 msgstr ""
 
 #: src/pages/settings-nav.ts
-msgid "Updates"
-msgstr "Atualizações"
+#~ msgid "Updates"
+#~ msgstr "Atualizações"
 
 #. placeholder {0}: update.name
 #: src/components/ComputerUpdateProgress.tsx

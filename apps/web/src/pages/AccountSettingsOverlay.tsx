@@ -1,11 +1,5 @@
-import { Trans, useLingui } from "@lingui/react/macro";
 import type { AccountSecurity, UsageSummary } from "@atlas/contracts";
-import {
-  accountDisplay,
-  displayName,
-  MAX_PASSWORD_LENGTH,
-  MIN_PASSWORD_LENGTH,
-} from "@atlas/core";
+import { accountDisplay, displayName, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@atlas/core";
 import {
   Button,
   Field,
@@ -27,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@atlas/ui-web/components/ui/table";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import { useId, useRef, useState, useSyncExternalStore } from "react";
 import { AccountAccess, LinkSsoRow } from "../components/AccountAccess";
@@ -34,7 +29,6 @@ import { AccountDataSettings } from "../components/AccountDataSettings";
 import { SuccessPop } from "../components/ai/primitives";
 import { ComputerDeviceSettings } from "../components/ComputerDeviceSettings";
 import { ComputersUnavailableHint } from "../components/ComputersUnavailableHint";
-import { DesktopUpdateSection } from "../components/DesktopUpdates";
 import { PasskeySettings } from "../components/PasskeySettings";
 import { SettingsGroup, SettingsRow } from "../components/SettingsRows";
 import { TrustedLinkSitesSettings } from "../components/TrustedLinkSitesSettings";
@@ -575,14 +569,6 @@ export function ComputerSettingsPanel({
         onRecovered={onSandboxProviderChange}
         onRecoveryDismissed={onRecoveryDismissed}
       />
-    </div>
-  );
-}
-
-export function UpdatesSettingsPanel() {
-  return (
-    <div className="space-y-5">
-      <DesktopUpdateSection />
     </div>
   );
 }

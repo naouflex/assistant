@@ -37,7 +37,6 @@ vi.mock("@atlas/ui-web", () => ({
 vi.mock("./AccountSettingsOverlay", () => ({
   ComputerSettingsPanel: () => null,
   GeneralSettingsPanels: () => null,
-  UpdatesSettingsPanel: () => null,
   UsageSettingsPanel: () => null,
 }));
 const { memoryConfigs, memoryConfigChange, providerConfig, updaterStatus } = vi.hoisted(() => ({
@@ -281,24 +280,10 @@ it("edits the memory of the space the app is showing, even after another space's
   }
 });
 
-const updatesNav = (container: HTMLElement) =>
-  container.querySelector('[data-testid="settings-nav-updates"]');
-
-it("hides server updates and never requests server authority", async () => {
-  const { container, cleanup } = await render({});
+it("never requests server update authority", async () => {
+  const { cleanup } = await render({});
   try {
-    expect(updatesNav(container)).toBeNull();
     expect(updaterStatus).not.toHaveBeenCalled();
-  } finally {
-    await cleanup();
-  }
-});
-
-it("shows Updates in the desktop app", async () => {
-  vi.stubGlobal("atlasDesktop", { update: {} });
-  const { container, cleanup } = await render({});
-  try {
-    expect(updatesNav(container)).not.toBeNull();
   } finally {
     await cleanup();
   }

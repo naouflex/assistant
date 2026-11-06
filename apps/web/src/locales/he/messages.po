@@ -1484,7 +1484,6 @@ msgid "Checking connection…"
 msgstr "בודק חיבור…"
 
 #: src/components/ComputersUnavailableHint.tsx
-#: src/components/DesktopUpdates.tsx
 #: src/pages/HostComputerPrompt.tsx
 msgid "Checking…"
 msgstr "בודק…"
@@ -2807,8 +2806,8 @@ msgid "Design"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-msgid "Desktop app"
-msgstr "אפליקציית הדסקטופ"
+#~ msgid "Desktop app"
+#~ msgstr "אפליקציית הדסקטופ"
 
 #: src/components/DesktopUpdates.tsx
 msgid "Desktop update"
@@ -2975,8 +2974,8 @@ msgid "Download the Android APK"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-msgid "Downloading…"
-msgstr "מוריד…"
+#~ msgid "Downloading…"
+#~ msgstr "מוריד…"
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Draft skill"
@@ -6843,8 +6842,8 @@ msgid "Unsupported file type: {0}"
 msgstr "סוג קובץ לא נתמך: {0}"
 
 #: src/components/DesktopUpdates.tsx
-msgid "Up to date"
-msgstr "מעודכן"
+#~ msgid "Up to date"
+#~ msgstr "מעודכן"
 
 #: src/components/ModelCredits.tsx
 msgid "Update"
@@ -6879,8 +6878,8 @@ msgid "Updated {updated}"
 msgstr "עודכן {updated}"
 
 #: src/pages/settings-nav.ts
-msgid "Updates"
-msgstr "עדכונים"
+#~ msgid "Updates"
+#~ msgstr "עדכונים"
 
 #. placeholder {0}: update.name
 #: src/components/ComputerUpdateProgress.tsx
