@@ -14,21 +14,45 @@ export function memorySearchTerms(query: string, maxTerms = KEYWORD_SEARCH_MAX_T
   return terms;
 }
 
+// A term matches only as a whole word: any adjacent character must be non-alphanumeric, so
+// "atlas" hits "atlas" and "atlas-rebrand" but never "catalyst" or "Atlases".
+function wordMatchIndexes(haystack: string, term: string): number[] {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp("(?<![\\p{L}\\p{N}])" + escaped + "(?![\\p{L}\\p{N}])", "gu");
+  const indexes: number[] = [];
+  for (const match of haystack.matchAll(pattern)) indexes.push(match.index!);
+  return indexes;
+}
+
 export function memorySearchTermHits(content: string, path: string, terms: readonly string[]): number {
   if (terms.length === 0) return 0;
-  const haystack = `${content}\n${path}`.toLowerCase();
+  const haystack = (content + "\n" + path).toLowerCase();
   let hits = 0;
   for (const term of terms) {
-    if (haystack.includes(term)) hits += 1;
+    if (wordMatchIndexes(haystack, term).length > 0) hits += 1;
   }
   return hits;
 }
 
 export function memorySearchSnippet(content: string, terms: readonly string[]): string {
   const lower = content.toLowerCase();
+  const positions: number[] = [];
   for (const term of terms) {
-    const idx = lower.indexOf(term);
-    if (idx >= 0) return content.slice(Math.max(0, idx - 40), idx + term.length + 80);
+    for (const index of wordMatchIndexes(lower, term)) positions.push(index);
   }
-  return content.slice(0, 140);
+  if (positions.length === 0) return content.slice(0, 140);
+  // Center the snippet where the query terms cluster most densely, not at the first term's first hit.
+  let best = positions[0]!;
+  let bestDensity = -1;
+  for (const position of positions) {
+    let density = 0;
+    for (const index of positions) {
+      if (index >= position - 40 && index <= position + 80) density += 1;
+    }
+    if (density > bestDensity) {
+      bestDensity = density;
+      best = position;
+    }
+  }
+  return content.slice(Math.max(0, best - 40), best + 120);
 }
