@@ -15,7 +15,20 @@ function deps(options: { deviceVoice: boolean; dictation: boolean; status: Voice
 }
 
 describe("mobile voice call entry", () => {
-  it("starts a device-only call without asking the API for provider readiness", async () => {
+  it("prefers the provider's transcription model over device dictation", async () => {
+    const fakes = deps({
+      deviceVoice: true,
+      dictation: true,
+      status: { ready: true, transcribe: true },
+    });
+
+    await expect(resolveVoiceCallPlan(fakes)).resolves.toEqual({
+      kind: "provider",
+      transcribe: true,
+    });
+  });
+
+  it("starts a device call when the provider is not ready", async () => {
     const fakes = deps({
       deviceVoice: true,
       dictation: true,
@@ -26,7 +39,6 @@ describe("mobile voice call entry", () => {
       kind: "device",
       transcribe: false,
     });
-    expect(fakes.loadVoiceStatus).not.toHaveBeenCalled();
   });
 
   it("reports missing speech recognition instead of opening provider setup", async () => {
@@ -104,7 +116,6 @@ describe("mobile voice call entry", () => {
       kind: "device",
       transcribe: false,
     });
-    expect(fakes.loadVoiceStatus).not.toHaveBeenCalled();
   });
 });
 

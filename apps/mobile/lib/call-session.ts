@@ -210,6 +210,8 @@ export function startCall(
     botColor?: string;
     botAvatarSet?: BotAvatarSet;
     transcribe?: boolean;
+    /** Hear the caller with the provider's model (any language) instead of the phone's recognizer. */
+    preferProvider?: boolean;
     /** Spoken as the call connects, before the caller's first turn. */
     greeting?: string;
     /** Called with each finished turn; a target means the caller asked for that bot instead. */
@@ -227,7 +229,7 @@ export function startCall(
   callId = newClientId();
   callRunId = null;
   canTranscribe = call.transcribe ?? true;
-  onDevice = null;
+  onDevice = call.preferProvider ? false : null;
   micOpen = false;
   bargedIn = false;
   spokenMemory.clear();

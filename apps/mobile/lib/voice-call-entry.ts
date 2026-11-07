@@ -26,12 +26,16 @@ export async function resolveVoiceCallPlan(deps: VoiceCallPlanDeps): Promise<Voi
     deviceVoiceEnabled = true;
   }
 
+  // A ready provider that can transcribe wins: its model understands every language, while
+  // the phone's recognizer only hears the app language. Device dictation is the fallback.
+  const status = await deps.loadVoiceStatus().catch(() => ({ ready: false, transcribe: false }));
+  if (status.ready && status.transcribe) return { kind: "provider", transcribe: true };
+
   const deviceDictationAvailable = deviceVoiceEnabled ? await deps.dictationAvailable() : false;
   if (deviceVoiceEnabled && deviceDictationAvailable) {
     return { kind: "device", transcribe: false };
   }
 
-  const status = await deps.loadVoiceStatus();
   if (!status.ready) {
     return deviceVoiceEnabled ? { kind: "dictation" } : { kind: "settings" };
   }
