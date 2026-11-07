@@ -69,24 +69,66 @@ export function SpaceMemorySection() {
   );
 }
 
+/** Shows a suggestion as the lines it adds and removes, falling back to the full note. */
+function ProposalChange({ proposal }: { proposal: MemoryProposal }) {
+  const added = proposal.added ?? [];
+  const removed = proposal.removed ?? [];
+  if (!added.length && !removed.length) {
+    return (
+      <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[13px]">
+        {proposal.content}
+      </pre>
+    );
+  }
+  return (
+    <div
+      className="mt-1 max-h-40 overflow-auto font-mono text-[13px]"
+      data-testid="memory-proposal-diff"
+    >
+      {removed.map((line, index) => (
+        <div
+          key={`r${index}`}
+          className="whitespace-pre-wrap text-destructive line-through decoration-destructive/40"
+          dir="auto"
+        >
+          − {line}
+        </div>
+      ))}
+      {added.map((line, index) => (
+        <div
+          key={`a${index}`}
+          className="whitespace-pre-wrap text-emerald-700 dark:text-emerald-400"
+          dir="auto"
+        >
+          + {line}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MemoryReview({
   dream,
   proposals,
+  applied,
   reviewing,
   nothingToChange,
   busy,
   onReview,
   onAccept,
   onReject,
+  onUndo,
 }: {
   dream: MemoryDream | null;
   proposals: MemoryProposal[];
+  applied: MemoryProposal[];
   reviewing: boolean;
   nothingToChange: boolean;
   busy: boolean;
   onReview: () => void;
   onAccept: (proposal: MemoryProposal) => void;
-  onReject: (proposal: MemoryProposal) => void;
+  onReject: (proposal: MemoryProposal, reason: "not_useful" | "dismiss") => void;
+  onUndo: (proposal: MemoryProposal) => void;
 }) {
   return (
     <div className="mb-3">
@@ -119,9 +161,12 @@ function MemoryReview({
               <p className="text-[13px] text-muted-foreground" dir="auto">
                 {proposal.reason}
               </p>
-              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap font-mono text-[13px]">
-                {proposal.content}
-              </pre>
+              <ProposalChange proposal={proposal} />
+              {proposal.askReason ? (
+                <p className="mt-1 text-[12px] text-muted-foreground" dir="auto">
+                  {proposal.askReason}
+                </p>
+              ) : null}
               <div className="mt-2 flex gap-2">
                 <Button type="button" disabled={busy} onClick={() => onAccept(proposal)}>
                   <Trans>Accept</Trans>
@@ -130,11 +175,45 @@ function MemoryReview({
                   type="button"
                   variant="outline"
                   disabled={busy}
-                  onClick={() => onReject(proposal)}
+                  onClick={() => onReject(proposal, "not_useful")}
                 >
-                  <Trans>Reject</Trans>
+                  <Trans>Not useful</Trans>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => onReject(proposal, "dismiss")}
+                >
+                  <Trans>Dismiss</Trans>
                 </Button>
               </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {applied.length > 0 ? (
+        <div className="mt-3" data-testid="memory-applied">
+          <h4 className="text-xs font-medium text-muted-foreground">
+            <Trans>Updated on its own</Trans>
+          </h4>
+          {applied.map((proposal) => (
+            <div key={proposal.id} className="mt-2 border-b border-border pb-2 last:border-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[13px] text-muted-foreground" dir="auto">
+                  {proposal.path} · {proposal.reason}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => onUndo(proposal)}
+                >
+                  <Trans>Undo</Trans>
+                </Button>
+              </div>
+              <ProposalChange proposal={proposal} />
             </div>
           ))}
         </div>
@@ -158,10 +237,14 @@ function MemoryDocumentList({
   const queryClient = useQueryClient();
   const list = queries.memory.list.queryOptions({ input });
   const proposalOptions = queries.memory.proposals.queryOptions({ input });
+  const appliedOptions = queries.memory.proposals.queryOptions({
+    input: { ...input, status: "applied" },
+  });
   const dreamOptions = queries.memory.dream.queryOptions({ input });
   // Bots write memory as they run, so every open refreshes behind the cached list.
   const listQuery = useQuery({ ...list, refetchOnMount: "always" });
   const proposalQuery = useQuery({ ...proposalOptions, refetchOnMount: "always" });
+  const appliedQuery = useQuery({ ...appliedOptions, refetchOnMount: "always" });
   const dreamQuery = useQuery({
     ...dreamOptions,
     refetchOnMount: "always",
@@ -172,6 +255,7 @@ function MemoryDocumentList({
   });
   const docs = listQuery.data ?? NO_DOCS;
   const proposals = proposalQuery.data ?? [];
+  const applied = appliedQuery.data ?? [];
   const dream = dreamQuery.data ?? null;
   const reviewing = dream?.status === "queued" || dream?.status === "running";
   const loading = listQuery.isPending;
@@ -338,15 +422,36 @@ function MemoryDocumentList({
     }
   }
 
-  async function rejectProposal(proposal: MemoryProposal) {
+  async function rejectProposal(proposal: MemoryProposal, reason: "not_useful" | "dismiss") {
     if (busy) return;
     setBusy(true);
     setError(null);
     try {
-      await rpc.memory.rejectProposal({ proposalId: proposal.id });
+      await rpc.memory.rejectProposal({ proposalId: proposal.id, reason });
       await queryClient.invalidateQueries({ queryKey: proposalOptions.queryKey });
     } catch {
       setError(t`Could not save`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function undoProposal(proposal: MemoryProposal) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const restored = await rpc.memory.undoProposal({ proposalId: proposal.id });
+      await setDocs((current) =>
+        current.map((entry) => (entry.path === restored.path ? restored : entry)),
+      );
+      await queryClient.invalidateQueries({ queryKey: appliedOptions.queryKey });
+    } catch (err) {
+      setError(
+        err instanceof ORPCError && err.code === "CONFLICT"
+          ? t`This note changed after the update. Edit it directly instead.`
+          : t`Could not save`,
+      );
     } finally {
       setBusy(false);
     }
@@ -384,12 +489,14 @@ function MemoryDocumentList({
         <MemoryReview
           dream={dream}
           proposals={proposals}
+          applied={applied}
           reviewing={reviewing}
           nothingToChange={nothingToChange}
           busy={busy}
           onReview={() => void startReview()}
           onAccept={(proposal) => void acceptProposal(proposal)}
-          onReject={(proposal) => void rejectProposal(proposal)}
+          onReject={(proposal, reason) => void rejectProposal(proposal, reason)}
+          onUndo={(proposal) => void undoProposal(proposal)}
         />
         {loading ? <Skeleton className="h-10 w-full" /> : null}
         {!compact && !loading && docs.length === 0 && !error ? (

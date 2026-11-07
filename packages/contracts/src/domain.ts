@@ -777,8 +777,27 @@ export const MemoryProposalSchema = z.object({
   baseRevision: z.number().int(),
   reason: z.string(),
   source: z.enum(["dream", "bot"]),
-  status: z.enum(["pending", "accepted", "rejected"]),
+  /**
+   * applied: landed on its own through the safe rails and can be undone for a week.
+   * superseded: a newer suggestion for the same note replaced it. dismissed: closed
+   * without saying it was wrong.
+   */
+  status: z.enum([
+    "pending",
+    "accepted",
+    "rejected",
+    "dismissed",
+    "superseded",
+    "applied",
+    "undone",
+  ]),
+  /** Lines this change adds and removes, for showing it as a diff. */
+  added: z.array(z.string()).optional(),
+  removed: z.array(z.string()).optional(),
+  /** Why it waits for the owner, when it does. */
+  askReason: z.string().nullable().optional(),
   createdAt: z.string(),
+  updatedAt: z.string().optional(),
 });
 export type MemoryProposal = z.infer<typeof MemoryProposalSchema>;
 
