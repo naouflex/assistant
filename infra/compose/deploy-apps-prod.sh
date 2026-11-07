@@ -93,7 +93,21 @@ else
   cat >> "\$file" <<'SITE'
 
 ${HOST} {
-    encode zstd gzip
+    # Compressing text/event-stream buffers live thread events until the next one arrives.
+    encode {
+        zstd
+        gzip
+        match {
+            header Content-Type text/html*
+            header Content-Type text/css*
+            header Content-Type text/plain*
+            header Content-Type text/javascript*
+            header Content-Type application/javascript*
+            header Content-Type application/json*
+            header Content-Type image/svg+xml*
+            header Content-Type application/wasm*
+        }
+    }
     handle /health {
         reverse_proxy atlas-api:3100
     }
