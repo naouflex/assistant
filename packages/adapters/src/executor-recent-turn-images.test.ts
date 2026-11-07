@@ -548,6 +548,18 @@ describe("recent turn images follow model vision", () => {
   });
 });
 
+describe("exact arithmetic input", () => {
+  it("offers only a person's own turn as an utterance", async () => {
+    const user = await runWithModel(TEXT_ONLY_MODEL);
+    expect(user.request.utterance).toBeTruthy();
+
+    const routine = await runWithModel(TEXT_ONLY_MODEL, undefined, false, false, true, {
+      trigger: "routine",
+    });
+    expect(routine.request.utterance).toBeUndefined();
+  });
+});
+
 describe("screen lifecycle after run completion", () => {
   it("keeps only a successfully finalized run's screen warm and uses a dedicated screen fence", async () => {
     const completed = await runWithModel(VISION_MODEL, undefined, false, false, true, {

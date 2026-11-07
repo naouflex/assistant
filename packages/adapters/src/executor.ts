@@ -1702,6 +1702,9 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           return true;
         };
 
+        const personTurn =
+          run.trigger === "user" ||
+          (run.trigger === "follow_up" && sourceMessage?.role === "user");
         const attachAfterWrite =
           compactRun &&
           (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging") &&
@@ -1735,12 +1738,9 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 });
               },
               prompt,
-              ...(speakers &&
-              (run.trigger === "user" ||
-                (run.trigger === "follow_up" && sourceMessage?.role === "user"))
-                ? { promptSpeaker: USER_SPEAKER }
-                : {}),
-              utterance: taskPrompt,
+              ...(speakers && personTurn ? { promptSpeaker: USER_SPEAKER } : {}),
+              // Bot messages and routines carry figures that are not a question to compute.
+              ...(personTurn ? { utterance: taskPrompt } : {}),
               // Keep an explicit executor override, but let the runtime select
               // cache-aware context for connections declaring a cache window.
               contextStrategy: deps.contextStrategy,
