@@ -793,7 +793,14 @@ export const appContract = {
       .output(SpaceMemoryConfigSchema),
     disconnectProvider: oc.output(z.object({ ok: z.literal(true) })),
     proposals: oc
-      .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
+      .input(
+        z.object({
+          botId: Id.optional(),
+          scope: z.enum(["bot", "user"]),
+          /** applied lists automatic updates from the last week that can still be undone. */
+          status: z.enum(["pending", "applied"]).optional(),
+        }),
+      )
       .output(z.array(MemoryProposalSchema)),
     dream: oc
       .input(z.object({ botId: Id.optional(), scope: z.enum(["bot", "user"]) }))
@@ -803,8 +810,15 @@ export const appContract = {
       .output(MemoryDreamSchema),
     acceptProposal: oc.input(z.object({ proposalId: Id })).output(MemoryDocumentSchema),
     rejectProposal: oc
-      .input(z.object({ proposalId: Id }))
+      .input(
+        z.object({
+          proposalId: Id,
+          /** not_useful teaches the next review; dismiss just closes the card. */
+          reason: z.enum(["not_useful", "dismiss"]).optional(),
+        }),
+      )
       .output(z.object({ ok: z.literal(true) })),
+    undoProposal: oc.input(z.object({ proposalId: Id })).output(MemoryDocumentSchema),
   },
   nightShift: {
     timeline: oc.input(NightShiftInputSchema).output(NightShiftTimelineSchema),

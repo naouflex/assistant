@@ -5,6 +5,7 @@ import type {
   BackgroundJobExecution,
   BackgroundJobHandlers,
   JobPublisher,
+  MemoryStore,
   MessagingSurface,
   PaymentWalletProvider,
   SandboxProvider,
@@ -69,6 +70,10 @@ export function createBackgroundJobHandlers(deps: {
   runtime: AgentRuntime;
   secretStore: SecretStore;
   memoryProviders: MemoryProviderResolver;
+  /** Lets memory reviews apply suggestions that pass the safe rails. */
+  memory?: MemoryStore;
+  /** Off makes every memory suggestion wait for the owner. */
+  dreamAutoApply?: boolean;
   deploymentModelKey?: string;
   deploymentModelConfigured?: boolean;
   messaging?: MessagingSurface;
@@ -235,6 +240,8 @@ export function createBackgroundJobHandlers(deps: {
             deploymentModelKey: deps.deploymentModelKey,
             deploymentModelConfigured: deps.deploymentModelConfigured,
             ...(deps.executor.resolveModel ? { resolveModel: deps.executor.resolveModel } : {}),
+            ...(deps.memory ? { memory: deps.memory } : {}),
+            autoApply: deps.dreamAutoApply !== false,
           },
           payload.dreamId,
         );

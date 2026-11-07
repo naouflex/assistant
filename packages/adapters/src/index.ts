@@ -108,6 +108,7 @@ export {
   buildAgentMemoryPrompt,
   readAgentMemory,
 } from "./memory-context.js";
+export * from "./memory-dream-rails.js";
 export * from "./memory-provider-factory.js";
 export * from "./messaging-composition.js";
 export * from "./messaging-context.js";

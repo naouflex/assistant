@@ -1,11 +1,16 @@
 import { MEMORY_REVISION_CONFLICT_ERROR, memoryDreamJob } from "@atlas/adapter-kit";
+import type { DreamEdit } from "@atlas/adapters";
 import {
+  applyDreamEdits,
   buildAgentMemoryPrompt,
   isScratchpadStatus,
   listScratchpadItems,
   mapScratchpadItem,
+  parseDreamEdits,
   readAgentMemory,
+  UNDO_WINDOW_MS,
 } from "@atlas/adapters";
+import type { MemoryProposal } from "@atlas/contracts";
 import { isDeletableMemoryDocument } from "@atlas/contracts";
 import { findSpaceMemoryConfig, IsolationError } from "@atlas/db";
 import { ORPCError } from "@orpc/server";
@@ -151,15 +156,18 @@ export function memoryRoutes(ctx: RouterContext) {
       ),
       proposals: authed.memory.proposals.handler(async ({ context, input }) => {
         const botId = await memoryBotId(repos, context.actor, input);
+        const applied = input.status === "applied";
         const rows = await deps.prisma.memoryProposal.findMany({
           where: {
             spaceId: context.actor.spaceId,
             userId: context.actor.userId,
             scope: input.scope,
             botId,
-            status: "pending",
+            status: applied ? "applied" : "pending",
+            ...(applied ? { updatedAt: { gte: new Date(Date.now() - UNDO_WINDOW_MS) } } : {}),
           },
           orderBy: { createdAt: "desc" },
+          ...(applied ? { take: 10 } : {}),
         });
         return rows.map(proposalView);
       }),
@@ -226,23 +234,47 @@ export function memoryRoutes(ctx: RouterContext) {
         });
         if (!proposal) throw new IsolationError();
         const scope = proposal.scope as "bot" | "user";
-        const updated = await deps.memory
-          .commit(
+        const commit = (content: string, expectedRevision: number) =>
+          deps.memory.commit(
             {
               scope,
               botId: proposal.botId ?? undefined,
               path: proposal.path,
-              content: proposal.content,
-              expectedRevision: proposal.baseRevision,
+              content,
+              expectedRevision,
             },
             memoryContext(context.actor),
-          )
-          .catch((error: unknown) => {
-            if (error instanceof Error && error.message === MEMORY_REVISION_CONFLICT_ERROR) {
-              throw new ORPCError("CONFLICT", { message: error.message });
-            }
-            throw error;
+          );
+        const conflict = (error: unknown) =>
+          error instanceof Error && error.message === MEMORY_REVISION_CONFLICT_ERROR;
+        let updated: Awaited<ReturnType<typeof commit>>;
+        try {
+          updated = await commit(proposal.content, proposal.baseRevision);
+        } catch (error) {
+          if (!conflict(error)) throw error;
+          // The note changed since the review read it. Line edits still apply when
+          // their target lines are there, so the card does not go stale.
+          const edits = proposalEdits(proposal.evidence);
+          const live = await deps.prisma.memoryDocument.findFirst({
+            where: {
+              spaceId: context.actor.spaceId,
+              userId: context.actor.userId,
+              scope,
+              botId: proposal.botId,
+              path: proposal.path,
+            },
           });
+          const replayed = edits ? applyDreamEdits(live?.content ?? "", edits) : null;
+          if (!replayed?.ok) {
+            throw new ORPCError("CONFLICT", { message: MEMORY_REVISION_CONFLICT_ERROR });
+          }
+          updated = await commit(replayed.content, live?.revision ?? 0).catch((retry: unknown) => {
+            if (conflict(retry)) {
+              throw new ORPCError("CONFLICT", { message: MEMORY_REVISION_CONFLICT_ERROR });
+            }
+            throw retry;
+          });
+        }
         await deps.prisma.memoryProposal.update({
           where: { id: proposal.id },
           data: { status: "accepted" },
@@ -269,9 +301,74 @@ export function memoryRoutes(ctx: RouterContext) {
         if (!proposal) throw new IsolationError();
         await deps.prisma.memoryProposal.update({
           where: { id: proposal.id },
-          data: { status: "rejected" },
+          data: { status: input.reason === "dismiss" ? "dismissed" : "rejected" },
         });
         return { ok: true as const };
+      }),
+      undoProposal: authed.memory.undoProposal.handler(async ({ context, input }) => {
+        const proposal = await deps.prisma.memoryProposal.findFirst({
+          where: {
+            id: input.proposalId,
+            spaceId: context.actor.spaceId,
+            userId: context.actor.userId,
+            status: "applied",
+          },
+        });
+        if (!proposal) throw new IsolationError();
+        const evidence = (proposal.evidence ?? {}) as {
+          appliedRevision?: unknown;
+          previousRevision?: unknown;
+        };
+        const scope = proposal.scope as "bot" | "user";
+        const doc = await deps.prisma.memoryDocument.findFirst({
+          where: {
+            spaceId: context.actor.spaceId,
+            userId: context.actor.userId,
+            scope,
+            botId: proposal.botId,
+            path: proposal.path,
+          },
+        });
+        const previous =
+          doc && typeof evidence.previousRevision === "number"
+            ? await deps.prisma.memoryRevision.findFirst({
+                where: { documentId: doc.id, revision: evidence.previousRevision },
+              })
+            : null;
+        if (!doc || !previous || doc.revision !== evidence.appliedRevision) {
+          // Something wrote the note after the update; restoring would lose that.
+          throw new ORPCError("CONFLICT", { message: MEMORY_REVISION_CONFLICT_ERROR });
+        }
+        const restored = await deps.memory
+          .commit(
+            {
+              scope,
+              botId: proposal.botId ?? undefined,
+              path: proposal.path,
+              content: previous.content,
+              expectedRevision: doc.revision,
+            },
+            memoryContext(context.actor),
+          )
+          .catch((error: unknown) => {
+            if (error instanceof Error && error.message === MEMORY_REVISION_CONFLICT_ERROR) {
+              throw new ORPCError("CONFLICT", { message: error.message });
+            }
+            throw error;
+          });
+        await deps.prisma.memoryProposal.update({
+          where: { id: proposal.id },
+          data: { status: "undone" },
+        });
+        return {
+          id: restored.id,
+          scope,
+          botId: proposal.botId,
+          path: restored.path,
+          content: restored.content,
+          revision: restored.revision,
+          updatedAt: new Date().toISOString(),
+        };
       }),
     },
     scratchpad: {
@@ -422,6 +519,17 @@ async function memoryBotId<Actor extends MemoryActor>(
   return null;
 }
 
+function proposalEdits(evidence: unknown): DreamEdit[] | null {
+  const edits = (evidence as { edits?: unknown } | null)?.edits;
+  return edits === undefined ? null : parseDreamEdits(edits);
+}
+
+function stringList(value: unknown): string[] | undefined {
+  return Array.isArray(value)
+    ? value.filter((line): line is string => typeof line === "string").slice(0, 40)
+    : undefined;
+}
+
 function proposalView(row: {
   id: string;
   scope: string;
@@ -432,9 +540,18 @@ function proposalView(row: {
   reason: string;
   source: string;
   status: string;
+  evidence?: unknown;
   createdAt: Date;
+  updatedAt?: Date;
 }) {
+  const evidence = (row.evidence ?? {}) as { added?: unknown; removed?: unknown; rail?: unknown };
+  const added = stringList(evidence.added);
+  const removed = stringList(evidence.removed);
   return {
+    ...(added ? { added } : {}),
+    ...(removed ? { removed } : {}),
+    askReason: typeof evidence.rail === "string" && evidence.rail !== "auto" ? evidence.rail : null,
+    ...(row.updatedAt ? { updatedAt: row.updatedAt.toISOString() } : {}),
     id: row.id,
     scope: row.scope as "bot" | "user",
     botId: row.botId,
@@ -443,7 +560,7 @@ function proposalView(row: {
     baseRevision: row.baseRevision,
     reason: row.reason,
     source: row.source as "dream" | "bot",
-    status: row.status as "pending" | "accepted" | "rejected",
+    status: row.status as MemoryProposal["status"],
     createdAt: row.createdAt.toISOString(),
   };
 }

@@ -349,6 +349,9 @@ async function main() {
     runtime,
     secretStore: secrets,
     memoryProviders,
+    memory: new MarkdownMemoryStore(prisma),
+    // DREAM_AUTO_APPLY=off makes every memory suggestion wait for approval.
+    dreamAutoApply: process.env.DREAM_AUTO_APPLY !== "off",
     deploymentModelKey,
     deploymentModelConfigured,
     messaging,
