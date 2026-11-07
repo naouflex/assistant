@@ -371,3 +371,33 @@ describe("formatFinishedShellCommand", () => {
     expect(body.endsWith("😀b")).toBe(true);
   });
 });
+
+describe("late shell results after the answer", () => {
+  it("marks the boundary and lets the bot stay silent", async () => {
+    const followUps: string[] = [];
+    let boundaries = 0;
+    await deliverFinishedShells(
+      (text) => followUps.push(text),
+      [Promise.resolve({ stdout: "ok", stderr: "", code: 0 })],
+      { toolResults: [] },
+      undefined,
+      { onAfterAnswer: () => (boundaries += 1) },
+    );
+    expect(boundaries).toBe(1);
+    expect(followUps[0]).toContain("NO_RESPONSE");
+  });
+
+  it("does not mark a boundary while the bot is still working", async () => {
+    const followUps: string[] = [];
+    let boundaries = 0;
+    await deliverFinishedShells(
+      (text) => followUps.push(text),
+      [Promise.resolve({ stdout: "ok", stderr: "", code: 0 })],
+      { toolResults: [{ toolName: "read_file", details: {} }] },
+      undefined,
+      { onAfterAnswer: () => (boundaries += 1) },
+    );
+    expect(boundaries).toBe(0);
+    expect(followUps[0]).not.toContain("NO_RESPONSE");
+  });
+});

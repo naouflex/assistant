@@ -5,6 +5,7 @@ import { redactShellStreams } from "./agent-environment.js";
 import { automated } from "./automated-messages.js";
 import { shortenPlainText } from "./context-selection.js";
 import { TOOL_RESULT_TEXT_LIMIT } from "./pi-runtime-limits.js";
+import { NO_RESPONSE } from "./silent-reply.js";
 
 /**
  * Device-code logins print a code and then wait. Once that output goes quiet,
@@ -41,10 +42,17 @@ export function isRunningShellCommand(result: unknown): result is RunningShellCo
   );
 }
 
-export function formatFinishedShellCommand(result: FinishedShellCommand): string {
+/** Told to the bot when a command finishes after it already answered. */
+export const LATE_SHELL_RESULT_GUIDANCE = `Your answer was already sent. Reply only if this output changes it or the user must act on it; otherwise reply exactly ${NO_RESPONSE}.`;
+
+export function formatFinishedShellCommand(
+  result: FinishedShellCommand,
+  afterAnswer = false,
+): string {
   // Delivered in the user's role after the turn, so marked as automated: models took
   // finished console output for the user replying.
   const parts = [automated("Shell command finished."), `exit code: ${result.code}`];
+  if (afterAnswer) parts.push(LATE_SHELL_RESULT_GUIDANCE);
   if (result.stdout) parts.push(`stdout:\n${keepHeadAndTail(result.stdout)}`);
   if (result.stderr) parts.push(`stderr:\n${keepHeadAndTail(result.stderr)}`);
   return parts.join("\n");
@@ -67,13 +75,19 @@ export async function deliverFinishedShells(
   pending: Array<Promise<FinishedShellCommand>>,
   turn: { toolResults: Array<{ toolName?: string; details?: unknown }> },
   signal?: AbortSignal,
+  options: {
+    /** Called when the turn was the bot's answer (no tool calls), before the follow-up. */
+    onAfterAnswer?: () => void;
+  } = {},
 ): Promise<void> {
   if (pending.length === 0 || turnReturnedRunningShell(turn)) return;
   const batch = pending.splice(0, pending.length);
   const results = await Promise.all(batch.map((completion) => finishOrAbort(completion, signal)));
   const texts = results.filter((result): result is FinishedShellCommand => result !== undefined);
   if (texts.length === 0) return;
-  followUp(texts.map((result) => formatFinishedShellCommand(result)).join("\n\n"));
+  const afterAnswer = turn.toolResults.length === 0 && options.onAfterAnswer !== undefined;
+  if (afterAnswer) options.onAfterAnswer?.();
+  followUp(texts.map((result) => formatFinishedShellCommand(result, afterAnswer)).join("\n\n"));
 }
 
 function turnReturnedRunningShell(turn: {

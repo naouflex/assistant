@@ -162,6 +162,8 @@ export async function consumeRunEvents(
         reply.assistantTurnBreakPending = true;
       } else if (event.type === "steered") {
         await onSteered(ctx, event);
+      } else if (event.type === "late_result") {
+        await onLateResult(ctx);
       } else if (event.type === "progress") {
         await streamProgress(ctx, event);
       } else if (event.type === "ask") {
@@ -315,28 +317,7 @@ async function onSteered(ctx: RunContext, event: RuntimeEvent<"steered">) {
     return;
   reply.steeringResets += 1;
   reply.lastSteeringResetAt = now;
-  await flushProgress(ctx);
-  const before = extractNarrationText(reply.messageSegments, reply.currentTextSegment);
-  const text = redactSecrets(before.text, ctx.secrets).trim();
-  if (text && runPromotesMidTurnNarration(run.trigger)) {
-    reply.messageSegments = before.remaining;
-    reply.currentTextSegment = "";
-    reply.workingNotes.length = 0;
-    reply.assembled = "";
-    reply.hasStreamedText = false;
-    reply.pendingProgress = "";
-    reply.redactor.skip();
-    await publishMessage(
-      deps,
-      run,
-      "bot",
-      [{ kind: "text", text }],
-      undefined,
-      nextProgressNonce(ctx),
-    );
-    reply.midTurnUserTexts.push(text);
-    reply.publishedMidTurnUserMessage = true;
-  }
+  await publishReplySoFar(ctx);
   reply.progressBudgetStart = reply.midTurnProgressCount;
   reply.turnStartedAtMs = now;
   reply.steeringReplyPending = true;
@@ -1038,4 +1019,40 @@ export async function failRun(
   await releaseBackgroundHelpers(deps, runId).catch((releaseError) => {
     getLogger().error("background helper release failed", releaseError);
   });
+}
+
+/** Posts the text written so far as its own message, so what follows starts a new one. */
+async function publishReplySoFar(ctx: RunContext) {
+  const { deps, run } = ctx;
+  const { reply } = ctx.state;
+  await flushProgress(ctx);
+  const before = extractNarrationText(reply.messageSegments, reply.currentTextSegment);
+  const text = redactSecrets(before.text, ctx.secrets).trim();
+  if (!text || !runPromotesMidTurnNarration(run.trigger)) return;
+  reply.messageSegments = before.remaining;
+  reply.currentTextSegment = "";
+  reply.workingNotes.length = 0;
+  reply.assembled = "";
+  reply.hasStreamedText = false;
+  reply.pendingProgress = "";
+  reply.redactor.skip();
+  await publishMessage(
+    deps,
+    run,
+    "bot",
+    [{ kind: "text", text }],
+    undefined,
+    nextProgressNonce(ctx),
+  );
+  reply.midTurnUserTexts.push(text);
+  reply.publishedMidTurnUserMessage = true;
+}
+
+/**
+ * A command finished after the bot answered. The answer goes out as its own message, and
+ * any reply to the late output is a separate one (or nothing), never glued onto the answer.
+ */
+async function onLateResult(ctx: RunContext) {
+  ctx.state.reply.assistantTurnBreakPending = true;
+  await publishReplySoFar(ctx);
 }

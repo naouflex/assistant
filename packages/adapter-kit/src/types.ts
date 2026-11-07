@@ -675,6 +675,8 @@ export type AgentRuntimeEvent =
       /** At least one came from the run's own person, in the app or a connected chat. */
       fromRunUser: boolean;
     }
+  /** A command finished after the bot already answered; text after this is its own message. */
+  | { type: "late_result" }
   | {
       type: "progress";
       text: string;

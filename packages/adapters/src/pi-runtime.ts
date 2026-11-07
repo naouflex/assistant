@@ -537,6 +537,7 @@ export class PiAgentRuntime implements AgentRuntime {
               host.pendingShells,
               turn,
               turnSignal,
+              { onAfterAnswer: () => queue.push({ type: "late_result" }) },
             );
           },
           prepareNextTurnWithContext: async () => {
