@@ -52,6 +52,7 @@ const fakeAgentState = vi.hoisted(() => ({
   promptImages: [] as unknown[][],
   toolResult: undefined as unknown,
   continueCalls: 0,
+  continueMessages: [] as unknown[],
 }));
 
 vi.mock("@earendil-works/pi-agent-core", () => ({
@@ -416,6 +417,7 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
 
     async continue() {
       fakeAgentState.continueCalls += 1;
+      fakeAgentState.continueMessages = [...this.state.messages];
       const message = {
         role: "assistant",
         content: [{ type: "text", text: "Trying again anyway." }],
@@ -566,6 +568,7 @@ const previousMaxToolCalls = process.env.MAX_TOOL_CALLS_PER_TURN;
 describe("Pi connector tool dispatch", () => {
   beforeEach(() => {
     fakeAgentState.mode = "dispatch";
+    fakeAgentState.continueMessages = [];
     fakeAgentState.abortCount = 0;
     fakeAgentState.tools = [];
     fakeAgentState.preparedMessages = [];
@@ -2025,6 +2028,67 @@ describe("Pi connector tool dispatch", () => {
       });
     },
   );
+
+  it("does not re-add steering a resumed turn already took before it paused", async () => {
+    const executeTool = vi.fn(async () => ({ ok: true }));
+    const checkpoint = serializeTurnCheckpoint({
+      version: 1,
+      provider: "test",
+      model: "dispatch-test-model",
+      systemPrompt: "You are a test bot.",
+      pendingToolCallId: "call-1",
+      executionMode: "sequential",
+      historyMessageIds: ["source-1", "message-1"],
+      messages: [
+        { role: "user", content: "check the files", timestamp: new Date(0) },
+        { role: "user", content: "Use the newer totals.", timestamp: new Date(0) },
+        {
+          role: "assistant",
+          content: [{ type: "toolCall", id: "call-1", name: "list_files", arguments: { path: "" } }],
+          stopReason: "toolUse",
+        },
+      ] as never,
+    });
+    // Still claimed by this run, so the claim on resume returns it next to a new message.
+    const claimSteering = vi.fn(async () => [
+      { id: "steering-1", messageId: "message-1", text: "Use the newer totals.", origin: "user" as const },
+      { id: "steering-2", messageId: "message-2", text: "Also check the logs.", origin: "user" as const },
+    ]);
+    const runtime = new PiAgentRuntime();
+
+    for await (const _event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "resumed-steering",
+        prompt: "check the files",
+        instructions: "Use list_files.",
+        history: [],
+        tools: [listFilesTool],
+        model: { provider: "test", id: "dispatch-test-model" },
+        turnCheckpoint: checkpoint,
+        executeTool,
+        claimSteering,
+      },
+      { signal: new AbortController().signal },
+    )) {
+      // drain
+    }
+
+    // The fake agent starts empty: the transcript it continues from is its initial messages
+    // plus what the runtime pushed before continue().
+    const userTexts = (
+      [...fakeAgentState.initialMessages, ...fakeAgentState.continueMessages] as Array<{
+        role: string;
+        content: unknown;
+      }>
+    )
+      .filter((message) => message.role === "user")
+      .map((message) => JSON.stringify(message.content));
+    expect(fakeAgentState.continueCalls).toBe(1);
+    expect(userTexts.filter((text) => text.includes("Use the newer totals."))).toHaveLength(1);
+    expect(userTexts.filter((text) => text.includes("Also check the logs."))).toHaveLength(1);
+  });
 
   it("keeps a restored turn paused, without a final reply, when a replayed call pauses", async () => {
     const executed: string[] = [];

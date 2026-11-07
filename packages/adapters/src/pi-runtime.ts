@@ -1062,6 +1062,10 @@ export class PiAgentRuntime implements AgentRuntime {
               for (const message of addedHistory)
                 if (message.id) representedHistoryIds.add(message.id);
               for (const item of initialSteering) {
+                // Steering this run already took before it paused is still claimed by it, so the
+                // claim returns it again; the restored transcript already carries it. Adding it a
+                // second time makes the model answer the same message twice.
+                if (representedHistoryIds.has(item.messageId)) continue;
                 representedHistoryIds.add(item.messageId);
                 const images = toPiImages(item.images);
                 agent.state.messages.push({
