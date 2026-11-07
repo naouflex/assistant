@@ -99,14 +99,13 @@ describe("useThreadVoiceCall hand-over", () => {
     expect(startCall).toHaveBeenCalledWith(expect.objectContaining({ botId: "max", session }));
   });
 
-  it("starts a shortcut call with a fresh greeting", async () => {
+  it("starts a shortcut call without a spoken greeting", async () => {
     vi.mocked(takeShortcutVoiceChat).mockReturnValueOnce(true);
     render("riley");
     await flush();
     expect(startCall).toHaveBeenCalledOnce();
-    expect(startCall).toHaveBeenCalledWith(
-      expect.objectContaining({ botId: "riley", greeting: "Hello, {bot} here." }),
-    );
+    expect(startCall).toHaveBeenCalledWith(expect.objectContaining({ botId: "riley" }));
+    expect(vi.mocked(startCall).mock.calls[0]?.[0]).not.toHaveProperty("greeting");
   });
 
   it("drops a hand-over queued before a sign-out", async () => {

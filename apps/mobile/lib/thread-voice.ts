@@ -15,11 +15,7 @@ import { currentSessionGeneration } from "./session";
 import { speakerColorFor } from "./thread-message-text";
 import { errorText } from "./user-error";
 import { speakQueue, speakText } from "./voice";
-import {
-  loadCallCallerName,
-  probeProviderTranscribe,
-  resolveVoiceCallPlan,
-} from "./voice-call-entry";
+import { probeProviderTranscribe, resolveVoiceCallPlan } from "./voice-call-entry";
 import { onShortcutVoiceChat, takeShortcutVoiceChat } from "./voice-chat-intent";
 
 const ATTACHMENT_PLACEHOLDER_LINE = /^\[(?:image|file|chart): .*\]$/;
@@ -181,38 +177,24 @@ export function useThreadVoiceCall({
   const router = useRouter();
   const voiceCallStarting = useRef(false);
 
-  /** A bot the caller was put through to answers ("Max here. Hi Riley."); a fresh call opens with hello. */
-  function callGreeting(botName: string, callerName: string | undefined, switchedHere: boolean) {
-    if (switchedHere) {
-      return callerName
-        ? t("{bot} here. Hi {name}.", { bot: botName, name: callerName })
-        : t("{bot} here.", { bot: botName });
-    }
-    return callerName
-      ? t("Hello {name}, {bot} here.", { name: callerName, bot: botName })
-      : t("Hello, {bot} here.", { bot: botName });
-  }
-
   /**
-   * `switchedHere`: the caller asked another bot to put them through, so this bot answers.
+   * `_switchedHere`: the caller was put through from another bot; the call still opens silently.
    * `setupSession`: the session the call belongs to. The checks below wait on the server; a
    * sign-in to another account meanwhile must not start this account's call with the new session.
    */
-  async function startVoiceCall(switchedHere = false, setupSession = currentSessionGeneration()) {
+  async function startVoiceCall(_switchedHere = false, setupSession = currentSessionGeneration()) {
     if (readOnly) return;
     const targetBotId = botId;
     if (!targetBotId || voiceCallStarting.current) return;
     voiceCallStarting.current = true;
     const loadVoiceStatus = () => rpc("voice/status");
     try {
-      const [plan, callerName] = await Promise.all([
-        resolveVoiceCallPlan({
-          loadDeviceVoiceEnabled,
-          dictationAvailable,
-          loadVoiceStatus,
-        }),
-        loadCallCallerName(() => rpc("me")),
-      ]);
+      // Like desktop, the call opens with the start cue and listens; the bot does not speak first.
+      const plan = await resolveVoiceCallPlan({
+        loadDeviceVoiceEnabled,
+        dictationAvailable,
+        loadVoiceStatus,
+      });
       if (activeBotId.current !== targetBotId) return;
       if (plan.kind === "settings") {
         router.push("/voice");
@@ -237,7 +219,6 @@ export function useThreadVoiceCall({
         botAvatarSet: mentionBots.find((bot) => bot.id === targetBotId)?.avatarSet,
         transcribe: plan.transcribe,
         preferProvider: plan.kind === "provider" && plan.transcribe,
-        greeting: callGreeting(botName, callerName, switchedHere),
         session: setupSession,
         switchBot: (text) => {
           const target = findSwitchTarget(text, mentionBotsRef.current);
