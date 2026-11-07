@@ -358,9 +358,9 @@ export function SidebarRoster({
                     data-roster-unread={item.chat.unread ? "true" : undefined}
                     data-roster-error={rowError && (compact || mini || tiles) ? "true" : undefined}
                     aria-current={selected ? "page" : undefined}
-                    aria-label={mini ? item.chat.name : undefined}
+                    aria-label={mini || tiles ? item.chat.name : undefined}
                     aria-describedby={
-                      mini
+                      mini || tiles
                         ? [
                             item.chat.unread ? `roster-unread-${item.kind}-${item.chat.id}` : null,
                             compactStatusLabel
@@ -446,7 +446,7 @@ export function SidebarRoster({
                       mini
                         ? "mx-auto size-12 justify-center rounded-xl"
                         : tiles
-                          ? "w-full min-w-0 flex-col gap-1 rounded-xl p-1"
+                          ? "w-full min-w-0 justify-center rounded-xl p-1"
                           : compact
                           ? "w-full min-h-11 gap-2 rounded-xl px-2.5 py-1.5"
                           : "w-full gap-3 rounded-xl px-2.5 py-[10px]"
@@ -492,17 +492,6 @@ export function SidebarRoster({
                     ) : (
                       avatar
                     )}
-                    {tiles ? (
-                      <span
-                        dir="auto"
-                        data-roster-bot-name={item.kind === "bot" ? "" : undefined}
-                        className={`w-full truncate text-center text-label text-foreground ${
-                          item.chat.unread ? "font-semibold" : "font-medium"
-                        }`}
-                      >
-                        {item.chat.name}
-                      </span>
-                    ) : null}
                     {!mini && !tiles ? (
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1.5">
@@ -604,9 +593,9 @@ export function SidebarRoster({
                         )
                       }
                     >
-                      {mini ? (
+                      {mini || tiles ? (
                         <IconTooltip
-                          side="inline-end"
+                          side={mini ? "inline-end" : "bottom"}
                           label={
                             compactStatusLabel
                               ? `${item.chat.name}: ${compactStatusLabel}`
