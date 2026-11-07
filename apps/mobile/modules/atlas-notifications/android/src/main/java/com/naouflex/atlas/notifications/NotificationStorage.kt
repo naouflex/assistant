@@ -11,7 +11,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 internal data class NotificationSettings(
-  val liveConnection: Boolean = false,
+  val liveConnection: Boolean = true,
   val messages: Boolean = true,
   val scheduledTasks: Boolean = true,
   val needsAttention: Boolean = true,
@@ -25,7 +25,7 @@ internal data class NotificationSettings(
 
   companion object {
     fun fromMap(value: Map<String, Boolean>) = NotificationSettings(
-      liveConnection = value["liveConnection"] ?: false,
+      liveConnection = value["liveConnection"] ?: true,
       messages = value["messages"] ?: true,
       scheduledTasks = value["scheduledTasks"] ?: true,
       needsAttention = value["needsAttention"] ?: true,
@@ -38,7 +38,7 @@ internal class NotificationStorage(context: Context) {
 
   var settings: NotificationSettings
     get() = NotificationSettings(
-      liveConnection = preferences.getBoolean(LIVE, false),
+      liveConnection = preferences.getBoolean(LIVE, true),
       messages = preferences.getBoolean(MESSAGES, true),
       scheduledTasks = preferences.getBoolean(SCHEDULED, true),
       needsAttention = preferences.getBoolean(ATTENTION, true),

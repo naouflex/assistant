@@ -13,7 +13,8 @@ export interface LiveNotificationSettings {
 }
 
 export const DEFAULT_LIVE_NOTIFICATION_SETTINGS: LiveNotificationSettings = {
-  liveConnection: false,
+  // On by default: Android has no push, so the live connection is how notifications arrive.
+  liveConnection: true,
   messages: true,
   scheduledTasks: true,
   needsAttention: true,
@@ -131,6 +132,12 @@ export async function resumeLiveNotifications(
   if (!nativeNotifications || !token) return;
   const parsed = normalizeApiBase(endpoint);
   if (!parsed.ok || apiBaseWarning(parsed.url)) return;
+  // Live connection is on by default, so a fresh install has never asked for permission.
+  const settings = await nativeNotifications.getSettings();
+  if (settings.liveConnection) {
+    const existing = await Notifications.getPermissionsAsync();
+    if (!existing.granted && existing.canAskAgain) await Notifications.requestPermissionsAsync();
+  }
   await nativeNotifications.resume(
     parsed.url,
     token,

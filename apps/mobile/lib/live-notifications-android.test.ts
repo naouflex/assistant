@@ -5,6 +5,12 @@ const { native } = vi.hoisted(() => ({
     setOpenThread: vi.fn(async (): Promise<void> => undefined),
     resume: vi.fn(async (): Promise<void> => undefined),
     stop: vi.fn(async (): Promise<void> => undefined),
+    getSettings: vi.fn(async () => ({
+      liveConnection: true,
+      messages: true,
+      scheduledTasks: true,
+      needsAttention: true,
+    })),
   },
 }));
 
@@ -12,6 +18,8 @@ vi.mock("expo-modules-core", () => ({ requireNativeModule: () => native }));
 vi.mock("expo-notifications", () => ({
   setNotificationHandler: vi.fn(),
   dismissAllNotificationsAsync: vi.fn(),
+  getPermissionsAsync: vi.fn(async () => ({ granted: true, canAskAgain: true })),
+  requestPermissionsAsync: vi.fn(async () => ({ granted: true, canAskAgain: true })),
 }));
 vi.mock("react-native", () => ({ Platform: { OS: "android" } }));
 vi.mock("./i18n", () => ({ getActiveUiLocale: () => "de", t: (text: string) => text }));
@@ -53,6 +61,16 @@ describe("Android live notification resume", () => {
       "de",
       JSON.stringify({ "CF-Access-Client-Id": "id" }),
     );
+  });
+
+  it("asks for notification permission on resume when live connection is on (the default)", async () => {
+    vi.mocked(Notifications.getPermissionsAsync).mockResolvedValueOnce({
+      granted: false,
+      canAskAgain: true,
+    } as never);
+    await resumeLiveNotifications("https://app.example.test", "token-1", "space-1");
+    expect(Notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(native.resume).toHaveBeenCalled();
   });
 
   it("does not resume for a public http server, an invalid URL, or no token", async () => {
