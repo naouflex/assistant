@@ -77,6 +77,7 @@ contextBridge.exposeInMainWorld("atlasDesktop", {
     minimize: () => ipcRenderer.invoke("desktop.window.minimize"),
     toggleMaximize: () => ipcRenderer.invoke("desktop.window.toggleMaximize"),
     state: () => ipcRenderer.invoke("desktop.window.state"),
+    focus: () => ipcRenderer.invoke("desktop.window.focus"),
   },
   update: {
     state: () => ipcRenderer.invoke("desktop.update.state"),

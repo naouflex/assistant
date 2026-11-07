@@ -1,5 +1,6 @@
 import type { ProductEvent } from "@atlas/contracts";
 import { displayName, plainTextFromMarkdown } from "@atlas/core";
+import { desktopBridge } from "./desktop";
 import { i18n } from "./i18n";
 
 export type BrowserNotificationPermission = "default" | "denied" | "granted";
@@ -130,4 +131,60 @@ export function deliverBrowserNotification(
   } catch {
     return "pending";
   }
+}
+
+export type NotificationChatTarget = { botId: string } | { groupId: string };
+
+/** Raises the app when a notification is clicked; the desktop app restores a minimized window. */
+export function focusAppWindow(
+  bridge: { window?: { focus?: () => Promise<void> } } | undefined = desktopBridge(),
+  win: { focus(): void } | undefined = typeof window === "undefined" ? undefined : window,
+): void {
+  void bridge?.window?.focus?.().catch(() => undefined);
+  try {
+    win?.focus();
+  } catch {
+    // Some browsers refuse focus outside a user gesture; the notification click still opens the chat.
+  }
+}
+
+export type RosterNotificationBot = {
+  id: string;
+  name: string;
+  unread: boolean;
+  preview: string;
+  notifyOnFinish: boolean;
+  archivedAt: string | null;
+  threadId: string;
+};
+
+export type RosterNotificationSnapshot = ReadonlyMap<string, { unread: boolean; preview: string }>;
+
+export function rosterNotificationSnapshot(
+  bots: readonly RosterNotificationBot[],
+): RosterNotificationSnapshot {
+  return new Map(bots.map((bot) => [bot.id, { unread: bot.unread, preview: bot.preview }]));
+}
+
+/**
+ * Bots whose chat gained an unread reply since the last roster poll. The open chat is left to its
+ * live event stream, and the first roster seen only records state, so old unread chats stay quiet.
+ */
+export function rosterNotifications(
+  previous: RosterNotificationSnapshot | null,
+  bots: readonly RosterNotificationBot[],
+  openBotId: string | undefined,
+): RosterNotificationBot[] {
+  if (!previous) return [];
+  return bots.filter((bot) => {
+    const before = previous.get(bot.id);
+    return (
+      before !== undefined &&
+      bot.id !== openBotId &&
+      bot.unread &&
+      bot.notifyOnFinish &&
+      !bot.archivedAt &&
+      (!before.unread || before.preview !== bot.preview)
+    );
+  });
 }

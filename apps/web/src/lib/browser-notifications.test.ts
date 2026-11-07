@@ -2,10 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   BrowserNotificationApi,
   BrowserNotificationContext,
+  RosterNotificationBot,
 } from "./browser-notifications.js";
 import {
   browserNotificationMessage,
   deliverBrowserNotification,
+  focusAppWindow,
+  rosterNotificationSnapshot,
+  rosterNotifications,
   requestBrowserNotificationPermission,
   shouldNotifyBrowser,
 } from "./browser-notifications.js";
@@ -165,4 +169,61 @@ describe("browser notifications", () => {
 
 it("uses a readable fallback for opaque notification names", () => {
   expect(browserNotificationMessage(event(), "__TestTok1__").title).toBe("Bot");
+});
+
+describe("roster notifications", () => {
+  const bot = (over: Partial<RosterNotificationBot> = {}): RosterNotificationBot => ({
+    id: "b1",
+    name: "Chief",
+    unread: false,
+    preview: "old",
+    notifyOnFinish: true,
+    archivedAt: null,
+    threadId: "t1",
+    ...over,
+  });
+
+  it("stays quiet on the first roster so old unread chats do not alert", () => {
+    expect(rosterNotifications(null, [bot({ unread: true })], undefined)).toEqual([]);
+  });
+
+  it("notifies when another chat gains an unread reply", () => {
+    const before = rosterNotificationSnapshot([bot()]);
+    const after = [bot({ unread: true, preview: "done" })];
+    expect(rosterNotifications(before, after, "other").map((b) => b.id)).toEqual(["b1"]);
+  });
+
+  it("notifies again when an unread chat gets a newer reply", () => {
+    const before = rosterNotificationSnapshot([bot({ unread: true, preview: "first" })]);
+    expect(rosterNotifications(before, [bot({ unread: true, preview: "second" })], undefined)).toHaveLength(1);
+    expect(rosterNotifications(before, [bot({ unread: true, preview: "first" })], undefined)).toHaveLength(0);
+  });
+
+  it("leaves the open chat, muted bots, archived bots and new bots alone", () => {
+    const before = rosterNotificationSnapshot([bot(), bot({ id: "b2" }), bot({ id: "b3" })]);
+    const after = [
+      bot({ unread: true, preview: "x" }),
+      bot({ id: "b2", unread: true, preview: "x", notifyOnFinish: false }),
+      bot({ id: "b3", unread: true, preview: "x", archivedAt: "2026-11-07T00:00:00Z" }),
+      bot({ id: "b4", unread: true, preview: "x" }),
+    ];
+    expect(rosterNotifications(before, after, "b1")).toEqual([]);
+  });
+});
+
+describe("focusAppWindow", () => {
+  it("raises the desktop window and the page", () => {
+    const focus = vi.fn(async () => undefined);
+    const win = { focus: vi.fn() };
+    focusAppWindow({ window: { focus } }, win);
+    expect(focus).toHaveBeenCalledOnce();
+    expect(win.focus).toHaveBeenCalledOnce();
+  });
+
+  it("still focuses the page on desktop builds without the bridge call", () => {
+    const win = { focus: vi.fn() };
+    focusAppWindow({ window: {} }, win);
+    focusAppWindow(undefined, win);
+    expect(win.focus).toHaveBeenCalledTimes(2);
+  });
 });

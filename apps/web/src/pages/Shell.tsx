@@ -92,6 +92,7 @@ import { BotsSidebarLayout } from "./shell/sidebar-layout";
 import { SidebarRoster } from "./shell/sidebar-roster";
 import { commitSpaceRename, countUnreadChats, sidebarGroupsForSpaces } from "./shell/space-sidebar";
 import { Transcript } from "./shell/transcript";
+import type { NotificationChatTarget } from "../lib/browser-notifications";
 import { useBrowserNotifications } from "./shell/use-browser-notifications";
 import { useChatRead } from "./shell/use-chat-read";
 import { useComposerActions } from "./shell/use-composer-actions";
@@ -374,8 +375,16 @@ function SpaceShell() {
     navigate,
     redirectKeepingOverlay,
   });
-  const { notifyBrowserForEvent, flushPendingBrowserNotifications } =
-    useBrowserNotifications(botsRef);
+  const openNotificationChat = useCallback(
+    (target: NotificationChatTarget) =>
+      navigate("botId" in target ? `/app/${target.botId}` : `/app/g/${target.groupId}`),
+    [navigate],
+  );
+  const { notifyBrowserForEvent, flushPendingBrowserNotifications, notifyRosterChanges } =
+    useBrowserNotifications(botsRef, openNotificationChat);
+  useEffect(() => {
+    notifyRosterChanges(bots, active?.id);
+  }, [bots, active?.id, notifyRosterChanges]);
   const { speakingMessageId, speakMessage } = useReadAloud({
     active,
     snapshot,

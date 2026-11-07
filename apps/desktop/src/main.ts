@@ -1660,6 +1660,13 @@ app.whenReady().then(async () => {
       win.maximize();
     }
   });
+  ipcMain.handle("desktop.window.focus", (event) => {
+    const win = windowFrom(event);
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    if (!win.isVisible()) win.show();
+    win.focus();
+  });
   ipcMain.handle("desktop.window.state", (event) => {
     const win = windowFrom(event);
     return {

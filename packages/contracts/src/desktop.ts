@@ -173,6 +173,8 @@ export interface AtlasDesktop {
     minimize: () => Promise<void>;
     toggleMaximize: () => Promise<void>;
     state: () => Promise<{ minimized: boolean; maximized: boolean; fullScreen: boolean }>;
+    /** Restores and raises the window, e.g. when a notification is clicked. Missing on older builds. */
+    focus?: () => Promise<void>;
   };
   update: AtlasDesktopUpdate;
   oauth: {
