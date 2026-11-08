@@ -15,7 +15,9 @@ describe("shipped bot avatar shapes", () => {
     expect(shippedBotAvatarShapePath(3)).toBe(SHIPPED_BOT_AVATAR_SHAPES.tablet);
     expect(shippedBotAvatarShapePath(3)).not.toBe(shippedBotAvatarShapePath(0));
     expect(shippedBotAvatarShapePath(14)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sun);
-    expect(shippedBotAvatarShapePath(24)).toBe(shippedBotAvatarShapePath(0));
+    expect(shippedBotAvatarShapePath(24)).toBe(SHIPPED_BOT_AVATAR_SHAPES.heart);
+    expect(shippedBotAvatarShapePath(25)).toBe(SHIPPED_BOT_AVATAR_SHAPES.tilted);
+    expect(shippedBotAvatarShapePath(26)).toBe(shippedBotAvatarShapePath(0));
     expect(shippedBotAvatarShapePath(11)).toBe(SHIPPED_BOT_AVATAR_SHAPES.gem);
     expect(shippedBotAvatarShapePath(23)).toBe(SHIPPED_BOT_AVATAR_SHAPES.sparkle);
     expect(shippedBotAvatarShapeFace(12).eyeCenterY).toBe(

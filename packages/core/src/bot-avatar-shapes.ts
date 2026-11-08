@@ -53,6 +53,10 @@ export const SHIPPED_BOT_AVATAR_SHAPES: Record<string, string> = {
   eye: "M14 114 Q114 24 214 114 Q114 204 14 114 Z",
   sparkle:
     "M114.27 14 Q114.27 114.27 214 114.27 Q114.27 114.27 114.27 214 Q114.27 114.27 14 114.27 Q114.27 114.27 114.27 14 Z",
+  heart:
+    "M114.27 50C124 32 140 20 160 20C194 20 220 46 220 84C220 138 172 178 130 206Q114.27 216 98.54 206C56.54 178 8.54 138 8.54 84C8.54 46 34.54 20 68.54 20C88.54 20 104.54 32 114.27 50Z",
+  tilted:
+    "M54.16 46.81 L135.67 26.49 C156.03 21.41 176.66 33.80 181.73 54.16 L202.05 135.67 C207.13 156.03 194.74 176.66 174.38 181.73 L92.87 202.05 C72.51 207.13 51.88 194.74 46.81 174.38 L26.49 92.87 C21.41 72.51 33.80 51.88 54.16 46.81Z",
 };
 
 export const SHIPPED_BOT_AVATAR_SHAPE_KEYS = [
@@ -80,6 +84,8 @@ export const SHIPPED_BOT_AVATAR_SHAPE_KEYS = [
   "bell",
   "eye",
   "sparkle",
+  "heart",
+  "tilted",
 ] as const;
 
 type ShapeKey = (typeof SHIPPED_BOT_AVATAR_SHAPE_KEYS)[number];
@@ -111,6 +117,7 @@ export const SHIPPED_BOT_AVATAR_SHAPE_FACE: Partial<
   flame: { inkY: 10, eyeCenterY: 88 },
   bell: { inkY: 12, eyeCenterY: 92 },
   eye: { eyeCenterY: 106 },
+  heart: { eyeCenterY: 100 },
 };
 
 const FALLBACK_SHAPE_PATH = SHIPPED_BOT_AVATAR_SHAPES.hex ?? "";

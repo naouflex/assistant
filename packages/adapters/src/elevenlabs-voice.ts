@@ -20,7 +20,7 @@ import {
 } from "./voice-http.js";
 
 const API = "https://api.elevenlabs.io/v1";
-const MODEL = "eleven_flash_v2_5";
+const MODEL = "eleven_v4_turbo";
 const FORMAT = "mp3_44100_64";
 const TRANSCRIBE_MODEL = "scribe_v2";
 
