@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   bootComputerOnce,
+  bootOrJoinBoot,
   createScreenRefocus,
   embeddableScreenUrl,
   isProxiedScreenUrl,
@@ -233,6 +234,50 @@ describe("computer boot ownership", () => {
     a.resolve();
     await first;
     expect(inFlight.get("a")).toBe(replacement);
+  });
+});
+
+describe("joining a boot already in progress", () => {
+  const busy = new Error("Computer is busy");
+  const base = {
+    boot: () => Promise.reject(busy),
+    isBusy: (error: unknown) => error === busy,
+    keepWaiting: () => true,
+    sleep: () => Promise.resolve(),
+  };
+
+  it("waits for the other boot and returns the running computer", async () => {
+    const status = vi
+      .fn()
+      .mockResolvedValueOnce({ state: "booting" })
+      .mockResolvedValueOnce({ state: "running" });
+    await expect(bootOrJoinBoot({ ...base, status })).resolves.toEqual({ state: "running" });
+    expect(status).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports busy when the other boot never finishes", async () => {
+    const status = vi.fn().mockResolvedValue({ state: "booting" });
+    await expect(
+      bootOrJoinBoot({ ...base, status, pollMs: 10, timeoutMs: 30 }),
+    ).rejects.toBe(busy);
+    expect(status).toHaveBeenCalledTimes(3);
+  });
+
+  it("stops waiting once the panel moved on", async () => {
+    const status = vi.fn();
+    await expect(
+      bootOrJoinBoot({ ...base, status, keepWaiting: () => false }),
+    ).resolves.toBeUndefined();
+    expect(status).not.toHaveBeenCalled();
+  });
+
+  it("rethrows other errors without waiting", async () => {
+    const other = new Error("boom");
+    const status = vi.fn();
+    await expect(
+      bootOrJoinBoot({ ...base, boot: () => Promise.reject(other), status }),
+    ).rejects.toBe(other);
+    expect(status).not.toHaveBeenCalled();
   });
 });
 

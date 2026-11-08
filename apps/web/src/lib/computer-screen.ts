@@ -103,6 +103,38 @@ export async function bootComputerOnce<T>(
   }
 }
 
+export const JOIN_BOOT_POLL_MS = 2_000;
+export const JOIN_BOOT_TIMEOUT_MS = 90_000;
+
+/**
+ * A boot refused as busy means someone else (a run, another tab) is starting this computer.
+ * Wait for that boot instead of reporting an error the panel would never clear.
+ */
+export async function bootOrJoinBoot<T extends { state: string }>(options: {
+  boot: () => Promise<T>;
+  status: () => Promise<T>;
+  isBusy: (error: unknown) => boolean;
+  keepWaiting: () => boolean;
+  pollMs?: number;
+  timeoutMs?: number;
+  sleep?: (ms: number) => Promise<void>;
+}): Promise<T | undefined> {
+  try {
+    return await options.boot();
+  } catch (error) {
+    if (!options.isBusy(error)) throw error;
+    const sleep = options.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+    const pollMs = options.pollMs ?? JOIN_BOOT_POLL_MS;
+    for (let waited = 0; waited < (options.timeoutMs ?? JOIN_BOOT_TIMEOUT_MS); waited += pollMs) {
+      await sleep(pollMs);
+      if (!options.keepWaiting()) return undefined;
+      const current = await options.status();
+      if (current.state === "running") return current;
+    }
+    throw error;
+  }
+}
+
 /** Only pages the web proxy serves carry the shim that reports their state to the app. */
 export function isProxiedScreenUrl(url: string | null): url is string {
   return screenIframeSandbox(url) !== undefined;

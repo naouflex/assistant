@@ -15,12 +15,14 @@ import {
 } from "@atlas/core";
 import { Button, Spinner } from "@atlas/ui-web";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { ORPCError } from "@orpc/client";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ComputerMaintenanceActions } from "../../components/ComputerMaintenanceActions";
 import { computersAreUnavailable } from "../../components/ComputersUnavailableHint";
 import {
   bootComputerOnce,
+  bootOrJoinBoot,
   createScreenRefocus,
   embeddableScreenUrl,
   isProxiedScreenUrl,
@@ -500,7 +502,12 @@ export function useComputerControls({
     try {
       if (needsBoot) {
         const status = await bootComputerOnce(bootsInFlight.current, targetBotId, () =>
-          rpc.computer.boot({ botId: targetBotId }),
+          bootOrJoinBoot({
+            boot: () => rpc.computer.boot({ botId: targetBotId }),
+            status: () => rpc.computer.status({ botId: targetBotId }),
+            isBusy: (error) => error instanceof ORPCError && error.code === "CONFLICT",
+            keepWaiting: () => stillThisBoot() && stillThisBot(),
+          }),
         );
         if (!stillThisBoot() || !stillThisBot()) return;
         if (status) {
