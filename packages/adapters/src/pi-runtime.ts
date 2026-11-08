@@ -645,6 +645,7 @@ export class PiAgentRuntime implements AgentRuntime {
         signal.addEventListener("abort", onAbort);
 
         let streamed = "";
+        let solvedWithoutModel = false;
         let currentMessageStreamed = "";
         let toolCalls = 0;
         let toolActivityShowing = false;
@@ -1111,6 +1112,7 @@ export class PiAgentRuntime implements AgentRuntime {
               });
               queue.push({ type: "text", text: solved.value });
               streamed = solved.value;
+              solvedWithoutModel = true;
             } else if (withholdSearchAnswer && request.executeTool) {
               const query = (request.utterance ?? request.prompt).trim().slice(0, 300);
               const args = { query };
@@ -1210,9 +1212,11 @@ export class PiAgentRuntime implements AgentRuntime {
           throw modelFailure(error, message);
         }
         // Only an assistant message can hold the answer a provider left off the deltas;
-        // a trailing tool result is tool output, not the model's reply.
+        // a trailing tool result is tool output, not the model's reply. Without a model
+        // turn, the trailing assistant message is restored history, not this reply.
         if (
           !budgetExceeded &&
+          !solvedWithoutModel &&
           terminalMessage?.role === "assistant" &&
           !messageHasToolCall(terminalMessage)
         ) {

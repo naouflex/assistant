@@ -5,6 +5,8 @@ export type ExactArithmetic = { expression: string; value: string };
 const CUE =
   /\b(compute|calculate|calculation|what(?:'s| is)|how much|times|multiplied|divided|plus|minus|difference|sum|total|product|larger|bigger|greater)\b/i;
 
+const MAX_QUESTION_LENGTH = 200;
+
 const REFERS_BACK = /\b(those|them|these|the two|that difference)\b/i;
 
 /**
@@ -154,6 +156,7 @@ export function exactArithmetic(
   prompt: string,
   history: readonly Turn[] = [],
 ): ExactArithmetic | undefined {
+  if (prompt.length > MAX_QUESTION_LENGTH || prompt.trim().includes("\n")) return undefined;
   const between = prompt.match(
     /\bdifference between\s+([\d,]+(?:\.\d+)?)\s+and\s+([\d,]+(?:\.\d+)?)/i,
   );

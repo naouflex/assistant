@@ -53,6 +53,11 @@ describe("exact arithmetic", () => {
     expect(exactArithmetic("Who is Ada Lovelace?")).toBeUndefined();
     expect(exactArithmetic("What's your name again?")).toBeUndefined();
     expect(exactArithmetic("Thanks.")).toBeUndefined();
+    expect(
+      exactArithmetic(
+        "Create an agent with this handoff:\n## Project\n- What is left: labs 4/6 and 2 * 3 sessions",
+      ),
+    ).toBeUndefined();
     expect(exactArithmetic("Remind me tomorrow at 9 to check the city figures.")).toBeUndefined();
     expect(exactArithmetic("What time did you set that reminder for?")).toBeUndefined();
     expect(exactArithmetic("What is the difference between those two?", [])).toBeUndefined();
