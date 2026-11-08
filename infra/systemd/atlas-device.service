@@ -10,7 +10,7 @@ Wants=network-online.target
 [Service]
 Environment=ATLAS_SERVER_URL=https://atlas.example.com
 ExecStart=/usr/bin/node /opt/atlas-device/atlas-device.mjs
-Restart=on-failure
+Restart=always
 RestartSec=10
 # A removed device stays stopped until it is paired again.
 RestartPreventExitStatus=78
