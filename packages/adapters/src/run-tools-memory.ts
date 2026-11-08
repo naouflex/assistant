@@ -8,7 +8,7 @@ import { readHistory, searchHistory } from "@atlas/db";
 import { sharedMemorySaveError } from "./builtin-tools.js";
 import { redactConnectorPayload } from "./connector-safety.js";
 import { MAX_RECALLED_MEMORIES } from "./history-compaction.js";
-import { appendJournalEntry, editMemory, journalPathForEntry } from "./memory-tools.js";
+import { appendJournalEntry, editMemory, isJournalFlag, journalPathForEntry } from "./memory-tools.js";
 import { userTimeZone } from "./schedule-tools.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolCall, ToolHandlers } from "./run-tool-gate.js";
@@ -68,7 +68,7 @@ export const memoryTools: ToolHandlers = {
   async remember(ctx, call) {
     const { deps, run, runId, bot, thread, context } = ctx;
     const { args } = call;
-    if (args.journal === true) {
+    if (isJournalFlag(args.journal)) {
       const fact = String(args.content ?? "");
       const path = journalPathForEntry(fact, new Date(), await userTimeZone(deps.prisma, run.userId));
       for (let attempt = 1; ; attempt += 1) {

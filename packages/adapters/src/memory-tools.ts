@@ -19,6 +19,15 @@ export function journalDay(now: Date, timeZone?: string | null): string {
   }
 }
 
+/**
+ * Models sometimes send boolean tool flags as strings ("true"). Treat those as
+ * true so a journal note never falls through to the size-capped MEMORY.md.
+ */
+export function isJournalFlag(value: unknown): boolean {
+  if (value === true) return true;
+  return typeof value === "string" && value.trim().toLowerCase() === "true";
+}
+
 export function journalPathForEntry(
   content: string,
   now = new Date(),
