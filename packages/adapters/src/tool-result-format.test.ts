@@ -4,10 +4,7 @@ import { compactToolResultForModel, shellResultSucceeded } from "./tool-result-f
 describe("compactToolResultForModel", () => {
   it("keeps a reported shell success and its fields", () => {
     expect(
-      compactToolResultForModel(
-        { exitCode: 0, stdout: "ok", stderr: "", cwd: "/tmp" },
-        "shell",
-      ),
+      compactToolResultForModel({ exitCode: 0, stdout: "ok", stderr: "", cwd: "/tmp" }, "shell"),
     ).toEqual({ ok: true, exitCode: 0, stdout: "ok", stderr: "", cwd: "/tmp" });
   });
 
@@ -16,11 +13,13 @@ describe("compactToolResultForModel", () => {
     expect(shellResultSucceeded({ killed: true, exitCode: 0 })).toBe(false);
     expect(shellResultSucceeded({ signal: "SIGKILL", exitCode: 0 })).toBe(false);
     expect(shellResultSucceeded({})).toBe(false);
-    expect(compactToolResultForModel({ timedOut: true, stdout: "partial" }, "shell")).toMatchObject({
-      ok: false,
-      timedOut: true,
-      stdout: "partial",
-    });
+    expect(compactToolResultForModel({ timedOut: true, stdout: "partial" }, "shell")).toMatchObject(
+      {
+        ok: false,
+        timedOut: true,
+        stdout: "partial",
+      },
+    );
     expect(
       compactToolResultForModel({ killed: true, stdout: "partial" }, "user_computer_shell"),
     ).toMatchObject({ ok: false, killed: true });
@@ -69,7 +68,13 @@ describe("compactToolResultForModel", () => {
 
     expect(
       compactToolResultForModel(
-        { url: "https://example.test", title: "Example", content, nextCursor: "page-2", untrusted: true },
+        {
+          url: "https://example.test",
+          title: "Example",
+          content,
+          nextCursor: "page-2",
+          untrusted: true,
+        },
         "web_fetch",
       ),
     ).toMatchObject({
@@ -120,5 +125,24 @@ describe("compactToolResultForModel", () => {
       ok: false,
       error: "The tool did not report a result.",
     });
+  });
+});
+
+describe("user computer shell exit code", () => {
+  it("treats code 0 from user_computer_shell as success", () => {
+    const shaped = compactToolResultForModel(
+      { stdout: "razer\n", stderr: "", code: 0 },
+      "user_computer_shell",
+    ) as Record<string, unknown>;
+    expect(shaped.ok).toBe(true);
+    expect(shaped.error).toBeUndefined();
+  });
+  it("reports a non-zero code from user_computer_shell", () => {
+    const shaped = compactToolResultForModel(
+      { stdout: "", stderr: "x", code: 2 },
+      "user_computer_shell",
+    ) as Record<string, unknown>;
+    expect(shaped.ok).toBe(false);
+    expect(shaped.error).toBe("The command failed with exit code 2.");
   });
 });

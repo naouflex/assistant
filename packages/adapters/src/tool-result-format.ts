@@ -14,12 +14,18 @@ function textLimit(key: string): number {
   return MAX_TEXT;
 }
 
+/** Shell tools report the exit as exitCode (bot computer) or code (user computer / phone). */
+function shellExitCode(record: Record<string, unknown>): number | undefined {
+  if (typeof record.exitCode === "number") return record.exitCode;
+  if (typeof record.code === "number") return record.code;
+  return undefined;
+}
+
 /** A shell result succeeded only when it reported a zero exit and was not stopped. */
 export function shellResultSucceeded(record: Record<string, unknown>): boolean {
   if (record.timedOut === true || record.killed === true) return false;
   if (typeof record.signal === "string" && record.signal.trim()) return false;
-  if (typeof record.exitCode !== "number") return false;
-  return record.exitCode === 0;
+  return shellExitCode(record) === 0;
 }
 
 function shellFailureReason(record: Record<string, unknown>): string {
@@ -27,8 +33,9 @@ function shellFailureReason(record: Record<string, unknown>): string {
   if (record.killed === true || (typeof record.signal === "string" && record.signal.trim())) {
     return "The command was killed.";
   }
-  if (typeof record.exitCode !== "number") return "The command did not report an exit code.";
-  return `The command failed with exit code ${record.exitCode}.`;
+  const exitCode = shellExitCode(record);
+  if (exitCode === undefined) return "The command did not report an exit code.";
+  return `The command failed with exit code ${exitCode}.`;
 }
 
 function shortenValue(key: string, value: unknown): unknown {
