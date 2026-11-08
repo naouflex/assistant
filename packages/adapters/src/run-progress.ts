@@ -11,7 +11,7 @@ import {
 import type { Run } from "@atlas/db";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { ReplyState, RunContext } from "./run-context.js";
-import { isUniqueViolation, publishMessage } from "./run-messages.js";
+import { publishMessage } from "./run-messages.js";
 import { runPromotesMidTurnNarration } from "./run-replies.js";
 import { isExactNoResponse } from "./silent-reply.js";
 import {
@@ -20,9 +20,6 @@ import {
   isUserProgressClientNonce,
   midTurnProgressBudgetAllows,
   narrationStatusLine,
-  FIRST_ACK_AFTER_MS,
-  FIRST_ACK_TEXT,
-  firstAckClientNonce,
   USER_PROGRESS_MESSAGE_MAX_LENGTH,
   userProgressClientNonce,
 } from "./user-progress.js";
@@ -168,12 +165,6 @@ export async function publishMidTurnNarration(ctx: RunContext, beforeConnectCard
   const text = redactSecretsAfter(reply.narrationSoFar, extracted.text, ctx.secrets).trim();
   reply.narrationSoFar += extracted.text;
   if (!text) return undefined;
-  if (
-    text === FIRST_ACK_TEXT &&
-    reply.midTurnUserTexts.some((posted) => posted.trim() === FIRST_ACK_TEXT)
-  ) {
-    return undefined;
-  }
   reply.assembled = "";
   reply.hasStreamedText = false;
   reply.pendingProgress = "";
@@ -230,41 +221,4 @@ export async function showNarrationStatus(ctx: RunContext, note: string | undefi
     runId,
     payload: { reset: true, text: narrationStatusLine(note), activity: true },
   });
-}
-
-/** Short auto-ack when the turn is still silent; does not consume the mid-turn reply budget. */
-export async function maybePublishFirstAck(ctx: RunContext) {
-  const { deps, run } = ctx;
-  const { reply } = ctx.state;
-  if (
-    ctx.scripted ||
-    isBackgroundRunTrigger(run.trigger) ||
-    !runPromotesMidTurnNarration(run.trigger) ||
-    ctx.allowSilentEmptyRun ||
-    reply.assembled.trim() ||
-    reply.midTurnUserTexts.length > 0 ||
-    reply.publishedMidTurnUserMessage
-  )
-    return;
-  try {
-    await publishMessage(
-      deps,
-      run,
-      "bot",
-      [{ kind: "text", text: FIRST_ACK_TEXT }],
-      true,
-      firstAckClientNonce(run.id),
-    );
-  } catch (error) {
-    if (!isUniqueViolation(error)) throw error;
-  }
-  reply.midTurnUserTexts.push(FIRST_ACK_TEXT);
-  reply.publishedMidTurnUserMessage = true;
-}
-
-export function scheduleFirstAck(ctx: RunContext) {
-  const timer = setTimeout(() => {
-    void maybePublishFirstAck(ctx).catch(() => undefined);
-  }, FIRST_ACK_AFTER_MS);
-  ctx.abortController.signal.addEventListener("abort", () => clearTimeout(timer), { once: true });
 }

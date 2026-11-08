@@ -19,7 +19,6 @@ import {
   NARRATION_STATUS_MAX_LENGTH,
   narrationStatusLine,
   USER_PROGRESS_MESSAGE_MAX_LENGTH,
-  firstAckClientNonce,
   userProgressClientNonce,
 } from "./user-progress.js";
 
@@ -175,8 +174,6 @@ describe("userProgressClientNonce", () => {
     expect(nonce.startsWith("user-progress:run-1:0:")).toBe(true);
     expect(isUserProgressClientNonce(nonce)).toBe(true);
     expect(userProgressClientNonce("run-1", 0)).not.toBe(nonce);
-    expect(firstAckClientNonce("run-1")).toBe("user-progress:run-1:ack");
-    expect(firstAckClientNonce("run-1")).toBe(firstAckClientNonce("run-1"));
     expect(isUserProgressClientNonce(null)).toBe(false);
     expect(isUserProgressClientNonce("other")).toBe(false);
   });

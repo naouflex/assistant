@@ -10,10 +10,6 @@ export const USER_PROGRESS_MESSAGE_MAX_LENGTH = 500;
 /** Durable interim chat messages wait until a turn is genuinely long. */
 export const MID_TURN_PROGRESS_MIN_TURN_AGE_MS = 60_000;
 
-/** Auto-ack when the turn is still silent after this delay. */
-export const FIRST_ACK_AFTER_MS = 10_000;
-export const FIRST_ACK_TEXT = "On it";
-
 /** A note shown as the working line instead of a message is cut to this length. */
 export const NARRATION_STATUS_MAX_LENGTH = 60;
 
@@ -121,11 +117,6 @@ export function assistantTurnSeparator(previous: string, next: string): string {
 
 /** clientNonce prefix for mid-turn progress messages (reconciler uses this). */
 export const USER_PROGRESS_CLIENT_NONCE_PREFIX = "user-progress:";
-
-/** One stable nonce so the automatic ack cannot be inserted twice. */
-export function firstAckClientNonce(runId: string): string {
-  return `${USER_PROGRESS_CLIENT_NONCE_PREFIX}${runId}:ack`;
-}
 
 export function userProgressClientNonce(runId: string, index = 0): string {
   // Include entropy so a resumed executor turn cannot reuse an earlier nonce

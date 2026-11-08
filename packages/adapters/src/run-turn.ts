@@ -56,7 +56,6 @@ import {
   nextProgressNonce,
   publishMidTurnNarration,
   recordExplicitNoResponse,
-  scheduleFirstAck,
   showNarrationStatus,
   tryFlushPendingTools,
 } from "./run-progress.js";
@@ -128,7 +127,6 @@ export async function consumeRunEvents(
       if (!(error instanceof RunHistoryWriteError)) throw error;
     }
   };
-  scheduleFirstAck(ctx);
   try {
     for await (const event of withRuntimeCleanup(events, ctx.abortController)) {
       if (ctx.state.approval.pausePending) return true;

@@ -141,6 +141,7 @@ if ! flock -n .deploy-update.lock true; then
   exit 75
 fi
 rm -f .deploy-update.status
+: > .deploy-update.log
 setsid nohup bash infra/compose/apps-prod-update.sh > .deploy-update.log 2>&1 < /dev/null &
 pid=\$!
 tail -n +1 -f --pid="\$pid" .deploy-update.log
