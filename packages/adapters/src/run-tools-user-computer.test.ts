@@ -3,6 +3,7 @@ import type { HostComputerRequest } from "./host-computer-protocol.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolCall } from "./run-tool-gate.js";
 import {
+  peerChainUserComputerOwner,
   userComputerCwd,
   userComputerGate,
   userComputerOwner,
@@ -201,5 +202,109 @@ describe("userComputerShell", () => {
     controller.abort();
     await expect(pending).rejects.toThrow("aborted");
     expect(signals.every((signal) => signal.aborted)).toBe(true);
+  });
+});
+
+describe("peerChainUserComputerOwner", () => {
+  type Msg = { role: string; blocks: unknown; runId: string | null };
+  type Run = {
+    trigger: string;
+    sourceMessageId: string | null;
+    userId: string;
+    bot: { userId: string };
+  };
+  function fake(messages: Record<string, Msg>, runs: Record<string, Run>) {
+    return {
+      message: {
+        findUnique: async ({ where }: { where: { id: string } }) => messages[where.id] ?? null,
+      },
+      run: { findUnique: async ({ where }: { where: { id: string } }) => runs[where.id] ?? null },
+    } as unknown as Parameters<typeof peerChainUserComputerOwner>[0];
+  }
+  const received = (returnTo: string) => [
+    {
+      kind: "bot_message_received",
+      fromBotId: "a",
+      fromBotName: "A",
+      text: "x",
+      returnToMessageId: returnTo,
+    },
+  ];
+  const messages: Record<string, Msg> = {
+    own: { role: "user", blocks: [{ kind: "text", text: "check the logs" }], runId: "run-a" },
+    outAB: { role: "bot", blocks: [], runId: "run-a" },
+    inB: { role: "user", blocks: received("outAB"), runId: "run-b" },
+    outBC: { role: "bot", blocks: [], runId: "run-b" },
+    inC: { role: "user", blocks: received("outBC"), runId: "run-c" },
+  };
+  const runs: Record<string, Run> = {
+    "run-a": {
+      trigger: "user",
+      sourceMessageId: "own",
+      userId: "user-1",
+      bot: { userId: "user-1" },
+    },
+    "run-b": {
+      trigger: "bot_message",
+      sourceMessageId: "inB",
+      userId: "user-1",
+      bot: { userId: "user-1" },
+    },
+  };
+  const woken = { trigger: "bot_message", sourceMessageId: "inB", userId: "user-1" };
+
+  it("reaches the owner when their own message started the chain, across hops", async () => {
+    await expect(peerChainUserComputerOwner(fake(messages, runs), woken, "user-1")).resolves.toBe(
+      "user-1",
+    );
+    await expect(
+      peerChainUserComputerOwner(
+        fake(messages, runs),
+        { ...woken, sourceMessageId: "inC" },
+        "user-1",
+      ),
+    ).resolves.toBe("user-1");
+  });
+
+  it.each([
+    ["a routine started the chain", { "run-a": { ...runs["run-a"]!, trigger: "routine" } }, {}],
+    ["a webhook started the chain", { "run-a": { ...runs["run-a"]!, trigger: "webhook" } }, {}],
+    ["another person's run", { "run-a": { ...runs["run-a"]!, userId: "user-2" } }, {}],
+    ["another person's bot", { "run-a": { ...runs["run-a"]!, bot: { userId: "user-2" } } }, {}],
+    [
+      "the origin was itself a relayed peer message",
+      {},
+      { own: { ...messages.own!, blocks: received("x") } },
+    ],
+    ["the origin was a bot message", {}, { own: { ...messages.own!, role: "bot" } }],
+  ])("is nobody when %s", async (_label, runChange, messageChange) => {
+    const db = fake({ ...messages, ...messageChange }, { ...runs, ...runChange } as Record<
+      string,
+      Run
+    >);
+    await expect(peerChainUserComputerOwner(db, woken, "user-1")).resolves.toBeUndefined();
+  });
+
+  it("is nobody for other triggers or a bot owned by someone else", async () => {
+    const db = fake(messages, runs);
+    await expect(
+      peerChainUserComputerOwner(db, { ...woken, trigger: "routine" }, "user-1"),
+    ).resolves.toBeUndefined();
+    await expect(peerChainUserComputerOwner(db, woken, "user-2")).resolves.toBeUndefined();
+  });
+
+  it("stops on a cycle", async () => {
+    const loop: Record<string, Run> = {
+      ...runs,
+      "run-a": {
+        trigger: "bot_message",
+        sourceMessageId: "inB",
+        userId: "user-1",
+        bot: { userId: "user-1" },
+      },
+    };
+    await expect(
+      peerChainUserComputerOwner(fake(messages, loop), woken, "user-1"),
+    ).resolves.toBeUndefined();
   });
 });

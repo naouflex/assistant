@@ -193,7 +193,11 @@ import {
 import { applyTool } from "./run-tools.js";
 import { historyMyChatsAllowed } from "./run-tools-memory.js";
 import type { UserComputerState } from "./run-tools-user-computer.js";
-import { USER_COMPUTER_SHELL_TOOL, userComputerOwner } from "./run-tools-user-computer.js";
+import {
+  peerChainUserComputerOwner,
+  USER_COMPUTER_SHELL_TOOL,
+  userComputerOwner,
+} from "./run-tools-user-computer.js";
 import { createRunTrustLoaders } from "./run-trust.js";
 import { completeRun, consumeRunEvents, failRun } from "./run-turn.js";
 import {
@@ -1167,13 +1171,21 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         const pageBrowserAllowed =
           graphical && browser.describe().capabilities.page && !heldForTakeover;
         const disabledBuiltinTools = disabledBuiltinToolSet(bot.disabledBuiltinTools);
-        const userComputerOwnerId = userComputerOwner({
+        const directUserComputerOwnerId = userComputerOwner({
           trigger: run.trigger,
           sourceRole: sourceMessage?.role,
           messagingChannelRun,
           runUserId: run.userId,
           botUserId: bot.userId,
         });
+        // A bot the owner's own task was delegated to can use their computer too (not their phone).
+        const userComputerOwnerId =
+          directUserComputerOwnerId ??
+          (await peerChainUserComputerOwner(
+            deps.prisma as unknown as Parameters<typeof peerChainUserComputerOwner>[0],
+            { trigger: run.trigger, sourceMessageId: run.sourceMessageId, userId: run.userId },
+            bot.userId,
+          ).catch(() => undefined));
         let userComputer: UserComputerState;
         let userComputerPlatform: string | undefined;
         let userComputerScreen = false;
@@ -1196,9 +1208,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         }
         // Online means Phone control is on: the phone only connects while it is.
         const phoneConnected = Boolean(
-          userComputerOwnerId &&
+          directUserComputerOwnerId &&
             deps.userDevices &&
-            (await deps.userDevices.connected(userComputerOwnerId, "phone").catch(() => null)),
+            (await deps.userDevices
+              .connected(directUserComputerOwnerId, "phone")
+              .catch(() => null)),
         );
         const builtins = [
           ...selectBuiltinToolsForRun({
@@ -1703,8 +1717,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         };
 
         const personTurn =
-          run.trigger === "user" ||
-          (run.trigger === "follow_up" && sourceMessage?.role === "user");
+          run.trigger === "user" || (run.trigger === "follow_up" && sourceMessage?.role === "user");
         const attachAfterWrite =
           compactRun &&
           (run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging") &&

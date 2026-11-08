@@ -57,6 +57,102 @@ export function userComputerOwner(input: {
   return input.runUserId === input.botUserId ? input.runUserId : undefined;
 }
 
+type PeerChainPrisma = {
+  message: {
+    findUnique(args: {
+      where: { id: string };
+      select: { role: true; blocks: true; runId: true };
+    }): Promise<{ role: string; blocks: unknown; runId: string | null } | null>;
+  };
+  run: {
+    findUnique(args: {
+      where: { id: string };
+      select: {
+        trigger: true;
+        sourceMessageId: true;
+        userId: true;
+        bot: { select: { userId: true } };
+      };
+    }): Promise<{
+      trigger: string;
+      sourceMessageId: string | null;
+      userId: string;
+      bot: { userId: string };
+    } | null>;
+  };
+};
+
+const PEER_CHAIN_MAX_HOPS = 8;
+
+function peerReturnMessageId(blocks: unknown): string | undefined {
+  if (!Array.isArray(blocks)) return undefined;
+  for (const block of blocks) {
+    if (
+      block &&
+      typeof block === "object" &&
+      (block as { kind?: unknown }).kind === "bot_message_received"
+    ) {
+      const id = (block as { returnToMessageId?: unknown }).returnToMessageId;
+      return typeof id === "string" && id ? id : undefined;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * A run woken by another bot's message reaches the owner's computer when the chain of peer
+ * messages behind it starts at the owner's own message to a bot they own: a task the owner handed
+ * to one bot that delegated it on (Strike Dev asking Autoresearch Dev to read logs on the owner's
+ * PC). Routines, webhooks, channels and other people's messages anywhere up the chain still reach
+ * no one's, and userComputerGate's approval applies as for the owner's own runs.
+ */
+export async function peerChainUserComputerOwner(
+  prisma: PeerChainPrisma,
+  run: { trigger: string; sourceMessageId: string | null | undefined; userId: string },
+  botUserId: string,
+): Promise<string | undefined> {
+  if (run.trigger !== "bot_message" || run.userId !== botUserId) return undefined;
+  let inboundId = run.sourceMessageId ?? undefined;
+  for (let hop = 0; hop < PEER_CHAIN_MAX_HOPS && inboundId; hop++) {
+    const inbound = await prisma.message.findUnique({
+      where: { id: inboundId },
+      select: { role: true, blocks: true, runId: true },
+    });
+    const returnTo = inbound && peerReturnMessageId(inbound.blocks);
+    if (!returnTo) return undefined;
+    const outbound = await prisma.message.findUnique({
+      where: { id: returnTo },
+      select: { role: true, blocks: true, runId: true },
+    });
+    if (!outbound?.runId) return undefined;
+    const sender = await prisma.run.findUnique({
+      where: { id: outbound.runId },
+      select: {
+        trigger: true,
+        sourceMessageId: true,
+        userId: true,
+        bot: { select: { userId: true } },
+      },
+    });
+    if (!sender || sender.userId !== run.userId || sender.bot.userId !== run.userId)
+      return undefined;
+    if (sender.trigger === "bot_message") {
+      inboundId = sender.sourceMessageId ?? undefined;
+      continue;
+    }
+    if (sender.trigger !== "user" && sender.trigger !== "follow_up") return undefined;
+    if (!sender.sourceMessageId) return undefined;
+    const origin = await prisma.message.findUnique({
+      where: { id: sender.sourceMessageId },
+      select: { role: true, blocks: true, runId: true },
+    });
+    // The owner's own words: a user-role message that is not itself a relayed peer message.
+    if (!origin || origin.role !== "user" || peerReturnMessageId(origin.blocks)) return undefined;
+    return run.userId;
+  }
+  return undefined;
+}
+
 /**
  * The user's own computer always asks a person first, in every approval mode and whatever the
  * rules allow, until they choose "Allow in this space"; a block still refuses it. These tools run
