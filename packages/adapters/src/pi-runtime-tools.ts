@@ -339,6 +339,8 @@ function toAgentTool(
         return {
           content: String(raw.content ?? ""),
           ...(typeof raw.old_text === "string" && raw.old_text ? { old_text: raw.old_text } : {}),
+          // Keep journal: dropping it sent dated notes into the size-capped MEMORY.md.
+          ...(raw.journal === true || raw.journal === "true" ? { journal: true } : {}),
         };
       }
       if (tool.name === "request_takeover") {

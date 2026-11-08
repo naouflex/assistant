@@ -1085,6 +1085,42 @@ describe("Pi connector tool dispatch", () => {
     expect(modes.get("destination_write")).toBe("default");
   });
 
+  it("keeps remember's journal flag so dated notes skip the capped MEMORY.md", async () => {
+    const runtime = new PiAgentRuntime();
+    for await (const _event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "r",
+        prompt: "note today",
+        instructions: "",
+        history: [],
+        tools: [builtinAgentTools.find((tool) => tool.name === "remember")!],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool: vi.fn(async () => ({ ok: true })),
+      },
+      {
+        operationId: "1",
+        traceId: "1",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      // Exhaust the stream.
+    }
+    const remember = fakeAgentState.tools.find((tool) => tool.name === "remember")!;
+    expect(remember.prepareArguments?.({ content: "x", journal: true })).toEqual({
+      content: "x",
+      journal: true,
+    });
+    expect(remember.prepareArguments?.({ content: "x", journal: "true" })).toEqual({
+      content: "x",
+      journal: true,
+    });
+    expect(remember.prepareArguments?.({ content: "x", journal: false })).toEqual({ content: "x" });
+  });
+
   it("does not claim a tool-only turn finished work the model never described", async () => {
     const runtime = new PiAgentRuntime();
     const events: unknown[] = [];
