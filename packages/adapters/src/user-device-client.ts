@@ -33,7 +33,8 @@ export interface UserDeviceClientOptions {
  * `cancelAll` stops every command and refuses requests still waiting on `authorize`.
  */
 export function startUserDeviceClient(options: UserDeviceClientOptions) {
-  const retry = options.retryMs ?? { min: 1_000, max: 60_000 };
+  // Bots wait only so long for a computer to come back after a server restart.
+  const retry = options.retryMs ?? { min: 1_000, max: 15_000 };
   const runner = createHostComputerRunner({ root: options.root, screen: options.screen });
   runner.setEnabled(true);
   const url = new URL(USER_DEVICE_CONNECT_PATH, options.serverUrl);

@@ -176,7 +176,13 @@ function setup() {
   });
   const hub = new UserDeviceHub({ prisma: db.prisma, address: "http://10.0.0.5:3100" });
   hubs.push(hub);
-  const devices = new UserDevices({ prisma: db.prisma, forwardSecret: secret, hub });
+  const devices = new UserDevices({
+    prisma: db.prisma,
+    forwardSecret: secret,
+    hub,
+    reconnectWaitMs: 200,
+    reconnectPollMs: 20,
+  });
   return { ...db, hub, devices };
 }
 
@@ -316,6 +322,17 @@ describe("user device gateway in the holding process", () => {
     await expect(devices.connected("user-1")).resolves.toBeNull();
     await expect(devices.pairedSince("user-1")).resolves.toEqual(new Date(0));
     await expect(devices.pairedSince("user-2")).resolves.toBeNull();
+  });
+
+  it("waits for a recently seen computer to reconnect instead of calling it offline", async () => {
+    const { hub, devices } = setup();
+    const first = new FakeSocket();
+    await hub.attach(device, first);
+    first.close();
+    await vi.waitFor(async () => expect(await devices.connected("user-1")).toBeNull());
+    const found = devices.connected("user-1");
+    await hub.attach(device, new FakeSocket());
+    await expect(found).resolves.toMatchObject({ deviceId: device.id });
   });
 
   it("fails an in-flight request when the device disconnects and never resends it", async () => {
