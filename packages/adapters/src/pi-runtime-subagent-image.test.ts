@@ -42,6 +42,8 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
         ?.execute("subagent-call", { name: "helper", task: "Inspect the screen" });
     }
     async waitForIdle() {}
+    followUp() {}
+    async continue() {}
     abort() {}
   },
 }));

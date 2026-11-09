@@ -93,12 +93,18 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
       if (fakeAgentState.mode === "answer-then-stop") {
         // The model answers the steered message in text and stops.
         await this.prepareNextTurnWithContext?.({ context: { messages: [] } });
+        const message = {
+          role: "assistant",
+          stopReason: "stop",
+          content: [{ type: "text", text: "Yes" }],
+        };
+        this.emit({
+          type: "message_update",
+          assistantMessageEvent: { type: "text_delta", delta: "Yes" },
+        });
+        this.emit({ type: "message_end", message });
         await this.finishTurn?.({
-          message: {
-            role: "assistant",
-            stopReason: "stop",
-            content: [{ type: "text", text: "Yes" }],
-          },
+          message,
           toolResults: [],
           context: { messages: [] },
           newMessages: [],
@@ -418,6 +424,7 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
     async continue() {
       fakeAgentState.continueCalls += 1;
       fakeAgentState.continueMessages = [...this.state.messages];
+      if (fakeAgentState.mode === "empty") return;
       const message = {
         role: "assistant",
         content: [{ type: "text", text: "Trying again anyway." }],
@@ -1794,6 +1801,7 @@ describe("Pi connector tool dispatch", () => {
       events.push(event);
     }
 
+    expect(fakeAgentState.continueCalls).toBe(1);
     expect(events).toContainEqual({
       type: "text",
       text: "No response. Try again.",
@@ -2080,15 +2088,27 @@ describe("Pi connector tool dispatch", () => {
         { role: "user", content: "Use the newer totals.", timestamp: new Date(0) },
         {
           role: "assistant",
-          content: [{ type: "toolCall", id: "call-1", name: "list_files", arguments: { path: "" } }],
+          content: [
+            { type: "toolCall", id: "call-1", name: "list_files", arguments: { path: "" } },
+          ],
           stopReason: "toolUse",
         },
       ] as never,
     });
     // Still claimed by this run, so the claim on resume returns it next to a new message.
     const claimSteering = vi.fn(async () => [
-      { id: "steering-1", messageId: "message-1", text: "Use the newer totals.", origin: "user" as const },
-      { id: "steering-2", messageId: "message-2", text: "Also check the logs.", origin: "user" as const },
+      {
+        id: "steering-1",
+        messageId: "message-1",
+        text: "Use the newer totals.",
+        origin: "user" as const,
+      },
+      {
+        id: "steering-2",
+        messageId: "message-2",
+        text: "Also check the logs.",
+        origin: "user" as const,
+      },
     ]);
     const runtime = new PiAgentRuntime();
 

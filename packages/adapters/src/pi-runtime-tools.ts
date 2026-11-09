@@ -714,16 +714,13 @@ export function serializeToolResult(
   verbatimMcpServers?: AgentRunRequest["verbatimMcpServers"],
 ) {
   try {
-    const shaped = compactToolResultForModel(result, name);
-    const text = JSON.stringify(shaped);
+    const verbatim =
+      result != null &&
+      (VERBATIM_TOOL_RESULTS.has(name) || isVerbatimMcpResult(name, args, verbatimMcpServers));
+    const text = JSON.stringify(verbatim ? result : compactToolResultForModel(result, name));
     if (!text) return JSON.stringify({ ok: false, error: "The tool result could not be read." });
     // skill-tools.ts already bounds skill content; the context budget selector may still shorten it.
-    if (
-      text.length <= 12_000 ||
-      VERBATIM_TOOL_RESULTS.has(name) ||
-      isVerbatimMcpResult(name, args, verbatimMcpServers)
-    )
-      return text;
+    if (verbatim || text.length <= 12_000) return text;
     return (strategy ?? DEFAULT_CONTEXT_STRATEGY) === "current"
       ? clipToolResultText(text)
       : shortenToolResultText(text, 12_000, { name, arguments: args });
