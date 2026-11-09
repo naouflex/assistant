@@ -46,6 +46,19 @@ vi.mock("./dictation", () => ({
   },
 }));
 
+const provider = vi.hoisted(() => ({
+  transcribes: vi.fn(async () => false),
+  finish: vi.fn(async () => ({ base64: "YXVkaW8=", mimeType: "audio/m4a" }) as null | object),
+  cancel: vi.fn(),
+  transcribe: vi.fn(async (_clip: unknown) => ({ text: "from the provider" })),
+}));
+
+vi.mock("./provider-dictation", () => ({
+  providerTranscribes: () => provider.transcribes(),
+  startHeldRecording: async () => ({ finish: provider.finish, cancel: provider.cancel }),
+  transcribeVoiceClip: (clip: unknown) => provider.transcribe(clip),
+}));
+
 function Harness({
   disabled,
   onReady,
@@ -80,11 +93,14 @@ describe("useComposerDictation", () => {
     root = createRoot(container);
     api = null;
     dictation.staged = "";
+    dictation.available.mockClear();
     dictation.available.mockResolvedValue(true);
     dictation.listen.mockClear();
     dictation.commit.mockClear();
     dictation.stop.mockClear();
     dictation.handlers = null;
+    provider.transcribes.mockResolvedValue(false);
+    provider.transcribe.mockClear();
   });
 
   afterEach(() => {
@@ -151,5 +167,22 @@ describe("useComposerDictation", () => {
     await act(async () => {});
     act(() => api?.start());
     expect(dictation.listen).not.toHaveBeenCalled();
+  });
+
+  it("records through a provider that transcribes, without the device recognizer", async () => {
+    provider.transcribes.mockResolvedValue(true);
+    render();
+    await act(async () => {});
+    expect(api?.available).toBe(true);
+    expect(dictation.available).not.toHaveBeenCalled();
+
+    await act(async () => api?.start());
+    expect(dictation.listen).not.toHaveBeenCalled();
+    expect(api?.listening).toBe(true);
+
+    await act(async () => api?.release());
+    expect(provider.transcribe).toHaveBeenCalledOnce();
+    expect(api?.draft).toBe("from the provider");
+    expect(api?.listening).toBe(false);
   });
 });

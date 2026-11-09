@@ -1,10 +1,13 @@
 /**
  * Hold-to-talk for the thread composer: press the mic, speak, release to drop the
- * words into the draft. Reuses on-device `dictation.listen` (no separate speech stack).
+ * words into the draft. A connected voice provider that transcribes hears the
+ * recording; without one, the device's own recognizer listens.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as dictation from "./dictation";
+import type { HeldRecording } from "./provider-dictation";
+import { providerTranscribes, startHeldRecording, transcribeVoiceClip } from "./provider-dictation";
 
 /** Joins a prior draft with freshly heard words without doubling a trailing space. */
 export function mergeDictation(base: string, heard: string): string {
@@ -13,6 +16,8 @@ export function mergeDictation(base: string, heard: string): string {
   if (!base) return text;
   return /[\s\n]$/.test(base) ? `${base}${text}` : `${base} ${text}`;
 }
+
+type Engine = "provider" | "device" | null;
 
 export function useComposerDictation({
   disabled,
@@ -24,13 +29,14 @@ export function useComposerDictation({
   draft: string;
   onDraft: (text: string) => void;
 }) {
-  const [available, setAvailable] = useState(false);
+  const [engine, setEngine] = useState<Engine>(null);
   const [listening, setListening] = useState(false);
   const baseRef = useRef("");
   const draftRef = useRef(draft);
   const onDraftRef = useRef(onDraft);
   const listeningRef = useRef(false);
   const holdGen = useRef(0);
+  const recording = useRef<Promise<HeldRecording | null> | null>(null);
 
   useEffect(() => {
     draftRef.current = draft;
@@ -41,12 +47,20 @@ export function useComposerDictation({
 
   useEffect(() => {
     let cancelled = false;
-    void dictation.available().then((ok) => {
-      if (!cancelled) setAvailable(ok);
-    });
+    void (async () => {
+      // Asking the device recognizer would prompt for speech access the provider does not need.
+      const next: Engine = (await providerTranscribes())
+        ? "provider"
+        : (await dictation.available())
+          ? "device"
+          : null;
+      if (!cancelled) setEngine(next);
+    })();
     return () => {
       cancelled = true;
+      holdGen.current += 1;
       if (listeningRef.current) dictation.stop();
+      void recording.current?.then((held) => held?.cancel());
     };
   }, []);
 
@@ -57,15 +71,25 @@ export function useComposerDictation({
   const endHold = useCallback((gen: number) => {
     if (holdGen.current !== gen) return;
     listeningRef.current = false;
+    recording.current = null;
     setListening(false);
   }, []);
 
+  const available = engine !== null;
+
   const start = useCallback(() => {
-    if (disabled || !available || listeningRef.current) return;
+    if (disabled || !engine || listeningRef.current) return;
     const gen = ++holdGen.current;
     baseRef.current = draftRef.current;
     listeningRef.current = true;
     setListening(true);
+    if (engine === "provider") {
+      recording.current = startHeldRecording().catch(() => null);
+      void recording.current.then((held) => {
+        if (!held) endHold(gen);
+      });
+      return;
+    }
     void dictation.listen({
       onInterim: (text) => {
         if (holdGen.current !== gen) return;
@@ -78,17 +102,34 @@ export function useComposerDictation({
       },
       onGiveUp: () => endHold(gen),
     });
-  }, [apply, available, disabled, endHold]);
+  }, [apply, disabled, endHold, engine]);
 
   const release = useCallback(() => {
     if (!listeningRef.current) return;
+    const gen = holdGen.current;
+    if (engine === "provider") {
+      const pending = recording.current;
+      void (async () => {
+        try {
+          const clip = await (await pending)?.finish();
+          if (!clip || holdGen.current !== gen) return;
+          const result = await transcribeVoiceClip(clip);
+          if (holdGen.current === gen && "text" in result) apply(result.text);
+        } catch {
+          // A failed take leaves the draft as it was.
+        } finally {
+          endHold(gen);
+        }
+      })();
+      return;
+    }
     dictation.commit();
     // commit may already have cleared via onFinal; if nothing was heard, stop the session.
     if (listeningRef.current) {
       dictation.stop();
-      endHold(holdGen.current);
+      endHold(gen);
     }
-  }, [endHold]);
+  }, [apply, endHold, engine]);
 
   return {
     available,

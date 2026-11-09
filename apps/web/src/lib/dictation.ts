@@ -45,8 +45,6 @@ const ENDPOINT_TICK_MS = 80;
 const SILENCE_RMS = 0.035;
 export const TRANSCRIPTION_RESPONSE_TIMEOUT_MS = 70_000;
 export const MAX_TRANSCRIPTION_RESPONSE_BYTES = 64 * 1024;
-/** Web Speech codes that mean the cloud recognizer cannot be used. */
-const WEB_SPEECH_SERVICE_ERRORS = new Set(["network", "service-not-allowed"]);
 
 export function webSpeechAvailable(): boolean {
   return Boolean(speechRecognitionCtor());
@@ -56,13 +54,7 @@ export function webSpeechAvailable(): boolean {
 export function dictationSupportsInterimBargeIn(transcribeOpt?: boolean): boolean {
   // Cloud transcription on a call uses a recorder; an open mic during TTS picks up the reply.
   if (transcribeOpt === true) return false;
-  const transcribe = Boolean(transcribeOpt);
-  if (
-    (prefersServerDictation() && transcribeOpt !== false) ||
-    (desktopBridge()?.speech && transcribe)
-  ) {
-    return false;
-  }
+  if (prefersServerDictation() && transcribeOpt !== false) return false;
   return webSpeechAvailable();
 }
 
@@ -93,14 +85,6 @@ export function prefersServerDictation(): boolean {
   // iPadOS 13+ reports a desktop Safari user agent, so fall back to touch support.
   const touchPoints = typeof navigator.maxTouchPoints === "number" ? navigator.maxTouchPoints : 0;
   return touchPoints > 1 && /macintosh/i.test(agent);
-}
-
-/** Connected server transcription should take over after Web Speech cannot run. */
-export function webSpeechNeedsServerFallback(
-  error: string | undefined,
-  transcribe: boolean,
-): boolean {
-  return transcribe && typeof error === "string" && WEB_SPEECH_SERVICE_ERRORS.has(error);
 }
 
 /**
@@ -260,29 +244,16 @@ export class Dictation {
     this.onFinal = opts.onFinal;
     this.set({ status: "listening", transcript: "" });
     const transcribe = Boolean(opts.transcribe);
-    // Desktop system speech is a fallback for an unconfigured transcription provider.
-    // An unknown capability is not a refusal: a device whose browser cannot hold the
-    // microphone open goes to the server even before the voice status has loaded.
-    if (
-      (prefersServerDictation() && opts.transcribe !== false) ||
-      (desktopBridge()?.speech && transcribe) ||
-      (opts.mode === "endpoint" && transcribe)
-    ) {
+    // A connected provider that can transcribe always hears the microphone; browser and
+    // system speech are only the fallback without one. An unknown capability is not a
+    // refusal: a device whose browser cannot hold the microphone open goes to the server
+    // even before the voice status has loaded.
+    if (transcribe || (prefersServerDictation() && opts.transcribe !== false)) {
       await this.listenRecorder(mine, opts.mode, opts.endpointMs ?? ENDPOINT_SILENCE_MS, spaceId);
       return;
     }
     if (webSpeechAvailable()) {
-      this.listenWebSpeech(
-        opts.mode,
-        opts.endpointMs ?? ENDPOINT_SILENCE_MS,
-        mine,
-        transcribe,
-        spaceId,
-      );
-      return;
-    }
-    if (transcribe) {
-      await this.listenRecorder(mine, opts.mode, opts.endpointMs ?? ENDPOINT_SILENCE_MS, spaceId);
+      this.listenWebSpeech(opts.mode, opts.endpointMs ?? ENDPOINT_SILENCE_MS, mine);
       return;
     }
     this.set({
@@ -291,13 +262,7 @@ export class Dictation {
     });
   }
 
-  private listenWebSpeech(
-    mode: DictationMode,
-    endpointMs: number,
-    mine: number,
-    transcribe: boolean,
-    spaceId: string | null,
-  ) {
+  private listenWebSpeech(mode: DictationMode, endpointMs: number, mine: number) {
     const Ctor = speechRecognitionCtor();
     if (!Ctor) return;
     const rec = new Ctor();
@@ -338,11 +303,6 @@ export class Dictation {
     rec.onerror = (event) => {
       if (!live || this.token !== mine) return;
       if (event.error === "aborted" || event.error === "no-speech") return;
-      if (webSpeechNeedsServerFallback(event.error, transcribe)) {
-        live = false;
-        this.fallbackToServer(rec, mine, mode, endpointMs, spaceId);
-        return;
-      }
       live = false;
       const code = event.error;
       this.set({
@@ -374,10 +334,6 @@ export class Dictation {
           : 0;
       if (shortSessions >= RESTART_GIVE_UP_AFTER) {
         live = false;
-        if (transcribe) {
-          this.fallbackToServer(rec, mine, mode, endpointMs, spaceId);
-          return;
-        }
         this.releaseRecognition(rec);
         this.failListening(
           mine,
@@ -408,31 +364,10 @@ export class Dictation {
       rec.start();
     } catch {
       if (!live || this.token !== mine) return;
-      if (transcribe) {
-        live = false;
-        this.fallbackToServer(rec, mine, mode, endpointMs, spaceId);
-        return;
-      }
       live = false;
       this.releaseRecognition(rec);
       this.set({ ...IDLE, error: t`Dictation failed.` });
     }
-  }
-
-  private fallbackToServer(
-    rec: SpeechRecognitionLike,
-    mine: number,
-    mode: DictationMode,
-    endpointMs: number,
-    spaceId: string | null,
-  ) {
-    const recognized = normalizedTranscript(this.snapshot.transcript);
-    this.releaseRecognition(rec);
-    clearTimeout(this.silenceTimer);
-    this.silenceTimer = undefined;
-    if (this.token !== mine) return;
-    this.set({ status: "listening", transcript: recognized });
-    void this.listenRecorder(mine, mode, endpointMs, spaceId);
   }
 
   private releaseRecognition(rec: SpeechRecognitionLike) {

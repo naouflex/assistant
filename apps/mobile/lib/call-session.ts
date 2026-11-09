@@ -42,8 +42,9 @@ import type { DictationGiveUp } from "./dictation";
 import * as dictation from "./dictation";
 import { deviceLanguage, getActiveUiLocale, t } from "./i18n";
 import { reportMobileError } from "./monitoring";
+import { deleteQuietly, transcribeVoiceClip } from "./provider-dictation";
 import { currentSessionGeneration, subscribeSessionGeneration } from "./session";
-import { errorText, voiceAccountErrorText } from "./user-error";
+import { errorText } from "./user-error";
 import type { SpeechOwner } from "./voice";
 import { createSpeechOwner, speakText, stopSpeaking } from "./voice";
 
@@ -769,34 +770,10 @@ async function recordClip(signal: AbortSignal): Promise<CallClip | null> {
   }
 }
 
-function deleteQuietly(uri: string | null): void {
-  if (!uri) return;
-  try {
-    new File(uri).delete();
-  } catch {
-    // The clip is disposable; a leftover in the cache is fine.
-  }
-}
-
 async function transcribeClip(clip: CallClip, signal: AbortSignal): Promise<string> {
-  const { apiBase, headers } = await captureApiRequestContext();
-  const res = await fetch(`${apiBase}/api/voice/transcribe`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin: "atlas://", ...headers },
-    body: JSON.stringify({ audioBase64: clip.base64, mimeType: clip.mimeType }),
-    signal,
-  });
-  const body = (await res.json().catch(() => ({}))) as {
-    text?: string;
-    error?: string;
-    code?: string;
-  };
-  if (!res.ok) {
-    throw new ExpectedTurnFailure(
-      voiceAccountErrorText(body) ?? errorText(body.error ?? "", t("Could not transcribe that.")),
-    );
-  }
-  return body.text ?? "";
+  const result = await transcribeVoiceClip(clip, signal);
+  if ("error" in result) throw new ExpectedTurnFailure(result.error);
+  return result.text;
 }
 
 async function sendHeard(
