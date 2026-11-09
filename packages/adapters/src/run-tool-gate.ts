@@ -13,6 +13,7 @@ import {
   connectorKindFromToolName,
   connectorReadRequiresApproval,
   connectorToolRequiresApproval,
+  connectorToolSendsMessage,
   decisiveActionApprovalRules,
   displayName,
   humanizeToolName,
@@ -52,6 +53,7 @@ import { ATLAS_DOCS_URLS } from "./builtin-skills.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import { findConnectedModelCredential } from "./model-selection.js";
 import { paidRequestEffect } from "./paid-request.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import { autoReviewCheckerProvider } from "./run-auto-review.js";
 import type { RunContext, RunTrust } from "./run-context.js";
 import {
@@ -74,7 +76,6 @@ import { resolveCompletedSecretLeftover } from "./run-secret.js";
 import type { ToolRequest } from "./run-tool-request.js";
 import { BUILTIN_AGENT_TOOL_NAMES, READ_ONLY_AGENT_TOOLS } from "./run-tool-selection.js";
 import { callMediaTool } from "./run-tools-files.js";
-import { PHONE_TOOLS } from "./phone-protocol.js";
 import { phoneGate } from "./run-tools-phone.js";
 import { USER_COMPUTER_TOOLS, userComputerGate } from "./run-tools-user-computer.js";
 import { connectorTrustKeys } from "./run-trust.js";
@@ -268,7 +269,9 @@ export async function gateToolCall(
     commandWatch ||
     scheduleNamesNewSite ||
     requiresUnattendedApproval ||
-    toolRequiresExplicitApproval(name);
+    toolRequiresExplicitApproval(name) ||
+    // Confirm before send: outbound email and messages always wait for the owner.
+    (viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName)));
   // Never ask runs everything else: only another owner's connection could have been steered into it.
   const guardedInNeverAsk = name === "respond_agent_connection";
   const resolvedRules = resolveActionApprovalForTools({
@@ -324,19 +327,19 @@ export async function gateToolCall(
     : PHONE_TOOLS.has(name)
       ? await phoneGate(ctx, approvalResolved.decision === "deny", name, args)
       : planActionGate({
-        resolved: approvalResolved,
-        mode,
-        mandatory: requiresMandatoryApproval,
-        steerable:
-          guardedInNeverAsk && mode === "never"
-            ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
-            : undefined,
-        consequential: requiresApprovalByDefault,
-        reviewOnly: connectorReadGated,
-        checkerConfigured,
-        newDestination: siteGate === "new",
-        alwaysAsk: spendsMoney,
-      });
+          resolved: approvalResolved,
+          mode,
+          mandatory: requiresMandatoryApproval,
+          steerable:
+            guardedInNeverAsk && mode === "never"
+              ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
+              : undefined,
+          consequential: requiresApprovalByDefault,
+          reviewOnly: connectorReadGated,
+          checkerConfigured,
+          newDestination: siteGate === "new",
+          alwaysAsk: spendsMoney,
+        });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {
       reason: approvalResolved.decision === "deny" ? "rule" : "never_asks",

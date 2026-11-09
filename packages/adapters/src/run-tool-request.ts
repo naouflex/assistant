@@ -22,6 +22,7 @@ import { sanitizeConnectorError } from "./connector-safety.js";
 import { isFleetApprovalTool, prepareFleetRequest } from "./fleet-tools.js";
 import { assertConnectorToolArgs, CATALOG_EXECUTE } from "./lazy-tool-catalog.js";
 import { paidRequestEffect, restorePaidRequest } from "./paid-request.js";
+import { PHONE_TOOLS } from "./phone-protocol.js";
 import type { RunContext } from "./run-context.js";
 import {
   isRunTainted,
@@ -36,7 +37,6 @@ import {
 } from "./run-effects.js";
 import { fleetPrepareDeps } from "./run-model.js";
 import { BUILTIN_AGENT_TOOL_NAMES, FLEET_WRITE_TOOL_NAMES_SET } from "./run-tool-selection.js";
-import { PHONE_TOOLS } from "./phone-protocol.js";
 import { USER_COMPUTER_TOOLS } from "./run-tools-user-computer.js";
 import { argumentGiven } from "./update-bot-patch.js";
 
@@ -423,8 +423,12 @@ async function prepareOwnBotUpdate(
   if (unguarded) return undefined;
   if (!["created", "routine"].includes(run.trigger) && !ctx.source.ownerStartedRun)
     return { error: "Instruction changes are blocked for runs someone else started." };
-  if (Object.keys(args).some((key) => key !== "instructions"))
-    return { error: "Change your instructions in their own update_bot call." };
+  const alongside = Object.keys(args).filter((key) => key !== "instructions");
+  if (alongside.length)
+    // Small models often stop at a bare rejection, so say exactly what to send next.
+    return {
+      error: `Nothing was saved: instruction changes need the owner's approval, so they go in their own update_bot call. Call update_bot again now with only { instructions }, then make a separate update_bot call for ${alongside.join(", ")}.`,
+    };
   // An older checkpoint predates the baseline; this attempt must not guess.
   if (ctx.state.ownInstructionsBaseline === undefined)
     return { error: OWN_INSTRUCTIONS_BASELINE_UNKNOWN_ERROR };

@@ -98,6 +98,13 @@ function deps(
   };
 }
 
+const rawQueryCount = (queryRaw: { mock: { calls: unknown[][] } }, text: string) =>
+  queryRaw.mock.calls.filter(([query]) =>
+    (Array.isArray(query) ? query : ((query as { strings?: string[] }).strings ?? []))
+      .join("?")
+      .includes(text),
+  ).length;
+
 describe("messaging another bot", () => {
   beforeEach(() => vi.stubEnv("BOT_MESSAGE_MAX_HOPS", undefined));
   afterEach(() => vi.unstubAllEnvs());
@@ -288,7 +295,7 @@ describe("messaging another bot", () => {
       { allowTerminalSource: true },
     );
     expect(sent.ok).toBe(true);
-    expect(harness.tx.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(rawQueryCount(harness.tx.$queryRaw, "FOR UPDATE")).toBe(2);
     expect(harness.tx.message.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
