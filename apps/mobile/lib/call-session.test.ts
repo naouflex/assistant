@@ -1331,9 +1331,13 @@ describe("mobile call recognition recovery", () => {
 });
 
 describe("mobile call session on a timer", () => {
-  beforeEach(() => vi.useFakeTimers());
+  beforeEach(() => {
+    vi.useFakeTimers();
+    device.os = "ios";
+  });
   afterEach(() => {
     endCall();
+    device.os = "ios";
     vi.useRealTimers();
   });
 
@@ -1362,6 +1366,34 @@ describe("mobile call session on a timer", () => {
       "actually hang on",
       expect.stringMatching(/^call:/),
     );
+  });
+
+  it("meters voice for barge-in on Android instead of transcribing over the reply", async () => {
+    device.os = "android";
+    const fake = fakes({ onDevice: true });
+    startCall({ botId: "bot-1", botName: "Ada", transcribe: false }, fake.deps);
+    await tick();
+    fake.hear("status please");
+    await tick();
+    fake.replyWith("message-1", "It is green.");
+    await tick();
+
+    fake.interim("it is green");
+    await tick(INTERIM_BARGE_IN_MS * 2);
+    expect(fake.stopSpeaking).not.toHaveBeenCalled();
+
+    fake.talk();
+    await tick();
+    expect(fake.stopSpeaking).toHaveBeenCalled();
+    // On-device turns finish through dictation, not the recorder fallback.
+    fake.hear("actually hang on");
+    await tick();
+    expect(fake.send).toHaveBeenLastCalledWith(
+      "bot-1",
+      "actually hang on",
+      expect.stringMatching(/^call:/),
+    );
+    device.os = "ios";
   });
 
   it("keeps the bot's farewell when the barged-out reply settles late", async () => {

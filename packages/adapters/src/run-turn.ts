@@ -331,7 +331,6 @@ async function pauseForAnswer(ctx: RunContext, event: RuntimeEvent<"ask">) {
     id: action.id,
     label: redactSecrets(action.label, ctx.secrets),
   }));
-  await ctx.computer.checkpoint.flush();
   await persistTurnCheckpoint(ctx, event.executionId);
   await ctx.settleRunningHelpers();
   const paused = await deps.events.pauseRunForInput({

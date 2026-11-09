@@ -29,11 +29,14 @@ import {
   loadComputerScreen,
   probeScreen,
   probeScreenStatus,
+  retainProxiedScreenUrl,
   SCREEN_FRAME_LOAD_TIMEOUT_MS,
+  SCREEN_URL_RENEW_MS,
   sameWuyingScreen,
   screenFrameError,
   screenFrameMessage,
   screenFrameStarted,
+  screenRenewReadAt,
 } from "../../lib/computer-screen";
 import type { Panel } from "../../lib/right-panel-state";
 import type { createSpaceRpc } from "../../lib/rpc";
@@ -270,6 +273,7 @@ export function useComputerState({
     };
   }, [computerOpen]);
   const screenRequest = useRef(0);
+  const screenRenewReadAtRef = useRef(0);
   const computerVisible = useRef(false);
   computerVisible.current = panel === "computer" || computerOpen;
   computerOpenRef.current = computerOpen;
@@ -335,7 +339,9 @@ export function useComputerState({
               (current === liveWuyingUrl.current && sameWuyingScreen(current, screen.url)))
           )
             return current;
-          return screen.url;
+          const next = retainProxiedScreenUrl(current, screen.url);
+          screenRenewReadAtRef.current = screenRenewReadAt(next, Date.now());
+          return next;
         });
         // A screen read replaces only its own error; a failed boot keeps its error and Retry.
         if (screen.error || computerErrorFromScreenRef.current) {
@@ -348,6 +354,24 @@ export function useComputerState({
       fallbackError: t`Could not connect to the computer screen`,
     });
   }
+
+  useEffect(() => {
+    const botId = computerBotIdRef.current ?? activeId;
+    if (
+      (panel !== "computer" && !computerOpen) ||
+      !botId ||
+      computerRef.current?.state !== "running"
+    )
+      return;
+    const renew = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - screenRenewReadAtRef.current < SCREEN_URL_RENEW_MS) return;
+      void refreshComputerScreen(botId);
+    };
+    const renewTimer = window.setInterval(renew, 60_000);
+    renew();
+    return () => window.clearInterval(renewTimer);
+  }, [panel, computerOpen, computer?.state, screenUrl, activeId]);
 
   return {
     computer,

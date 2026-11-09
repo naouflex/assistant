@@ -14,7 +14,6 @@ import {
   isRunTerminalEvent,
   isSecretAskBlock,
   newClientId,
-  PLAYBACK_ECHO_RATIO,
   runThreadSubscription,
   speechFromBlocks,
   spokenDecision,
@@ -24,7 +23,7 @@ import { t } from "@lingui/core/macro";
 import { getGlobalBroadcastChannel } from "better-auth/client";
 import { useSyncExternalStore } from "react";
 import { pickUp } from "./call-pickup.js";
-import { dictation, dictationSupportsInterimBargeIn } from "./dictation.js";
+import { dictation } from "./dictation.js";
 import {
   newLogoAvatarActivitySource,
   openLogoAvatarActivityFeed,
@@ -200,13 +199,9 @@ export function startCall(call: {
       bargedIn = false;
       set({ phase: "speaking", caption: speech.caption ?? "" });
       if (speech.caption?.trim()) spokenMemory.remember(speech.caption);
-      if (dictationSupportsInterimBargeIn(transcribe)) {
-        void openMic();
-      } else {
-        dictation.stop("cancel");
-        micOpen = false;
-        watchVoiceOverReply();
-      }
+      dictation.stop("cancel");
+      micOpen = false;
+      watchVoiceOverReply();
     } else if (speech.status === "idle") {
       stopVoiceWatch();
       if (state.phase !== "listening" && !bargedIn) {
@@ -421,8 +416,6 @@ export function toggleMute(): void {
     return;
   }
   if (state.phase === "listening") void listen();
-  else if (state.phase === "speaking" && dictationSupportsInterimBargeIn(transcribe))
-    void openMic();
   else if (state.phase === "speaking") watchVoiceOverReply();
   else if (state.phase === "thinking") void openMic();
 }
@@ -645,7 +638,7 @@ async function handleTranscript(text: string) {
   }
   dictation.stop("submit");
   // The microphone caught the reply, not the caller: drop it and keep listening.
-  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) {
+  if (spokenMemory.isPlaybackEcho(text)) {
     set({ heard: "" });
     void listen();
     return;
@@ -743,6 +736,10 @@ async function handleTranscript(text: string) {
  */
 function watchInterim(text: string) {
   if (state?.phase !== "speaking") return;
+  if (spokenMemory.isPlaybackEcho(text)) {
+    interim.clear();
+    return;
+  }
   interim.hear(text);
 }
 
@@ -790,10 +787,8 @@ function reactToThread() {
       awaitingReply = approvalRunId !== null;
       set({ exchanges: [...state.exchanges, { role: "bot", text }], heard: "" });
       spokenMemory.remember(text);
-      if (!dictationSupportsInterimBargeIn(transcribe)) {
-        dictation.stop("cancel");
-        micOpen = false;
-      }
+      dictation.stop("cancel");
+      micOpen = false;
       void speaker.speak(
         secretAsk
           ? `${text}. ${t`Hang up first, then enter the code on screen.`}`
@@ -842,10 +837,8 @@ function speakInterimUpdate(sinceTurn: ThreadMessage[], replyRunId: string | nul
   if (update.runId) updatedRunIds.add(update.runId);
   set({ exchanges: [...state.exchanges, { role: "bot", text }], heard: "" });
   spokenMemory.remember(text);
-  if (!dictationSupportsInterimBargeIn(transcribe)) {
-    dictation.stop("cancel");
-    micOpen = false;
-  }
+  dictation.stop("cancel");
+  micOpen = false;
   void speaker.speak(text, { botId: state.botId, messageId: update.id });
 }
 

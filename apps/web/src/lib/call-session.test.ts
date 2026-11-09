@@ -43,8 +43,19 @@ vi.mock("./dictation.js", async (importOriginal) => {
   };
 });
 
+let voiceOverReply: (() => void) | undefined;
 vi.mock("./voice-onset.js", () => ({
-  watchForVoice: vi.fn(async () => true),
+  watchForVoice: vi.fn(async (onVoice: () => void, signal: AbortSignal) => {
+    voiceOverReply = onVoice;
+    signal.addEventListener(
+      "abort",
+      () => {
+        voiceOverReply = undefined;
+      },
+      { once: true },
+    );
+    return true;
+  }),
 }));
 
 vi.mock("./tts.js", () => ({
@@ -127,10 +138,12 @@ describe("call session", () => {
     expect(send).not.toHaveBeenCalled();
 
     // Playback requests the microphone again without resetting its guard first.
+    // Playback keeps the mic shut and meters for a barge-in instead.
     const speech = vi.mocked(speaker.subscribe).mock.calls.at(-1)?.[0];
     speech?.({ status: "speaking", caption: "Are you there?" });
     await Promise.resolve();
-    expect(listen).toHaveBeenCalledTimes(2);
+    expect(listen).toHaveBeenCalledOnce();
+    expect(vi.mocked(watchForVoice)).toHaveBeenCalled();
   });
 
   it("keeps recovered active work when an older call refresh finishes late", async () => {
@@ -734,14 +747,14 @@ describe("call session", () => {
     speech?.({ status: "speaking", caption: "Booked for Friday" });
     await Promise.resolve();
     expect(getSnapshot()?.phase).toBe("speaking");
-    // Dictation runs through playback so the caller can cut in.
-    expect(listen).toHaveBeenCalledTimes(1);
-
+    // Half-duplex: dictation stays off until playback ends or the meter hears a barge-in.
+    expect(listen).not.toHaveBeenCalled();
+    expect(vi.mocked(watchForVoice)).toHaveBeenCalled();
     listen.mockClear();
     speech?.({ status: "idle" });
     await vi.advanceTimersByTimeAsync(ECHO_GUARD_MS);
     expect(getSnapshot()?.phase).toBe("listening");
-    expect(listen).not.toHaveBeenCalled();
+    expect(listen).toHaveBeenCalledTimes(1);
   });
 
   it("waits out the echo guard when the mic was shut through playback", async () => {
@@ -1253,63 +1266,26 @@ describe("call session", () => {
     );
   });
 
-  it("cuts the reply short on an interim heard over it, then sends the finished turn", async () => {
+  it("cuts the reply short when the caller talks over it, then sends that turn", async () => {
     await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
-    const speech = await speakingReply("Booked for Friday");
+    await speakingReply("Booked for Friday");
     send.mockClear();
     vi.mocked(speaker.stop).mockClear();
 
-    interim("what about the deploy");
-    await vi.advanceTimersByTimeAsync(INTERIM_BARGE_IN_MS - 1);
-    expect(speaker.stop).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(1);
+    voiceOverReply?.();
     expect(speaker.stop).toHaveBeenCalled();
     expect(getSnapshot()?.phase).toBe("listening");
-
-    // The cut-off reply never resumes, and the session that is still open finishes the turn.
-    const sessions = listen.mock.calls.length;
-    speech?.({ status: "idle" });
-    await vi.advanceTimersByTimeAsync(ECHO_GUARD_MS);
-    expect(listen).toHaveBeenCalledTimes(sessions);
 
     await heard("what about the deploy");
     expect(send).toHaveBeenCalledWith(expect.objectContaining({ text: "what about the deploy" }));
   });
 
-  it("keeps playing when the interim is the reply leaking into the mic", async () => {
+  it("does not transcribe while the bot is speaking", async () => {
     await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
     await speakingReply("I'm here and hearing you");
     vi.mocked(speaker.stop).mockClear();
 
     interim("I am here and hearing");
-    await vi.advanceTimersByTimeAsync(INTERIM_BARGE_IN_MS * 2);
-
-    expect(speaker.stop).not.toHaveBeenCalled();
-    expect(getSnapshot()?.phase).toBe("speaking");
-  });
-
-  it("keeps playing when an interim phrase is revised back into an echo", async () => {
-    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
-    await speakingReply("I'm here and hearing you");
-    vi.mocked(speaker.stop).mockClear();
-
-    interim("I am");
-    await vi.advanceTimersByTimeAsync(INTERIM_BARGE_IN_MS - 100);
-    interim("I am here and hearing");
-    await vi.advanceTimersByTimeAsync(INTERIM_BARGE_IN_MS * 2);
-
-    expect(speaker.stop).not.toHaveBeenCalled();
-    expect(getSnapshot()?.phase).toBe("speaking");
-  });
-
-  it("does not cut the reply for a single interim word", async () => {
-    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
-    await speakingReply("Booked for Friday");
-    vi.mocked(speaker.stop).mockClear();
-
-    interim("yeah");
-    await vi.advanceTimersByTimeAsync(INTERIM_BARGE_IN_MS * 2);
 
     expect(speaker.stop).not.toHaveBeenCalled();
     expect(getSnapshot()?.phase).toBe("speaking");

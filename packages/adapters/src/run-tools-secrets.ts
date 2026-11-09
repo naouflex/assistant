@@ -299,7 +299,6 @@ export const secretTools: ToolHandlers = {
     if (!(await renewRunLease(deps, runId, ctx.workerId, ctx.fence))) {
       return pauseForSecret(ctx);
     }
-    await ctx.computer.checkpoint.flush();
     await persistTurnCheckpoint(ctx, executionId);
     await ctx.settleRunningHelpers();
     const paused = await deps.events.pauseRunForInput({

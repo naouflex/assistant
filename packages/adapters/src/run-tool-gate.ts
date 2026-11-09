@@ -684,7 +684,6 @@ async function showApprovalCard(ctx: RunContext, call: ToolCall, card: ApprovalC
     // Another worker owns the run now; exit without leaving a local pause card.
     return pauseForApproval(ctx);
   }
-  await ctx.computer.checkpoint.flush();
   await persistTurnCheckpoint(ctx, executionId);
   await ctx.settleRunningHelpers();
   const paused = await deps.events.pauseRunForInput({

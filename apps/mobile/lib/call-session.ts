@@ -14,7 +14,6 @@ import {
   isRetryableError,
   latestSpokenCallReply,
   newClientId,
-  PLAYBACK_ECHO_RATIO,
   recognitionLocaleTag,
   retryDelayMs,
   spokenMemory,
@@ -475,7 +474,7 @@ async function handleTranscript(raw: string): Promise<void> {
     deps.stopSpeaking();
     set({ phase: "thinking", caption: "" });
   }
-  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) {
+  if (spokenMemory.isPlaybackEcho(text)) {
     set({ heard: "" });
     void listen();
     return;
@@ -670,17 +669,18 @@ function speakAndListen(text: string): void {
   spokenMemory.remember(text);
   // Only the on-device path can hear the caller over the reply; the recorder would just
   // record the speaker, so it stays shut until playback ends.
-  if (!onDevice) {
-    turn?.abort();
-    turn = null;
-    micOpen = false;
-  }
+  // Half-duplex while the bot speaks: STT during TTS picks up the reply. iOS on-device
+  // recognition can still barge in with echo filtering; Android meters voice instead.
+  turn?.abort();
+  turn = null;
+  micOpen = false;
   set({ phase: "speaking", heard: "" });
-  if (onDevice) void openMic();
+  if (Platform.OS === "ios" && onDevice) void openMic();
   else
     watchVoice(() => {
       if (superseded() || state?.phase !== "speaking") return;
       bargedIn = true;
+      interim.clear();
       deps.stopSpeaking();
       void listen();
     });

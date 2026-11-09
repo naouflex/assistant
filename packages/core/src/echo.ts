@@ -5,6 +5,9 @@ const MIN_ECHO_WORDS = 3;
 const ECHO_MATCH_RATIO = 0.6;
 /** Default overlap for matching a long heard line against a spoken reply. */
 export const PLAYBACK_ECHO_RATIO = 0.4;
+/** While TTS is playing, the mic often carries leakage; match more loosely than after playback. */
+const PLAYBACK_LEAK_RATIO = 0.25;
+const PLAYBACK_LEAK_MIN_WORDS = 2;
 
 const CONTRACTIONS: Record<string, string> = {
   m: "am",
@@ -65,6 +68,32 @@ export function isEchoOfSpeech(
   return ratio >= threshold;
 }
 
+/**
+ * Looser match for leakage while the speaker is still playing: STT often paraphrases
+ * or returns only the start of the reply the mic picked up.
+ */
+export function isPlaybackLeak(heard: string, spoken: string): boolean {
+  const heardWords = words(heard);
+  const spokenWords = words(spoken);
+  if (!spokenWords.length || !heardWords.length) return false;
+  if (heardWords.length === 1) return false;
+  if (heardWords.length === 2) {
+    return spokenWords.some(
+      (word, i) => word === heardWords[0] && spokenWords[i + 1] === heardWords[1],
+    );
+  }
+  let cursor = 0;
+  let matched = 0;
+  for (const word of heardWords) {
+    const at = spokenWords.indexOf(word, cursor);
+    if (at === -1) continue;
+    matched += 1;
+    cursor = at + 1;
+  }
+  if (matched < PLAYBACK_LEAK_MIN_WORDS) return false;
+  return matched / heardWords.length >= PLAYBACK_LEAK_RATIO;
+}
+
 /** How long a spoken line can still come back through the microphone. */
 const ECHO_MEMORY_MS = 15_000;
 /** More than one call's worth of turns inside the window; older ones are dropped. */
@@ -107,6 +136,17 @@ export class SpokenMemory {
       this.entries.map((entry) => entry.text).join(". "),
       matchThreshold,
     );
+  }
+
+  /** True when the transcript is probably the bot's own voice, not the caller. */
+  isPlaybackEcho(heard: string, now = Date.now()): boolean {
+    if (this.isEcho(heard, PLAYBACK_ECHO_RATIO, now)) return true;
+    this.prune(now);
+    for (const entry of this.entries) {
+      if (isPlaybackLeak(heard, entry.text)) return true;
+    }
+    if (this.entries.length < 2) return false;
+    return isPlaybackLeak(heard, this.entries.map((entry) => entry.text).join(". "));
   }
 
   private prune(now: number): void {

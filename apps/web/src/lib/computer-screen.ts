@@ -123,7 +123,8 @@ export async function bootOrJoinBoot<T extends { state: string }>(options: {
     return await options.boot();
   } catch (error) {
     if (!options.isBusy(error)) throw error;
-    const sleep = options.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+    const sleep =
+      options.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
     const pollMs = options.pollMs ?? JOIN_BOOT_POLL_MS;
     for (let waited = 0; waited < (options.timeoutMs ?? JOIN_BOOT_TIMEOUT_MS); waited += pollMs) {
       await sleep(pollMs);
@@ -142,6 +143,79 @@ export function isProxiedScreenUrl(url: string | null): url is string {
 
 /** How long a framed screen may stay silent before the app treats it as not loaded. */
 export const SCREEN_FRAME_LOAD_TIMEOUT_MS = 15_000;
+
+/** Matches the sealed screen capability lifetime in the API proxy. */
+const SCREEN_CAPABILITY_TTL_MS = 60 * 60_000;
+/**
+ * Re-read the screen URL this long after it was issued so the iframe gets a fresh
+ * capability before the token in its current URL expires.
+ */
+export const SCREEN_URL_RENEW_MS = 50 * 60_000;
+const SCREEN_SOURCE_RENEW_REMAINING_MS =
+  SCREEN_CAPABILITY_TTL_MS - SCREEN_URL_RENEW_MS + 5 * 60_000;
+
+function screenCapabilityExpiresAt(url: string): number | null {
+  try {
+    const match = new URL(url, "http://localhost").pathname.match(
+      /^\/novnc\/session\/(?:view|control)\/(\d+)\./,
+    );
+    if (!match) return null;
+    const expiresAt = Number(match[1]);
+    return Number.isSafeInteger(expiresAt) ? expiresAt : null;
+  } catch {
+    return null;
+  }
+}
+
+/** When to start the renew timer: issue time for sealed URLs, else the read time. */
+export function screenRenewReadAt(url: string | null, readAt: number): number {
+  const expiresAt = url ? screenCapabilityExpiresAt(url) : null;
+  if (expiresAt == null) return readAt;
+  return expiresAt - SCREEN_CAPABILITY_TTL_MS;
+}
+
+/**
+ * Identity of a live screen stream, ignoring rotating capability tokens.
+ * View vs control stays in the key so takeover/release still reload.
+ */
+export function screenStreamKey(url: string): string {
+  try {
+    const parsed = new URL(url, "http://localhost");
+    const match = parsed.pathname.match(/^\/novnc\/session\/(view|control)\/[^/]+(\/.*)?$/);
+    if (match) return `${parsed.origin}/novnc/session/${match[1]}${match[2] ?? ""}`;
+    const viewOnly = parsed.searchParams.get("view_only");
+    const policy = viewOnly == null ? "" : `?view_only=${viewOnly}`;
+    return `${parsed.origin}${parsed.pathname}${policy}`;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Keep the connected screen URL while only the capability token rotated.
+ * Adopt a newer same-stream URL once the held capability is in the renew window.
+ */
+export function retainScreenSource(held: string, next: string, now = Date.now()): string {
+  if (screenStreamKey(held) !== screenStreamKey(next)) return next;
+  const heldExpires = screenCapabilityExpiresAt(held);
+  const nextExpires = screenCapabilityExpiresAt(next);
+  if (
+    heldExpires != null &&
+    nextExpires != null &&
+    nextExpires > heldExpires &&
+    heldExpires - now <= SCREEN_SOURCE_RENEW_REMAINING_MS
+  ) {
+    return next;
+  }
+  return held;
+}
+
+/** Pick the URL an iframe should keep when the API returns a rotated capability. */
+export function retainProxiedScreenUrl(held: string | null, next: string | null): string | null {
+  if (!next) return next;
+  if (!held || !isProxiedScreenUrl(held) || !isProxiedScreenUrl(next)) return next;
+  return retainScreenSource(held, next);
+}
 
 export type ScreenFrameState = "loading" | "connecting" | "connected" | "failed" | "disconnected";
 

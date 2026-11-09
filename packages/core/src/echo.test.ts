@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isEchoOfSpeech, SpokenMemory } from "./echo.js";
+import { isEchoOfSpeech, isPlaybackLeak, SpokenMemory } from "./echo.js";
 
 const SPOKEN = "I'm here and hearing you…";
 
@@ -117,5 +117,15 @@ describe("SpokenMemory", () => {
     expect(memory.isEcho("what should we do next", undefined, 100)).toBe(false);
     memory.clear();
     expect(memory.isEcho("hey I am here and here", undefined, 100)).toBe(false);
+  });
+
+  it("treats paraphrased leakage as playback echo while TTS is still going", () => {
+    const spoken =
+      "I checked your calendar and you are free Friday afternoon so we can book the flight then";
+    const heard = "I checked your calendar and you are free Friday";
+    expect(isPlaybackLeak(heard, spoken)).toBe(true);
+    const memory = new SpokenMemory();
+    memory.remember(spoken, 0);
+    expect(memory.isPlaybackEcho(heard, 100)).toBe(true);
   });
 });

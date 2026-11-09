@@ -8,11 +8,15 @@ import {
   loadComputerScreen,
   probeScreen,
   probeScreenStatus,
+  retainScreenSource,
+  SCREEN_URL_RENEW_MS,
   sameWuyingScreen,
   screenFrameError,
   screenFrameMessage,
   screenFrameStarted,
   screenIframeSandbox,
+  screenRenewReadAt,
+  screenStreamKey,
 } from "./computer-screen";
 
 describe("computer screen requests", () => {
@@ -257,9 +261,7 @@ describe("joining a boot already in progress", () => {
 
   it("reports busy when the other boot never finishes", async () => {
     const status = vi.fn().mockResolvedValue({ state: "booting" });
-    await expect(
-      bootOrJoinBoot({ ...base, status, pollMs: 10, timeoutMs: 30 }),
-    ).rejects.toBe(busy);
+    await expect(bootOrJoinBoot({ ...base, status, pollMs: 10, timeoutMs: 30 })).rejects.toBe(busy);
     expect(status).toHaveBeenCalledTimes(3);
   });
 
@@ -532,6 +534,32 @@ describe("probeScreenStatus", () => {
       "wuying://desktop?auth_code=once",
       expect.objectContaining({ credentials: "omit" }),
     );
+  });
+});
+
+describe("screen capability renewal", () => {
+  const now = 1_710_000_000_000;
+  const view = (token: string, expiresAt = now + 60 * 60_000) =>
+    `https://app.example/novnc/session/view/${expiresAt}.${token}/embed.html?autoconnect=true&resize=scale&view_only=true&path=websockify`;
+
+  it("treats rotating capability tokens as the same running view stream", () => {
+    expect(screenStreamKey(view("aaaToken"))).toBe(screenStreamKey(view("bbbToken")));
+    expect(retainScreenSource(view("aaaToken"), view("bbbToken"), now)).toBe(view("aaaToken"));
+  });
+
+  it("adopts a same-stream URL once the held capability is in the renew window", () => {
+    const held = view("oldToken", now + 10 * 60_000);
+    const renewed = view("newToken", now + 60 * 60_000);
+    expect(retainScreenSource(held, renewed, now)).toBe(renewed);
+  });
+
+  it("renews a reused seal before its original expiry", () => {
+    const issuedAt = now;
+    const readAt = issuedAt + 20 * 60_000;
+    const expiresAt = issuedAt + 60 * 60_000;
+    const reused = view("reused", expiresAt);
+    expect(screenRenewReadAt(reused, readAt)).toBe(issuedAt);
+    expect(screenRenewReadAt(reused, readAt) + SCREEN_URL_RENEW_MS).toBeLessThan(expiresAt);
   });
 });
 

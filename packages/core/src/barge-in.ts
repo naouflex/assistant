@@ -1,6 +1,7 @@
 import { PLAYBACK_ECHO_RATIO, spokenMemory } from "./echo.js";
 
 export { PLAYBACK_ECHO_RATIO };
+
 /** The only one-word turns worth cutting a reply short for. */
 const INTERRUPT_WORDS = new Set(["stop", "wait", "hold on", "pause", "no"]);
 
@@ -12,7 +13,7 @@ export const INTERIM_BARGE_IN_MS = 300;
 
 /** A sentence, or one interruption word, that is not the reply leaking back into the mic. */
 export function isCallBargeIn(text: string): boolean {
-  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) return false;
+  if (spokenMemory.isPlaybackEcho(text)) return false;
   const cleaned = cleanWords(text);
   return cleaned.includes(" ") || INTERRUPT_WORDS.has(cleaned);
 }
@@ -20,7 +21,7 @@ export function isCallBargeIn(text: string): boolean {
 /** An interim is revised word by word, so one stray word never cuts playback. */
 export function isInterimCallBargeIn(text: string): boolean {
   const cleaned = cleanWords(text);
-  if (spokenMemory.isEcho(text, PLAYBACK_ECHO_RATIO)) return false;
+  if (spokenMemory.isPlaybackEcho(text)) return false;
   return cleaned.includes(" ") || INTERRUPT_WORDS.has(cleaned);
 }
 
