@@ -49,6 +49,7 @@ PRD="$(git rev-parse --show-toplevel)/.agents/skills/pr-watch/pr-digest"
    | `failures` | Triage below. |
    | `open-comments` | Answer them below. |
    | `pending` | Checks are still running (you woke early, or one registered late). Back to 1. |
+   | `no-checks` | CI never ran on this commit. Tell the user; do not treat it as green or merge on it. |
    | `out-of-sync` | Push or reconcile, then back to 1. |
 
 3. After any push or reply, go back to 1 once. A verdict is only good for the
@@ -185,4 +186,4 @@ clean or stopped at a limit. If you stopped at a limit, say what was pending.
 ```
 
 Exit codes: `0` green · `10` failures · `11` open comments · `12` pending ·
-`20` out of sync · `1` error. Needs `gh`, `jq`, and `perl`.
+`13` no checks · `20` out of sync · `1` error. Needs `gh`, `jq`, and `perl`.
