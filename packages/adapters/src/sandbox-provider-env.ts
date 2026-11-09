@@ -75,6 +75,7 @@ export function sandboxProviderOptionsFromEnv(
   | "kubernetesHomeClaim"
   | "kubernetesHomeColocateNamespace"
   | "kubernetesHomeColocateLabels"
+  | "kubernetesNodeSelector"
   | "wuyingAccessKeyId"
   | "wuyingAccessKeySecret"
   | "wuyingRegionId"
@@ -128,6 +129,10 @@ export function sandboxProviderOptionsFromEnv(
     kubernetesHomeColocateLabels: stringMap(
       source.KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS,
       "KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS",
+    ),
+    kubernetesNodeSelector: stringMap(
+      source.KUBERNETES_SANDBOX_NODE_SELECTOR,
+      "KUBERNETES_SANDBOX_NODE_SELECTOR",
     ),
     wuyingAccessKeyId: optional(source.WUYING_ACCESS_KEY_ID),
     wuyingAccessKeySecret: optional(source.WUYING_ACCESS_KEY_SECRET),

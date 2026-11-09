@@ -120,6 +120,7 @@ The API and worker talk to the Kubernetes API with their own service account (or
 | `KUBERNETES_SANDBOX_CPU_LIMIT` / `_MEMORY_LIMIT` | unset | Container limits, such as `2` and `4Gi` |
 | `KUBERNETES_SANDBOX_POD_LABELS` / `_POD_ANNOTATIONS` | unset | JSON objects of strings, merged into every pod |
 | `KUBERNETES_SANDBOX_READY_TIMEOUT_MS` | `120000` | How long a new pod has to become ready |
+| `KUBERNETES_SANDBOX_NODE_SELECTOR` | unset | JSON object of node labels (for example `{"atlas.io/computer-node":"true"}`) so computers land on worker nodes only |
 
 Each pod runs the image's own user (uid 1000) with no service account token and no service links,
 with all Linux capabilities dropped, privilege escalation off and the runtime's default seccomp

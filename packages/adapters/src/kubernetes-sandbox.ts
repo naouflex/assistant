@@ -85,6 +85,8 @@ export interface KubernetesSandboxOptions {
   homeClaim?: string;
   homeColocateNamespace?: string;
   homeColocateLabels?: Record<string, string>;
+  /** Schedule computer pods only on nodes that carry these labels (for example Pi workers). */
+  nodeSelector?: Record<string, string>;
 }
 
 export interface KubernetesSandboxSdk {
@@ -106,6 +108,7 @@ export class KubernetesSandboxProvider implements SandboxProvider {
   private readonly homeClaim: string | undefined;
   private readonly homeColocateNamespace: string | undefined;
   private readonly homeColocateLabels: Record<string, string>;
+  private readonly nodeSelector: Record<string, string> | undefined;
   private clientsValue: KubernetesSandboxSdk | undefined;
 
   private readonly desktops = new LinuxDesktop({
@@ -150,6 +153,10 @@ export class KubernetesSandboxProvider implements SandboxProvider {
     this.homeClaim = options.homeClaim?.trim() || undefined;
     this.homeColocateNamespace = options.homeColocateNamespace?.trim() || undefined;
     this.homeColocateLabels = { ...options.homeColocateLabels };
+    this.nodeSelector =
+      options.nodeSelector && Object.keys(options.nodeSelector).length > 0
+        ? { ...options.nodeSelector }
+        : undefined;
     if (
       this.homeClaim &&
       (!this.homeColocateNamespace || Object.keys(this.homeColocateLabels).length === 0)
@@ -623,6 +630,7 @@ export class KubernetesSandboxProvider implements SandboxProvider {
         restartPolicy: "Never",
         terminationGracePeriodSeconds: 10,
         ...(this.homeClaim ? this.homeSpec(botId) : {}),
+        ...(this.nodeSelector ? { nodeSelector: this.nodeSelector } : {}),
         ...(this.runtimeClassName ? { runtimeClassName: this.runtimeClassName } : {}),
         containers: [
           {

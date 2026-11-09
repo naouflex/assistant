@@ -54,3 +54,29 @@ Before handing the boot media over, mount it and check every item. The node cann
 Secrets (Wi-Fi key, join token, VPN key, device tokens) go only onto the media, never into the repo or a handover.
 
 Done when the node shows `Ready` in `kubectl get nodes` and answers SSH.
+
+## Computer scheduling
+
+Label every Pi that should run bot computers (not the control plane unless you mean to):
+
+```bash
+kubectl label node <pi-hostname> atlas.io/computer-node=true --overwrite
+```
+
+Cordon nodes that must not run computers (for example a dev WSL agent):
+
+```bash
+kubectl cordon <node>
+```
+
+On production Atlas, set `KUBERNETES_SANDBOX_NODE_SELECTOR` to a JSON object such as `{"atlas.io/computer-node":"true"}` so new computer pods schedule only on those workers. Stop and restart a running computer (or delete its pod) to pick up the selector.
+
+## WireGuard gateway (prod → pod screens)
+
+Production reaches computer noVNC on pod IPs (`10.42.0.0/16`) through a `wg-atlas` tunnel. Only the **k3s control-plane** node should run that interface: it can forward to pods on every node; a single worker gateway often cannot.
+
+- Install on the control plane: `sudo bash install-wg-gateway.sh` from this skill directory (after `/etc/wireguard/wg-atlas.conf` and `atlas.key` are in place — never commit them).
+- On any former gateway worker: `sudo bash disable-wg-gateway.sh`.
+- PostUp must insert `FORWARD` accept rules **before** kube-router's rules (`iptables -I FORWARD 1` / `2`), or prod TCP to pod IPs times out while in-cluster curls succeed.
+
+If the tunnel dies after reboot, confirm `systemctl is-active wg-quick@wg-atlas` on the control plane and that the home router forwards UDP to that node's WireGuard listen port.

@@ -164,6 +164,16 @@ describe("sandboxProviderOptionsFromEnv", () => {
     expect(sandboxProviderOptionsFromEnv({}).kubernetesNamespace).toBeUndefined();
   });
 
+  it("loads Kubernetes nodeSelector from env", () => {
+    expect(
+      sandboxProviderOptionsFromEnv({
+        KUBERNETES_SANDBOX_NODE_SELECTOR: '{"atlas.io/computer-node":"true"}',
+      }),
+    ).toMatchObject({
+      kubernetesNodeSelector: { "atlas.io/computer-node": "true" },
+    });
+  });
+
   it("loads the Kubernetes home claim and its pod-affinity target", () => {
     expect(
       sandboxProviderOptionsFromEnv({

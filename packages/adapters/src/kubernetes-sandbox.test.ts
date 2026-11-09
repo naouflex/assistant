@@ -174,6 +174,30 @@ describe("KubernetesSandboxProvider", () => {
     expect(script).toContain("computer image is missing required desktop tools");
   });
 
+  it("schedules pods on nodes that match nodeSelector when set", async () => {
+    const readNamespacedPod = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error("missing"), { code: 404 }))
+      .mockResolvedValue(readyPod);
+    const createNamespacedPod = vi.fn().mockResolvedValue(readyPod);
+    const provider = new KubernetesSandboxProvider(
+      { nodeSelector: { "atlas.io/computer-node": "true" } },
+      {
+        core: {
+          readNamespacedPod,
+          createNamespacedPod,
+          deleteNamespacedPod: vi.fn().mockResolvedValue({ status: "Success" }),
+        },
+        exec: { exec: vi.fn() },
+      } as unknown as KubernetesSandboxSdk,
+    );
+
+    await provider.provision({ botId: "bot-a", homePath: "/unused" }, context);
+
+    const request = createNamespacedPod.mock.calls[0]?.[0];
+    expect(request?.body?.spec?.nodeSelector).toEqual({ "atlas.io/computer-node": "true" });
+  });
+
   it("creates a ready pod with required isolation metadata", async () => {
     const readNamespacedPod = vi
       .fn()

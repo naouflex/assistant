@@ -49,6 +49,7 @@ export interface SandboxProviderOptions {
   kubernetesHomeClaim?: string;
   kubernetesHomeColocateNamespace?: string;
   kubernetesHomeColocateLabels?: KubernetesSandboxOptions["homeColocateLabels"];
+  kubernetesNodeSelector?: KubernetesSandboxOptions["nodeSelector"];
   wuyingAccessKeyId?: string;
   wuyingAccessKeySecret?: string;
   wuyingRegionId?: string;
@@ -138,6 +139,7 @@ export async function createSandboxProvider(
         homeClaim: opts.kubernetesHomeClaim,
         homeColocateNamespace: opts.kubernetesHomeColocateNamespace,
         homeColocateLabels: opts.kubernetesHomeColocateLabels,
+        nodeSelector: opts.kubernetesNodeSelector,
       });
     case "wuying": {
       const required = {
