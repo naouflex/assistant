@@ -139,6 +139,8 @@ describe("ElevenLabsVoiceProvider", () => {
     expect(clip.mimeType).toBe("audio/mpeg");
     expect([...clip.bytes]).toEqual([1, 2, 3]);
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/text-to-speech/abc");
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.voice_settings).toMatchObject({ stability: 0.35, style: 0.3 });
   });
 
   it("transcribes through Scribe", async () => {

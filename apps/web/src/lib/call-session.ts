@@ -10,6 +10,7 @@ import {
   isApprovalAskBlock,
   isCallBargeIn,
   isFarewell,
+  isInterimCallUpdate,
   isRunTerminalEvent,
   isSecretAskBlock,
   newClientId,
@@ -99,6 +100,8 @@ let feed: {
 } | null = null;
 /** Every bot message already spoken this call: a streaming message updates many times. */
 const spokenMessageIds = new Set<string>();
+/** Runs that already spoke an update while working this call. */
+const updatedRunIds = new Set<string>();
 let unsubSpeech: (() => void) | null = null;
 let unsubDictation: (() => void) | null = null;
 let hangUpAfterReply = false;
@@ -307,6 +310,7 @@ function dropCall(): void {
   speaker.stop();
   thread = null;
   spokenMessageIds.clear();
+  updatedRunIds.clear();
   spokenMemory.clear();
   if (state) {
     state = null;
@@ -812,9 +816,37 @@ function reactToThread() {
     awaitingReply = false;
     approvalRunId = null;
     awaitedRunId = null;
-    set({ caption: errorText(thread?.run?.id === replyRunId ? thread.run.error : undefined) });
+    // A run whose last word was already spoken as an update has answered; only silence is an error.
+    if (!updatedRunIds.has(replyRunId)) {
+      set({ caption: errorText(thread?.run?.id === replyRunId ? thread.run.error : undefined) });
+    }
     void listen();
+    return;
   }
+  speakInterimUpdate(messages.slice(turnIndex + 1), replyRunId);
+}
+
+/** The bot keeps working: say what it posted on the way, and keep waiting for its reply. */
+function speakInterimUpdate(sinceTurn: ThreadMessage[], replyRunId: string | null) {
+  if (!state || !awaitingReply || speaker.isSpeaking()) return;
+  const update = sinceTurn.findLast(
+    (message) =>
+      isInterimCallUpdate(message) &&
+      !replyFinished(message) &&
+      (!replyRunId || message.runId === replyRunId),
+  );
+  if (!update || spokenMessageIds.has(update.id)) return;
+  const text = speechFromBlocks(update.blocks);
+  if (!text) return;
+  spokenMessageIds.add(update.id);
+  if (update.runId) updatedRunIds.add(update.runId);
+  set({ exchanges: [...state.exchanges, { role: "bot", text }], heard: "" });
+  spokenMemory.remember(text);
+  if (!dictationSupportsInterimBargeIn(transcribe)) {
+    dictation.stop("cancel");
+    micOpen = false;
+  }
+  void speaker.speak(text, { botId: state.botId, messageId: update.id });
 }
 
 /**

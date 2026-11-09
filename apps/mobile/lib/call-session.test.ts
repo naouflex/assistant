@@ -1396,6 +1396,63 @@ describe("mobile call session on a timer", () => {
     expect(getSnapshot()).toBeNull();
   });
 
+  it("speaks an update the bot posts while its run is still working", async () => {
+    const api = await import("./api");
+    vi.mocked(api.rpc).mockResolvedValue({ cursor: 3, messages: [], run: null } as never);
+    let push: (event: { type: string; seq?: number }) => void = () => undefined;
+    vi.mocked(api.subscribeThread).mockImplementation((async (
+      _target: unknown,
+      _cursor: unknown,
+      onEvent: typeof push,
+    ) => {
+      push = onEvent;
+      await new Promise(() => undefined);
+    }) as never);
+    vi.mocked(api.blockText).mockImplementation(
+      ((message: { blocks: Array<{ text?: string }> }) => message.blocks[0]?.text ?? "") as never,
+    );
+    const fake = fakes();
+    const { watch: _watch, ...deps } = fake.deps;
+    const id = startCall({ botId: "bot-1", botName: "Ada" }, deps);
+    await tick();
+    const working = (messages: unknown[]) => ({
+      cursor: 4,
+      run: { id: "run-1", status: "running" },
+      messages,
+    });
+    const turn = {
+      id: "u1",
+      role: "user",
+      callId: id,
+      blocks: [{ kind: "text", text: "book it" }],
+    };
+    const update = {
+      id: "m1",
+      role: "bot",
+      runId: "run-1",
+      callId: id,
+      blocks: [{ kind: "text", text: "Checking the flights now." }],
+    };
+    const live = {
+      ...update,
+      id: "progress:run-1",
+      blocks: [{ kind: "progress", text: "search" }],
+    };
+    vi.mocked(api.applyMobileThreadEvent).mockReturnValue(working([turn, live]) as never);
+    push({ type: "thread.progress", seq: 4 });
+    await tick();
+    expect(fake.spoken).toEqual([]);
+
+    vi.mocked(api.applyMobileThreadEvent).mockReturnValue(working([turn, update, live]) as never);
+    push({ type: "thread.message.created", seq: 5 });
+    await tick();
+    expect(fake.spoken).toEqual(["Checking the flights now."]);
+    vi.mocked(api.rpc).mockReset();
+    vi.mocked(api.subscribeThread).mockReset();
+    vi.mocked(api.applyMobileThreadEvent).mockReset();
+    vi.mocked(api.blockText).mockReset();
+  });
+
   it("retries the first snapshot load instead of losing the feed", async () => {
     const { rpc, subscribeThread } = await import("./api");
     vi.mocked(rpc)
