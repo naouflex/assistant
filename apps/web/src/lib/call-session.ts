@@ -34,6 +34,7 @@ import { recheckSessionOnUnauthorized, rpc } from "./rpc.js";
 import { isThreadSnapshotEvent, reduceThreadSnapshot } from "./thread-events.js";
 import { speaker } from "./tts.js";
 import { errorText } from "./user-error";
+import { watchForVoice } from "./voice-onset.js";
 
 /** `ringing` until the call picks up; the rest describe the conversation. */
 type CallPhase = "ringing" | "listening" | "thinking" | "speaking";
@@ -110,6 +111,8 @@ let guardTimer: ReturnType<typeof setTimeout> | null = null;
 let micOpen = false;
 /** The caller cut the reply off: there is no tail left to wait out before listening. */
 let bargedIn = false;
+/** Meters the microphone for the caller talking over a reply that a recorder cannot hear. */
+let voiceWatch: AbortController | null = null;
 /** A turn is in flight: its reply must be spoken even if the mic reopened meanwhile. */
 let awaitingReply = false;
 /** The run whose approval card the caller was sent to answer on screen. */
@@ -199,10 +202,14 @@ export function startCall(call: {
       } else {
         dictation.stop("cancel");
         micOpen = false;
+        watchVoiceOverReply();
       }
-    } else if (speech.status === "idle" && state.phase !== "listening" && !bargedIn) {
-      set({ caption: "" });
-      guardThenListen();
+    } else if (speech.status === "idle") {
+      stopVoiceWatch();
+      if (state.phase !== "listening" && !bargedIn) {
+        set({ caption: "" });
+        guardThenListen();
+      }
     }
     if (speech.error) set({ caption: speech.error });
   });
@@ -285,6 +292,7 @@ function dropCall(): void {
   if (guardTimer) clearTimeout(guardTimer);
   guardTimer = null;
   interim.clear();
+  stopVoiceWatch();
   micOpen = false;
   bargedIn = false;
   awaitingReply = false;
@@ -403,12 +411,39 @@ export function toggleMute(): void {
   set({ muted });
   if (muted) {
     dictation.stop("cancel");
+    stopVoiceWatch();
     micOpen = false;
     set({ heard: "" });
     return;
   }
   if (state.phase === "listening") void listen();
-  else if (state.phase === "speaking") void openMic();
+  else if (state.phase === "speaking" && dictationSupportsInterimBargeIn(transcribe))
+    void openMic();
+  else if (state.phase === "speaking") watchVoiceOverReply();
+  else if (state.phase === "thinking") void openMic();
+}
+
+/**
+ * A recorder would capture the reply itself, so while it plays only a level meter listens.
+ * Once the caller talks over it, the reply stops and a fresh recording takes their turn.
+ */
+function watchVoiceOverReply() {
+  if (!state || state.muted || voiceWatch) return;
+  const controller = new AbortController();
+  voiceWatch = controller;
+  void watchForVoice(() => {
+    if (voiceWatch !== controller) return;
+    voiceWatch = null;
+    if (state?.phase !== "speaking") return;
+    bargedIn = true;
+    speaker.stop();
+    void listen();
+  }, controller.signal);
+}
+
+function stopVoiceWatch() {
+  voiceWatch?.abort();
+  voiceWatch = null;
 }
 
 export function toggleTranscript(): void {
@@ -689,7 +724,11 @@ async function handleTranscript(text: string) {
     awaitingReply = false;
     set({ caption: errorText(error, t`Could not send that`) });
     void listen();
+    return;
   }
+  if (!state || state.botId !== botId || callId !== turnCallId) return;
+  // The caller can keep talking while the bot works; what they say steers the run.
+  if (state.phase === "thinking" && awaitingReply && !hangUpAfterReply) void openMic();
 }
 
 /**

@@ -158,7 +158,7 @@ function speechRecognitionCtor(): SpeechRecognitionCtor | undefined {
   return host.SpeechRecognition ?? host.webkitSpeechRecognition;
 }
 
-function audioContextCtor(): (new () => AudioContext) | undefined {
+export function audioContextCtor(): (new () => AudioContext) | undefined {
   if (typeof AudioContext === "function") return AudioContext;
   if (typeof window === "undefined") return undefined;
   const host = window as Window & { webkitAudioContext?: typeof AudioContext };

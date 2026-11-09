@@ -21,7 +21,7 @@ import {
 import type { AudioRecorder } from "expo-audio";
 import { File } from "expo-file-system";
 import { useSyncExternalStore } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import type { ApiRequestContext, MobileSnapshot } from "./api";
 import {
   applyMobileThreadEvent,
@@ -79,6 +79,11 @@ export type CallDeps = {
   dictate: (handlers: DictationHandlers, signal: AbortSignal) => Promise<boolean>;
   /** Fallback when the device cannot: record a clip and send it to the voice provider. */
   record: (signal: AbortSignal) => Promise<CallClip | null>;
+  /**
+   * Resolves true once the caller starts talking over playback, through an echo-cancelled
+   * meter that records nothing; false where the device cannot meter without hearing itself.
+   */
+  hearVoice: (signal: AbortSignal) => Promise<boolean>;
   transcribe: (clip: CallClip, signal: AbortSignal) => Promise<string>;
   /** Resolves with the run the message started, so only that run's reply is spoken. */
   send: (botId: string, text: string, clientNonce: string) => Promise<string | undefined>;
@@ -120,6 +125,12 @@ const SPEECH_LEVEL_DB = -35;
 const SILENCE_HANG_MS = 1_200;
 const METER_POLL_MS = 200;
 const MAX_CLIP_MS = 30_000;
+/** Louder than the reply left after echo cancellation; a voice at the phone is well above. */
+const VOICE_OVER_PLAYBACK_DB = -25;
+const VOICE_SUSTAIN_MS = 300;
+const VOICE_POLL_MS = 100;
+/** A bot can work for minutes; the meter gives up rather than hold the microphone forever. */
+const MAX_VOICE_WATCH_MS = 10 * 60_000;
 
 let state: CallState | null = null;
 /** The session the call started in: a sign-out or an account or server change ends the call. */
@@ -157,6 +168,8 @@ let micOpen = false;
 let opening = false;
 /** The caller cut the reply off: the speaker going idle must not reopen the microphone. */
 let bargedIn = false;
+/** Waits for the caller to talk while the recorder must stay shut (playback, the wait sound). */
+let voiceWatch: AbortController | null = null;
 /** Counting down a phrase heard over the reply, before it counts as cutting in. */
 const interim = createInterimBargeIn(() => {
   if (state?.phase !== "speaking") return;
@@ -302,6 +315,7 @@ export function endCall(): void {
   micOpen = false;
   opening = false;
   bargedIn = false;
+  stopVoiceWatch();
   switchBot = undefined;
   switching = false;
   interim.clear();
@@ -320,6 +334,7 @@ export function toggleMute(): void {
     turn = null;
     micOpen = false;
     interim.clear();
+    stopVoiceWatch();
     return;
   }
   consentBlocked = false;
@@ -341,6 +356,27 @@ async function listen(): Promise<void> {
   set({ phase: "listening", heard: "", caption: "" });
   if (state.muted) return;
   await openMic();
+}
+
+/** Runs `then` once the caller starts talking, unless the call moved on first. */
+function watchVoice(then: () => void): void {
+  stopVoiceWatch();
+  if (!state || state.muted) return;
+  const controller = new AbortController();
+  voiceWatch = controller;
+  void deps
+    .hearVoice(controller.signal)
+    .catch(() => false)
+    .then((heard) => {
+      if (voiceWatch !== controller) return;
+      voiceWatch = null;
+      if (heard && !controller.signal.aborted) then();
+    });
+}
+
+function stopVoiceWatch(): void {
+  voiceWatch?.abort();
+  voiceWatch = null;
 }
 
 /** Opens one microphone session, unless one is already running or the call is muted. */
@@ -482,6 +518,7 @@ async function handleTranscript(raw: string): Promise<void> {
     if (state?.botId === botId && callId === turnCallId) {
       callRunId = runId ?? null;
       if (hangUpAfterReply) farewellSent = true;
+      else if (state.phase === "thinking") listenWhileWorking();
     }
   } catch (error) {
     if (state?.botId !== botId || callId !== turnCallId) return;
@@ -505,6 +542,23 @@ async function handleTranscript(raw: string): Promise<void> {
   }
 }
 
+/**
+ * The caller can keep talking while the bot works; what they say steers the run. The
+ * recognizer can listen straight away, but a recorder would capture the wait sound, so it
+ * starts only once the caller is heard, and the wait sound stops for their turn.
+ */
+function listenWhileWorking(): void {
+  if (onDevice) {
+    void openMic();
+    return;
+  }
+  watchVoice(() => {
+    if (state?.phase !== "thinking") return;
+    deps.waitSound("stop");
+    void openMic();
+  });
+}
+
 function failTurn(error: unknown): void {
   if (!(error instanceof ExpectedTurnFailure)) reportMobileError(error, "voice.turn");
   failures += 1;
@@ -523,6 +577,7 @@ function blockForConsent(error: AiConsentBlocked): void {
   turn = null;
   micOpen = false;
   interim.clear();
+  stopVoiceWatch();
   set({
     phase: "listening",
     muted: true,
@@ -621,6 +676,13 @@ function speakAndListen(text: string): void {
   }
   set({ phase: "speaking", heard: "" });
   if (onDevice) void openMic();
+  else
+    watchVoice(() => {
+      if (superseded() || state?.phase !== "speaking") return;
+      bargedIn = true;
+      deps.stopSpeaking();
+      void listen();
+    });
   void deps
     .speak(botId, text)
     .catch((error: unknown) => {
@@ -639,6 +701,7 @@ function speakAndListen(text: string): void {
     })
     .finally(() => {
       if (superseded()) return;
+      stopVoiceWatch();
       if (blockedByConsent) return;
       // The caller cut in: the microphone is already theirs and their turn is on its way.
       if (bargedIn) return;
@@ -678,6 +741,7 @@ function productionDeps(): CallDeps {
   const own: CallDeps = {
     dictate: dictateTurn,
     record: recordClip,
+    hearVoice: hearVoiceOverPlayback,
     transcribe: transcribeClip,
     send: async (botId, text, clientNonce) => {
       try {
@@ -763,6 +827,52 @@ async function recordClip(signal: AbortSignal): Promise<CallClip | null> {
     return { base64, mimeType: "audio/m4a" };
   } finally {
     recorder?.release();
+    if (recordingTurn === signal) {
+      recordingTurn = undefined;
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+    }
+  }
+}
+
+/**
+ * Android's voice-call microphone cancels the phone's own playback, so its level can tell the
+ * caller from the reply. iOS reroutes playback to the earpiece while recording, so it keeps
+ * the reply uninterrupted unless the device recognizer is listening.
+ */
+async function hearVoiceOverPlayback(signal: AbortSignal): Promise<boolean> {
+  if (Platform.OS !== "android") return false;
+  const { AudioModule, RecordingPresets, setAudioModeAsync } = await import("expo-audio");
+  // Never prompt over the reply: the first turn already asked.
+  if (signal.aborted || !(await AudioModule.getRecordingPermissionsAsync()).granted) return false;
+  let recorder: AudioRecorder | undefined;
+  try {
+    recordingTurn = signal;
+    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    const preset = RecordingPresets.LOW_QUALITY;
+    recorder = new AudioModule.AudioRecorder({
+      ...preset,
+      isMeteringEnabled: true,
+      android: { ...preset.android, audioSource: "voice_communication" },
+    });
+    await recorder.prepareToRecordAsync();
+    if (signal.aborted) return false;
+    recorder.record();
+    let loudMs = 0;
+    for (let elapsed = 0; elapsed < MAX_VOICE_WATCH_MS && !signal.aborted; ) {
+      await abortableDelay(VOICE_POLL_MS, signal);
+      elapsed += VOICE_POLL_MS;
+      if (signal.aborted) break;
+      const level = recorder.getStatus().metering ?? -160;
+      loudMs = level > VOICE_OVER_PLAYBACK_DB ? loudMs + VOICE_POLL_MS : 0;
+      if (loudMs >= VOICE_SUSTAIN_MS) return true;
+    }
+    return false;
+  } finally {
+    if (recorder) {
+      await recorder.stop().catch(() => undefined);
+      deleteQuietly(recorder.uri);
+      recorder.release();
+    }
     if (recordingTurn === signal) {
       recordingTurn = undefined;
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });

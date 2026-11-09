@@ -108,6 +108,7 @@ function fakes(opts: { onDevice?: boolean } = {}) {
   const recordings: Array<Deferred<CallClip | null>> = [];
   const signals: AbortSignal[] = [];
   const speeches: Array<Deferred<void>> = [];
+  const voices: Array<Deferred<boolean>> = [];
   const send = vi.fn(
     async (_botId: string, _text: string, _clientNonce: string): Promise<string | undefined> =>
       "run-1",
@@ -143,6 +144,12 @@ function fakes(opts: { onDevice?: boolean } = {}) {
       recordings.push(next);
       return next.promise;
     },
+    hearVoice: (signal) => {
+      const next = deferred<boolean>();
+      voices.push(next);
+      signal.addEventListener("abort", () => next.resolve(false), { once: true });
+      return next.promise;
+    },
     // The fake clip carries the words, so transcription is the identity.
     transcribe: async (clip) => clip.base64,
     send,
@@ -169,6 +176,9 @@ function fakes(opts: { onDevice?: boolean } = {}) {
     recordings,
     signals,
     speeches,
+    /** The caller starts talking where only the meter is listening. */
+    talk: () => voices[voices.length - 1]?.resolve(true),
+    voices,
     spoken,
     send,
     closeCall,
@@ -206,6 +216,55 @@ describe("mobile call session", () => {
       expect.stringMatching(/^call:/),
     );
     expect(getSnapshot()).toMatchObject({ phase: "thinking", heard: "how is the deploy going" });
+  });
+
+  it("records a new turn once the caller talks over a reply the recorder could not hear", async () => {
+    const fake = fakes();
+    startCall({ botId: "bot-1", botName: "Ada" }, fake.deps);
+    await flush();
+    fake.say("how is the deploy going");
+    await flush();
+    fake.replyWith("m1", "It is green and the tests passed.", "run-1");
+    await flush();
+    expect(getSnapshot()?.phase).toBe("speaking");
+    const recordingsBefore = fake.recordings.length;
+
+    fake.talk();
+    await flush();
+
+    expect(fake.stopSpeaking).toHaveBeenCalledOnce();
+    expect(getSnapshot()?.phase).toBe("listening");
+    expect(fake.recordings).toHaveLength(recordingsBefore + 1);
+    fake.say("actually hang on");
+    await flush();
+    expect(fake.send).toHaveBeenLastCalledWith(
+      "bot-1",
+      "actually hang on",
+      expect.stringMatching(/^call:/),
+    );
+  });
+
+  it("hears the caller while the bot works, after stopping the wait sound", async () => {
+    const fake = fakes();
+    startCall({ botId: "bot-1", botName: "Ada" }, fake.deps);
+    await flush();
+    fake.say("deploy the site");
+    await flush();
+    expect(getSnapshot()?.phase).toBe("thinking");
+    const recordingsBefore = fake.recordings.length;
+
+    fake.talk();
+    await flush();
+    expect(fake.waits.at(-1)).toBe("stop");
+    expect(fake.recordings).toHaveLength(recordingsBefore + 1);
+
+    fake.say("use staging first");
+    await flush();
+    expect(fake.send).toHaveBeenLastCalledWith(
+      "bot-1",
+      "use staging first",
+      expect.stringMatching(/^call:/),
+    );
   });
 
   it("reports a failed turn unless the caption already explains it", async () => {
@@ -995,9 +1054,11 @@ describe("mobile call speech locales", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(start).toHaveBeenCalledOnce();
-      expect.soft(start).toHaveBeenCalledWith(
-        expect.objectContaining({ lang, interimResults: true, continuous: true }),
-      );
+      expect
+        .soft(start)
+        .toHaveBeenCalledWith(
+          expect.objectContaining({ lang, interimResults: true, continuous: true }),
+        );
       if (os === "ios") {
         expect.soft(start).toHaveBeenCalledWith(
           expect.objectContaining({
