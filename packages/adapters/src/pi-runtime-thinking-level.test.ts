@@ -54,6 +54,8 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
       );
     }
     async waitForIdle() {}
+    followUp() {}
+    async continue() {}
     abort() {
       fakeAgentState.abortCalls += 1;
     }
@@ -134,6 +136,7 @@ async function runWithModel(
   }>,
   maxImagesPerPrompt?: number,
   limits?: { contextWindow?: number; maxTokens?: number },
+  prompt = "hello",
 ) {
   const runtime = new PiAgentRuntime();
   for await (const _event of runtime.run(
@@ -141,7 +144,7 @@ async function runWithModel(
       botId: "b",
       threadId: "t",
       runId: "r",
-      prompt: "hello",
+      prompt,
       instructions: "",
       history: [],
       tools: builtinAgentTools,
@@ -228,6 +231,9 @@ describe("Pi agent thinking level", () => {
       new AbortController().signal,
       "low",
       resolveModel,
+      undefined,
+      undefined,
+      "Run a subagent helper to check the logs.",
     );
 
     expect(resolveModel).toHaveBeenCalledWith("local", "qwen3.5:4b");

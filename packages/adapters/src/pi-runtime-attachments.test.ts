@@ -23,6 +23,8 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
       promptCalls.images = images;
     }
     async waitForIdle() {}
+    followUp() {}
+    async continue() {}
     abort() {}
   },
 }));

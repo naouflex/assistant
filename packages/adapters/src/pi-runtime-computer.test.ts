@@ -38,6 +38,10 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
 
     async waitForIdle() {}
 
+    followUp() {}
+
+    async continue() {}
+
     abort() {}
   },
 }));

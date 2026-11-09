@@ -238,6 +238,7 @@ export function createRuntimeContextPolicy(
     if (!prior) return;
     const result: Message[] = [];
     let latestMatchedIndex = -1;
+    let inPlace = true;
     let catalogIds: string[] = [];
     let catalogMessage: Message | undefined;
     const indexesByHash = new Map<string, number[]>();
@@ -247,7 +248,7 @@ export function createRuntimeContextPolicy(
       indexes.push(index);
       indexesByHash.set(hash, indexes);
     }
-    for (const entry of prior) {
+    for (const [position, entry] of prior.entries()) {
       if (entry.catalogIds) {
         const rebuilt = navigation(entry.catalogIds);
         if (!rebuilt || messageHash(rebuilt) !== entry.hash) return;
@@ -256,7 +257,18 @@ export function createRuntimeContextPolicy(
         catalogMessage = rebuilt;
       } else {
         const index = indexesByHash.get(entry.hash)?.shift();
+        // The previous run's current message carried volatile context (date, run status) that
+        // history stores without; the matched messages before it are still the cached prefix,
+        // as long as they were matched in place rather than to an earlier repeat.
+        if (
+          index === undefined &&
+          position === prior.length - 1 &&
+          inPlace &&
+          latestMatchedIndex >= 0
+        )
+          break;
         if (index === undefined) return;
+        if (latestMatchedIndex >= 0 && index !== latestMatchedIndex + 1) inPlace = false;
         result.push(ctx.messages[index]!);
         latestMatchedIndex = Math.max(latestMatchedIndex, index);
       }

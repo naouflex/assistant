@@ -53,6 +53,13 @@ function prismaWith(options: {
   };
 }
 
+const rawQueryCount = (queryRaw: { mock: { calls: unknown[][] } }, text: string) =>
+  queryRaw.mock.calls.filter(([query]) =>
+    (Array.isArray(query) ? query : ((query as { strings?: string[] }).strings ?? []))
+      .join("?")
+      .includes(text),
+  ).length;
+
 describe("call_user", () => {
   it("only rings a one-to-one chat with a voice provider, once per cooldown", async () => {
     const input = { userId: "user-1", threadId: "thread-1", groupChat: false };
@@ -356,7 +363,7 @@ describe("requestUserCall security", () => {
     ]);
     expect(results.filter((result) => "ok" in result)).toHaveLength(1);
     expect(tx.message.create).toHaveBeenCalledOnce();
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(rawQueryCount(tx.$queryRaw, "pg_advisory_xact_lock")).toBe(2);
     expect(deps.jobs.enqueue).toHaveBeenCalledOnce();
   });
 

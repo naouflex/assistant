@@ -116,6 +116,8 @@ async function runRoutine(
     run: {
       findUnique: vi.fn(async () => run),
       findUniqueOrThrow: vi.fn(async () => run),
+      // No background helpers wait on this run.
+      findMany: vi.fn(async () => []),
       // No other run of this bot waits for the computer.
       findFirst: vi.fn(async (args?: { where?: { status?: unknown } }) =>
         args?.where?.status === "queued"

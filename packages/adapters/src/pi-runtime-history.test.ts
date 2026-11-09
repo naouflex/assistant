@@ -26,6 +26,8 @@ vi.mock("@earendil-works/pi-agent-core", () => ({
       captured.prompt = input;
     }
     async waitForIdle() {}
+    followUp() {}
+    async continue() {}
     abort() {}
   },
 }));
