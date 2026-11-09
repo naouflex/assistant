@@ -33,6 +33,7 @@ import {
 } from "@atlas/core";
 import type { ThreadEvents } from "@atlas/db";
 import {
+  appliedModelRole,
   availableInSpace,
   effectiveMemoryScope,
   isPartialReplyClientNonce,
@@ -119,6 +120,11 @@ import {
   pinnedModelCredentialError,
   runModelChoice,
 } from "./model-selection.js";
+import {
+  classifyModelTier,
+  HELPER_DELEGATION_INSTRUCTION,
+  routesTrigger,
+} from "./model-tier-router.js";
 import { modelAcceptsImageInput } from "./model-vision.js";
 import { mountWorkNote, ownFilesNote } from "./mounted-files.js";
 import { usesNativeShell } from "./native-shell.js";
@@ -244,12 +250,19 @@ async function verbatimMcpServersForRun(
       verbatimResults: true,
       enabled: true,
       ...availableInSpace(scope),
-      AND: [{ OR: [{ allBots: true }, { assignments: { some: { botId: scope.botId } } }] }],
+      AND: [
+        {
+          OR: [{ allBots: true }, { assignments: { some: { botId: scope.botId } } }],
+        },
+      ],
     },
     select: { id: true, slug: true },
   });
   if (!servers?.length) return undefined;
-  return { ids: servers.map((server) => server.id), slugs: servers.map((server) => server.slug) };
+  return {
+    ids: servers.map((server) => server.id),
+    slugs: servers.map((server) => server.slug),
+  };
 }
 
 export function createRunExecutor(executorDeps: ExecutorDeps) {
@@ -453,7 +466,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         // Acquiring the computer can requeue a busy run. Count that wait as queue
         // time, and only stamp execution once this attempt can use its computer.
         const executionStarted = await deps.prisma.run.updateMany({
-          where: { id: runId, status: "running", leaseOwner: workerId, leaseFence: fence },
+          where: {
+            id: runId,
+            status: "running",
+            leaseOwner: workerId,
+            leaseFence: fence,
+          },
           data: { startedAt: executionStartedAt },
         });
         if (executionStarted.count !== 1) {
@@ -900,7 +918,10 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               }).then(
                 (role) => role.backups,
                 (error: unknown) => {
-                  getLogger().warn("Backup models could not be loaded", { runId, error });
+                  getLogger().warn("Backup models could not be loaded", {
+                    runId,
+                    error,
+                  });
                   return [];
                 },
               ));
@@ -943,44 +964,129 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           }
           return undefined;
         };
+        // A person's turn with a light model chosen is classified by it first, then answered
+        // by the light, main, or heavy model. Bots and pinned runs keep their own model.
+        const roleFor = (role: "light" | "heavy") =>
+          appliedModelRole(deps.prisma, run, role).then(
+            (settings) => settings.primary,
+            () => null,
+          );
+        let helperModel: AgentRunRequest["model"] | undefined;
+        const startOnTier = async () => {
+          if (run.modelPinned || modelChoice.modelProvider || scripted) return undefined;
+          if (!routesTrigger(run.trigger)) return undefined;
+          const light = await roleFor("light");
+          if (!light) return undefined;
+          const startOn = async (choice: ModelRoleChoice) => {
+            try {
+              const tier = await resolveConnectedModelKey(
+                deps,
+                run,
+                choice.provider,
+                choice.modelId,
+                (values) => runSecrets.push(...values),
+                true,
+                choice.credentialId,
+              );
+              return {
+                provider: choice.provider,
+                id: choice.modelId,
+                credential: tier.credential,
+                thinkingLevel: (choice.thinkingLevel ??
+                  null) as AgentRunRequest["model"]["thinkingLevel"],
+                modelFastTier: false as AgentRunRequest["model"]["modelFastTier"],
+                resolved: tier.resolved,
+              };
+            } catch {
+              // Resolver errors can carry credential details, so only the outcome is kept.
+              getLogger().warn("model.route.unavailable", {
+                runId,
+                "model.id": choice.modelId,
+              });
+              return undefined;
+            }
+          };
+          const lightStart = await startOn(light);
+          if (!lightStart) return undefined;
+          helperModel = {
+            provider: lightStart.provider,
+            id: lightStart.id,
+            ...(lightStart.credential ? { connectionId: lightStart.credential.id } : {}),
+            ...resolvedModelRunFields(lightStart.resolved),
+            thinkingLevel: "off",
+          };
+          const tier = await classifyModelTier(deps.runtime, {
+            botId: bot.id,
+            threadId: thread.id,
+            runId,
+            spaceId: run.spaceId,
+            userId: run.userId,
+            text: task.prompt,
+            model: {
+              provider: lightStart.provider,
+              id: lightStart.id,
+              ...(lightStart.credential ? { connectionId: lightStart.credential.id } : {}),
+              ...resolvedModelRunFields(lightStart.resolved),
+            },
+            onUsage: async (event) => {
+              await recordUsage(deps.prisma, event, {
+                spaceId: run.spaceId,
+                botId: bot.id,
+                userId: run.userId,
+                runId,
+                operationId: `route:${runId}`,
+                operationKind: "setup",
+              });
+            },
+          });
+          if (tier === "light") return lightStart;
+          if (tier === "main") return undefined;
+          const heavy = await roleFor("heavy");
+          return heavy ? startOn(heavy) : undefined;
+        };
         let start: Awaited<ReturnType<typeof startOnBackup>>;
-        let primaryFailure = { message: MISSING_MODEL_RUN_ERROR, accountFailure: true };
+        let primaryFailure = {
+          message: MISSING_MODEL_RUN_ERROR,
+          accountFailure: true,
+        };
         let retryPrimary: unknown;
         if (selectedProvider && selectedModelId) {
           if (await modelAccessDenied()) {
             await failRunBeforeModel(MODEL_ACCESS_REQUIRED_RUN_ERROR, true);
             return;
           }
-          try {
-            start = {
-              provider: selectedProvider,
-              id: selectedModelId,
-              credential: selected.credential,
-              thinkingLevel: selected.thinkingLevel,
-              modelFastTier: selected.modelFastTier,
-              resolved: await resolveModelKey(
-                deps,
-                run.userId,
-                run.spaceId,
-                selected.credential,
-                selectedProvider,
-                selectedModelId,
-                (values) => runSecrets.push(...values),
-              ),
-            };
-          } catch (error) {
-            // An incompatible saved model or a dead (already retired) credential is a
-            // configuration error: record it on the run rather than retrying setup.
-            const terminal = isTerminalModelSetupError(error);
-            if (!terminal && !isModelCredentialRejected(error)) throw error;
-            primaryFailure = {
-              message: error instanceof Error ? error.message : "Connect the provider again.",
-              accountFailure:
-                error instanceof HostedModelCreditsRequiredError ||
-                isRetiredModelCredentialError(error),
-            };
-            if (!terminal) retryPrimary = error;
-          }
+          start = await startOnTier();
+          if (!start)
+            try {
+              start = {
+                provider: selectedProvider,
+                id: selectedModelId,
+                credential: selected.credential,
+                thinkingLevel: selected.thinkingLevel,
+                modelFastTier: selected.modelFastTier,
+                resolved: await resolveModelKey(
+                  deps,
+                  run.userId,
+                  run.spaceId,
+                  selected.credential,
+                  selectedProvider,
+                  selectedModelId,
+                  (values) => runSecrets.push(...values),
+                ),
+              };
+            } catch (error) {
+              // An incompatible saved model or a dead (already retired) credential is a
+              // configuration error: record it on the run rather than retrying setup.
+              const terminal = isTerminalModelSetupError(error);
+              if (!terminal && !isModelCredentialRejected(error)) throw error;
+              primaryFailure = {
+                message: error instanceof Error ? error.message : "Connect the provider again.",
+                accountFailure:
+                  error instanceof HostedModelCreditsRequiredError ||
+                  isRetiredModelCredentialError(error),
+              };
+              if (!terminal) retryPrimary = error;
+            }
         } else if (await modelAccessDenied()) {
           await failRunBeforeModel(MISSING_MODEL_RUN_ERROR, true);
           return;
@@ -991,6 +1097,13 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           await failRunBeforeModel(primaryFailure.message, primaryFailure.accountFailure);
           return;
         }
+        // A run that struggles moves to the heavy model once; one already on it has nowhere to go.
+        const escalation =
+          run.modelPinned || modelChoice.modelProvider || scripted ? null : await roleFor("heavy");
+        const escalateTo =
+          escalation && !(escalation.provider === start.provider && escalation.modelId === start.id)
+            ? escalation
+            : null;
         const {
           provider: runModelProvider,
           id: runModelId,
@@ -1004,7 +1117,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         // used; modelPinned is what keeps that record from becoming the next choice.
         if (!run.modelPinned) {
           await deps.prisma.run.updateMany({
-            where: { id: runId, status: "running", leaseOwner: workerId, leaseFence: fence },
+            where: {
+              id: runId,
+              status: "running",
+              leaseOwner: workerId,
+              leaseFence: fence,
+            },
             data: { modelProvider: runModelProvider, modelId: runModelId },
           });
         }
@@ -1131,7 +1249,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         const paymentWallet = deps.paymentWallet;
         const paymentWalletEnabled = paymentWallet
           ? await paymentWalletConnected(
-              { prisma: deps.prisma, secretStore: deps.secretStore, paymentWallet },
+              {
+                prisma: deps.prisma,
+                secretStore: deps.secretStore,
+                paymentWallet,
+              },
               run.userId,
             )
           : false;
@@ -1156,7 +1278,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           (run.trigger === "user" || run.trigger === "follow_up") && run.sourceMessageId
             ? await deps.prisma.message.findUnique({
                 where: { id: run.sourceMessageId },
-                select: { clientNonce: true, role: true, blocks: true, threadId: true },
+                select: {
+                  clientNonce: true,
+                  role: true,
+                  blocks: true,
+                  threadId: true,
+                },
               })
             : null;
         // Calls carry no schema flag: the sending client encodes them in the clientNonce.
@@ -1183,7 +1310,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           directUserComputerOwnerId ??
           (await peerChainUserComputerOwner(
             deps.prisma as unknown as Parameters<typeof peerChainUserComputerOwner>[0],
-            { trigger: run.trigger, sourceMessageId: run.sourceMessageId, userId: run.userId },
+            {
+              trigger: run.trigger,
+              sourceMessageId: run.sourceMessageId,
+              userId: run.userId,
+            },
             bot.userId,
           ).catch(() => undefined));
         let userComputer: UserComputerState;
@@ -1356,7 +1487,10 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             pendingTurnCheckpoints: new Map(),
             storedTurnCheckpoint,
           },
-          screen: { lastFrameId: undefined, unchangedVisualStreak: { count: 0 } },
+          screen: {
+            lastFrameId: undefined,
+            unchangedVisualStreak: { count: 0 },
+          },
           toolCallStreak: { key: undefined, count: 0 },
           overLimitActionCalls: 0,
           toolResults: new Map(),
@@ -1494,7 +1628,9 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           : buildApprovalContinuation(
               approvedEffects,
               (request) => redactSecrets(JSON.stringify(request), runSecrets),
-              { exposedToolNames: new Set(partitionTools(tools).listed.map((tool) => tool.name)) },
+              {
+                exposedToolNames: new Set(partitionTools(tools).listed.map((tool) => tool.name)),
+              },
             );
         const replyContext = await loadReplyContext(deps.prisma, thread.id, run.sourceMessageId);
         let userTimeZone: string | null | undefined;
@@ -1705,7 +1841,10 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           fallbackModels.map((candidate) => fallbackKey(candidate.provider, candidate.modelId)),
         );
         // Provider kind and model id only: custom endpoints are identified by kind, never host.
-        const activeModel = { "model.provider": runModelProvider, "model.id": runModelId };
+        const activeModel = {
+          "model.provider": runModelProvider,
+          "model.id": runModelId,
+        };
         // Shutdown must not finalize the attempt. The finally block queues the run
         // when this worker still owns it.
         const interruptedByShutdown = async () => {
@@ -1789,6 +1928,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 userComputerPlatform,
                 ownShellPlatform: hostEnvironment?.platform,
               })
+                .concat(
+                  helperModel && tools.some((tool) => tool.name === "run_subagent")
+                    ? HELPER_DELEGATION_INSTRUCTION
+                    : undefined,
+                )
                 .filter((instruction): instruction is string => Boolean(instruction))
                 .join("\n\n"),
               history: runtimeHistory,
@@ -1847,8 +1991,24 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                     );
                   }
                 : undefined,
+              ...(escalateTo
+                ? {
+                    resolveEscalationModel: () =>
+                      resolveConnectedModel(
+                        { userId: run.userId, spaceId: run.spaceId },
+                        escalateTo.provider,
+                        escalateTo.modelId,
+                        (values) => runSecrets.push(...values),
+                        true,
+                        escalateTo.thinkingLevel ?? null,
+                        escalateTo.credentialId,
+                      ),
+                  }
+                : {}),
               onModelChange: async (provider, modelId) => {
-                if (!fallbackModelIds.has(fallbackKey(provider, modelId))) {
+                const escalating =
+                  escalateTo?.provider === provider && escalateTo.modelId === modelId;
+                if (!escalating && !fallbackModelIds.has(fallbackKey(provider, modelId))) {
                   throw new Error("Backup model is not selected");
                 }
                 const updated = await deps.prisma.run.updateMany({
@@ -1872,7 +2032,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 effects.pendingTurnCheckpoints.set(executionId, capture);
               },
               resumeToolResult: {
-                content: [{ type: "text", text: takeoverResume?.promptNote ?? taskPrompt }],
+                content: [
+                  {
+                    type: "text",
+                    text: takeoverResume?.promptNote ?? taskPrompt,
+                  },
+                ],
               },
               script,
               allowSilentEmpty: allowSilentEmptyRun,
@@ -1882,6 +2047,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 ? undefined
                 : (name, args, executionId, route, observer) =>
                     applyTool(ctx, name, args, executionId, route, observer),
+              ...(helperModel ? { helperModel } : {}),
               resolveModel: scripted
                 ? undefined
                 : (provider, modelId) =>
@@ -2010,7 +2176,9 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             });
             return;
           }
-          throw new Error("Run setup failed; retrying", { cause: reportedSetupError });
+          throw new Error("Run setup failed; retrying", {
+            cause: reportedSetupError,
+          });
         }
       } finally {
         getLogger().info("run.computer", {
@@ -2029,7 +2197,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         // paused or requeued run keeps its sessions for its next attempt. A
         // successful finalisation already ended the state, and the terminal row
         // this reads then only repeats that.
-        if (await runEndedForThisWorker(deps.prisma, { runId, leaseOwner: workerId })) {
+        if (
+          await runEndedForThisWorker(deps.prisma, {
+            runId,
+            leaseOwner: workerId,
+          })
+        ) {
           endRunConnectorState(runId);
         }
         if (!lease.retainComputer) {

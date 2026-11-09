@@ -23,6 +23,8 @@ export const ES_MESSAGES: Record<string, string> = {
   "Add a model in Settings to use this.": "Agrega un modelo en Configuración para usarlo.",
   "Approval model": "Modelo de aprobación",
   "Main model": "Modelo principal",
+  "Light model": "Modelo ligero",
+  "Heavy model": "Modelo potente",
   "Add fallback": "Agregar modelo de respaldo",
   "Manage {provider}": "Gestionar {provider}",
   "Add provider": "Agregar proveedor",

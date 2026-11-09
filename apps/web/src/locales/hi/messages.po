@@ -1229,6 +1229,7 @@ msgstr "बॉट"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Bot"
 msgstr "बॉट"
 
@@ -2806,10 +2807,6 @@ msgid "Design"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-#~ msgid "Desktop app"
-#~ msgstr ""
-
-#: src/components/DesktopUpdates.tsx
 msgid "Desktop update"
 msgstr ""
 
@@ -2893,6 +2890,7 @@ msgstr "डिस्कनेक्ट हो रहा है…"
 #: src/components/ComputerUpdateProgress.tsx
 #: src/components/PasskeyOffer.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Dismiss"
 msgstr "खारिज करें"
@@ -2972,10 +2970,6 @@ msgstr "CSV डाउनलोड करें"
 #: src/components/SidebarFooter.tsx
 msgid "Download the Android APK"
 msgstr ""
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Downloading…"
-#~ msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Draft skill"
@@ -3459,6 +3453,10 @@ msgstr "हेडर"
 msgid "Hear a sample"
 msgstr "एक नमूना सुनें"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Heavy model"
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Hi, this is how I'll sound when I read replies out loud."
 msgstr "नमस्ते, उत्तर पढ़कर सुनाते समय मेरी आवाज़ ऐसी होगी।"
@@ -3796,6 +3794,10 @@ msgstr "बॉट्स को MEMORY.md के साथ-साथ अर्थ
 msgid "Light"
 msgstr "लाइट"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Light model"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Linear issue"
 msgstr ""
@@ -4121,6 +4123,7 @@ msgstr "संदेश"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Message"
 msgstr "संदेश"
 
@@ -4678,6 +4681,10 @@ msgstr ""
 
 #: src/pages/shell/agent-import.tsx
 msgid "Not used by Atlas"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Not useful"
 msgstr ""
 
 #: src/components/McpServerHealthLine.tsx
@@ -5315,7 +5322,6 @@ msgstr ""
 msgid "Registration is closed"
 msgstr "पंजीकरण बंद है"
 
-#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5612,6 +5618,10 @@ msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "Rotate key"
+msgstr ""
+
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Route by task"
 msgstr ""
 
 #: src/lib/identity-display.ts
@@ -6608,6 +6618,10 @@ msgid "This month"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
+msgid "This note changed after the update. Edit it directly instead."
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 msgid "This note changed."
 msgstr ""
 
@@ -6817,6 +6831,7 @@ msgid "Unassigned"
 msgstr "असाइन नहीं किया गया"
 
 #: src/components/AskCard.tsx
+#: src/pages/KnowledgeSection.tsx
 msgid "Undo"
 msgstr "पूर्ववत करें"
 
@@ -6840,10 +6855,6 @@ msgstr "पिन हटाएं"
 #: src/pages/shell/use-composer-actions.ts
 msgid "Unsupported file type: {0}"
 msgstr "असमर्थित फ़ाइल प्रकार: {0}"
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Up to date"
-#~ msgstr ""
 
 #: src/components/ModelCredits.tsx
 msgid "Update"
@@ -6877,9 +6888,9 @@ msgstr ""
 msgid "Updated {updated}"
 msgstr ""
 
-#: src/pages/settings-nav.ts
-#~ msgid "Updates"
-#~ msgstr "अपडेट"
+#: src/pages/KnowledgeSection.tsx
+msgid "Updated on its own"
+msgstr ""
 
 #. placeholder {0}: update.name
 #: src/components/ComputerUpdateProgress.tsx

@@ -379,23 +379,11 @@ export function fallbackAwareModelStream(
           skip("No credential is available for the backup model.");
           continue;
         }
-        const resolved = resolveRuntimeModel(config);
-        if (
-          !resolved.model ||
-          resolved.model.provider !== config.provider ||
-          resolved.model.id !== config.id
-        ) {
+        const candidate = runtimeTargetFor(config);
+        if (!candidate) {
           skip("The backup model is unavailable.");
           continue;
         }
-        const candidate: RuntimeModelTarget = {
-          config,
-          models: resolved.models,
-          model: modelForCompletion(resolved.model, config.maxTokens),
-          cardMaxTokens: cardOutputCeiling(resolved.model),
-          apiKey: resolved.apiKey,
-          credentials: resolved.credentials,
-        };
         const incompatibility = fallbackIncompatibility(
           candidate,
           requestContext(true),
@@ -833,4 +821,23 @@ export function fallbackAwareModelStream(
   };
   void run().catch((error: unknown) => finishWithThrownError(state.getActive(), error));
   return output;
+}
+
+/** The runnable target for a resolved model, or undefined when the runtime does not know it. */
+export function runtimeTargetFor(config: AgentRunRequest["model"]): RuntimeModelTarget | undefined {
+  const resolved = resolveRuntimeModel(config);
+  if (
+    !resolved.model ||
+    resolved.model.provider !== config.provider ||
+    resolved.model.id !== config.id
+  )
+    return undefined;
+  return {
+    config,
+    models: resolved.models,
+    model: modelForCompletion(resolved.model, config.maxTokens),
+    cardMaxTokens: cardOutputCeiling(resolved.model),
+    apiKey: resolved.apiKey,
+    credentials: resolved.credentials,
+  };
 }

@@ -1229,6 +1229,7 @@ msgstr "Bot"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Bot"
 msgstr "Bot"
 
@@ -2806,10 +2807,6 @@ msgid "Design"
 msgstr "Design"
 
 #: src/components/DesktopUpdates.tsx
-#~ msgid "Desktop app"
-#~ msgstr "Desktop app"
-
-#: src/components/DesktopUpdates.tsx
 msgid "Desktop update"
 msgstr "Desktop update"
 
@@ -2893,6 +2890,7 @@ msgstr "Disconnecting…"
 #: src/components/ComputerUpdateProgress.tsx
 #: src/components/PasskeyOffer.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Dismiss"
 msgstr "Dismiss"
@@ -2972,10 +2970,6 @@ msgstr "Download CSV"
 #: src/components/SidebarFooter.tsx
 msgid "Download the Android APK"
 msgstr "Download the Android APK"
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Downloading…"
-#~ msgstr "Downloading…"
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Draft skill"
@@ -3459,6 +3453,10 @@ msgstr "Headers"
 msgid "Hear a sample"
 msgstr "Hear a sample"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Heavy model"
+msgstr "Heavy model"
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Hi, this is how I'll sound when I read replies out loud."
 msgstr "Hi, this is how I'll sound when I read replies out loud."
@@ -3796,6 +3794,10 @@ msgstr "Lets bots save and recall facts by meaning, alongside MEMORY.md."
 msgid "Light"
 msgstr "Light"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Light model"
+msgstr "Light model"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Linear issue"
 msgstr "Linear issue"
@@ -4121,6 +4123,7 @@ msgstr "Message"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Message"
 msgstr "Message"
 
@@ -4679,6 +4682,10 @@ msgstr "Not supported in Atlas"
 #: src/pages/shell/agent-import.tsx
 msgid "Not used by Atlas"
 msgstr "Not used by Atlas"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Not useful"
+msgstr "Not useful"
 
 #: src/components/McpServerHealthLine.tsx
 msgid "Not working"
@@ -5315,7 +5322,6 @@ msgstr "Refreshing…"
 msgid "Registration is closed"
 msgstr "Registration is closed"
 
-#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr "Reject"
@@ -5613,6 +5619,10 @@ msgstr "Room guidance"
 #: src/pages/RoutineEditor.tsx
 msgid "Rotate key"
 msgstr "Rotate key"
+
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Route by task"
+msgstr "Route by task"
 
 #: src/lib/identity-display.ts
 #: src/pages/RoutineEditor.tsx
@@ -6608,6 +6618,10 @@ msgid "This month"
 msgstr "This month"
 
 #: src/pages/KnowledgeSection.tsx
+msgid "This note changed after the update. Edit it directly instead."
+msgstr "This note changed after the update. Edit it directly instead."
+
+#: src/pages/KnowledgeSection.tsx
 msgid "This note changed."
 msgstr "This note changed."
 
@@ -6817,6 +6831,7 @@ msgid "Unassigned"
 msgstr "Unassigned"
 
 #: src/components/AskCard.tsx
+#: src/pages/KnowledgeSection.tsx
 msgid "Undo"
 msgstr "Undo"
 
@@ -6840,10 +6855,6 @@ msgstr "Unpin"
 #: src/pages/shell/use-composer-actions.ts
 msgid "Unsupported file type: {0}"
 msgstr "Unsupported file type: {0}"
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Up to date"
-#~ msgstr "Up to date"
 
 #: src/components/ModelCredits.tsx
 msgid "Update"
@@ -6877,9 +6888,9 @@ msgstr "Update progress"
 msgid "Updated {updated}"
 msgstr "Updated {updated}"
 
-#: src/pages/settings-nav.ts
-#~ msgid "Updates"
-#~ msgstr "Updates"
+#: src/pages/KnowledgeSection.tsx
+msgid "Updated on its own"
+msgstr "Updated on its own"
 
 #. placeholder {0}: update.name
 #: src/components/ComputerUpdateProgress.tsx

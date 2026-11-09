@@ -577,6 +577,10 @@ export interface AgentRunRequest {
   onModelChange?: (provider: string, modelId: string) => Promise<void>;
   /** Resolve an explicitly requested helper model within the active user and space scope. */
   resolveModel?: (provider: string, modelId: string) => Promise<AgentRunModel>;
+  /** The member's heavy model, resolved only if the run struggles and moves to it once. */
+  resolveEscalationModel?: () => Promise<AgentRunModel>;
+  /** The member's light model, which helpers use when no model is requested. */
+  helperModel?: AgentRunModel;
   resumeFromCheckpoint?: string;
   /** Opaque runtime transcript, persisted only on the server. */
   turnCheckpoint?: string;
