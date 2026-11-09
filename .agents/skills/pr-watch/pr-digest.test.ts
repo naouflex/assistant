@@ -295,6 +295,11 @@ describe("pr-digest", () => {
     expect(result.calls).toBe("POST\n");
   });
 
+  it("does not call a PR with no checks green", () => {
+    expect(runDigest({ checks: [[]] }).status).toBe(13);
+    expect(runDigest({}).status).toBe(0);
+  });
+
   describe("--watch", () => {
     const running = { name: "e2e", status: "in_progress", conclusion: null, html_url: "" };
     const failed = { ...running, status: "completed", conclusion: "failure" };

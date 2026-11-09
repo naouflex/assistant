@@ -1,0 +1,21 @@
+#!/bin/bash
+# Reset Wi-Fi after 3 failed minutes, reboot after 8 (never in the first 15 min of uptime).
+state=/run/pi-netwatch.fails
+gw=$(ip -4 route show default | awk '{print $3; exit}')
+if { [ -n "$gw" ] && ping -c1 -W3 "$gw" >/dev/null 2>&1; } || ping -c1 -W3 1.1.1.1 >/dev/null 2>&1; then
+  echo 0 > "$state"
+  exit 0
+fi
+n=$(( $(cat "$state" 2>/dev/null || echo 0) + 1 ))
+echo "$n" > "$state"
+logger -t pi-netwatch "network unreachable for $n check(s)"
+if [ "$n" -eq 3 ] || [ "$n" -eq 6 ]; then
+  logger -t pi-netwatch "resetting Wi-Fi driver"
+  modprobe -r brcmfmac_wcc brcmfmac 2>/dev/null; sleep 3; modprobe brcmfmac
+  sleep 5; systemctl restart netplan-wpa-wlan0 2>/dev/null; systemctl restart systemd-networkd
+  iw dev wlan0 set power_save off 2>/dev/null
+fi
+if [ "$n" -ge 8 ] && [ "$(cut -d. -f1 /proc/uptime)" -ge 900 ]; then
+  logger -t pi-netwatch "rebooting: network down for $n minutes"
+  systemctl reboot
+fi

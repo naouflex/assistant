@@ -9,7 +9,7 @@
 #   pr-digest --reply ID BODY reply to a review comment thread
 #
 # Exit: 0 green · 10 check failures · 11 open comments · 12 still pending
-#       20 local/remote out of sync · 1 error
+#       13 no checks ran · 20 local/remote out of sync · 1 error
 set -uo pipefail
 
 POLL=${PR_DIGEST_POLL:-30}
@@ -312,6 +312,10 @@ digest() {
     echo "VERDICT open-comments"; return 11
   fi
   if [ "$pending" -gt 0 ]; then echo "VERDICT pending ($pending)"; return 12; fi
+  # Nothing ran is not the same as everything passed.
+  if [ "$(jq length <<<"$runs")" = "0" ] && [ "$(jq length <<<"$statuses")" = "0" ]; then
+    echo "VERDICT no-checks"; return 13
+  fi
   echo "VERDICT green"
   return 0
 }
