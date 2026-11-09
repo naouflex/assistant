@@ -685,6 +685,43 @@ describe("automatic outcome return", () => {
     });
   });
 
+  it("does not repeat a final reply the sender's chat already shows", async () => {
+    const harness = deps({
+      hopBlocks: [
+        {
+          kind: "bot_message_received",
+          fromBotId: "bot-target",
+          fromBotName: "Coordinator",
+          text: "research this",
+          hop: 1,
+          intent: "request",
+          returnToMessageId: "message-request",
+        },
+      ],
+    });
+    vi.mocked(harness.deps.prisma.message.findMany).mockResolvedValue([
+      { id: "message-final", role: "bot", blocks: [{ kind: "text", text: "The answer is 42.\n" }] },
+    ] as never);
+    const returned = await returnBotMessageOutcome(
+      harness.deps,
+      { ...run, sourceMessageId: "message-source" },
+      sender,
+      "The answer is 42.",
+    );
+    expect(returned).toBe(true);
+    expect(harness.tx.message.create).toHaveBeenCalledOnce();
+    expect(harness.tx.message.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          threadId: "thread-target",
+          blocks: [expect.objectContaining({ returnToMessageId: "message-final" })],
+        }),
+      }),
+    );
+    expect(harness.notify).toHaveBeenCalledOnce();
+    expect(harness.enqueue).toHaveBeenCalledOnce();
+  });
+
   it("still returns a final result after an interim status update", async () => {
     const harness = deps({
       hopBlocks: [

@@ -81,7 +81,12 @@ export async function messageBot(
     intent?: BotMessageIntent;
     deliveryKey?: string;
   },
-  options?: { allowTerminalSource?: boolean; forceUnread?: boolean },
+  options?: {
+    allowTerminalSource?: boolean;
+    forceUnread?: boolean;
+    /** A message in the sender's chat that already shows this text; no receipt is posted. */
+    shownInMessageId?: string;
+  },
 ) {
   const message = String(input.message ?? "").trim();
   if (!message) return { ok: false as const, error: "message is required" };
@@ -152,7 +157,7 @@ export async function messageBot(
         ok: true;
         runId: string;
         targetEventSeq: number;
-        senderEventSeq: number;
+        senderEventSeq: number | undefined;
       }
     | {
         ok: false;
@@ -210,16 +215,18 @@ export async function messageBot(
 
         // Echo into the sender's chat in the same transaction so a failed notify
         // cannot leave one side delivered and the other blank.
-        const outbound = await createThreadMessageInTransaction(tx, {
-          threadId: run.threadId,
-          role: "bot",
-          blocks: [outboundBlock],
-          botId: run.botId,
-          runId: run.id,
-          markUnread: options?.forceUnread === true,
-          allowCancelledRun: options?.allowTerminalSource === true,
-          lease: runLeaseFor(deps, run.id),
-        });
+        const outbound = options?.shownInMessageId
+          ? { id: options.shownInMessageId }
+          : await createThreadMessageInTransaction(tx, {
+              threadId: run.threadId,
+              role: "bot",
+              blocks: [outboundBlock],
+              botId: run.botId,
+              runId: run.id,
+              markUnread: options?.forceUnread === true,
+              allowCancelledRun: options?.allowTerminalSource === true,
+              lease: runLeaseFor(deps, run.id),
+            });
         const inboundBlock: MessageBlock = {
           kind: "bot_message_received",
           fromBotId: sender.id,
@@ -272,21 +279,23 @@ export async function messageBot(
           runId: nextRun.id,
           payload: { messageId: inbound.id, role: "user", blocks: [inboundBlock] },
         });
-        const outboundEvent = await appendEventInTransaction(tx, {
-          spaceId: run.spaceId,
-          threadId: run.threadId,
-          botId: run.botId,
-          type: "thread.message.created",
-          runId: run.id,
-          allowCancelledRun: options?.allowTerminalSource === true,
-          lease: runLeaseFor(deps, run.id),
-          payload: { messageId: outbound.id, role: "bot", blocks: [outboundBlock] },
-        });
+        const outboundEvent = options?.shownInMessageId
+          ? undefined
+          : await appendEventInTransaction(tx, {
+              spaceId: run.spaceId,
+              threadId: run.threadId,
+              botId: run.botId,
+              type: "thread.message.created",
+              runId: run.id,
+              allowCancelledRun: options?.allowTerminalSource === true,
+              lease: runLeaseFor(deps, run.id),
+              payload: { messageId: outbound.id, role: "bot", blocks: [outboundBlock] },
+            });
         return {
           ok: true as const,
           runId: nextRun.id,
           targetEventSeq: inboundEvent.seq,
-          senderEventSeq: outboundEvent.seq,
+          senderEventSeq: outboundEvent?.seq,
         };
       }),
     );
@@ -308,9 +317,11 @@ export async function messageBot(
   await deps.events.notify(targetThreadId, committed.targetEventSeq).catch((error) => {
     getLogger().error("bot message realtime notification", error);
   });
-  await deps.events.notify(run.threadId, committed.senderEventSeq).catch((error) => {
-    getLogger().error("bot message sender echo notification", error);
-  });
+  if (committed.senderEventSeq !== undefined) {
+    await deps.events.notify(run.threadId, committed.senderEventSeq).catch((error) => {
+      getLogger().error("bot message sender echo notification", error);
+    });
+  }
   await deps.jobs.enqueue(runContinueJob(committed.runId)).catch((error) => {
     // The queued run is durable; the job reconciler repairs a missed wake.
     getLogger().error("bot message enqueue", error);
@@ -353,7 +364,8 @@ export async function returnBotMessageOutcome(
   }
   const sent = await deps.prisma.message.findMany({
     where: { threadId: run.threadId, runId: run.id },
-    select: { blocks: true },
+    orderBy: { seq: "asc" },
+    select: { id: true, role: true, blocks: true },
   });
   // Only an explicit result counts as a terminal outcome. Interim message_bot
   // status updates must not suppress the automatic final return.
@@ -379,6 +391,14 @@ export async function returnBotMessageOutcome(
     await markBotOutcomeReturned(deps.prisma, run.id);
     return true;
   }
+  // The final reply is usually already in this chat; a receipt would repeat it word for word.
+  const shownIn = sent.findLast(
+    (message) =>
+      message.role === "bot" &&
+      (Array.isArray(message.blocks) ? (message.blocks as MessageBlock[]) : []).some(
+        (block) => block.kind === "text" && block.text.trim() === text.trim(),
+      ),
+  );
   const outcome = await messageBot(
     deps,
     run,
@@ -393,6 +413,7 @@ export async function returnBotMessageOutcome(
     {
       allowTerminalSource: true,
       forceUnread: options?.forceUnread,
+      shownInMessageId: shownIn?.id,
     },
   );
   if (outcome.ok) await markBotOutcomeReturned(deps.prisma, run.id);
