@@ -23,6 +23,8 @@ export const NL_MESSAGES: Record<string, string> = {
   "Add a model in Settings to use this.": "Voeg een model toe in Instellingen om dit te gebruiken.",
   "Approval model": "Goedkeuringsmodel",
   "Main model": "Hoofdmodel",
+  "Light model": "Licht model",
+  "Heavy model": "Zwaar model",
   "Add fallback": "Back-upmodel toevoegen",
   "Manage {provider}": "{provider} beheren",
   "Add provider": "Aanbieder toevoegen",

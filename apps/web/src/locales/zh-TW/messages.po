@@ -1230,6 +1230,7 @@ msgstr "機器人"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Bot"
 msgstr "機器人"
 
@@ -2807,10 +2808,6 @@ msgid "Design"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-#~ msgid "Desktop app"
-#~ msgstr "桌面應用程式"
-
-#: src/components/DesktopUpdates.tsx
 msgid "Desktop update"
 msgstr "桌面版更新"
 
@@ -2894,6 +2891,7 @@ msgstr "正在中斷…"
 #: src/components/ComputerUpdateProgress.tsx
 #: src/components/PasskeyOffer.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Dismiss"
 msgstr "忽略"
@@ -2973,10 +2971,6 @@ msgstr "下載 CSV"
 #: src/components/SidebarFooter.tsx
 msgid "Download the Android APK"
 msgstr ""
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Downloading…"
-#~ msgstr "下載中…"
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Draft skill"
@@ -3460,6 +3454,10 @@ msgstr "標頭"
 msgid "Hear a sample"
 msgstr "試聽"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Heavy model"
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Hi, this is how I'll sound when I read replies out loud."
 msgstr "你好，這是我朗讀回覆時的聲音。"
@@ -3797,6 +3795,10 @@ msgstr "讓機器人在 MEMORY.md 之外，依語意儲存和回想事實。"
 msgid "Light"
 msgstr "淺色"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Light model"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Linear issue"
 msgstr "Linear 工單"
@@ -4122,6 +4124,7 @@ msgstr "訊息"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Message"
 msgstr "訊息"
 
@@ -4679,6 +4682,10 @@ msgstr ""
 
 #: src/pages/shell/agent-import.tsx
 msgid "Not used by Atlas"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Not useful"
 msgstr ""
 
 #: src/components/McpServerHealthLine.tsx
@@ -5316,7 +5323,6 @@ msgstr "重新整理中…"
 msgid "Registration is closed"
 msgstr "註冊已關閉"
 
-#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5614,6 +5620,10 @@ msgstr "聊天室指引"
 #: src/pages/RoutineEditor.tsx
 msgid "Rotate key"
 msgstr "輪換金鑰"
+
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Route by task"
+msgstr ""
 
 #: src/lib/identity-display.ts
 #: src/pages/RoutineEditor.tsx
@@ -6609,6 +6619,10 @@ msgid "This month"
 msgstr "本月"
 
 #: src/pages/KnowledgeSection.tsx
+msgid "This note changed after the update. Edit it directly instead."
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 msgid "This note changed."
 msgstr ""
 
@@ -6818,6 +6832,7 @@ msgid "Unassigned"
 msgstr "未分配"
 
 #: src/components/AskCard.tsx
+#: src/pages/KnowledgeSection.tsx
 msgid "Undo"
 msgstr "復原"
 
@@ -6841,10 +6856,6 @@ msgstr "取消置頂"
 #: src/pages/shell/use-composer-actions.ts
 msgid "Unsupported file type: {0}"
 msgstr "不支援的檔案類型：{0}"
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Up to date"
-#~ msgstr "已是最新"
 
 #: src/components/ModelCredits.tsx
 msgid "Update"
@@ -6878,9 +6889,9 @@ msgstr "更新進度"
 msgid "Updated {updated}"
 msgstr "更新於 {updated}"
 
-#: src/pages/settings-nav.ts
-#~ msgid "Updates"
-#~ msgstr "更新"
+#: src/pages/KnowledgeSection.tsx
+msgid "Updated on its own"
+msgstr ""
 
 #. placeholder {0}: update.name
 #: src/components/ComputerUpdateProgress.tsx

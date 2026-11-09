@@ -33,6 +33,8 @@ export function deploymentModelRole(
       backups: [],
     };
   }
+  // Tiers are opt-in: with none chosen, every turn stays on the main model.
+  if (role === "light" || role === "heavy") return { primary: null, backups: [] };
   const provider = defaults.settings?.defaultModelProvider ?? defaults.deployment?.provider;
   const modelId =
     usableModelId(defaults.settings?.defaultModelId) ?? usableModelId(defaults.deployment?.model);
@@ -131,7 +133,6 @@ export function selectConfiguredModel(input: {
         ? null
         : (((bot?.thinkingLevel ?? mainThinking) as AgentRunRequest["model"]["thinkingLevel"]) ??
           null),
-    modelFastTier:
-      hasOverride && !useOverride ? false : Boolean(bot?.modelFastTier),
+    modelFastTier: hasOverride && !useOverride ? false : Boolean(bot?.modelFastTier),
   };
 }

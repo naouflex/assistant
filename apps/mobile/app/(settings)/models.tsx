@@ -284,6 +284,22 @@ export default function Models() {
             {me.needsModel ? null : (
               <SpaceBotsModel bots={bots} spaceId={spaceId} onSwitched={() => load()} />
             )}
+            {me.needsModel ? null : (
+              <>
+                <ModelRoleSettings
+                  {...shared}
+                  modelRole="light"
+                  title={t("Light model")}
+                  defaultLabel={t("Main model")}
+                />
+                <ModelRoleSettings
+                  {...shared}
+                  modelRole="heavy"
+                  title={t("Heavy model")}
+                  defaultLabel={t("Main model")}
+                />
+              </>
+            )}
             <ModelRoleSettings
               {...shared}
               modelRole="approval"

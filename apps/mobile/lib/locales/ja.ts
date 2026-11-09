@@ -22,6 +22,8 @@ export const JA_MESSAGES: Record<string, string> = {
   "Add a model in Settings to use this.": "使用するには設定でモデルを追加してください。",
   "Approval model": "承認モデル",
   "Main model": "メインモデル",
+  "Light model": "軽量モデル",
+  "Heavy model": "高性能モデル",
   "Add fallback": "バックアップモデルを追加",
   "Manage {provider}": "{provider} を管理",
   "Add provider": "プロバイダーを追加",

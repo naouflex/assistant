@@ -15,6 +15,8 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "The screen connection closed.": "螢幕連線已關閉。",
   "Approval model": "核准模型",
   "Main model": "主模型",
+  "Light model": "輕量模型",
+  "Heavy model": "高效能模型",
   "Add fallback": "新增備援模型",
   "Manage {provider}": "管理 {provider}",
   "Choose a model": "選擇模型",

@@ -22,6 +22,8 @@ export const RU_MESSAGES: Record<string, string> = {
   "Add a model in Settings to use this.": "Добавьте модель в настройках, чтобы использовать это.",
   "Approval model": "Модель проверки действий",
   "Main model": "Основная модель",
+  "Light model": "Лёгкая модель",
+  "Heavy model": "Мощная модель",
   "Add fallback": "Добавить резервную модель",
   "Manage {provider}": "Управление: {provider}",
   "Add provider": "Добавить провайдера",

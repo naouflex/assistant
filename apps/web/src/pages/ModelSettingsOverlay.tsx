@@ -25,6 +25,7 @@ import {
   ModelThinkingOptions,
   Spinner,
 } from "@atlas/ui-web";
+import { Disclosure } from "@atlas/ui-web/components/ui/disclosure";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -312,6 +313,39 @@ export function ModelSettingsOverlay({
             <SpaceBotsModelNotice
               refreshKey={`${me.spaceId}:${me.defaultProvider ?? ""}:${me.defaultModel ?? ""}`}
             />
+          )}
+          {me.needsModel ? null : (
+            <Disclosure
+              className="mb-6"
+              summaryClassName="text-sm font-medium"
+              summary={<Trans>Route by task</Trans>}
+            >
+              {(
+                [
+                  ["light", t`Light model`],
+                  ["heavy", t`Heavy model`],
+                ] as const
+              ).map(([role, title]) => (
+                <ModelRoleSettings
+                  key={role}
+                  userId={me.userId}
+                  spaceId={me.spaceId}
+                  scope={scope}
+                  credentials={credentials}
+                  modelRole={role}
+                  title={title}
+                  defaultLabel={t`Main model`}
+                  providers={providers}
+                  providerLabel={providerLabel}
+                  onConnect={(next, intent) => openConnection(next, intent, null, role)}
+                  onManage={(id, credentialId) =>
+                    openConnection({ id, name: id }, null, credentialId, role)
+                  }
+                  panel={connectionAt === role ? panelFor(true) : null}
+                  thinking
+                />
+              ))}
+            </Disclosure>
           )}
           <ModelRoleSettings
             userId={me.userId}

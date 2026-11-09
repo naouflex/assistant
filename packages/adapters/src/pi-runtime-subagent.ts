@@ -82,6 +82,8 @@ export async function executeSubagent(
         throw new Error("Per-call subagent model selection is unavailable");
       }
       requestModel = await host.request.resolveModel(requestedProvider, requestedModelId);
+    } else if (host.request.helperModel) {
+      requestModel = host.request.helperModel;
     } else if (
       host.request.resolveModel &&
       isLocalAnswerModel(host.request.model.provider, host.request.model.id)

@@ -1229,6 +1229,7 @@ msgstr "봇"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Bot"
 msgstr "Bot"
 
@@ -2806,10 +2807,6 @@ msgid "Design"
 msgstr ""
 
 #: src/components/DesktopUpdates.tsx
-#~ msgid "Desktop app"
-#~ msgstr ""
-
-#: src/components/DesktopUpdates.tsx
 msgid "Desktop update"
 msgstr ""
 
@@ -2893,6 +2890,7 @@ msgstr "연결 해제 중…"
 #: src/components/ComputerUpdateProgress.tsx
 #: src/components/PasskeyOffer.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Dismiss"
 msgstr "닫기"
@@ -2972,10 +2970,6 @@ msgstr "CSV 다운로드"
 #: src/components/SidebarFooter.tsx
 msgid "Download the Android APK"
 msgstr ""
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Downloading…"
-#~ msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Draft skill"
@@ -3459,6 +3453,10 @@ msgstr "헤더"
 msgid "Hear a sample"
 msgstr "샘플 듣기"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Heavy model"
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Hi, this is how I'll sound when I read replies out loud."
 msgstr "안녕하세요. 답변을 소리 내어 읽을 때 이런 목소리로 들립니다."
@@ -3796,6 +3794,10 @@ msgstr "MEMORY.md와 함께 봇이 의미를 기준으로 사실을 저장하고
 msgid "Light"
 msgstr "라이트"
 
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Light model"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Linear issue"
 msgstr "Linear 이슈"
@@ -4121,6 +4123,7 @@ msgstr "메시지"
 
 #. js-lingui-explicit-id
 #: src/lib/browser-notifications.ts
+#: src/pages/shell/use-browser-notifications.ts
 msgid "Message"
 msgstr "메시지"
 
@@ -4678,6 +4681,10 @@ msgstr ""
 
 #: src/pages/shell/agent-import.tsx
 msgid "Not used by Atlas"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Not useful"
 msgstr ""
 
 #: src/components/McpServerHealthLine.tsx
@@ -5315,7 +5322,6 @@ msgstr "새로고침 중…"
 msgid "Registration is closed"
 msgstr "가입이 마감되었습니다"
 
-#: src/pages/KnowledgeSection.tsx
 #: src/pages/PluginSubmissionsPanel.tsx
 msgid "Reject"
 msgstr ""
@@ -5613,6 +5619,10 @@ msgstr ""
 #: src/pages/RoutineEditor.tsx
 msgid "Rotate key"
 msgstr "key 교체"
+
+#: src/pages/ModelSettingsOverlay.tsx
+msgid "Route by task"
+msgstr ""
 
 #: src/lib/identity-display.ts
 #: src/pages/RoutineEditor.tsx
@@ -6608,6 +6618,10 @@ msgid "This month"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
+msgid "This note changed after the update. Edit it directly instead."
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 msgid "This note changed."
 msgstr ""
 
@@ -6817,6 +6831,7 @@ msgid "Unassigned"
 msgstr "섹션 없음"
 
 #: src/components/AskCard.tsx
+#: src/pages/KnowledgeSection.tsx
 msgid "Undo"
 msgstr "실행 취소"
 
@@ -6840,10 +6855,6 @@ msgstr "고정 해제"
 #: src/pages/shell/use-composer-actions.ts
 msgid "Unsupported file type: {0}"
 msgstr "지원하지 않는 파일 형식: {0}"
-
-#: src/components/DesktopUpdates.tsx
-#~ msgid "Up to date"
-#~ msgstr "최신 상태"
 
 #: src/components/ModelCredits.tsx
 msgid "Update"
@@ -6877,9 +6888,9 @@ msgstr ""
 msgid "Updated {updated}"
 msgstr ""
 
-#: src/pages/settings-nav.ts
-#~ msgid "Updates"
-#~ msgstr "업데이트"
+#: src/pages/KnowledgeSection.tsx
+msgid "Updated on its own"
+msgstr ""
 
 #. placeholder {0}: update.name
 #: src/components/ComputerUpdateProgress.tsx
