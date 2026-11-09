@@ -14,6 +14,7 @@ import { dictation } from "./dictation.js";
 import { recheckSessionOnUnauthorized, rpc } from "./rpc.js";
 import { reduceThreadSnapshot } from "./thread-events.js";
 import { speaker } from "./tts.js";
+import { watchForVoice } from "./voice-onset.js";
 
 // The macro compiles away in the app build; tests run the source, so tag the template as-is.
 vi.mock("@lingui/core/macro", () => ({
@@ -41,6 +42,10 @@ vi.mock("./dictation.js", async (importOriginal) => {
     },
   };
 });
+
+vi.mock("./voice-onset.js", () => ({
+  watchForVoice: vi.fn(async () => true),
+}));
 
 vi.mock("./tts.js", () => ({
   speaker: {
@@ -799,6 +804,41 @@ describe("call session", () => {
     await Promise.resolve();
     expect(listen).not.toHaveBeenCalled();
     vi.mocked(dictationModule.dictationSupportsInterimBargeIn).mockReturnValue(true);
+  });
+
+  it("cuts a reply the recorder cannot hear once the meter hears the caller", async () => {
+    const dictationModule = await import("./dictation.js");
+    vi.mocked(dictationModule.dictationSupportsInterimBargeIn).mockReturnValue(false);
+    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: true });
+    await speakingReply("Booked for Friday");
+    const onVoice = vi.mocked(watchForVoice).mock.calls.at(-1)?.[0];
+    expect(onVoice).toBeDefined();
+    listen.mockClear();
+    vi.mocked(speaker.stop).mockClear();
+
+    onVoice?.();
+    await flushMicrotasks();
+
+    expect(speaker.stop).toHaveBeenCalled();
+    expect(getSnapshot()?.phase).toBe("listening");
+    // A fresh recording takes the caller's turn, without waiting out the echo guard.
+    expect(listen).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps listening while the bot works and steers the run with what it hears", async () => {
+    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
+    getThread.mockResolvedValue(snapshot([], runningRun) as never);
+    const before = listen.mock.calls.length;
+    await heard("book the flight");
+    await flushMicrotasks();
+
+    expect(getSnapshot()?.phase).toBe("thinking");
+    expect(listen).toHaveBeenCalledTimes(before + 1);
+
+    await heard("make it a window seat");
+    expect(followUp).toHaveBeenCalledWith(
+      expect.objectContaining({ botId: "call-bot", text: "make it a window seat" }),
+    );
   });
 
   it("stops the reply when the caller talks over it", async () => {

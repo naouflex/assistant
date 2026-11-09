@@ -100,6 +100,7 @@ vi.mock("./call-sounds", () => ({
 const deps: CallDeps = {
   dictate: async () => true,
   record: vi.fn(),
+  hearVoice: async () => false,
   transcribe: vi.fn(),
   send: vi.fn(),
   endCall: async () => undefined,
