@@ -3,6 +3,7 @@ import { link, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { AdapterContext, ComputerRef, ProcessEvent } from "@atlas/adapter-kit";
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import { shellQuote } from "@atlas/core/node/desktop-runtime";
 import type { Exec, V1Pod } from "@kubernetes/client-node";
 import { describe, expect, it, vi } from "vitest";
@@ -1097,6 +1098,33 @@ describe("KubernetesSandboxProvider", () => {
     await expect(
       provider.setScreenControl(computer, false, context, "control-token"),
     ).rejects.toThrow("API offline");
+  });
+
+  it("names an API server that refuses connections as an unreachable computer", async () => {
+    const refused = Object.assign(new Error("connect ECONNREFUSED 10.0.0.1:6443"), {
+      code: "ECONNREFUSED",
+    });
+    const provider = providerFor({ readNamespacedPod: vi.fn().mockRejectedValue(refused) });
+    await expect(provider.isRunning(computer, context)).rejects.toBeInstanceOf(
+      SandboxUnreachableError,
+    );
+  });
+
+  it("names a silent API server as an unreachable computer", async () => {
+    const deadline = new AbortController();
+    vi.spyOn(AbortSignal, "timeout").mockReturnValueOnce(deadline.signal);
+    const provider = providerFor({ readNamespacedPod: vi.fn(() => new Promise<never>(() => {})) });
+    const status = provider.isRunning(computer, context);
+    deadline.abort(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+    await expect(status).rejects.toBeInstanceOf(SandboxUnreachableError);
+  });
+
+  it("keeps a cancelled run's abort instead of blaming the API server", async () => {
+    const run = new AbortController();
+    const provider = providerFor({ readNamespacedPod: vi.fn(() => new Promise<never>(() => {})) });
+    const status = provider.isRunning(computer, { ...context, signal: run.signal });
+    run.abort(new Error("run cancelled"));
+    await expect(status).rejects.toThrow("run cancelled");
   });
 
   it.skipIf(process.platform !== "linux")(

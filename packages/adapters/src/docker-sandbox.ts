@@ -30,6 +30,7 @@ import {
   clampRounded,
   computerObservation,
   containerCommandCwd,
+  isServiceUnreachable,
   normalizeWorkspacePath,
 } from "./computer-support.js";
 import { sandboxCommandArgv } from "./sandbox-command-environment.js";
@@ -40,37 +41,6 @@ export const MAX_SANDBOX_ERROR_RESPONSE_BYTES = 8 * 1024;
 export const MAX_SANDBOX_SUCCESS_RESPONSE_BYTES = 16 * 1024 * 1024;
 export const SCREEN_RELEASE_TIMEOUT_MS = 8_000;
 
-const SUPERVISOR_DOWN_CODES = new Set([
-  "ECONNREFUSED",
-  "ENOTFOUND",
-  "EHOSTUNREACH",
-  "ENETUNREACH",
-  "EAI_AGAIN",
-]);
-
-/**
- * undici reports a refused or missing supervisor as `TypeError: fetch failed` and keeps the
- * reason on `cause`. That bare message is what a model timeout looks like, so a down computer
- * has to be named before it is stored on the run.
- */
-function isSupervisorUnreachable(error: unknown, depth = 0): boolean {
-  if (depth > 5 || typeof error !== "object" || error === null) return false;
-  if ("name" in error && error.name === "AbortError") return false;
-  if ("code" in error && typeof error.code === "string" && SUPERVISOR_DOWN_CODES.has(error.code)) {
-    return true;
-  }
-  if (error instanceof AggregateError) {
-    return error.errors.some((item) => isSupervisorUnreachable(item, depth + 1));
-  }
-  if (
-    error instanceof Error &&
-    error.message !== "fetch failed" &&
-    /\b(?:ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|ENETUNREACH|EAI_AGAIN)\b/.test(error.message)
-  ) {
-    return true;
-  }
-  return "cause" in error && isSupervisorUnreachable(error.cause, depth + 1);
-}
 const SANDBOX_ERROR_RESPONSE_TIMEOUT_MS = 1_000;
 const SANDBOX_SUCCESS_RESPONSE_TIMEOUT_MS = 30_000;
 
@@ -166,7 +136,7 @@ export class DockerSandboxProvider implements SandboxProvider {
     try {
       return await fetch(url, init);
     } catch (error) {
-      if (!isSupervisorUnreachable(error)) throw error;
+      if (!isServiceUnreachable(error)) throw error;
       throw new SandboxUnreachableError({ cause: error });
     }
   }
