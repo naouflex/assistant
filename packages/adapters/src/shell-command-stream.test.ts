@@ -313,6 +313,27 @@ describe("deliverFinishedShells", () => {
     expect(followUps).toHaveLength(1);
     expect(followUps[0]).toContain("exit code: 0");
   });
+
+  it("tells the runtime whether the output arrived after the answer", async () => {
+    const finished = { stdout: "ok\n", stderr: "", code: 0 };
+    const delivered: boolean[] = [];
+    const deliver = (text: string, afterAnswer: boolean) => delivered.push(afterAnswer);
+
+    await deliverFinishedShells(deliver, [Promise.resolve(finished)], {
+      toolResults: [{ toolName: "read_file" }],
+    });
+    await deliverFinishedShells(
+      deliver,
+      [Promise.resolve(finished)],
+      { toolResults: [] },
+      undefined,
+      {
+        onAfterAnswer: () => undefined,
+      },
+    );
+
+    expect(delivered).toEqual([false, true]);
+  });
 });
 
 const LONG_OUTPUT = `START\n${"compiling step\n".repeat(3_000)}ERROR: build failed\n`;

@@ -1,5 +1,5 @@
-import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type { ProcessEvent } from "@atlas/adapter-kit";
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import { redactSecrets } from "@atlas/core";
 import { redactShellStreams } from "./agent-environment.js";
 import { automated } from "./automated-messages.js";
@@ -71,7 +71,7 @@ function keepHeadAndTail(text: string): string {
  * output is skipped so the bot can relay a device code before the process ends.
  */
 export async function deliverFinishedShells(
-  followUp: (text: string) => void,
+  followUp: (text: string, afterAnswer: boolean) => void,
   pending: Array<Promise<FinishedShellCommand>>,
   turn: { toolResults: Array<{ toolName?: string; details?: unknown }> },
   signal?: AbortSignal,
@@ -87,7 +87,10 @@ export async function deliverFinishedShells(
   if (texts.length === 0) return;
   const afterAnswer = turn.toolResults.length === 0 && options.onAfterAnswer !== undefined;
   if (afterAnswer) options.onAfterAnswer?.();
-  followUp(texts.map((result) => formatFinishedShellCommand(result, afterAnswer)).join("\n\n"));
+  followUp(
+    texts.map((result) => formatFinishedShellCommand(result, afterAnswer)).join("\n\n"),
+    afterAnswer,
+  );
 }
 
 function turnReturnedRunningShell(turn: {

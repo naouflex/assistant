@@ -527,12 +527,12 @@ export class PiAgentRuntime implements AgentRuntime {
             : async () => apiKey,
           finishTurn: async (turn, turnSignal) => {
             await deliverFinishedShells(
-              (text) => {
-                agent.followUp({
-                  role: "user",
-                  content: text,
-                  timestamp: Date.now(),
-                });
+              (text, afterAnswer) => {
+                const message = { role: "user" as const, content: text, timestamp: Date.now() };
+                // Follow-ups are read only once the bot has answered, so output that finished
+                // mid-work is steered into the next turn instead of trailing the answer.
+                if (afterAnswer) agent.followUp(message);
+                else agent.steer(message);
               },
               host.pendingShells,
               turn,

@@ -230,12 +230,10 @@ export async function executeSubagent(
   nested = new Agent({
     finishTurn: async (turn, turnSignal) => {
       await deliverFinishedShells(
-        (text) => {
-          nested.followUp({
-            role: "user",
-            content: text,
-            timestamp: Date.now(),
-          });
+        (text, afterAnswer) => {
+          const message = { role: "user" as const, content: text, timestamp: Date.now() };
+          if (afterAnswer) nested.followUp(message);
+          else nested.steer(message);
         },
         nestedHost.pendingShells,
         turn,
