@@ -31,6 +31,12 @@ export const USER_DEVICE_LIMIT = 10;
 const PING_INTERVAL_MS = 25_000;
 /** A connection row older than this has lost its holding process. */
 const STALE_AFTER_MS = 3 * PING_INTERVAL_MS;
+/**
+ * A device seen this recently is reconnecting, usually after a server restart: wait for it
+ * rather than telling the bot, and through it the person at that computer, that it is off.
+ */
+const RECONNECT_WAIT_MS = 45_000;
+const RECONNECT_POLL_MS = 1_500;
 const MAX_MESSAGE_BYTES = HOST_COMPUTER_MAX_BYTES + 64 * 1024;
 
 export class UserDeviceOfflineError extends Error {
@@ -417,6 +423,8 @@ export class UserDevices implements UserDeviceGateway {
       /** Present in API processes, which hold device sockets. */
       hub?: UserDeviceHub;
       fetch?: typeof fetch;
+      reconnectWaitMs?: number;
+      reconnectPollMs?: number;
     },
   ) {
     this.fetch = deps.fetch ?? fetch;
@@ -512,6 +520,35 @@ export class UserDevices implements UserDeviceGateway {
   }
 
   private async route(userId: string, deviceId: string | undefined, kind: UserDeviceKind) {
+    const found = await this.liveRoute(userId, deviceId, kind);
+    if (found || !(await this.recentlySeen(userId, deviceId, kind))) return found;
+    const waitMs = this.deps.reconnectWaitMs ?? RECONNECT_WAIT_MS;
+    const pollMs = this.deps.reconnectPollMs ?? RECONNECT_POLL_MS;
+    for (const until = Date.now() + waitMs; Date.now() < until; ) {
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+      const back = await this.liveRoute(userId, deviceId, kind);
+      if (back) return back;
+    }
+    return null;
+  }
+
+  private async recentlySeen(userId: string, deviceId: string | undefined, kind: UserDeviceKind) {
+    const device = await runAsSystem("find a recently connected device", () =>
+      this.deps.prisma.userDevice.findFirst({
+        where: {
+          userId,
+          revokedAt: null,
+          platform: platformOf(kind),
+          lastSeenAt: { gt: new Date(Date.now() - STALE_AFTER_MS) },
+          ...(deviceId ? { id: deviceId } : {}),
+        },
+        select: { id: true },
+      }),
+    );
+    return Boolean(device);
+  }
+
+  private async liveRoute(userId: string, deviceId: string | undefined, kind: UserDeviceKind) {
     const connection = await runAsSystem("find a user's connected device", () =>
       this.deps.prisma.userDeviceConnection.findFirst({
         where: {
