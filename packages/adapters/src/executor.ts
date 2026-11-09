@@ -120,7 +120,11 @@ import {
   pinnedModelCredentialError,
   runModelChoice,
 } from "./model-selection.js";
-import { classifyModelTier, routesTrigger } from "./model-tier-router.js";
+import {
+  classifyModelTier,
+  HELPER_DELEGATION_INSTRUCTION,
+  routesTrigger,
+} from "./model-tier-router.js";
 import { modelAcceptsImageInput } from "./model-vision.js";
 import { mountWorkNote, ownFilesNote } from "./mounted-files.js";
 import { usesNativeShell } from "./native-shell.js";
@@ -962,15 +966,15 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         };
         // A person's turn with a light model chosen is classified by it first, then answered
         // by the light, main, or heavy model. Bots and pinned runs keep their own model.
+        const roleFor = (role: "light" | "heavy") =>
+          appliedModelRole(deps.prisma, run, role).then(
+            (settings) => settings.primary,
+            () => null,
+          );
         let helperModel: AgentRunRequest["model"] | undefined;
         const startOnTier = async () => {
           if (run.modelPinned || modelChoice.modelProvider || scripted) return undefined;
           if (!routesTrigger(run.trigger)) return undefined;
-          const roleFor = (role: "light" | "heavy") =>
-            appliedModelRole(deps.prisma, run, role).then(
-              (settings) => settings.primary,
-              () => null,
-            );
           const light = await roleFor("light");
           if (!light) return undefined;
           const startOn = async (choice: ModelRoleChoice) => {
@@ -1093,6 +1097,13 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           await failRunBeforeModel(primaryFailure.message, primaryFailure.accountFailure);
           return;
         }
+        // A run that struggles moves to the heavy model once; one already on it has nowhere to go.
+        const escalation =
+          run.modelPinned || modelChoice.modelProvider || scripted ? null : await roleFor("heavy");
+        const escalateTo =
+          escalation && !(escalation.provider === start.provider && escalation.modelId === start.id)
+            ? escalation
+            : null;
         const {
           provider: runModelProvider,
           id: runModelId,
@@ -1917,6 +1928,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 userComputerPlatform,
                 ownShellPlatform: hostEnvironment?.platform,
               })
+                .concat(
+                  helperModel && tools.some((tool) => tool.name === "run_subagent")
+                    ? HELPER_DELEGATION_INSTRUCTION
+                    : undefined,
+                )
                 .filter((instruction): instruction is string => Boolean(instruction))
                 .join("\n\n"),
               history: runtimeHistory,
@@ -1975,8 +1991,24 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                     );
                   }
                 : undefined,
+              ...(escalateTo
+                ? {
+                    resolveEscalationModel: () =>
+                      resolveConnectedModel(
+                        { userId: run.userId, spaceId: run.spaceId },
+                        escalateTo.provider,
+                        escalateTo.modelId,
+                        (values) => runSecrets.push(...values),
+                        true,
+                        escalateTo.thinkingLevel ?? null,
+                        escalateTo.credentialId,
+                      ),
+                  }
+                : {}),
               onModelChange: async (provider, modelId) => {
-                if (!fallbackModelIds.has(fallbackKey(provider, modelId))) {
+                const escalating =
+                  escalateTo?.provider === provider && escalateTo.modelId === modelId;
+                if (!escalating && !fallbackModelIds.has(fallbackKey(provider, modelId))) {
                   throw new Error("Backup model is not selected");
                 }
                 const updated = await deps.prisma.run.updateMany({

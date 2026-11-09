@@ -74,6 +74,7 @@ import { PiJsonlSessionRecorder } from "./pi-session.js";
 const primary = model("provider-a", "primary", 32_768);
 const backupA = model("provider-b", "backup-a", 8_192);
 const backupB = model("provider-c", "backup-b", 16_384);
+const heavy = model("provider-d", "heavy", 65_536);
 
 function model(provider: string, id: string, contextWindow: number): Model<"openai-completions"> {
   return {
@@ -208,7 +209,7 @@ async function run(
 beforeEach(() => {
   providerState.models.clear();
   providerState.credentialStores.length = 0;
-  for (const candidate of [primary, backupA, backupB]) {
+  for (const candidate of [primary, backupA, backupB, heavy]) {
     providerState.models.set(
       `${candidate.provider}/${candidate.id}`,
       candidate as unknown as Record<string, unknown>,
@@ -1701,6 +1702,86 @@ describe("Pi runtime ordered model fallback", () => {
         ([target]) => (target as Model<"openai-completions">).provider,
       ),
     ).toEqual([primary.provider, primary.provider]);
+  });
+
+  it.each([
+    [3, ["provider-a", "provider-a", "provider-a", "provider-d"]],
+    [2, ["provider-a", "provider-a", "provider-a"]],
+  ] as const)(
+    "after %i failed tools, moves to the heavy model once",
+    async (failures, providers) => {
+      const input = request();
+      const onModelChange = vi.fn(async () => {});
+      input.onModelChange = onModelChange;
+      input.resolveEscalationModel = vi.fn(async () => ({
+        provider: heavy.provider,
+        id: heavy.id,
+        apiKey: "fake-heavy-key",
+      }));
+      input.executeTool = vi.fn(async () => {
+        throw new Error("command failed");
+      });
+      let calls = 0;
+      providerState.stream.mockImplementation((target: Model<"openai-completions">) => {
+        calls += 1;
+        if (calls <= failures) {
+          const call = {
+            type: "toolCall" as const,
+            id: `failed-${calls}`,
+            name: "write_effect",
+            arguments: { value: "retry" },
+          };
+          return stream(target, message(target, [call], "toolUse"));
+        }
+        return stream(target, message(target, [{ type: "text", text: "Done." }], "stop"));
+      });
+
+      await run(input);
+
+      expect(
+        providerState.stream.mock.calls.map(
+          ([target]) => (target as Model<"openai-completions">).provider,
+        ),
+      ).toEqual(providers);
+      expect(onModelChange).toHaveBeenCalledTimes(failures === 3 ? 1 : 0);
+      expect(input.resolveEscalationModel).toHaveBeenCalledTimes(failures === 3 ? 1 : 0);
+    },
+  );
+
+  it("stays on the current model when the heavy model holds less context", async () => {
+    const input = request();
+    input.resolveEscalationModel = async () => ({
+      provider: backupA.provider,
+      id: backupA.id,
+      apiKey: "fake-small-key",
+    });
+    input.executeTool = vi.fn(async () => {
+      throw new Error("command failed");
+    });
+    let calls = 0;
+    providerState.stream.mockImplementation((target: Model<"openai-completions">) => {
+      calls += 1;
+      if (calls <= 3) {
+        const call = {
+          type: "toolCall" as const,
+          id: `failed-${calls}`,
+          name: "write_effect",
+          arguments: { value: "retry" },
+        };
+        return stream(target, message(target, [call], "toolUse"));
+      }
+      return stream(target, message(target, [{ type: "text", text: "Done." }], "stop"));
+    });
+
+    await run(input);
+
+    expect(
+      new Set(
+        providerState.stream.mock.calls.map(
+          ([target]) => (target as Model<"openai-completions">).provider,
+        ),
+      ),
+    ).toEqual(new Set([primary.provider]));
   });
 
   it.each(["failed", "skipped", "mixed"] as const)(

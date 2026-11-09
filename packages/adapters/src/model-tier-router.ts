@@ -86,3 +86,7 @@ export async function classifyModelTier(
 export function routesTrigger(trigger: string): boolean {
   return trigger === "user" || trigger === "follow_up" || trigger === "messaging";
 }
+
+/** Helpers run on the light model, so mechanical work handed to them costs less. */
+export const HELPER_DELEGATION_INSTRUCTION =
+  "run_subagent helpers run on a faster, cheaper model. Hand them mechanical work that needs no judgment: reading or searching many files, collecting facts, condensing long output. Keep decisions, edits, and the final answer yourself.";

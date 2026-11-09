@@ -58,6 +58,7 @@ import {
   sanitizeError,
   sanitizeProviderError,
 } from "./pi-runtime-errors.js";
+import { runIsStruggling } from "./pi-runtime-escalation.js";
 import type { FallbackStreamState } from "./pi-runtime-fallback.js";
 import {
   continuationRepeat,
@@ -65,6 +66,7 @@ import {
   MAX_CONTINUATION_MARKER,
   MAX_CONTINUATION_OVERLAP,
   MAX_SELF_RECOVERIES_PER_RUN,
+  runtimeTargetFor,
 } from "./pi-runtime-fallback.js";
 import type { RuntimeModelTarget } from "./pi-runtime-models.js";
 import {
@@ -492,19 +494,49 @@ export class PiAgentRuntime implements AgentRuntime {
           },
           onSwitch: async (target) => {
             await request.onModelChange?.(target.config.provider, target.config.id);
-            activeStreamTarget = target;
-            contextPolicy = contextPolicyFor(target);
-            host.activeModel = target;
-            const nextThinkingLevel = thinkingLevelFor(
-              target.model,
-              target.config.thinkingLevel ?? request.model.thinkingLevel,
-            );
-            agent.state.model = target.model;
-            agent.state.thinkingLevel = nextThinkingLevel;
-            host.models = target.models;
-            host.model = target.model;
-            host.apiKey = target.credentials?.accessToken ?? target.apiKey;
+            useTarget(target);
           },
+        };
+        const useTarget = (target: RuntimeModelTarget) => {
+          activeStreamTarget = target;
+          contextPolicy = contextPolicyFor(target);
+          host.activeModel = target;
+          const nextThinkingLevel = thinkingLevelFor(
+            target.model,
+            target.config.thinkingLevel ?? request.model.thinkingLevel,
+          );
+          agent.state.model = target.model;
+          agent.state.thinkingLevel = nextThinkingLevel;
+          host.models = target.models;
+          host.model = target.model;
+          host.apiKey = target.credentials?.accessToken ?? target.apiKey;
+        };
+        let toolErrors = 0;
+        let escalated = false;
+        const escalationDue = () =>
+          !escalated && runIsStruggling({ toolErrors, modelResponses: host.modelResponses ?? 0 });
+        const escalate = async (resolve: () => Promise<AgentRunRequest["model"]>) => {
+          escalated = true;
+          try {
+            const target = runtimeTargetFor(await resolve());
+            const current = activeStreamTarget.model;
+            // The stronger model must hold everything the current one was given.
+            if (
+              !target ||
+              target.model.contextWindow < current.contextWindow ||
+              (hasCurrentImages && !target.model.input.includes("image"))
+            )
+              return;
+            await request.onModelChange?.(target.config.provider, target.config.id);
+            useTarget(target);
+            getLogger().info("model.escalated", {
+              runId: request.runId,
+              toolErrors,
+              modelResponses: host.modelResponses ?? 0,
+            });
+          } catch (error) {
+            getLogger().warn("model.escalation.failed", { runId: request.runId, error });
+          }
         };
         agent = new Agent({
           sessionId: conversationSessionId(request.threadId, request.botId),
@@ -522,9 +554,10 @@ export class PiAgentRuntime implements AgentRuntime {
               ),
               deferredToolNames,
             ),
-          getApiKey: hasBackups
-            ? async () => activeStreamTarget.credentials?.accessToken ?? activeStreamTarget.apiKey
-            : async () => apiKey,
+          getApiKey:
+            hasBackups || request.resolveEscalationModel
+              ? async () => activeStreamTarget.credentials?.accessToken ?? activeStreamTarget.apiKey
+              : async () => apiKey,
           finishTurn: async (turn, turnSignal) => {
             await deliverFinishedShells(
               (text, afterAnswer) => {
@@ -804,6 +837,11 @@ export class PiAgentRuntime implements AgentRuntime {
               });
             }
 
+            toolErrors += event.toolResults.filter(
+              (result) => "isError" in result && result.isError === true,
+            ).length;
+            if (hasToolCalls && hasToolResults && request.resolveEscalationModel && escalationDue())
+              await escalate(request.resolveEscalationModel);
             const turnToolNames = messageToolCallNames(event.message);
             if (
               hasToolCalls &&
