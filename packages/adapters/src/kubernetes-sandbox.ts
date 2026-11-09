@@ -17,11 +17,17 @@ import type {
   ScreenSession,
   TerminalRequest,
 } from "@atlas/adapter-kit";
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import { boundedSandboxCommandTimeoutMs } from "@atlas/core";
 import { COMPUTER_CACHE_ENV } from "@atlas/core/node/desktop-runtime";
 import type * as KubernetesClient from "@kubernetes/client-node";
 import type { CoreV1Api, Exec, V1Pod, V1PodSpec, V1Status } from "@kubernetes/client-node";
-import { normalizeWorkspacePath, shellQuote, workspacePath } from "./computer-support.js";
+import {
+  isServiceUnreachable,
+  normalizeWorkspacePath,
+  shellQuote,
+  workspacePath,
+} from "./computer-support.js";
 import { LinuxDesktop, onBotScreen } from "./linux-desktop.js";
 import { sandboxCommandArgv } from "./sandbox-command-environment.js";
 import {
@@ -35,6 +41,7 @@ const DEFAULT_NAMESPACE = "atlas-sandboxes";
 // production so every pod runs the image the API was tested against.
 const DEFAULT_COMPUTER_IMAGE = "ghcr.io/naouflex/assistant/computer:edge";
 const DEFAULT_READY_TIMEOUT_MS = 120_000;
+const API_REQUEST_TIMEOUT_MS = 10_000;
 const WORKSPACE = "/home/atlas";
 const CONTAINER_NAME = "computer";
 // Names the bot that owns a computer pod. A pod carrying another bot's value is
@@ -679,8 +686,9 @@ export class KubernetesSandboxProvider implements SandboxProvider {
 
   private async readPod(name: string, signal: AbortSignal): Promise<V1Pod | undefined> {
     signal.throwIfAborted();
+    const apiDeadline = AbortSignal.timeout(API_REQUEST_TIMEOUT_MS);
     try {
-      const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(10_000)]);
+      const requestSignal = AbortSignal.any([signal, apiDeadline]);
       const request = Promise.all([loadKubernetes(), this.clients()]).then(
         ([{ Observable }, clients]) =>
           clients.core.readNamespacedPod(
@@ -704,6 +712,11 @@ export class KubernetesSandboxProvider implements SandboxProvider {
       return pod;
     } catch (error) {
       if (isApiStatus(error, 404)) return undefined;
+      // Every operation reads its pod first, so an API server that is down or silent stops the
+      // run here instead of failing each tool call with a bare timeout until the run expires.
+      if (!signal.aborted && (apiDeadline.aborted || isServiceUnreachable(error))) {
+        throw new SandboxUnreachableError({ cause: error });
+      }
       throw error;
     }
   }

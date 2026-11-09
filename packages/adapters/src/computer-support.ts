@@ -62,6 +62,38 @@ export function clampRounded(value: number, min: number, max: number): number {
   return Math.min(Math.max(Math.round(value), min), max);
 }
 
+const SERVICE_DOWN_CODES = new Set([
+  "ECONNREFUSED",
+  "ENOTFOUND",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "EAI_AGAIN",
+]);
+
+/**
+ * undici reports a refused or missing service as `TypeError: fetch failed` and keeps the
+ * reason on `cause`. That bare message is what a model timeout looks like, so a down computer
+ * service has to be named before it is stored on the run.
+ */
+export function isServiceUnreachable(error: unknown, depth = 0): boolean {
+  if (depth > 5 || typeof error !== "object" || error === null) return false;
+  if ("name" in error && error.name === "AbortError") return false;
+  if ("code" in error && typeof error.code === "string" && SERVICE_DOWN_CODES.has(error.code)) {
+    return true;
+  }
+  if (error instanceof AggregateError) {
+    return error.errors.some((item) => isServiceUnreachable(item, depth + 1));
+  }
+  if (
+    error instanceof Error &&
+    error.message !== "fetch failed" &&
+    /\b(?:ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|ENETUNREACH|EAI_AGAIN)\b/.test(error.message)
+  ) {
+    return true;
+  }
+  return "cause" in error && isServiceUnreachable(error.cause, depth + 1);
+}
+
 export function normalizeWorkspacePath(value: string): string {
   const normalized = value.replace(/\\/g, "/").replace(/^\/+/, "");
   const segments = normalized.split("/").filter(Boolean);
