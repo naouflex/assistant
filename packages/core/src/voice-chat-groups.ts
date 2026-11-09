@@ -106,6 +106,19 @@ export function latestSpokenCallReply<T extends VoiceChatMessage>(
   return undefined;
 }
 
+/**
+ * An update the bot posted while its run keeps working. It is written whole, unlike the live
+ * `progress:` line or a card that is still settling, so a call can speak it before the run ends.
+ */
+export function isInterimCallUpdate(message: VoiceChatMessage): boolean {
+  return (
+    message.role === "bot" &&
+    !message.id.startsWith("progress:") &&
+    message.blocks.some((block) => block.kind === "text") &&
+    message.blocks.every((block) => block.kind === "text" || block.kind === "steps")
+  );
+}
+
 function isCallMarker(message: VoiceChatMessage): boolean {
   return message.role === "bot" && message.blocks[0]?.kind === "voice_call";
 }

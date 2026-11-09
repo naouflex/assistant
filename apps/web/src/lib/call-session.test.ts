@@ -519,7 +519,7 @@ describe("call session", () => {
   it("waits for the reply's own active run when another run is primary", async () => {
     await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
     const feed = vi.mocked(runThreadSubscription).mock.calls.at(-1)![0];
-    const messages = [callerMessage("hello"), botMessage("message-1", "Still writing")];
+    const messages = [callerMessage("hello"), streamingMessage("Still writing")];
     getThread.mockResolvedValue({
       ...snapshot(messages, { ...runningRun, id: "run-9" } as ThreadSnapshot["run"]),
       activeRuns: [runningRun],
@@ -1153,12 +1153,12 @@ describe("call session", () => {
   it("speaks a streaming reply once, with the text its run finished on", async () => {
     await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
     const feed = vi.mocked(runThreadSubscription).mock.calls[0]?.[0];
-    getThread.mockResolvedValue(snapshot([botMessage("message-1", "Booked")], runningRun) as never);
+    getThread.mockResolvedValue(snapshot([streamingMessage("Booked")], runningRun) as never);
     await heard("book the flight");
     expect(speak).not.toHaveBeenCalled();
 
     getThread.mockResolvedValue(
-      snapshot([botMessage("message-1", "Booked for Friday")], runningRun) as never,
+      snapshot([streamingMessage("Booked for Friday")], runningRun) as never,
     );
     await feed?.refresh();
     expect(speak).not.toHaveBeenCalled();
@@ -1315,18 +1315,47 @@ describe("call session", () => {
     expect(getSnapshot()?.phase).toBe("speaking");
   });
 
+  it("speaks an update the bot posts while it works, then its reply", async () => {
+    await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
+    const feed = vi.mocked(runThreadSubscription).mock.calls[0]?.[0];
+    const update = botMessage("update-1", "Checking the flights now.");
+    getThread.mockResolvedValue(
+      snapshot(
+        [callerMessage("book it"), update, streamingMessage("using search…")],
+        runningRun,
+      ) as never,
+    );
+    await heard("book it");
+    expect(speak).toHaveBeenLastCalledWith(
+      "Checking the flights now.",
+      expect.objectContaining({ messageId: "update-1" }),
+    );
+
+    await finishSpeaking();
+    getThread.mockResolvedValue(
+      snapshot([
+        callerMessage("book it"),
+        update,
+        botMessage("message-1", "Booked for Friday"),
+      ]) as never,
+    );
+    await feed?.refresh();
+    expect(speak).toHaveBeenCalledTimes(2);
+    expect(speak).toHaveBeenLastCalledWith(
+      "Booked for Friday",
+      expect.objectContaining({ messageId: "message-1" }),
+    );
+  });
+
   it("speaks only the final reply when a mid-turn progress message came first", async () => {
     await answeredCall({ botId: "call-bot", botName: "Ada", transcribe: false });
     const feed = vi.mocked(runThreadSubscription).mock.calls[0]?.[0];
-    getThread.mockResolvedValue(snapshot([botMessage("progress-1", "Hey,")], runningRun) as never);
+    getThread.mockResolvedValue(snapshot([streamingMessage("Hey,")], runningRun) as never);
     await heard("are you there");
     expect(speak).not.toHaveBeenCalled();
 
     getThread.mockResolvedValue(
-      snapshot([
-        botMessage("progress-1", "Hey,"),
-        botMessage("message-1", "Hey, I'm here."),
-      ]) as never,
+      snapshot([streamingMessage("Hey,"), botMessage("message-1", "Hey, I'm here.")]) as never,
     );
     await feed?.refresh();
     expect(speak).toHaveBeenCalledTimes(1);

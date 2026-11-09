@@ -23,6 +23,13 @@ const API = "https://api.elevenlabs.io/v1";
 const MODEL = "eleven_v4_turbo";
 const FORMAT = "mp3_44100_64";
 const TRANSCRIBE_MODEL = "scribe_v2";
+/** A little less stable and a little more styled than a voice's defaults: warmer, still steady. */
+const VOICE_SETTINGS = {
+  stability: 0.35,
+  similarity_boost: 0.75,
+  style: 0.3,
+  use_speaker_boost: true,
+};
 
 export class ElevenLabsVoiceProvider implements VoiceProvider {
   describe(): AdapterDescriptor<VoiceCapabilities> {
@@ -74,7 +81,11 @@ export class ElevenLabsVoiceProvider implements VoiceProvider {
           "content-type": "application/json",
           accept: "audio/mpeg",
         },
-        body: JSON.stringify({ text: request.text, model_id: MODEL }),
+        body: JSON.stringify({
+          text: request.text,
+          model_id: MODEL,
+          voice_settings: VOICE_SETTINGS,
+        }),
         signal,
       },
     );

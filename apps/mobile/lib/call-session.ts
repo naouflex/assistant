@@ -10,6 +10,7 @@ import {
   createInterimBargeIn,
   isCallBargeIn,
   isFarewell,
+  isInterimCallUpdate,
   isRetryableError,
   latestSpokenCallReply,
   newClientId,
@@ -949,13 +950,21 @@ function watchReplies(
             }
             snapshot = applyMobileThreadEvent(snapshot, event) ?? snapshot;
             if (!snapshot) return;
-            const message = latestSpokenCallReply(snapshot.messages, watchedCallId);
+            const run = snapshot.run;
+            const working = Boolean(run && ACTIVE_RUN_STATUSES.some((s) => s === run.status));
+            // The live progress line trails the run's updates; it is never spoken itself.
+            const message = latestSpokenCallReply(
+              working
+                ? snapshot.messages.filter((m) => !m.id.startsWith("progress:"))
+                : snapshot.messages,
+              watchedCallId,
+            );
             if (!message || message.id === lastSeen) return;
             // Wait for the message's own run to settle so half-written blocks are never
-            // spoken; another run still working says nothing about this one.
-            const run = snapshot?.run;
+            // spoken, unless it is an update posted whole; another run still working says
+            // nothing about this one.
             const fromAnotherRun = Boolean(message.runId && message.runId !== run?.id);
-            if (!fromAnotherRun && run && ACTIVE_RUN_STATUSES.some((s) => s === run.status)) return;
+            if (!fromAnotherRun && working && !isInterimCallUpdate(message)) return;
             const text = blockText(message).trim();
             if (!text) return;
             lastSeen = message.id;
