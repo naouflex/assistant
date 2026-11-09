@@ -3,7 +3,7 @@ import { link, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { AdapterContext, ComputerRef, ProcessEvent } from "@atlas/adapter-kit";
-import { SandboxUnreachableError } from "@atlas/adapter-kit";
+import { SandboxUnreachableError, WorkspaceTooLargeError } from "@atlas/adapter-kit";
 import { shellQuote } from "@atlas/core/node/desktop-runtime";
 import type { Exec, V1Pod } from "@kubernetes/client-node";
 import { describe, expect, it, vi } from "vitest";
@@ -810,6 +810,30 @@ describe("KubernetesSandboxProvider", () => {
         context,
       ),
     ).rejects.toThrow("write denied");
+  });
+
+  it("reports an oversized workspace file as a workspace too large to save", async () => {
+    const [header] = encodeTarEntry("big.bin", Buffer.alloc(64 * 1024 * 1024 + 1));
+    const exec = vi.fn(async (...args: Parameters<Exec["exec"]>) => {
+      const command = args[3] as string[];
+      if (args[6]) {
+        args[6].resume();
+        args[6].on("end", () => args[8]?.({ status: "Success" }));
+      } else
+        queueMicrotask(() => {
+          if (command.some((arg) => arg.includes("find"))) args[4]?.write("big.bin\0");
+          else if (command.includes("tar")) args[4]?.write(header);
+          args[8]?.({ status: "Success" });
+        });
+      return { close: vi.fn(), onclose: null, onerror: null } as unknown as Awaited<
+        ReturnType<Exec["exec"]>
+      >;
+    });
+    const files = [];
+    await expect(async () => {
+      for await (const file of providerFor({}, exec).exportWorkspace(computer, context))
+        files.push(file);
+    }).rejects.toBeInstanceOf(WorkspaceTooLargeError);
   });
 
   it("exports binary files without attaching stdin to the archive exec", async () => {

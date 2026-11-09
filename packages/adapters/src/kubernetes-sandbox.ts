@@ -17,7 +17,7 @@ import type {
   ScreenSession,
   TerminalRequest,
 } from "@atlas/adapter-kit";
-import { SandboxUnreachableError } from "@atlas/adapter-kit";
+import { SandboxUnreachableError, WorkspaceTooLargeError } from "@atlas/adapter-kit";
 import { boundedSandboxCommandTimeoutMs } from "@atlas/core";
 import { COMPUTER_CACHE_ENV } from "@atlas/core/node/desktop-runtime";
 import type * as KubernetesClient from "@kubernetes/client-node";
@@ -1170,8 +1170,7 @@ export class TarReader {
     if (type === "x") return { name, mode, size, kind: "pax" as const };
     if (type !== "0") return { name, mode, size, kind: "skip" as const };
     this.paxPath = undefined;
-    if (size > this.maxFileBytes)
-      throw new Error(`computer file exceeds ${this.maxFileBytes} bytes`);
+    if (size > this.maxFileBytes) throw new WorkspaceTooLargeError("bytes");
     return { name, mode, size, kind: "file" as const };
   }
 }
