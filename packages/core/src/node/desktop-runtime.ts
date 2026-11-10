@@ -405,16 +405,38 @@ function revokeTargetCommand(kind: "view" | "control" | "terminal", display: num
   return `mkdir -p ${TARGETS}; : >/tmp/atlas/${kind}-target-next-${display}; mv /tmp/atlas/${kind}-target-next-${display} ${TARGETS}/${kind}-${display}`;
 }
 
+function vncPidFile(kind: "view" | "control", layout: DesktopLayout) {
+  return `/tmp/atlas/sockets/${kind}-${layout.displayNumber}.pid`;
+}
+
+// x11vnc is started by the same user that later stops it; the pid file lets
+// stop signal that exact process instead of a broader pkill.
+
 function stopVncCommand(kind: "view" | "control", layout: DesktopLayout) {
   const socketPrefix = `/tmp/atlas/sockets/${kind}-${layout.displayNumber}-`;
+  const pidFile = vncPidFile(kind, layout);
   const pattern = quoteLayout(`^([^ ]*/)?x11vnc .* -unixsock ${socketPrefix}[^ ]+( |$)`);
   return [
-    `pkill -f ${pattern} || true`,
+    "uid=$(id -u)",
+    // Prefer the pid we started as this user; do not signal processes we do not own.
+    `if [ -f ${pidFile} ]; then`,
+    `  pid=$(tr -dc '0-9' <${pidFile} || true)`,
+    `  owner=$(awk '/^Uid:/{print $2; exit}' /proc/"$pid"/status 2>/dev/null || true)`,
+    `  if [ -n "$pid" ] && [ "$owner" = "$uid" ]; then`,
+    `    kill -TERM "$pid" 2>/dev/null || true`,
+    "    sleep 0.1",
+    `    kill -KILL "$pid" 2>/dev/null || true`,
+    "  fi",
+    `  rm -f ${pidFile}`,
+    "fi",
+    `pkill -u "$uid" -f ${pattern} || true`,
     "sleep 0.1",
-    `pkill -KILL -f ${pattern} || true`,
-    `for i in $(seq 1 10); do pgrep -f ${pattern} >/dev/null || break; sleep 0.1; done`,
-    `if pgrep -f ${pattern} >/dev/null; then echo 'computer screen transport failed to stop' >&2; exit 1; fi`,
-    `rm -f ${socketPrefix}*`,
+    `pkill -KILL -u "$uid" -f ${pattern} || true`,
+    `for i in $(seq 1 10); do pgrep -u "$uid" -f ${pattern} >/dev/null || break; sleep 0.1; done`,
+    // A leftover transport we cannot signal must not fail the RPC. Revoke the
+    // sockets/tokens and continue so computer/release and threads/send stay up.
+    `if pgrep -f ${pattern} >/dev/null; then echo 'computer screen transport failed to stop; revoking tokens and continuing' >&2; fi`,
+    `rm -f ${socketPrefix}* ${pidFile}`,
   ].join("\n");
 }
 
@@ -581,6 +603,7 @@ function renderEnsureScreenCommand(
     `if [ ! -S ${socket} ] || ! pgrep -f ${quoteLayout(`^([^ ]*/)?x11vnc .* -unixsock ${socket}( |$)`)} >/dev/null; then`,
     stopVncCommand("view", layout),
     `  nohup x11vnc -display ${layout.display} -forever -shared -viewonly -nopw -rfbport 0 -unixsock ${socket} -xkb -ncache 0 8>&- 9>&- </dev/null >${log}-x11vnc.log 2>&1 &`,
+    `  printf '%s\\n' "$!" >${vncPidFile("view", layout)}`,
     "fi",
     `for i in $(seq 1 50); do [ -S ${socket} ] && break; sleep 0.1; done`,
     `if [ ! -S ${socket} ]; then echo 'screen viewer did not start' >&2; tail -c 2000 ${log}-x11vnc.log >&2 || true; exit 1; fi`,
@@ -675,6 +698,7 @@ export function interactiveScreenCommand(
     stopProcesses,
     `mkdir -p ${TARGETS} /tmp/atlas/sockets`,
     `nohup x11vnc -display ${layout.display} -forever -shared -nopw -rfbport 0 -unixsock ${socket} -xkb -ncache 0 8>&- 9>&- </dev/null >/tmp/atlas/x11vnc-control-${layout.displayNumber}.log 2>&1 &`,
+    `printf '%s\\n' "$!" >${vncPidFile("control", layout)}`,
     `for i in $(seq 1 50); do [ -S ${socket} ] && pgrep -f ${process} >/dev/null && break; sleep 0.1; done`,
     `[ -S ${socket} ] && pgrep -f ${process} >/dev/null || exit 1`,
     `printf %s ${shellQuote(controlToken)} >${tokenFile}`,
