@@ -1,6 +1,11 @@
 import type { JobPublisher, ProductAnalytics, SandboxProvider } from "@atlas/adapter-kit";
 import { runContinueJob } from "@atlas/adapter-kit";
-import { cancelComputerRunWork, screenLeaseIdForRun, toComputerRef } from "@atlas/adapters";
+import {
+  backgroundParentRunId,
+  cancelComputerRunWork,
+  screenLeaseIdForRun,
+  toComputerRef,
+} from "@atlas/adapters";
 import type {
   Actor,
   GroupMember,
@@ -92,6 +97,15 @@ function answerSteersRun(
     (imageHandling === "confirm" && attachments.some((block) => block.kind === "image")) ||
     (attachments.length > 0 && !runReadsThreadHistory(run.trigger))
   );
+}
+
+/**
+ * A background helper the bot handed long work to. A new message starts its own turn beside it
+ * instead of waiting for it or steering it, so the bot keeps answering while the helper works.
+ * A helper waiting on the owner at the computer still takes the reply that hands control back.
+ */
+function backgroundHelperAtWork(run: { status: string; clientNonce?: string | null }) {
+  return run.status !== "waiting_takeover" && backgroundParentRunId(run.clientNonce) !== undefined;
 }
 
 /** Background work holds pending steering; paused cards never hold the queue. */
@@ -841,6 +855,7 @@ export async function sendThreadMessage(
             modelId: true,
             modelPinned: true,
             thinkingLevel: true,
+            clientNonce: true,
           },
         });
         if (input.imageHandling === "confirm") {
@@ -924,7 +939,8 @@ export async function sendThreadMessage(
         const holdingRuns = activeRuns.filter(
           (run) =>
             QUEUE_HOLDING_RUN_STATUSES.some((status) => status === run.status) &&
-            !messageBypassesTakeoverWait(run),
+            !messageBypassesTakeoverWait(run) &&
+            !backgroundHelperAtWork(run),
         );
         const active = holdingRuns.find(steersUserMessage) ?? holdingRuns[0];
         if (active) {

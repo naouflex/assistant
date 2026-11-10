@@ -433,6 +433,7 @@ export async function provisionComputer(
       });
       if (claim.count !== 1) throw new ComputerBusyError();
     };
+    const providerStarted = performance.now();
     let ref = await provision();
     provisioned = ref;
     await markReplacement(ref);
@@ -471,10 +472,14 @@ export async function provisionComputer(
     // that was not brought up to date. Failing rolls this computer back; the next start downloads.
     if (cache && !hydrated && mountsServerHome(ref.kind))
       throw new Error("Computer host changed while it was starting");
+    const providerMs = Math.round(performance.now() - providerStarted);
     const replacement = replaces(ref);
+    let restoreMs = 0;
     if (replacement) {
       await onProgress?.("restoring");
+      const restoreStarted = performance.now();
       await restoreComputerWorkspace(deps.home, deps.sandbox, existing.homeKey, ref, context);
+      restoreMs = Math.round(performance.now() - restoreStarted);
     }
     await onProgress?.("reconnecting");
     await ensureComputerWorkspaceLayout(
@@ -541,6 +546,8 @@ export async function provisionComputer(
       provider: ref.kind,
       operation: replacement ? "create" : ref.started ? "resume" : "reuse",
       durationMs: Math.round(performance.now() - started),
+      providerMs,
+      restoreMs,
     });
     return ref;
   } catch (error) {

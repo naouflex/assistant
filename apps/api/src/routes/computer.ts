@@ -19,6 +19,7 @@ import {
   hasActiveComputerControl,
   isComputerScreenUnavailable,
   isSandboxGoneError,
+  isTransientComputerStartError,
   provisionComputer,
   queueComputerUpdate,
   rateLimitEnds,
@@ -32,6 +33,7 @@ import {
   scheduleComputerSleep,
   screenLeaseIdForRun,
   sleepDeferReason,
+  startComputerWithRetry,
   takeoverLeaseMs,
   toComputerRef,
   touchRunningComputer,
@@ -120,10 +122,14 @@ export function computerRoutes(ctx: RouterContext) {
         const computerId = bot.computer.id;
         try {
           await getLogger().withContext({ reason: "manual" }, () =>
-            provisionComputer(deps, computerId, {
-              ...ctx,
-              screenLeaseId: screenLeaseIdForRun(lease, manualRunId),
-            }),
+            startComputerWithRetry(
+              () =>
+                provisionComputer(deps, computerId, {
+                  ...ctx,
+                  screenLeaseId: screenLeaseIdForRun(lease, manualRunId),
+                }),
+              { signal: ctx.signal, computerId },
+            ),
           );
           scheduleComputerSleep(deps.jobs, bot.computer.id);
         } catch (error) {
@@ -133,6 +139,13 @@ export function computerRoutes(ctx: RouterContext) {
           // The bot was deleted or moved to another computer while this boot waited.
           if (isRecordNotFound(error)) {
             throw new ORPCError("NOT_FOUND", { message: "Computer no longer exists" });
+          }
+          // Still failing after the retries: say so instead of an internal error.
+          if (isTransientComputerStartError(error)) {
+            getLogger().warn("computer.start_failed", { "computer.id": computerId, error });
+            throw new ORPCError("SERVICE_UNAVAILABLE", {
+              message: "The computer did not start. Try again.",
+            });
           }
           throw error;
         } finally {
@@ -760,10 +773,7 @@ export function computerRoutes(ctx: RouterContext) {
         if (await expireStaleComputerControl(deps, bot.computer)) {
           bot = await repos.getBot(context.actor, input.botId);
         }
-        if (
-          !bot.computer?.providerRef ||
-          !SCREEN_STATES.has(bot.computer.state)
-        ) {
+        if (!bot.computer?.providerRef || !SCREEN_STATES.has(bot.computer.state)) {
           return { url: null };
         }
         const computer = bot.computer;

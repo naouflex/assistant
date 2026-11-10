@@ -77,6 +77,7 @@ import {
   renewComputerExecutionLease,
   screenLeaseIdForRun,
 } from "./computer-lifecycle.js";
+import { startComputerWithRetry } from "./computer-start-retry.js";
 import { teamBotWorkspaceDirectory } from "./computer-support.js";
 import { checkpointRunComputerWorkspace } from "./computer-workspace.js";
 import {
@@ -135,7 +136,7 @@ import { loadPurchaseRedactions } from "./purchase-service.js";
 import { loadReplyContext, messageToAgentHistoryText } from "./reply-context.js";
 import { backOffRoutineAfterAccountError } from "./routine-backoff.js";
 import { lateRoutineRunInstruction } from "./routine-lateness.js";
-import { lazyRunComputer } from "./run-computer.js";
+import { lazyRunComputer, noteComputerUsed, shouldPrewarmComputer } from "./run-computer.js";
 import type {
   RunComputerUseState,
   RunContext,
@@ -1140,7 +1141,11 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         const runComputer = lazyRunComputer(
           async () => {
             getLogger().info("computer.requested");
-            const computer = await provisionComputer(deps, storedComputer.id, context, "bot");
+            // A connection cut or a busy computer mid-start is retried here, before it fails the turn.
+            const computer = await startComputerWithRetry(
+              () => provisionComputer(deps, storedComputer.id, context, "bot"),
+              { signal: context.signal, computerId: storedComputer.id },
+            );
             computerUse.screenRelease = { computer, context, keepWarm: false };
             scheduleComputerSleep(deps.jobs, storedComputer.id);
             // Earlier attachments wait for the computer's first use; every start copies them
@@ -1168,6 +1173,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
         let copyingTurnFiles = Promise.resolve();
         // Serialize copies before each tool, including attachments received while a boot is in flight.
         const getRunComputer = async (reason: "tool" | "takeover" | "script", tool?: string) => {
+          noteComputerUsed(storedComputer.id);
           if (computerUse.reason === "none") {
             computerUse.reason = reason;
             computerUse.tool = tool && BUILTIN_AGENT_TOOL_NAMES.has(tool) ? tool : undefined;
@@ -1205,6 +1211,23 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             },
           );
         };
+        // A bot that used its computer recently likely needs it again: boot it while the
+        // model works on its first reply instead of after the first tool asks for it.
+        if (
+          shouldPrewarmComputer({
+            computerId: storedComputer.id,
+            kind: computerKind,
+            state: storedComputer.state,
+            trigger: run.trigger,
+            heldForTakeover: Boolean(heldForTakeover),
+          })
+        ) {
+          getLogger().info("computer.prewarm", {
+            "run.id": runId,
+            "computer.id": storedComputer.id,
+          });
+          runComputer.prewarm();
+        }
         let currentTurnFiles: Awaited<ReturnType<typeof listCurrentTurnFiles>> = [];
         let recentThreadFiles: Awaited<ReturnType<typeof listRecentThreadFiles>> = [];
         try {

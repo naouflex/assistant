@@ -2302,6 +2302,93 @@ describe("sendThreadMessage", () => {
       expect(enqueue).not.toHaveBeenCalled();
     },
   );
+  it.each([
+    ["running", true],
+    ["queued", true],
+    ["waiting_takeover", false],
+  ] as const)("starts a new turn beside a %s background helper: %s", async (status, startsTurn) => {
+    let messageSeq = 0;
+    let eventSeq = 0;
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      thread: {
+        update: vi.fn(async ({ data }: { data: { nextMessageSeq?: unknown } }) =>
+          data.nextMessageSeq ? { nextMessageSeq: ++messageSeq } : { nextEventSeq: ++eventSeq },
+        ),
+      },
+      message: {
+        create: vi.fn().mockResolvedValue({
+          id: "msg-1",
+          threadId: "thread-1",
+          seq: 1,
+          role: "user",
+          blocks: [{ kind: "text", text: "and the weather?" }],
+          botId: null,
+          replyToMessageId: null,
+          runId: null,
+          createdAt: new Date(),
+        }),
+        update: vi.fn(),
+      },
+      run: {
+        findMany: vi
+          .fn()
+          .mockResolvedValueOnce([
+            {
+              id: "run-helper",
+              taskId: "task-helper",
+              status,
+              trigger: "follow_up",
+              clientNonce: "background:run-parent:call-1",
+            },
+          ])
+          .mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue({ status: "queued", startedAt: null }),
+        create: vi
+          .fn()
+          .mockResolvedValue({ id: "run-user", taskId: "task-user", status: "queued" }),
+      },
+      task: { create: vi.fn().mockResolvedValue({ id: "task-user" }) },
+      steeringMessage: { create: vi.fn() },
+      event: {
+        create: vi.fn().mockResolvedValue({ id: "event-1", seq: 2, createdAt: new Date() }),
+      },
+    };
+    const prisma = {
+      message: { findUnique: vi.fn().mockResolvedValue(null) },
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)),
+    } as unknown as PrismaClient;
+    const actor = { spaceId: "workspace-1", userId: "user-1" } as Actor;
+    const target = {
+      kind: "bot",
+      botId: "bot-1",
+      threadId: "thread-1",
+      bot: { computer: null },
+    } as ThreadTarget;
+    const enqueue = vi.fn().mockResolvedValue(undefined);
+
+    const sent = await sendThreadMessage(
+      {
+        prisma,
+        events: { notify: vi.fn().mockResolvedValue(undefined) } as never,
+        jobs: { enqueue } as never,
+      },
+      actor,
+      target,
+      { text: "and the weather?", clientNonce: "nonce-helper" },
+    );
+    if (startsTurn) {
+      expect(sent).toMatchObject({ runId: "run-user", runIds: ["run-user"] });
+      expect(tx.run.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ trigger: "user" }) }),
+      );
+      expect(tx.steeringMessage.create).not.toHaveBeenCalled();
+    } else {
+      expect(sent).toMatchObject({ runId: "run-helper" });
+      expect(tx.run.create).not.toHaveBeenCalled();
+    }
+  });
+
   it("keeps a group message pending instead of steering into a member's webhook run", async () => {
     let messageSeq = 0;
     let eventSeq = 0;
