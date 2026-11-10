@@ -1,13 +1,14 @@
 #!/usr/bin/env node
-// `pnpm dev`: start the API, worker, web app, and sandbox supervisor for this checkout.
+// `pnpm dev`: start the API, worker, and web app for this checkout, plus the sandbox supervisor
+// when bot computers run in local Docker (SANDBOX_PROVIDER=docker, the default).
 //
 // Several checkouts (git worktrees) can run at once. Each gets the first free block of ports,
 // and all of them share one Postgres database unless this branch adds migrations that main
 // does not have; those run against a database of the branch's own on the same server, so
 // unmerged schema changes never reach the shared one.
 //
-// The database is `.env`'s DATABASE_URL when it accepts a connection. Otherwise a local
-// Postgres container (`atlas-dev-postgres`) is started and reused by every checkout.
+// The database is `.env`'s DATABASE_URL. Only when it is unset is a local Postgres container
+// (`atlas-dev-postgres`) started and reused by every checkout.
 // Setting WEB_PORT or API_PORT, in the shell or `.env`, turns off port selection. A relative
 // DATA_DIR resolves in the main checkout, so checkouts sharing the database share its files.
 // Branch databases, and their copied files, are dropped once the branch is deleted or merged.
@@ -44,7 +45,6 @@ const MANAGED = {
   runtime: "atlas_dev",
   database: "atlas",
 };
-const SERVICES = ["@atlas/api", "@atlas/worker", "@atlas/web", "@atlas/sandbox-supervisor"];
 
 const fileEnv = existsSync(path.join(root, ".env"))
   ? dotenv.parse(readFileSync(path.join(root, ".env")))
@@ -174,9 +174,11 @@ async function startManagedPostgres() {
 async function sharedDatabase() {
   const url = setting("DATABASE_URL");
   const migrationUrl = setting("DATABASE_MIGRATION_URL") || url;
-  if (url && (await connects(migrationUrl))) return { url, migrationUrl };
-  if (url) log("DATABASE_URL in .env does not accept a connection; using the local container");
-  return startManagedPostgres();
+  if (!url) return startManagedPostgres();
+  if (await connects(migrationUrl)) return { url, migrationUrl };
+  throw new Error(
+    "DATABASE_URL in .env does not accept a connection. Start that database, or remove DATABASE_URL to use a local container.",
+  );
 }
 
 function migrationNames(ref) {
@@ -372,6 +374,10 @@ function generateClientIfStale(env) {
 }
 
 const env = { ...process.env, COREPACK_ENABLE_DOWNLOAD_PROMPT: "0" };
+// Remote providers run computers elsewhere; only local Docker computers need the supervisor.
+const dockerComputers = (setting("SANDBOX_PROVIDER") ?? "docker").trim() === "docker";
+const SERVICES = ["@atlas/api", "@atlas/worker", "@atlas/web"];
+if (dockerComputers) SERVICES.push("@atlas/sandbox-supervisor");
 
 let ports = null;
 if (!setting("WEB_PORT") && !setting("API_PORT")) {
