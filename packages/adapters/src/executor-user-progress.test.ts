@@ -1085,14 +1085,14 @@ describe("a stray NO_RESPONSE on runs that must reply", () => {
     },
   );
 
-  it("leaves a sentinel-only user reply as it is today", async () => {
+  it("never shows the bare sentinel as a user reply", async () => {
     const { finalizeRun } = await runTurn("", false, undefined, [], "fyi", {
       runtimeEvents: [
         { type: "text", text: "NO_RESPONSE" },
         { type: "done", text: "NO_RESPONSE" },
       ],
     });
-    expect(savedText(finalizeRun)).toBe("NO_RESPONSE");
+    expect(savedText(finalizeRun)).not.toContain("NO_RESPONSE");
   });
 });
 

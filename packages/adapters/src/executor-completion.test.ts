@@ -23,6 +23,7 @@ import {
 } from "./run-replies.js";
 import {
   isExactNoResponse,
+  mayBecomeNoResponse,
   NO_RESPONSE,
   stripNoResponseReply,
   stripStrayNoResponse,
@@ -472,10 +473,12 @@ describe("stripNoResponseReply", () => {
     expect(stripNoResponseReply(text, blocks)).toEqual({ assembled: text, blocks });
   });
 
-  it("fails closed on case, punctuation, and wrapped variants", () => {
+  it("fails closed on case but reads wrapped or punctuated sentinels as silence", () => {
     expect(isExactNoResponse("no_response")).toBe(false);
-    expect(isExactNoResponse("NO_RESPONSE.")).toBe(false);
-    expect(isExactNoResponse(`\`${NO_RESPONSE}\``)).toBe(false);
+    // Shown to a person, these leak the token; they are never prose.
+    expect(isExactNoResponse("NO_RESPONSE.")).toBe(true);
+    expect(isExactNoResponse(`\`${NO_RESPONSE}\``)).toBe(true);
+    expect(isExactNoResponse("**NO_RESPONSE**")).toBe(true);
     expect(stripNoResponseReply("no_response", [{ kind: "text", text: "no_response" }])).toEqual({
       assembled: "no_response",
       blocks: [{ kind: "text", text: "no_response" }],
@@ -630,12 +633,56 @@ describe("stripStrayNoResponse for runs that must reply", () => {
   it.each([
     [NO_RESPONSE],
     [`  ${NO_RESPONSE}NO_RESPONSE  `],
-    ["first NO_RESPONSE last"],
-    ["reportNO_RESPONSE"],
-    ["NO_RESPONSE_POLICY is on."],
-    [""],
-  ])("leaves %j unchanged", (text) => {
-    const blocks = text ? [{ kind: "text" as const, text }] : [];
-    expect(stripStrayNoResponse(text, blocks)).toEqual({ assembled: text, blocks });
+    ["`NO_RESPONSE`"],
+    ["**NO_RESPONSE**"],
+    ["NO_RESPONSE."],
+  ])("never shows a sentinel-only reply %j as text", (text) => {
+    const steps = { kind: "steps" as const, steps: [{ label: "List items", count: 1 }] };
+    expect(stripStrayNoResponse(text, [steps, { kind: "text", text }])).toEqual({
+      assembled: "",
+      blocks: [steps],
+    });
   });
+
+  it.each([
+    ["Done.\n\n`NO_RESPONSE`", "Done."],
+    [
+      "Here is the report.\n\nNO_RESPONSE\n\nOne more thing.",
+      "Here is the report.\n\nOne more thing.",
+    ],
+    ["**NO_RESPONSE**\n\nDone.", "Done."],
+  ])("drops wrapped or standalone-line sentinels from %j", (text, prose) => {
+    expect(stripStrayNoResponse(text, [{ kind: "text", text }])).toEqual({
+      assembled: prose,
+      blocks: [{ kind: "text", text: prose }],
+    });
+    expect(stripNoResponseReply(text, [{ kind: "text", text }]).assembled).toBe(prose);
+  });
+
+  it.each([["first NO_RESPONSE last"], ["reportNO_RESPONSE"], ["NO_RESPONSE_POLICY is on."], [""]])(
+    "leaves %j unchanged",
+    (text) => {
+      const blocks = text ? [{ kind: "text" as const, text }] : [];
+      expect(stripStrayNoResponse(text, blocks)).toEqual({ assembled: text, blocks });
+    },
+  );
+});
+
+describe("mayBecomeNoResponse", () => {
+  it.each([
+    "NO_",
+    "NO_RESPONSE",
+    "**NO_RESP",
+    "`NO_RESPONSE`",
+    "NO_RESPONSENO_RES",
+    " NO_RESPONSE.",
+  ])("holds back %j while it could still be the sentinel", (text) => {
+    expect(mayBecomeNoResponse(text)).toBe(true);
+  });
+  it.each(["", "No", "Done.", "NO_RESPONSE_POLICY", "NO_RESPONSE then more", "Hello NO_"])(
+    "streams %j",
+    (text) => {
+      expect(mayBecomeNoResponse(text)).toBe(false);
+    },
+  );
 });

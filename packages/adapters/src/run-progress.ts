@@ -13,7 +13,7 @@ import type { ExecutorDeps } from "./executor-deps.js";
 import type { ReplyState, RunContext } from "./run-context.js";
 import { publishMessage } from "./run-messages.js";
 import { runPromotesMidTurnNarration } from "./run-replies.js";
-import { isExactNoResponse } from "./silent-reply.js";
+import { isExactNoResponse, mayBecomeNoResponse } from "./silent-reply.js";
 import {
   clampUserProgressMessage,
   extractNarrationText,
@@ -130,6 +130,8 @@ export async function flushProgress(ctx: RunContext) {
   if (
     ctx.scripted ||
     !reply.pendingProgress ||
+    // Hold back what may yet be a silent reply's sentinel; prose that follows releases it.
+    mayBecomeNoResponse(reply.assistantTurnText) ||
     run.trigger === "routine" ||
     isBackgroundRunTrigger(run.trigger)
   )
