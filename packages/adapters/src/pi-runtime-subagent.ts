@@ -1,3 +1,4 @@
+import { thrownErrorMessage } from "@atlas/core";
 import { Agent } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { isLocalAnswerModel, LOCAL_FAST_MODEL_ID } from "./answer-quality.js";
@@ -98,7 +99,7 @@ export async function executeSubagent(
       }
     }
   } catch (error) {
-    const message = sanitizeError(error instanceof Error ? error.message : String(error));
+    const message = sanitizeError(thrownErrorMessage(error));
     host.queue.push({
       type: "subagent",
       agentId,
@@ -408,7 +409,7 @@ export async function executeSubagent(
     // The parent bot reads this as a tool result; say plainly that it is the helper talking.
     return `${label}${clipped}`;
   } catch (error) {
-    const message = sanitizeError(error instanceof Error ? error.message : String(error));
+    const message = sanitizeError(thrownErrorMessage(error));
     host.queue.push({
       type: "subagent",
       agentId,

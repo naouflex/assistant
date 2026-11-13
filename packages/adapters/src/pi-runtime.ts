@@ -20,6 +20,7 @@ import {
   MODEL_IMAGE_INPUT_ERROR,
   MODEL_OUTPUT_CUT_ERROR,
   modelFallbackFailure,
+  thrownErrorMessage,
 } from "@atlas/core";
 import { getLogger } from "@atlas/logging";
 import type { AgentToolResult } from "@earendil-works/pi-agent-core";
@@ -1061,7 +1062,7 @@ export class PiAgentRuntime implements AgentRuntime {
                     content: [
                       {
                         type: "text",
-                        text: sanitizeError(error instanceof Error ? error.message : String(error)),
+                        text: sanitizeError(thrownErrorMessage(error)),
                       },
                     ],
                     details: {},
@@ -1353,7 +1354,7 @@ export class PiAgentRuntime implements AgentRuntime {
         queue.push(streamed.trim() ? { type: "done", text: streamed } : { type: "done" });
       } catch (error) {
         span?.setStatus({ status: "error" });
-        const message = sanitizeError(error instanceof Error ? error.message : String(error));
+        const message = sanitizeError(thrownErrorMessage(error));
         queue.fail(
           error instanceof TransientModelError
             ? new TransientModelError(message)

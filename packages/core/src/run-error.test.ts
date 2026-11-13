@@ -15,6 +15,7 @@ import {
   MODEL_REQUIRED_SEND_ERROR,
   modelFallbackFailure,
   normalizeRunError,
+  thrownErrorMessage,
   userRunError,
   VERBATIM_TOOL_RESULT_TOO_LARGE_ERROR,
 } from "./run-error.js";
@@ -885,4 +886,20 @@ describe("the one action that fixes a failed run", () => {
       });
     },
   );
+});
+
+describe("thrownErrorMessage", () => {
+  it("reads plain thrown objects instead of printing [object Object]", () => {
+    expect(thrownErrorMessage({ message: "Overloaded" })).toBe("Overloaded");
+    expect(thrownErrorMessage({ status: 402, error: { message: "Insufficient credits" } })).toBe(
+      "402 Insufficient credits",
+    );
+    expect(thrownErrorMessage({ code: "E_FAIL" })).toBe('{"code":"E_FAIL"}');
+    expect(thrownErrorMessage({})).toBe("Unknown error");
+    expect(thrownErrorMessage(new Error("boom"))).toBe("boom");
+    expect(thrownErrorMessage("plain")).toBe("plain");
+  });
+  it("lets userRunError classify an object-shaped provider error", () => {
+    expect(userRunError({ message: "Overloaded" })).not.toContain("[object Object]");
+  });
 });

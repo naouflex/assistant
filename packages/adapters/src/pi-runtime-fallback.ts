@@ -11,6 +11,7 @@ import {
   MODEL_OUTPUT_CUT_ERROR,
   MODEL_OUTPUT_LIMIT_ERROR,
   MODEL_REQUEST_LIMIT_ERROR,
+  thrownErrorMessage,
 } from "@atlas/core";
 import { getLogger } from "@atlas/logging";
 import type {
@@ -312,7 +313,7 @@ export function fallbackAwareModelStream(
     });
   };
   const finishWithThrownError = (target: RuntimeModelTarget, error: unknown) => {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = thrownErrorMessage(error);
     recordFailure(target, message);
     const aborted = signalAborted() || /abort|cancel/i.test(message);
     const stopReason: "aborted" | "error" = aborted ? "aborted" : "error";

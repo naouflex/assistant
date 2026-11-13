@@ -66,6 +66,44 @@ export function isModelRequiredSendError(error: unknown): boolean {
   return typeof message === "string" && message.trim() === MODEL_REQUIRED_SEND_ERROR;
 }
 
+/**
+ * The message of anything thrown. SDKs and transports sometimes throw plain objects such as
+ * `{ error: { message } }` or `{ status, message }`; `String()` turns those into
+ * "[object Object]", which tells the user nothing and hides a billing or rate error from the
+ * classifier.
+ */
+export function thrownErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const record = error as {
+      message?: unknown;
+      error?: unknown;
+      status?: unknown;
+      code?: unknown;
+    };
+    const nested =
+      record.error && typeof record.error === "object"
+        ? (record.error as { message?: unknown }).message
+        : record.error;
+    const text = [record.message, nested].find(
+      (value): value is string => typeof value === "string" && value.trim() !== "",
+    );
+    const status = [record.status, record.code].find(
+      (value) => typeof value === "number" && value >= 100 && value <= 599,
+    );
+    if (text) return status === undefined ? text : `${status} ${text}`;
+    try {
+      const json = JSON.stringify(error);
+      if (json && json !== "{}") return json.length > 2000 ? `${json.slice(0, 2000)}…` : json;
+    } catch {
+      // Circular or otherwise unserializable: fall through to the generic text.
+    }
+    return "Unknown error";
+  }
+  return String(error);
+}
+
 /** What the API itself answers for an unexpected failure. */
 const INTERNAL_RUN_ERROR = "Internal server error";
 // A database client error quotes the query, the server file that ran it and a source excerpt;
@@ -85,7 +123,7 @@ const SERVER_FILE_PATH =
  * nothing of the query.
  */
 export function userRunError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = thrownErrorMessage(error);
   if (
     (error instanceof Error && /^(?:Prisma|DriverAdapter)/.test(error.name)) ||
     DATABASE_ERROR.test(message)
