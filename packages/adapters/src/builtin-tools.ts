@@ -686,7 +686,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "ask_user",
     description:
-      "Ask the user one short multiple-choice question with tappable options, then wait for their selection. Use this instead of asking them to type when two to four concise choices are enough.",
+      "Ask the user one short multiple-choice question with tappable options, then wait for their selection. Use this instead of asking them to type when two to four concise choices are enough. Ask only what the conversation and memory do not already answer and you cannot sensibly decide yourself. The run pauses here, so finish any other calls first and make this the only call in its step.",
     inputSchema: {
       type: "object",
       properties: {
@@ -883,7 +883,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   },
   {
     name: "remember",
-    description: `Save one short new fact to your memory index (${MEMORY_INDEX_PATH}), one call per fact. To change or drop a fact, pass old_text from its entry with new or empty content. Holds ${BOT_MEMORY_MAX_BYTES / 1024} KB. Pass journal: true to append a dated note under journal/YYYY-MM-DD.md instead.`,
+    description: `Save one short new fact to your memory index (${MEMORY_INDEX_PATH}), one call per fact. Save what will still matter in later chats (stable preferences, people and relationships, standing instructions, recurring context), written as one self-contained sentence; skip one-off task details and anything already saved. When a fact changes or conflicts with an entry, pass old_text from that entry with the new or empty content instead of adding a second entry. Holds ${BOT_MEMORY_MAX_BYTES / 1024} KB. Pass journal: true to append a dated note under journal/YYYY-MM-DD.md instead.`,
     inputSchema: {
       type: "object",
       properties: {

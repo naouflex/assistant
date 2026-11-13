@@ -21,7 +21,7 @@ describe("liveModelSibling", () => {
   const models = builtinModels();
   const cataloged = models
     .getProvider("openrouter")
-    .getModels()
+    ?.getModels()
     .find(
       (model) => /-\d+\.\d+$/.test(model.id) && model.reasoning && model.input.includes("image"),
     );
