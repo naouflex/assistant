@@ -20,7 +20,16 @@ describe("OpenRouter output reservation recovery", () => {
       expect(affordableOpenRouterOutput("openrouter", failure(inner), 4096)).toBe(1024);
     },
   );
-  it.each([0, -1, 4096, 8192, Number.MAX_SAFE_INTEGER + 1])(
+  it("also shrinks the reservation when the key's own spending limit is what tripped", () => {
+    // OpenRouter's shape: the message under `error`, the limit source at the top level.
+    const keyLimit = `402 ${JSON.stringify({
+      type: "error",
+      error: { type: "billing_error", message: message(3000) },
+      metadata: { limit_source: "openrouter_key_limit" },
+    })}`;
+    expect(affordableOpenRouterOutput("openrouter", keyLimit, 4096)).toBe(3000);
+  });
+  it.each([0, -1, 1023, 4096, 8192, Number.MAX_SAFE_INTEGER + 1])(
     "ignores unsafe or non-decreasing allowances (%s)",
     (affordable) => {
       expect(
@@ -35,7 +44,7 @@ describe("OpenRouter output reservation recovery", () => {
   it.each([
     undefined,
     "402: invalid JSON",
-    `402: ${JSON.stringify({ message: message(), metadata: { limit_source: "openrouter_key_limit" } })}`,
+    `402: ${JSON.stringify({ message: message(), metadata: { limit_source: "some_other_limit" } })}`,
     `402: ${JSON.stringify({ message: "Insufficient credits.", metadata: { limit_source: "openrouter_credits" } })}`,
     `401: ${JSON.stringify({ message: message(), metadata: { limit_source: "openrouter_credits" } })}`,
     `402: ${JSON.stringify({ message: message() })}`,
