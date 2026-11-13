@@ -264,12 +264,9 @@ export async function runTrial(
       messagingLinked = false;
       messagingAddress = `U-eval-${randomUUID()}`;
       messaging.resetWitnesses();
-      if (scenario.approvalTool)
-        await rpc(app, cookie, "approvalRules/set", {
-          effect: "require_approval",
-          matchKind: "tool",
-          matchValue: scenario.approvalTool,
-        });
+      // Per-tool rules now only allow or deny; "ask" mode puts every connector write behind
+      // the user's approval, which is the boundary this case checks.
+      if (scenario.approvalTool) await rpc(app, cookie, "autoReview/set", { mode: "ask" });
     };
     await setupActor();
     if (scenario.routine) {
@@ -711,15 +708,25 @@ export async function runTrial(
       }
       replies.push(lastText);
       if ("fromPeer" in step) {
+        // What reached the peer's chat from this run. A reply already shown in the bot's own
+        // chat is delivered without a second "sent" echo there, so read the peer's side.
+        const { createdAt: stepStartedAt } = await prisma.run.findUniqueOrThrow({
+          where: { id: runId },
+          select: { createdAt: true },
+        });
+        const peerThread = await prisma.thread.findFirst({
+          where: { botId: peer?.id },
+          select: { id: true },
+        });
         const returned = (
           await prisma.message.findMany({
-            where: { runId, role: "bot" },
+            where: { threadId: peerThread?.id ?? "", createdAt: { gte: stepStartedAt } },
             orderBy: { seq: "asc" },
             select: { blocks: true },
           })
         ).flatMap((message) =>
           (message.blocks as MessageBlock[]).flatMap((block) =>
-            block.kind === "bot_message_sent" && block.toBotId === peer?.id ? [block.text] : [],
+            block.kind === "bot_message_received" && block.fromBotId === botId ? [block.text] : [],
           ),
         );
         peerExchanges.push({

@@ -523,6 +523,17 @@ async function main() {
       CURSOR_API_KEY: "",
       CLOUD_AGENT_PROVIDER: "",
       MODEL_API_KEY: "",
+      // Every auxiliary model call (approval checker, helpers, summaries) uses the priced eval
+      // model; a developer .env default would be unpriced and stop the trial.
+      ATLAS_AUTO_REVIEW_PROVIDER: connection.provider,
+      ATLAS_AUTO_REVIEW_MODEL: connection.modelId ?? "",
+      PI_DEFAULT_PROVIDER: connection.provider,
+      PI_DEFAULT_MODEL: connection.modelId ?? "",
+      // A developer's local model server would become the approval checker and helpers.
+      ATLAS_LOCAL_MODELS_URL: "",
+      RAKAZO_LOCAL_MODELS_URL: "",
+      ATLAS_LOCAL_MODELS: "",
+      RAKAZO_LOCAL_MODELS: "",
       // A developer .env with Stripe keys would put the disposable app behind billing.
       STRIPE_SECRET_KEY: "",
       STRIPE_WEBHOOK_SECRET: "",
