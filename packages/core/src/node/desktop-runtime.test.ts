@@ -419,6 +419,51 @@ describe("shared Linux desktop lifecycle", () => {
     expect(stopExtraScreenCommand(1, "a")).toMatch(/pkill -f .*sockets\/terminal-2-/);
   });
 
+  it("starts and stops x11vnc as the same user and keeps going if the transport cannot be signalled", () => {
+    const start = interactiveScreenCommand(true, "token", screenPorts(1));
+    expect(start).toContain("/tmp/atlas/sockets/control-2.pid");
+    expect(start).toMatch(/printf '%s\\n' "\$!"/);
+    expect(ensureScreenCommand(0, "bot", "token")).toMatch(
+      /printf '%s\\n' "\$!" >\/tmp\/atlas\/sockets\/view-\d+\.pid/,
+    );
+    const stop = interactiveScreenCommand(false);
+    expect(stop).toContain('pkill -u "$uid" -f');
+    expect(stop).toContain("revoking tokens and continuing");
+    expect(stop).not.toMatch(/then echo 'computer screen transport failed to stop' >&2; exit 1/);
+
+    const root = mkdtempSync(path.join(tmpdir(), "atlas-screen-stop-"));
+    roots.push(root);
+    mkdirSync(path.join(root, "desktop-targets"), { recursive: true });
+    mkdirSync(path.join(root, "sockets"), { recursive: true });
+    writeFileSync(
+      path.join(root, "desktop-targets", "control-1"),
+      "token: unix_socket:/tmp/atlas/sockets/control-1-token\n",
+    );
+    writeFileSync(path.join(root, "sockets", "control-1-token"), "socket");
+    const script = stop.replaceAll("/tmp/atlas", root);
+    const result = spawnSync(
+      "bash",
+      [
+        "-eu",
+        "-c",
+        [
+          "pkill() { echo 'pkill: killing pid 3269 failed: Permission denied' >&2; return 1; }",
+          "pgrep() { return 0; }",
+          "sleep() { :; }",
+          "kill() { echo 'kill: permission denied' >&2; return 1; }",
+          script,
+        ].join("\n"),
+      ],
+      { encoding: "utf8", timeout: 5000 },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain("computer screen transport failed to stop");
+    expect(result.stderr).toContain("revoking tokens and continuing");
+    expect(readdirSync(path.join(root, "sockets")).filter((name) => name.startsWith("control-1"))).toEqual(
+      [],
+    );
+  });
+
   it.each([DEFAULT_DESKTOP_ENV, env])(
     "generates valid shell for every lifecycle operation ($displayStart)",
     (environment) => {
@@ -477,7 +522,7 @@ describe("shared Linux desktop lifecycle", () => {
 
   it("stops only the selected VNC transport and keeps the shared gateway", () => {
     const command = stopExtraScreenCommand(1, "a", env);
-    const patterns = [...command.matchAll(/pkill -f '([^']+)'/g)].map(
+    const patterns = [...command.matchAll(/pkill(?: -KILL)?(?: -u "\$uid")? -f '([^']+)'/g)].map(
       (match) => new RegExp(match[1]!),
     );
     for (const pattern of patterns) {

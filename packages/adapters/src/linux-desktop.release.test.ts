@@ -102,6 +102,38 @@ describe("LinuxDesktop.releaseScreen", () => {
 
     expect(commands.map(releasesBrowser)).toEqual([true]);
   });
+
+  it("does not fail release when the screen transport cannot be signalled", async () => {
+    const desktop = new LinuxDesktop(
+      host({
+        code: 1,
+        stdout: "",
+        stderr:
+          "pkill: killing pid 3269 failed: Permission denied\ncomputer screen transport failed to stop\n",
+      }),
+    );
+
+    await expect(desktop.releaseScreen(computer, context)).resolves.toBeUndefined();
+  });
+
+  it("keeps a warm screen when control revocation cannot signal the transport", async () => {
+    const commands: string[] = [];
+    const desktop = new LinuxDesktop(
+      host(
+        {
+          code: 1,
+          stdout: "",
+          stderr: "computer screen transport failed to stop; revoking tokens and continuing\n",
+        },
+        commands,
+      ),
+    );
+
+    await desktop.releaseScreen(computer, { ...context, keepScreenWarm: true });
+
+    expect(commands).toHaveLength(1);
+    expect(releasesBrowser(commands[0]!)).toBe(false);
+  });
 });
 
 describe("LinuxDesktop.connectScreen", () => {

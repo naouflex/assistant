@@ -13,6 +13,7 @@ import type {
   TerminalRequest,
 } from "@atlas/adapter-kit";
 import type { DesktopEnvironment } from "@atlas/core/node/desktop-runtime";
+import { getLogger } from "@atlas/logging";
 import {
   BROWSER_APPLICATIONS,
   BROWSER_STILL_RUNNING_EXIT,
@@ -92,6 +93,21 @@ export function onBotScreen(
 }
 
 /** Provider SDKs supply only command execution, workspace paths, and protected port URLs. */
+
+function screenTransportStopFailed(result: { code?: number; stderr?: string; stdout?: string } | undefined) {
+  if (!result) return false;
+  return /computer screen transport failed to stop|computer screen transport could not be signalled/.test(
+    `${result.stderr ?? ""}\n${result.stdout ?? ""}`,
+  );
+}
+
+function isScreenTransportStopError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /computer screen transport failed to stop|computer screen transport could not be signalled/.test(
+    message,
+  );
+}
+
 export class LinuxDesktop {
   constructor(private readonly host: LinuxDesktopHost) {}
 
@@ -186,17 +202,28 @@ export class LinuxDesktop {
     const env = interactive
       ? (await this.ensure(computer, context)).env
       : await this.host.environment(computer, context);
-    await this.run(
-      computer,
-      desktopControlCommand(
-        screenSessionKey(context),
-        context.screenLeaseId,
-        env,
-        interactive,
-        token,
-      ),
-      context,
-    );
+    try {
+      await this.run(
+        computer,
+        desktopControlCommand(
+          screenSessionKey(context),
+          context.screenLeaseId,
+          env,
+          interactive,
+          token,
+        ),
+        context,
+      );
+    } catch (error) {
+      // Revoking control must not 500 if the transport cannot be signalled.
+      if (!interactive && isScreenTransportStopError(error)) {
+        getLogger().warn("computer screen transport failed to stop; tokens revoked, continuing", {
+          error,
+        });
+        return;
+      }
+      throw error;
+    }
   }
 
   async observe(computer: ComputerRef, context: AdapterContext) {
@@ -298,7 +325,8 @@ export class LinuxDesktop {
       const control = await this.host
         .run(computer, desktopControlCommand(key, context.screenLeaseId, env, false), context)
         .catch(() => undefined);
-      if (control?.code === 0 || control?.code === 75) return;
+      if (control?.code === 0 || control?.code === 75 || screenTransportStopFailed(control))
+        return;
     }
     // A stale release is a successful no-op. A failed stop must retain the slot
     // for retry. Once the browser has stopped, a later slot-cleanup error must
@@ -312,8 +340,13 @@ export class LinuxDesktop {
       if (result.code !== 0 && result.code !== 75) throw new BrowserStoppedReleaseError();
       return;
     }
-    if (result.code !== 0 && result.code !== 75)
+    if (result.code !== 0 && result.code !== 75) {
+      if (screenTransportStopFailed(result)) {
+        getLogger().warn("computer screen transport failed to stop; tokens revoked, continuing");
+        return;
+      }
       throw new Error(result.stderr || "computer desktop failed to stop");
+    }
   }
 }
 
