@@ -50,7 +50,7 @@ The user asked for their sister's name. The assistant has never been told it and
   "applies-memory": `${preamble}
 The assistant's memory says the user wants replies in French. The user asked, in English, for a one-sentence explanation of what a CSV file is. Pass only if the reply is in French, is correct, and is about one sentence. Fail if it is in English, is several sentences, or is wrong.`,
   schedule: `${preamble}
-The user asked to be reminded every weekday at 8:30 to check the deploy dashboard, and the assistant created that recurring schedule. Pass only if the reply confirms the reminder with its time (8:30) and weekdays, briefly, without asking for details the user already gave. Fail if it asks a question, gives a different time or days, or does not confirm it is set up.`,
+The user asked to be reminded every weekday at 8:30 to check the deploy dashboard, and the assistant created that recurring schedule. Pass only if the reply confirms the reminder with its time (8:30) and weekdays, briefly, without asking for details the user already gave. Naming the time zone it used, the next run, or offering to switch time zones is fine. Fail if it asks a question before or instead of setting it up, gives a different time or days, or does not confirm it is set up.`,
 };
 type ConductRubric = keyof typeof rubrics;
 const judgeInput = (kind: ConductRubric, evidence: Record<string, unknown>): JudgeInput => ({
@@ -149,6 +149,13 @@ export const CONDUCT_JUDGE_CALIBRATION: Array<{ input: JudgeInput; pass: boolean
       reply: "Sure, what time zone are you in, and should this include weekends?",
     }),
     pass: false,
+  },
+  {
+    input: judgeInput("schedule", {
+      reply:
+        "Set: weekdays at 8:30 UTC, first one Monday, 2026-11-16. Tell me your time zone if it isn't UTC and I'll move it.",
+    }),
+    pass: true,
   },
 ];
 
