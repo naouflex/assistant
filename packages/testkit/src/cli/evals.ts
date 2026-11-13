@@ -10,6 +10,12 @@ import { loadRootEnv } from "@atlas/core/node/load-root-env";
 import type { EvalCase } from "../evals/cases.js";
 import { EVAL_CASES, HISTORY_EVAL_CASES } from "../evals/cases.js";
 import {
+  CONDUCT_EVAL_CASES,
+  CONDUCT_FIXTURE_VERSION,
+  CONDUCT_JUDGE_CALIBRATION,
+  CONDUCT_JUDGE_VERSION,
+} from "../evals/conduct.js";
+import {
   DELIBERATION_EVAL_CASES,
   DELIBERATION_FIXTURE_VERSION,
   DELIBERATION_JUDGE_CALIBRATION,
@@ -119,10 +125,15 @@ async function main() {
       judge: { version: GROUP_JUDGE_VERSION, calibration: GROUP_JUDGE_CALIBRATION },
     },
     "tool-choice": { cases: TOOL_CHOICE_CASES, fixtureVersion: TOOL_CHOICE_FIXTURE_VERSION },
+    conduct: {
+      cases: CONDUCT_EVAL_CASES,
+      fixtureVersion: CONDUCT_FIXTURE_VERSION,
+      judge: { version: CONDUCT_JUDGE_VERSION, calibration: CONDUCT_JUDGE_CALIBRATION },
+    },
   };
   if (!Object.hasOwn(suites, values.suite!))
     throw new Error(
-      "Unknown suite; use product, history, group, silence, deliberation, memory, tool-choice, or approval",
+      "Unknown suite; use product, history, group, silence, deliberation, memory, conduct, tool-choice, or approval",
     );
   const suite = suites[values.suite!]!;
   const suiteJudge = suite.judge;
