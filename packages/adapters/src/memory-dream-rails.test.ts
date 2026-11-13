@@ -81,6 +81,19 @@ describe("decideDreamRail", () => {
     expect(decideDreamRail(rail({ added: [`Key ${key}`], next: key })).mode).toBe("drop");
     expect(decideDreamRail(rail({ limitChars: 10 })).mode).toBe("drop");
   });
+
+  it("drops growth past the byte cap but lets an oversized note shrink", () => {
+    const grow = rail({ limitBytes: 10, previous: "short", next: "a much longer note" });
+    expect(decideDreamRail(grow)).toEqual({
+      mode: "drop",
+      why: "It would push the note past its size cap.",
+    });
+    // Multi-byte text counts in bytes, as the prompt cap does.
+    expect(decideDreamRail(rail({ limitBytes: 4, previous: "", next: "ééé" })).mode).toBe("drop");
+    const shrink = rail({ limitBytes: 10, previous: "x".repeat(40), next: "x".repeat(30) });
+    expect(decideDreamRail(shrink).mode).not.toBe("drop");
+    expect(decideDreamRail(rail({ limitBytes: 4096 }))).toEqual({ mode: "auto" });
+  });
 });
 
 describe("secrets", () => {

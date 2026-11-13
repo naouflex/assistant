@@ -1,6 +1,7 @@
 import type { AgentRunRequest, AgentRuntime, MemoryStore } from "@atlas/adapter-kit";
 import { MEMORY_REVISION_CONFLICT_ERROR } from "@atlas/adapter-kit";
 import type { MessageBlock } from "@atlas/contracts";
+import { BOT_MEMORY_MAX_BYTES, MEMORY_INDEX_PATH } from "@atlas/contracts";
 import { blocksToAgentHistoryText, escapePromptData } from "@atlas/core";
 import type { PrismaClient } from "@atlas/db";
 import { recordUsage } from "@atlas/db";
@@ -389,6 +390,8 @@ async function landProposal(
     removed,
     pinnedTouched,
     limitChars: scope === "user" ? MAX_SHARED_MEMORY_CHARS : MAX_BOT_MEMORY_CHARS,
+    limitBytes:
+      scope === "bot" && proposal.path === MEMORY_INDEX_PATH ? BOT_MEMORY_MAX_BYTES : undefined,
     autoAppliesInWindow,
     autoApplyEnabled: deps.autoApply !== false && Boolean(deps.memory),
   });

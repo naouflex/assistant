@@ -26,6 +26,10 @@ export const UNDO_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const PIN_PATTERN = /\[pin\]/i;
 
+function utf8Bytes(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
 export function isPinnedLine(line: string): boolean {
   return PIN_PATTERN.test(line);
 }
@@ -169,6 +173,8 @@ export type DreamRailInput = {
   removed: string[];
   pinnedTouched: boolean;
   limitChars: number;
+  /** Byte cap of the note as the prompt loads it (MEMORY.md); growth past it is dropped. */
+  limitBytes?: number;
   autoAppliesInWindow: number;
   autoApplyEnabled: boolean;
 };
@@ -185,6 +191,14 @@ export function decideDreamRail(input: DreamRailInput): DreamRailDecision {
   }
   if (input.next.length > input.limitChars) {
     return { mode: "drop", why: "It would not fit in the note." };
+  }
+  if (input.limitBytes !== undefined) {
+    // The prompt cuts MEMORY.md at its byte cap, so growth past it would silently lose the
+    // end of the note. Shrinking an oversized note is still allowed.
+    const nextBytes = utf8Bytes(input.next);
+    if (nextBytes > input.limitBytes && nextBytes > utf8Bytes(input.previous)) {
+      return { mode: "drop", why: "It would push the note past its size cap." };
+    }
   }
   if (!input.autoApplyEnabled)
     return { mode: "ask", why: "This bot asks before every memory change." };
