@@ -14,6 +14,8 @@ android {
 }
 
 dependencies {
+  // Headless JS tasks keep JS timers running while a reply is read aloud in the background.
+  implementation 'com.facebook.react:react-android'
   testImplementation 'junit:junit:4.13.2'
   // The real parser: Android's own org.json is a stub in local unit tests.
   testImplementation 'org.json:json:20240303'

@@ -20,6 +20,9 @@ import android.os.IBinder
  * foreground service with a notification and Stop button, plus a media session so headset
  * buttons and the lock screen can stop it too. The app starts it when speech begins and stops
  * it when speech ends; Stop here asks the app to cut the speech, which then stops the service.
+ *
+ * Swiping Atlas away from Recents ends the activity only: this service, and the JS that speaks,
+ * keep running (the default stopWithTask="false"), so the reply plays on and Stop stays here.
  */
 class AtlasPlaybackService : Service() {
   private var session: MediaSession? = null
@@ -31,28 +34,46 @@ class AtlasPlaybackService : Service() {
     }
     val title = intent?.getStringExtra(EXTRA_TITLE)?.takeIf(String::isNotBlank)
       ?: getString(R.string.atlas_playback_title)
+    val text = intent?.getStringExtra(EXTRA_TEXT)?.takeIf(String::isNotBlank)
+      ?: getString(R.string.atlas_playback_text)
     createChannel()
     val mediaSession = session ?: createSession().also { session = it }
-    mediaSession.setMetadata(
-      MediaMetadata.Builder()
-        .putString(MediaMetadata.METADATA_KEY_TITLE, title)
-        .putString(MediaMetadata.METADATA_KEY_ARTIST, getString(R.string.atlas_playback_text))
-        .build(),
-    )
+    describe(mediaSession, title, text)
     try {
-      startForegroundCompat(title, mediaSession)
+      enterForeground(notification(title, text, mediaSession))
     } catch (_: Exception) {
       report(started = false)
       stopSelf()
       return START_NOT_STICKY
     }
+    current = this
     report(started = true)
     return START_NOT_STICKY
+  }
+
+  /** Swaps the notification's lines in place, e.g. from waiting for a reply to reading it. */
+  private fun show(title: String, text: String) {
+    val mediaSession = session ?: return
+    describe(mediaSession, title, text)
+    runCatching {
+      getSystemService(NotificationManager::class.java)
+        .notify(NOTIFICATION_ID, notification(title, text, mediaSession))
+    }
+  }
+
+  private fun describe(mediaSession: MediaSession, title: String, text: String) {
+    mediaSession.setMetadata(
+      MediaMetadata.Builder()
+        .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+        .putString(MediaMetadata.METADATA_KEY_ARTIST, text)
+        .build(),
+    )
   }
 
   override fun onBind(intent: Intent?): IBinder? = null
 
   override fun onDestroy() {
+    if (current === this) current = null
     session?.run {
       isActive = false
       release()
@@ -90,16 +111,16 @@ class AtlasPlaybackService : Service() {
       isActive = true
     }
 
-  private fun startForegroundCompat(title: String, mediaSession: MediaSession) {
+  private fun notification(title: String, text: String, mediaSession: MediaSession): Notification {
     val stop = Notification.Action.Builder(
       Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel),
       getString(R.string.atlas_playback_stop),
       stopIntent(),
     ).build()
-    val notification = builder()
+    return builder()
       .setSmallIcon(R.drawable.ic_atlas_notification)
       .setContentTitle(title)
-      .setContentText(getString(R.string.atlas_playback_text))
+      .setContentText(text)
       .setContentIntent(openApp())
       .setDeleteIntent(stopIntent())
       .setOngoing(true)
@@ -113,6 +134,9 @@ class AtlasPlaybackService : Service() {
           .setShowActionsInCompactView(0),
       )
       .build()
+  }
+
+  private fun enterForeground(notification: Notification) {
     if (Build.VERSION.SDK_INT >= 29) {
       startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
     } else {
@@ -163,18 +187,36 @@ class AtlasPlaybackService : Service() {
     private const val CHANNEL_ID = "atlas_playback"
     private const val NOTIFICATION_ID = 1103
     private const val EXTRA_TITLE = "com.naouflex.atlas.notifications.PLAYBACK_TITLE"
+    private const val EXTRA_TEXT = "com.naouflex.atlas.notifications.PLAYBACK_TEXT"
     private const val ACTION_STOP = "com.naouflex.atlas.notifications.PLAYBACK_STOP"
 
     /** Answers the start request that is still waiting for [onStartCommand]. */
     private var pendingStart: ((Boolean) -> Unit)? = null
 
+    /** The running service, so its notification can change without starting it again. */
+    private var current: AtlasPlaybackService? = null
+
+    /** Updates the lines of a running playback notification; false when none is running. */
+    fun update(title: String, text: String): Boolean {
+      val service = current ?: return false
+      service.show(
+        title.takeIf(String::isNotBlank) ?: service.getString(R.string.atlas_playback_title),
+        text.takeIf(String::isNotBlank) ?: service.getString(R.string.atlas_playback_text),
+      )
+      return true
+    }
+
     /** Set by the JS bridge: the user asked to stop from the notification or a media button. */
     var onStopRequested: (() -> Unit)? = null
 
-    fun start(context: Context, title: String, onResult: (Boolean) -> Unit) {
+    fun start(context: Context, title: String, onResult: (Boolean) -> Unit) = start(context, title, "", onResult)
+
+    fun start(context: Context, title: String, text: String, onResult: (Boolean) -> Unit) {
       pendingStart?.invoke(false)
       pendingStart = onResult
-      val intent = Intent(context, AtlasPlaybackService::class.java).putExtra(EXTRA_TITLE, title)
+      val intent = Intent(context, AtlasPlaybackService::class.java)
+        .putExtra(EXTRA_TITLE, title)
+        .putExtra(EXTRA_TEXT, text)
       // Android 12+ refuses a foreground start from the background; speech then simply ends
       // when the app is frozen, as before.
       val queued = runCatching {

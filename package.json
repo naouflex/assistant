@@ -80,7 +80,8 @@
     "patchedDependencies": {
       "app-builder-lib@26.15.3": "patches/app-builder-lib@26.15.3.patch",
       "dockerode@5.0.1": "patches/dockerode@5.0.1.patch",
-      "expo-speech-recognition@57.1.0": "patches/expo-speech-recognition@57.1.0.patch"
+      "expo-speech-recognition@57.1.0": "patches/expo-speech-recognition@57.1.0.patch",
+      "expo-speech@57.0.3": "patches/expo-speech@57.0.3.patch"
     }
   }
 }

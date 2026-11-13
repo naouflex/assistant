@@ -13,14 +13,20 @@ class AtlasNotificationsModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("AtlasNotifications")
 
-    Events("onPlaybackStop")
+    Events("onPlaybackStop", "onSpeechFocus")
 
     OnCreate {
       AtlasPlaybackService.onStopRequested = { sendEvent("onPlaybackStop", mapOf<String, Any?>()) }
+      AtlasSpeechFocus.onChange = { state -> sendEvent("onSpeechFocus", mapOf("state" to state)) }
     }
 
     OnDestroy {
       AtlasPlaybackService.onStopRequested = null
+      AtlasSpeechFocus.onChange = null
+      reactContext()?.let {
+        AtlasSpeechFocus.release(it)
+        AtlasJsTimers.release(it)
+      }
     }
 
     AsyncFunction("getSettings") {
@@ -89,11 +95,37 @@ class AtlasNotificationsModule : Module() {
     }
 
     AsyncFunction("startPlayback") { title: String, promise: Promise ->
-      AtlasPlaybackService.start(context(), title) { started -> promise.resolve(started) }
+      AtlasPlaybackService.start(context(), title) { started ->
+        if (started) reactContext()?.let(AtlasJsTimers::hold)
+        promise.resolve(started)
+      }
     }
 
     AsyncFunction("stopPlayback") {
       AtlasPlaybackService.stop(context())
+      reactContext()?.let(AtlasJsTimers::release)
+    }
+
+    /** Like startPlayback, with the notification's line under the title (e.g. waiting for a reply). */
+    AsyncFunction("startPlaybackWithText") { title: String, text: String, promise: Promise ->
+      val context = context()
+      AtlasPlaybackService.start(context, title, text) { started ->
+        // Timers have to keep firing for as long as the service keeps the app alive.
+        if (started) reactContext()?.let(AtlasJsTimers::hold)
+        promise.resolve(started)
+      }
+    }
+
+    AsyncFunction("updatePlayback") { title: String, text: String ->
+      AtlasPlaybackService.update(title, text)
+    }
+
+    AsyncFunction("acquireSpeechFocus") {
+      AtlasSpeechFocus.acquire(context())
+    }
+
+    AsyncFunction("releaseSpeechFocus") {
+      AtlasSpeechFocus.release(context())
     }
 
     AsyncFunction("openSettings") {
@@ -140,6 +172,8 @@ class AtlasNotificationsModule : Module() {
     Intent("android.settings.APP_NOTIFICATION_PROMOTION_SETTINGS")
       .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
       .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+  private fun reactContext() = appContext.reactContext as? com.facebook.react.bridge.ReactContext
 
   private fun context() = appContext.reactContext
     ?: throw IllegalStateException("Android application context is unavailable")

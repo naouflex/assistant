@@ -1,0 +1,17 @@
+diff --git a/android/src/main/java/expo/modules/speech/SpeechModule.kt b/android/src/main/java/expo/modules/speech/SpeechModule.kt
+index ed8d2a72383239c7b3d331b0db0b40451f6223e5..17899dd35e50a774a86b33ff088b4b92a3819a39 100644
+--- a/android/src/main/java/expo/modules/speech/SpeechModule.kt
++++ b/android/src/main/java/expo/modules/speech/SpeechModule.kt
+@@ -37,7 +37,11 @@ class SpeechModule : Module() {
+       TextToSpeech.getMaxSpeechInputLength()
+     }
+ 
+-    OnActivityDestroys {
++    // Atlas: shut the engine down with the module, not the activity. Leaving the app (Back, or
++    // a swipe from Recents) ends the activity while a foreground service keeps a reply playing;
++    // shutting down here cut that reply off, never reported it stopped, and left the engine
++    // dead until the app restarted.
++    OnDestroy {
+       textToSpeech.shutdown()
+     }
+ 

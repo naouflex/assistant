@@ -87,7 +87,7 @@ describe("Android read-aloud playback service", () => {
     const module = source("java/com/naouflex/atlas/notifications/AtlasNotificationsModule.kt");
     expect(module).toContain('AsyncFunction("startPlayback")');
     expect(module).toContain('AsyncFunction("stopPlayback")');
-    expect(module).toContain('Events("onPlaybackStop")');
+    expect(module).toMatch(/Events\("onPlaybackStop"[^)]*\)/);
   });
 
   it("provides playback strings in every shipped mobile locale", () => {
