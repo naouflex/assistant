@@ -7,7 +7,6 @@ import { parseArgs } from "node:util";
 import type { AgentRunRequest } from "@atlas/adapter-kit";
 import { ModelConnectInputSchema } from "@atlas/contracts";
 import { loadRootEnv } from "@atlas/core/node/load-root-env";
-import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import type { EvalCase } from "../evals/cases.js";
 import { EVAL_CASES, HISTORY_EVAL_CASES } from "../evals/cases.js";
 import {
@@ -48,7 +47,8 @@ import { TOOL_CHOICE_CASES } from "../evals/tool-choice-cases.js";
 import type { DiagnosticWireObservation } from "../evals/wire-observer.js";
 import { diagnosticWireFetch } from "../evals/wire-observer.js";
 import { runApprovalSuite } from "./approval-eval.js";
-import { disposableDatabaseEnv, startPostgres } from "./postgres.js";
+import type { DisposablePostgres } from "./postgres.js";
+import { disposableDatabaseEnv, startDisposablePostgres } from "./postgres.js";
 
 async function main() {
   const { values } = parseArgs({
@@ -479,7 +479,7 @@ async function main() {
   }
   // This CLI owns a disposable database. Never migrate or evaluate against an inherited database.
   const dataDir = mkdtempSync(path.join(tmpdir(), "atlas-evals-"));
-  let postgres: StartedPostgreSqlContainer | undefined;
+  let postgres: DisposablePostgres | undefined;
   let stopRequested = false;
   const stop = new AbortController();
   const requestStop = () => {
@@ -489,7 +489,7 @@ async function main() {
   process.on("SIGINT", requestStop);
   process.on("SIGTERM", requestStop);
   try {
-    postgres = await startPostgres(stop.signal);
+    postgres = await startDisposablePostgres(stop.signal);
     const databaseUrl = postgres.getConnectionUri();
     Object.assign(process.env, {
       ...disposableDatabaseEnv(databaseUrl),
