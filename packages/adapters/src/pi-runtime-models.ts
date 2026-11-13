@@ -111,7 +111,13 @@ export function resolveRuntimeModel(modelConfig: AgentRunRequest["model"]): {
     ((envDefaultProvider === "openrouter" && modelId === envDefaultModel) ||
       modelConfig.contextWindow !== undefined)
   ) {
-    model = configuredOpenRouterModel(modelId, modelConfig.contextWindow);
+    // A newer point release of a cataloged line keeps that line's real limits; a guessed
+    // 16k window would cap output at 4k, which a thinking model can spend before replying.
+    const line = liveModelSibling(models, provider, modelId);
+    model =
+      modelConfig.contextWindow === undefined && line?.reasoning
+        ? line
+        : configuredOpenRouterModel(modelId, modelConfig.contextWindow);
   }
   // Saved generic limits and deployment defaults take precedence over inferred siblings.
   model ??= liveModelSibling(models, provider, modelId);
