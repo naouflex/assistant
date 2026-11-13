@@ -25,10 +25,12 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppErrorBoundary } from "../components/app-error-boundary";
+import { AppNoticeHost } from "../components/app-notice-host";
 import { CallCard } from "../components/CallCard";
 import { chatRouteHeader } from "../components/chat-route-header";
 import { CodeCopyButton } from "../components/code-copy-button";
 import { ComputerUpdateProgress } from "../components/computer-update-progress";
+import { ConnectionNotice } from "../components/connection-notice";
 import { floatingHeaderOptions, glassHeaderOptions } from "../components/glass-title";
 import { MermaidDiagram } from "../components/mermaid-diagram";
 import { MessageMenuHost } from "../components/message-action-menu";
@@ -92,6 +94,7 @@ import {
   useTrustedLinkSites,
 } from "../lib/trusted-link-sites";
 import { startUnsentSends } from "../lib/unsent-sends";
+import { getVoicePlaybackState, subscribeVoicePlayback } from "../lib/voice";
 import { InboxPane } from "./index";
 
 // Before anything renders: text grows with the iOS text size only up to a fixed maximum.
@@ -259,6 +262,9 @@ export const unstable_settings = { anchor: "index" };
 function LayoutContent() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  // The notice sits above the voice dock, which owns the bottom inset while it shows.
+  const playbackIdle =
+    useSyncExternalStore(subscribeVoicePlayback, getVoicePlaybackState).status === "idle";
   // Beside the list a chat swaps in place, the way it does when picked from a sidebar.
   const { split, inboxHidden, foldActive } = useSplitView();
   const chatAnimation = split ? "none" : undefined;
@@ -485,6 +491,10 @@ function LayoutContent() {
                     />
                   </Stack>
                 </SplitFrame>
+                <ConnectionNotice />
+                <AppNoticeHost
+                  style={{ marginTop: 8, marginBottom: playbackIdle ? insets.bottom + 8 : 0 }}
+                />
                 <VoicePlayerBar style={{ marginTop: 8, marginBottom: insets.bottom + 8 }} />
               </View>
               <ComputerUpdateProgress />

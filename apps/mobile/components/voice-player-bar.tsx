@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { mobileTokens } from "../lib/appearance";
+import { tapHaptic } from "../lib/haptics";
 import { useI18n } from "../lib/i18n";
 import { useThemedStyles } from "../lib/native";
 import { iosAtLeast } from "../lib/native-controls";
@@ -8,6 +9,7 @@ import {
   getVoicePlaybackState,
   pauseVoicePlayback,
   resumeVoicePlayback,
+  skipVoicePlayback,
   stopVoicePlayback,
   subscribeVoicePlayback,
 } from "../lib/voice";
@@ -33,13 +35,44 @@ export function VoicePlayerBar({
 
   const speakerColor = playback.speaker?.color ?? tokens.foreground;
   const paused = playback.status === "paused";
+  // Stop works from the first moment; until the first clip is ready there is nothing to pause.
+  const preparing = playback.status === "playing" && !playback.canPause;
+  const name = playback.speaker?.name || t("Bot");
+  const detail = playback.interrupted
+    ? t("Paused while another app uses audio")
+    : preparing
+      ? t("Getting ready…")
+      : null;
 
   return (
     <GlassSurface style={[styles.bar, style]} fallbackStyle={styles.barFallback}>
-      <NativeSymbol ios="waveform" android="pulse-outline" size={16} color={speakerColor} />
-      <Text numberOfLines={1} style={[styles.name, { color: speakerColor }]}>
-        {playback.speaker?.name || t("Bot")}
-      </Text>
+      <View
+        accessible
+        accessibilityLabel={detail ? `${name}, ${detail}` : t("{name} is speaking", { name })}
+        accessibilityLiveRegion="polite"
+        style={styles.who}
+      >
+        {preparing ? (
+          <ActivityIndicator size="small" color={speakerColor} style={styles.indicator} />
+        ) : (
+          <NativeSymbol
+            ios={paused ? "pause.circle" : "waveform"}
+            android={paused ? "pause-circle-outline" : "pulse-outline"}
+            size={16}
+            color={speakerColor}
+          />
+        )}
+        <View style={styles.copy}>
+          <Text numberOfLines={1} style={[styles.name, { color: speakerColor }]}>
+            {name}
+          </Text>
+          {detail ? (
+            <Text numberOfLines={1} style={styles.detail}>
+              {detail}
+            </Text>
+          ) : null}
+        </View>
+      </View>
       {paused ? (
         <VoiceControlButton
           accessibilityLabel={t("Play")}
@@ -53,6 +86,14 @@ export function VoicePlayerBar({
           onPress={pauseVoicePlayback}
           ios="pause.fill"
           android="pause"
+        />
+      ) : null}
+      {playback.canSkip ? (
+        <VoiceControlButton
+          accessibilityLabel={t("Next")}
+          onPress={skipVoicePlayback}
+          ios="forward.end.fill"
+          android="play-skip-forward"
         />
       ) : null}
       <VoiceControlButton
@@ -81,7 +122,12 @@ function VoiceControlButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
+      // The circle is drawn at 34pt; the touch target reaches the 44pt minimum.
+      hitSlop={5}
+      onPress={() => {
+        tapHaptic();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.button,
         !iosAtLeast(26) && styles.buttonFallback,
@@ -111,7 +157,11 @@ function createStyles() {
       borderColor: tokens.glassStroke,
       backgroundColor: tokens.glassFill,
     },
-    name: { flexGrow: 1, flexShrink: 1, fontSize: 13, fontWeight: "600" },
+    who: { flexGrow: 1, flexShrink: 1, flexDirection: "row", alignItems: "center", gap: 10 },
+    indicator: { width: 16, height: 16, transform: [{ scale: 0.7 }] },
+    copy: { flexShrink: 1 },
+    name: { fontSize: 13, fontWeight: "600" },
+    detail: { fontSize: 12, color: tokens.mutedForeground },
     button: {
       width: 34,
       height: 34,

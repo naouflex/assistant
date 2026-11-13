@@ -12,6 +12,7 @@ import type { MobileBot, MobileMessage, MobileSnapshot } from "../../lib/api";
 import { blockText, copyableMobileMessageText, selectableMobileMessageText } from "../../lib/api";
 import type { MobileArtifactTarget } from "../../lib/artifact-open";
 import { canDoubleTapReact } from "../../lib/double-tap";
+import { selectionHaptic } from "../../lib/haptics";
 import { useI18n } from "../../lib/i18n";
 import { presentMessageActionSheet } from "../../lib/message-action-sheet";
 import { buildMessageContextMenu, messageMenuReaction } from "../../lib/message-context-menu";
@@ -342,7 +343,14 @@ export const MessageRow = memo(function MessageRow({
         if (id === "unread") markUnread();
       },
       actionProps: {
-        onLongPress: Platform.OS === "ios" ? undefined : openSheet,
+        // iOS's context menu gives its own haptic.
+        onLongPress:
+          Platform.OS === "ios"
+            ? undefined
+            : (event: GestureResponderEvent) => {
+                selectionHaptic();
+                openSheet(event);
+              },
         accessibilityActions: menuActions.map((action) => ({
           name: action.name,
           label: action.text,

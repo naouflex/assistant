@@ -37,6 +37,7 @@ import {
 import { useComposerDictation } from "../lib/composer-dictation";
 import type { ComposerDraftScope } from "../lib/composer-draft";
 import { readComposerDraft, writeComposerDraft } from "../lib/composer-draft";
+import { tapHaptic } from "../lib/haptics";
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 import type { ComposerSnapshot } from "../lib/thread-feedback";
@@ -692,7 +693,10 @@ export function ThreadComposer({
               accessibilityRole="button"
               accessibilityLabel={t("Call")}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              onPress={() => void startVoiceCall()}
+              onPress={() => {
+                tapHaptic();
+                void startVoiceCall();
+              }}
               style={{ marginBottom: 8 }}
             >
               <GlassSurface
@@ -714,7 +718,10 @@ export function ThreadComposer({
               accessibilityLabel={t("Send")}
               disabled={sending || !canSend}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              onPress={() => void send()}
+              onPress={() => {
+                tapHaptic();
+                void send();
+              }}
               style={{ marginBottom: 8, opacity: sending || !canSend ? 0.5 : 1 }}
             >
               <GlassSurface

@@ -12,6 +12,7 @@ import { rpc } from "../lib/api";
 import { startCallBackground, stopCallBackground } from "../lib/call-background";
 import type { CallPhase } from "../lib/call-session";
 import { endCall, toggleMute, toggleTranscript, useCallSession } from "../lib/call-session";
+import { tapHaptic } from "../lib/haptics";
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens } from "../lib/native";
 import { setVoiceBackgroundPlayback } from "../lib/voice";
@@ -272,7 +273,10 @@ function RoundButton({
       color={color}
       tint={background}
       selected={selected}
-      onPress={onPress}
+      onPress={() => {
+        tapHaptic();
+        onPress();
+      }}
       fallbackStyle={[
         styles.buttonFallback,
         { borderColor: border, backgroundColor: background ?? "transparent" },

@@ -159,6 +159,34 @@ function noteServerReachable(reachable: boolean): void {
   for (const listener of [...serverReachableListeners]) listener();
 }
 
+/**
+ * Asks the server's health check whether it answers again, so the app notices it is back even
+ * when nothing else is retrying. Resolves whether it answered.
+ */
+export async function probeServerReachable(timeoutMs = 8_000): Promise<boolean> {
+  const apiBase = currentApiBase();
+  const generation = currentSessionGeneration();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetchServer(
+      `${apiBase}/health`,
+      { method: "GET", signal: controller.signal },
+      apiBase,
+    );
+    cancelResponseBody(res);
+    const reachable = !isUnreachableStatus(res.status);
+    if (apiBase === currentApiBase() && generation === currentSessionGeneration()) {
+      noteServerReachable(reachable);
+    }
+    return reachable;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function currentApiBase() {
   const parsed = normalizeApiBase(cachedApiBase ?? defaultApiBase());
   if (!parsed.ok) throw new Error(parsed.error);
