@@ -39,8 +39,22 @@ vi.mock("./call-session", () => ({
 }));
 vi.mock("./device-voice", () => ({ loadDeviceVoiceEnabled: async () => true }));
 vi.mock("./dictation", () => ({ available: async () => true }));
-vi.mock("./i18n", () => ({ useI18n: () => ({ t: (text: string) => text }) }));
-vi.mock("./voice", () => ({ speakQueue: vi.fn(), speakText: vi.fn() }));
+vi.mock("./i18n", () => ({
+  getActiveUiLocale: () => "en",
+  useI18n: () => ({ t: (text: string) => text }),
+}));
+vi.mock("./voice", () => ({
+  appendSpeech: vi.fn(async () => true),
+  createSpeechOwner: () => Symbol("owner"),
+  speakQueue: vi.fn(),
+  speakText: vi.fn(),
+}));
+vi.mock("./playback-background", () => ({ keepWaitingForReply: vi.fn() }));
+vi.mock("./voice-background", () => ({ useBackgroundAutoSpeak: () => false }));
+vi.mock("./auto-speak-notice", () => ({
+  clearAutoSpeakFailure: vi.fn(async () => undefined),
+  noticeAutoSpeakFailure: vi.fn(async () => undefined),
+}));
 vi.mock("./voice-chat-intent", () => ({
   onShortcutVoiceChat: () => () => undefined,
   takeShortcutVoiceChat: vi.fn(() => false),

@@ -42,6 +42,10 @@ vi.mock("./call-sounds", () => ({
   playCallCue: vi.fn(),
 }));
 vi.mock("./voice", () => ({ speakText: vi.fn() }));
+vi.mock("./voice-background", () => ({
+  saveBackgroundAutoSpeak: vi.fn(async () => undefined),
+  useBackgroundAutoSpeak: () => false,
+}));
 vi.mock("./appearance", () => ({ mobileTokens: () => ({}) }));
 vi.mock("./native", () => ({ native: {}, useThemedStyles: (factory: () => unknown) => factory() }));
 vi.mock("./i18n", () => ({ t: (text: string) => text, useI18n: () => ({ t }) }));
@@ -72,6 +76,7 @@ vi.mock("react-native", () => {
     ScrollView: View,
     Text: ({ children }: { children: ReactNode }) => <span>{children}</span>,
     ActivityIndicator: () => <span>Loading</span>,
+    Platform: { OS: "android" },
     StyleSheet: { create: (styles: unknown) => styles },
     Pressable: ({ children, onPress, disabled, accessibilityState }: ButtonProps) => (
       <button

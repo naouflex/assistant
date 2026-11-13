@@ -18,7 +18,15 @@ import { aiConsentCoalesceKey, captureApiRequestContext, rpc } from "./api";
 import { voiceForBot } from "./bot-voices";
 import { loadDeviceVoiceEnabled } from "./device-voice";
 import { t } from "./i18n";
-import { keepPlaybackInBackground, onPlaybackStopRequested } from "./playback-background";
+import {
+  acquireSpeechFocus,
+  createPlaybackKeeper,
+  keepPlaybackInBackground,
+  onPlaybackStopRequested,
+  onSpeechFocusChange,
+  releaseSpeechFocus,
+  speechFocusSupported,
+} from "./playback-background";
 import { fetchServer } from "./server-headers";
 import { errorText, voiceAccountErrorText } from "./user-error";
 
@@ -52,11 +60,21 @@ export type VoicePlaybackState = {
   botId?: string;
   /** The thread message this clip was spoken from, when playback started from one. */
   messageId?: string;
-  /** False when the active engine (Android on-device voice) can only stop, not pause. */
+  /** False while the clip is still being prepared, before there is anything to pause. */
   canPause: boolean;
   speaker?: PlaybackSpeaker;
+  /** Paused by a phone call or another app taking the audio, not by the user. */
+  interrupted?: true;
+  /** More queued speech follows, so Skip can move on to it. */
+  canSkip?: true;
 };
-type VoiceControl = { pause(): void; resume(): void; stop(): void };
+type VoiceControl = {
+  pause(): void;
+  resume(): void;
+  stop(): void;
+  /** Ends the current message only, so a queue moves on to the next one. */
+  skip?(): void;
+};
 
 const IDLE_PLAYBACK: VoicePlaybackState = { status: "idle", canPause: false };
 let playback: VoicePlaybackState = IDLE_PLAYBACK;
@@ -67,11 +85,18 @@ const playbackListeners = new Set<() => void>();
 // change below: pause, resume and the device-voice path all rebuild the state.
 let announcedSpeaker: { botId: string; speaker: PlaybackSpeaker } | undefined;
 
+/** Set while a call or another app holds the audio; "lost" waits for the user to resume. */
+let interruption: "transient" | "lost" | null = null;
+
 function setPlayback(next: VoicePlaybackState, control: VoiceControl | null) {
-  playback =
-    next.botId && announcedSpeaker?.botId === next.botId
-      ? { ...next, speaker: announcedSpeaker.speaker }
-      : next;
+  if (next.status === "idle") interruption = null;
+  const speaker =
+    next.botId && announcedSpeaker?.botId === next.botId ? announcedSpeaker.speaker : undefined;
+  playback = withQueueState({
+    ...next,
+    ...(speaker ? { speaker } : {}),
+    ...(next.status === "paused" && interruption ? { interrupted: true as const } : {}),
+  });
   activeControl = control;
   for (const listener of playbackListeners) listener();
   // A call holds its own microphone service; anything else read aloud holds a playback one,
@@ -80,6 +105,26 @@ function setPlayback(next: VoicePlaybackState, control: VoiceControl | null) {
     playback.status !== "idle" && !playsInBackground,
     playback.speaker?.name,
   );
+  // The audio is held for the whole reply, across its clips, and let go when the user pauses
+  // so their music comes back. An interruption keeps the request, to hear when it ends.
+  speechFocus.update(
+    !playsInBackground &&
+      (playback.status === "playing" ||
+        (playback.status === "paused" && interruption === "transient")),
+  );
+}
+
+function withQueueState(state: VoicePlaybackState): VoicePlaybackState {
+  const { canSkip: _drop, ...rest } = state;
+  return state.status !== "idle" && speechQueue.length > 0 ? { ...rest, canSkip: true } : rest;
+}
+
+/** Re-announces the dock's state when only the queue behind it changed. */
+function refreshQueueState(): void {
+  const next = withQueueState(playback);
+  if (next.canSkip === playback.canSkip) return;
+  playback = next;
+  for (const listener of playbackListeners) listener();
 }
 
 export function getVoicePlaybackState(): VoicePlaybackState {
@@ -96,6 +141,9 @@ export function pauseVoicePlayback(): void {
 }
 
 export function resumeVoicePlayback(): void {
+  // Resuming after another app took the audio for good asks for it again.
+  if (interruption === "lost") speechFocus.reacquire();
+  interruption = null;
   activeControl?.resume();
 }
 
@@ -105,6 +153,42 @@ export function stopVoicePlayback(): void {
   playbackEpoch += 1;
   speechQueue = [];
   activeControl?.stop();
+}
+
+/** Moves on to the next queued message, or stops when this was the last one. */
+export function skipVoicePlayback(): void {
+  if (speechQueue.length === 0 || !activeControl?.skip) {
+    stopVoicePlayback();
+    return;
+  }
+  activeControl.skip();
+}
+
+/**
+ * A call or another app took the audio: pause the reply where it is. "transient" resumes on its
+ * own when the audio comes back; "lost" (another app started playing) waits for the user.
+ */
+export function interruptVoicePlayback(kind: "transient" | "lost"): void {
+  if (playback.status === "idle" || !activeControl) return;
+  if (playback.status === "paused" && interruption === null) return; // the user paused first
+  interruption = kind;
+  // While the clip is still preparing there is nothing to pause yet; it starts paused instead.
+  if (playback.status === "playing" && playback.canPause) activeControl.pause();
+  else setPlayback(playback, activeControl);
+}
+
+/** The audio came back after a transient interruption. */
+export function endVoiceInterruption(): void {
+  if (interruption !== "transient") return;
+  interruption = null;
+  if (playback.status === "paused") activeControl?.resume();
+}
+
+/** A reply that became playable during a call starts paused, and resumes when the call ends. */
+function applyPendingInterruption(control: VoiceControl): void {
+  if (interruption !== null && playback.status === "playing" && activeControl === control) {
+    control.pause();
+  }
 }
 
 /** Cuts the reply off mid-sentence, for a caller who talked over it. */
@@ -127,10 +211,21 @@ let playsInBackground = false;
 function playbackAudioMode() {
   return {
     playsInSilentMode: true as const,
-    interruptionMode: "mixWithOthers" as const,
+    interruptionMode: replyInterruptionMode(),
     shouldPlayInBackground: true as const,
     ...(playsInBackground ? { allowsRecording: true as const } : {}),
   };
+}
+
+/**
+ * Replies duck other audio. Android does that through the reply-long focus request below, so
+ * expo-audio must not also take and drop focus per clip (music would swell between sentences);
+ * iOS ducks through the audio session. A call keeps mixing, as its recording session needs.
+ */
+function replyInterruptionMode(): "mixWithOthers" | "duckOthers" {
+  if (playsInBackground) return "mixWithOthers";
+  if (Platform.OS === "android") return speechFocusSupported() ? "mixWithOthers" : "duckOthers";
+  return Platform.OS === "ios" ? "duckOthers" : "mixWithOthers";
 }
 
 /**
@@ -182,10 +277,43 @@ function releasePlayback(epoch: number, stillOwner: boolean, keepForQueue: boole
  * queue. Resolves to whether the first item was spoken, so a caller can tell
  * the user when no voice is set up.
  */
-export async function speakQueue(items: SpeechQueueItem[]): Promise<boolean> {
-  const epoch = beginSpeech();
-  speechQueue = items;
+export async function speakQueue(items: SpeechQueueItem[], owner?: SpeechOwner): Promise<boolean> {
+  const epoch = beginSpeech(owner);
+  speechQueue = items.map((item) => (owner && !item.owner ? { ...item, owner } : item));
   return advanceSpeechQueue(epoch);
+}
+
+/** The epoch of the queue an owner is still playing, so more of its speech can join it. */
+let queueOwner: { owner: SpeechOwner; epoch: number } | undefined;
+
+/**
+ * Adds speech to the end of what `owner` is already saying, e.g. the next sentences of a reply
+ * that is still streaming in; starts speaking when it has gone quiet. Resolves true once the
+ * speech joined a running queue or has played, or false when nothing could be spoken (no voice).
+ */
+export async function appendSpeech(items: SpeechQueueItem[], owner: SpeechOwner): Promise<boolean> {
+  if (items.length === 0) return true;
+  const owned = items.map((item) => ({ ...item, owner }));
+  for (const item of owned) streamedItems.add(item);
+  if (queueOwner?.owner === owner && isCurrentSpeech(queueOwner.epoch)) {
+    speechQueue.push(...owned);
+    refreshQueueState();
+    if (lastClip?.epoch === queueOwner.epoch) prefetchNextQueued(lastClip.requestContext);
+    return true;
+  }
+  const epoch = beginSpeech(owner);
+  queueOwner = { owner, epoch };
+  speechQueue = owned;
+  try {
+    let spoken = await advanceSpeechQueue(epoch);
+    // Speech that joined while the last item finished still gets its turn.
+    while (spoken && isCurrentSpeech(epoch) && speechQueue.length > 0) {
+      spoken = await advanceSpeechQueue(epoch);
+    }
+    return spoken;
+  } finally {
+    if (queueOwner?.epoch === epoch) queueOwner = undefined;
+  }
 }
 
 async function advanceSpeechQueue(epoch: number): Promise<boolean> {
@@ -193,8 +321,9 @@ async function advanceSpeechQueue(epoch: number): Promise<boolean> {
   if (!isCurrentSpeech(epoch)) return true;
   const next = speechQueue.shift();
   if (!next) return false;
+  refreshQueueState();
   const { text, ...opts } = next;
-  const spoken = await speakPrepared(text, opts, epoch);
+  const spoken = await speakPrepared(text, opts, epoch, next);
   if (!isCurrentSpeech(epoch)) return true;
   if (spoken && speechQueue.length > 0) await advanceSpeechQueue(epoch);
   return spoken;
@@ -204,7 +333,12 @@ export async function speakText(text: string, opts: SpeechOptions = {}): Promise
   return speakPrepared(text, opts, beginSpeech(opts.owner));
 }
 
-async function speakPrepared(text: string, opts: SpeechOptions, epoch: number): Promise<boolean> {
+async function speakPrepared(
+  text: string,
+  opts: SpeechOptions,
+  epoch: number,
+  item?: SpeechQueueItem,
+): Promise<boolean> {
   if (!isCurrentSpeech(epoch)) return false;
   // Each queued item owns the epoch while it prepares and plays.
   activeSpeechOwner = opts.owner;
@@ -240,13 +374,11 @@ async function speakPrepared(text: string, opts: SpeechOptions, epoch: number): 
     }
     const requestContext = await captureApiRequestContext();
     if (!isCurrentSpeech(epoch)) return false;
-    const prepared = await rpc(
-      "voice/prepare",
-      { text, voiceId: opts.voiceId, botId: opts.botId, scope: opts.scope },
-      { requestContext },
-    );
+    const plan = await ((item && prefetchedPlans.get(item)) ??
+      planHostedSpeech(text, opts, requestContext));
+    if (item) prefetchedPlans.delete(item);
     if (!isCurrentSpeech(epoch)) return false;
-    if (!prepared.ready) {
+    if (!plan.ready) {
       if (playback.status !== "idle") setPlayback(IDLE_PLAYBACK, null);
       return false;
     }
@@ -256,6 +388,7 @@ async function speakPrepared(text: string, opts: SpeechOptions, epoch: number): 
     if (activeControl !== prepareControl) activeControl?.stop();
     if (!isCurrentSpeech(epoch)) return false;
     const session = new HostedSession(generation);
+    let skipped = false;
     const control: VoiceControl = {
       pause: () => {
         session.pause();
@@ -275,36 +408,42 @@ async function speakPrepared(text: string, opts: SpeechOptions, epoch: number): 
         session.stop();
         setPlayback(IDLE_PLAYBACK, null);
       },
+      skip: () => {
+        skipped = true;
+        session.stop();
+      },
     };
     setPlayback(
       { status: "playing", botId: opts.botId, messageId: opts.messageId, canPause: true },
       control,
     );
-    const utterances = prepared.utterances;
-    // Render one clip ahead; failures ride as values so an abandoned prefetch never rejects unhandled.
-    type Rendered = { audio: Uint8Array; error?: never } | { audio?: never; error: unknown };
-    const render = (text: string): Promise<Rendered> =>
-      renderUtterance(text, opts, requestContext).then(
-        (audio) => ({ audio }),
-        (error: unknown) => ({ error }),
-      );
+    applyPendingInterruption(control);
+    const utterances = plan.utterances;
+    const render = (clip: string): Promise<Rendered> => renderSafely(clip, opts, requestContext);
     let finished = false;
     try {
+      // Render one clip ahead; the first may already be rendering from the plan.
       let next: Promise<Rendered> | null =
-        utterances.length > 0 ? render(utterances[0] ?? "") : null;
+        utterances.length > 0 ? (plan.first ?? render(utterances[0] ?? "")) : null;
       for (let i = 0; i < utterances.length; i += 1) {
         if (session.isStopped || !isCurrentSpeech(epoch)) break;
         const current = next;
         next = i + 1 < utterances.length ? render(utterances[i + 1] ?? "") : null;
+        // The last clip is playing: get the next queued message ready behind it.
+        if (i + 1 === utterances.length) {
+          lastClip = { epoch, requestContext };
+          prefetchNextQueued(requestContext);
+        }
         if (!current) break;
         const rendered = await current;
         if ("error" in rendered) throw rendered.error;
         if (session.isStopped || !isCurrentSpeech(epoch)) break;
         await playSpeechClip(rendered.audio, session);
       }
-      finished = !session.isStopped && isCurrentSpeech(epoch);
+      finished = (!session.isStopped || skipped) && isCurrentSpeech(epoch);
     } finally {
-      releasePlayback(epoch, isCurrentHostedSpeechSession(generation), finished);
+      if (lastClip?.epoch === epoch) lastClip = null;
+      releasePlayback(epoch, isCurrentHostedSpeechSession(generation) || skipped, finished);
     }
     return true;
   } finally {
@@ -314,6 +453,71 @@ async function speakPrepared(text: string, opts: SpeechOptions, epoch: number): 
       setPlayback(IDLE_PLAYBACK, null);
     }
   }
+}
+
+// Failures ride as values, so an abandoned prefetch never rejects unhandled.
+type Rendered = { audio: Uint8Array; error?: never } | { audio?: never; error: unknown };
+type HostedPlan = { ready: boolean; utterances: string[]; first?: Promise<Rendered> };
+
+function renderSafely(
+  text: string,
+  opts: SpeechOptions,
+  requestContext: ApiRequestContext,
+): Promise<Rendered> {
+  return renderUtterance(text, opts, requestContext).then(
+    (audio) => ({ audio }),
+    (error: unknown) => ({ error }),
+  );
+}
+
+/** What to say: the server may shorten a long reply to a summary written by the bot's model. */
+async function planHostedSpeech(
+  text: string,
+  opts: SpeechOptions,
+  requestContext: ApiRequestContext,
+): Promise<HostedPlan> {
+  const prepared = await rpc(
+    "voice/prepare",
+    { text, voiceId: opts.voiceId, botId: opts.botId, scope: opts.scope },
+    { requestContext },
+  );
+  return { ready: prepared.ready, utterances: prepared.ready ? prepared.utterances : [] };
+}
+
+/** The first clip of a queued message, rendering while the message before it still plays. */
+async function planWithFirstClip(
+  text: string,
+  opts: SpeechOptions,
+  requestContext: ApiRequestContext,
+): Promise<HostedPlan> {
+  const plan = await planHostedSpeech(text, opts, requestContext);
+  const opening = plan.utterances[0];
+  return plan.ready && opening
+    ? { ...plan, first: renderSafely(opening, opts, requestContext) }
+    : plan;
+}
+
+const prefetchedPlans = new WeakMap<SpeechQueueItem, Promise<HostedPlan>>();
+
+/** The hosted reply playing its last clip, so speech that joins now is readied at once. */
+let lastClip: { epoch: number; requestContext: ApiRequestContext } | null = null;
+
+/** Speech added to a reply that is still streaming; the next of it is readied ahead. */
+const streamedItems = new WeakSet<SpeechQueueItem>();
+
+/**
+ * Plans the next streamed chunk, and renders its first clip, while the current one plays its last
+ * clip, so the voice runs on without a gap. A queue of whole messages waits its turn instead:
+ * a Stop there would waste the render.
+ */
+function prefetchNextQueued(requestContext: ApiRequestContext): void {
+  const upcoming = speechQueue[0];
+  if (!upcoming || !streamedItems.has(upcoming) || prefetchedPlans.has(upcoming)) return;
+  const { text, ...opts } = upcoming;
+  const plan = planWithFirstClip(text, opts, requestContext);
+  // Its failure surfaces when the queue reaches it, not as an unhandled rejection now.
+  plan.catch(() => undefined);
+  prefetchedPlans.set(upcoming, plan);
 }
 
 let deviceSpeechSession = 0;
@@ -354,46 +558,73 @@ async function speakOnDevice(
   await Speech.stop();
   if (!isCurrentDeviceSpeechSession(session) || !isCurrentSpeech(mine)) return true;
 
-  // Android's TextToSpeech engine has no pause/resume, only stop; iOS's does.
-  // Feature-detect rather than trust the platform alone: support has moved
-  // across expo-speech versions, and a missing method must not throw here.
+  // iOS's engine pauses mid-word. Android's TextToSpeech can only stop, so a pause there stops
+  // the sentence and Resume says it again from its start. Feature-detect the native pause:
+  // support has moved across expo-speech versions, and a missing method must not throw here.
   const pausable = Speech as unknown as {
     pause?: () => void | Promise<void>;
     resume?: () => void | Promise<void>;
   };
-  const canPause =
+  const nativePause =
     Platform.OS === "ios" &&
     typeof pausable.pause === "function" &&
     typeof pausable.resume === "function";
   if (!isCurrentDeviceSpeechSession(session) || !isCurrentSpeech(mine)) return true;
+  let paused = false;
+  let skipped = false;
+  let wake: (() => void) | undefined;
+  const waitWhilePaused = () =>
+    new Promise<void>((resolve) => {
+      wake = resolve;
+    });
   const control: VoiceControl = {
     pause: () => {
-      if (!canPause) return;
-      void pausable.pause?.();
-      setPlayback({ status: "paused", botId, messageId, canPause }, control);
+      if (paused) return;
+      paused = true;
+      if (nativePause) void pausable.pause?.();
+      else void Speech.stop();
+      setPlayback({ status: "paused", botId, messageId, canPause: true }, control);
     },
     resume: () => {
-      if (!canPause) return;
-      void pausable.resume?.();
-      setPlayback({ status: "playing", botId, messageId, canPause }, control);
+      if (!paused) return;
+      paused = false;
+      if (nativePause) void pausable.resume?.();
+      wake?.();
+      setPlayback({ status: "playing", botId, messageId, canPause: true }, control);
     },
     stop: () => {
       deviceSpeechSession += 1;
       void Speech.stop();
+      wake?.();
       setPlayback(IDLE_PLAYBACK, null);
     },
+    skip: () => {
+      skipped = true;
+      deviceSpeechSession += 1;
+      void Speech.stop();
+      wake?.();
+    },
   };
-  setPlayback({ status: "playing", botId, messageId, canPause }, control);
+  setPlayback({ status: "playing", botId, messageId, canPause: true }, control);
+  applyPendingInterruption(control);
+  const current = () => isCurrentDeviceSpeechSession(session) && isCurrentSpeech(mine);
   let finished = false;
   try {
-    for (const utterance of utterances) {
-      if (!isCurrentDeviceSpeechSession(session) || !isCurrentSpeech(mine)) return true;
-      await speakOneUtterance(Speech, utterance, voice);
+    for (let i = 0; i < utterances.length; ) {
+      if (!current()) return true;
+      if (paused && !nativePause) {
+        await waitWhilePaused();
+        continue;
+      }
+      await speakOneUtterance(Speech, utterances[i] ?? "", voice);
+      // Stopped by a pause: the same sentence is spoken again on Resume.
+      if (paused && !nativePause) continue;
+      i += 1;
     }
-    finished = isCurrentDeviceSpeechSession(session) && isCurrentSpeech(mine);
+    finished = current();
     return true;
   } finally {
-    releasePlayback(mine, isCurrentDeviceSpeechSession(session), finished);
+    releasePlayback(mine, isCurrentDeviceSpeechSession(session) || skipped, finished || skipped);
   }
 }
 
@@ -611,6 +842,9 @@ async function playWithHtmlAudio(
   }
 }
 
+/** How long a clip the system paused may wait to resume before the reply is dropped. */
+const SYSTEM_PAUSE_GIVE_UP_MS = 10 * 60_000;
+
 async function playWithNativeAudio(bytes: Uint8Array, session?: HostedSession): Promise<void> {
   if (session?.isStopped) return;
   await setAudioModeAsync(playbackAudioMode());
@@ -624,6 +858,7 @@ async function playWithNativeAudio(bytes: Uint8Array, session?: HostedSession): 
   try {
     await new Promise<void>((resolve, reject) => {
       let settled = false;
+      let started = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
       const finish = (error?: Error) => {
         if (settled) return;
@@ -650,12 +885,22 @@ async function playWithNativeAudio(bytes: Uint8Array, session?: HostedSession): 
           finish();
           return;
         }
-        if (status.playing && status.duration > 0 && !session?.isPaused) {
+        if (session?.isPaused) return;
+        if (status.playing && status.duration > 0) {
+          started = true;
           clearTimeout(timer);
           timer = setTimeout(
             () => finish(new Error(t("Could not play that clip."))),
             Math.min(120_000, Math.ceil(status.duration * 1000) + 8_000),
           );
+        } else if (started && !status.playing) {
+          // The system paused the clip (an iOS call, Siri). That is not a stall: wait for it to
+          // come back, and give up quietly, without an error, if it never does.
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            session?.stop();
+            finish();
+          }, SYSTEM_PAUSE_GIVE_UP_MS);
         }
       });
       session?.setPlayer({
@@ -707,5 +952,38 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+/**
+ * The reply-long audio focus request: held while speaking, let go after the same short grace as
+ * the notification so a queue's next message does not make other audio swell in between.
+ */
+const speechFocus = (() => {
+  const keeper = createPlaybackKeeper({
+    start: async () => {
+      const grant = await acquireSpeechFocus();
+      if (grant === "delayed") interruptVoicePlayback("transient");
+      return grant !== "failed";
+    },
+    stop: releaseSpeechFocus,
+    setTimer: (run, ms) => setTimeout(run, ms),
+    clearTimer: (timer) => clearTimeout(timer as ReturnType<typeof setTimeout>),
+  });
+  return {
+    update(active: boolean): void {
+      if (speechFocusSupported()) void keeper.update(active);
+    },
+    /** Asks again after another app took the audio for good. */
+    reacquire(): void {
+      if (!speechFocusSupported()) return;
+      void keeper.release();
+      void keeper.update(true);
+    },
+  };
+})();
+
 // The notification's Stop (or a headset / lock-screen control) ends whatever is being read.
 onPlaybackStopRequested(() => stopVoicePlayback());
+
+onSpeechFocusChange((change) => {
+  if (change === "resumed") endVoiceInterruption();
+  else interruptVoicePlayback(change === "lost" ? "lost" : "transient");
+});

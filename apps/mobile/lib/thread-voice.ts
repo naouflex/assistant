@@ -6,22 +6,30 @@ import { Alert, AppState } from "react-native";
 import type { MobileBot, MobileMessage, MobileSnapshot } from "./api";
 import { rpc } from "./api";
 import { nextAutoSpeakAction } from "./auto-speak";
+import { clearAutoSpeakFailure, noticeAutoSpeakFailure } from "./auto-speak-notice";
 import { findSwitchTarget, ringOnArrival, takeRingOnArrival } from "./bot-switch";
 import { setCallProviderTranscribe, startCall } from "./call-session";
 import { loadDeviceVoiceEnabled } from "./device-voice";
 import { available as dictationAvailable } from "./dictation";
-import { useI18n } from "./i18n";
+import { getActiveUiLocale, useI18n } from "./i18n";
+import { keepWaitingForReply } from "./playback-background";
 import { currentSessionGeneration } from "./session";
+import { createReplySpeaker, liveStepLabels, workingNarration } from "./speech-stream";
 import { spokenMessageText } from "./spoken-text";
 import { speakerColorFor } from "./thread-message-text";
 import { errorText } from "./user-error";
-import { speakQueue, speakText } from "./voice";
+import { appendSpeech, createSpeechOwner, speakQueue, speakText } from "./voice";
+import { useBackgroundAutoSpeak } from "./voice-background";
 import { probeProviderTranscribe, resolveVoiceCallPlan } from "./voice-call-entry";
 import { onShortcutVoiceChat, takeShortcutVoiceChat } from "./voice-chat-intent";
 
+const IN_PROGRESS_RUN_STATUSES = new Set(["running", "queued", "leased"]);
+
 /**
- * Reads a bot's finished reply aloud when the bot has auto-speak on and its chat is in front.
- * Returns a ref to the latest check, for focus effects that must not re-run on every message.
+ * Reads a bot's reply aloud when the bot has auto-speak on and its chat is in front (or, with
+ * "Read replies in the background" on, behind another app): sentence by sentence while it streams,
+ * the rest once it lands. Returns a ref to the latest check, for focus effects that must not
+ * re-run on every message.
  */
 export function useAutoSpeakReply({
   botId,
@@ -37,37 +45,83 @@ export function useAutoSpeakReply({
   showingSaved: boolean;
 }) {
   const navigation = useNavigation();
+  const { locale, t } = useI18n();
   const autoSpoken = useRef<string | null>(null);
   const autoSpokenBotId = useRef<string | null>(null);
+  const background = useBackgroundAutoSpeak();
+  const speaker = useRef(currentBot);
+  useLayoutEffect(() => {
+    speaker.current = currentBot;
+  }, [currentBot]);
+
+  const replySpeaker = useRef<ReturnType<typeof createReplySpeaker> | null>(null);
+  replySpeaker.current ??= createReplySpeaker({
+    append: (chunks, owner) => {
+      const bot = speaker.current;
+      return appendSpeech(
+        chunks.map((text) => ({ text, ...speechIdentity(bot) })),
+        owner,
+      );
+    },
+    speakWhole: (text) => speakText(text, speechIdentity(speaker.current)),
+    createOwner: createSpeechOwner,
+    narration: (steps) => workingNarration(steps, getActiveUiLocale(), t("Working on it.")),
+    onOutcome: (outcome) => {
+      if ("error" in outcome) void noticeAutoSpeakFailure("failed");
+      else if (!outcome.spoken) void noticeAutoSpeakFailure("no-voice");
+      else void clearAutoSpeakFailure();
+    },
+    setTimer: (run, ms) => setTimeout(run, ms),
+    clearTimer: (timer) => clearTimeout(timer as ReturnType<typeof setTimeout>),
+  });
 
   const speakFinishedReply = useCallback(() => {
-    if (!botId || inGroup || !currentBot) return;
+    const replies = replySpeaker.current;
+    if (!botId || inGroup || !currentBot || !replies) return;
+    const allowed = navigation.isFocused() && (AppState.currentState === "active" || background);
+    const snapshotReady = snap?.botId === currentBot.id && !showingSaved;
+    const run = snap?.run;
+    const inProgress = Boolean(run && IN_PROGRESS_RUN_STATUSES.has(run.status));
+    if (
+      currentBot.autoSpeak &&
+      allowed &&
+      snapshotReady &&
+      autoSpokenBotId.current === currentBot.id &&
+      run &&
+      inProgress
+    ) {
+      const live = snap?.messages.find((message) => message.id === `progress:${run.id}`);
+      replies.live({
+        runId: run.id,
+        text: live ? spokenMessageText(live) : "",
+        stepLabels: live ? liveStepLabels(live.blocks) : [],
+      });
+    }
     const decision = nextAutoSpeakAction({
       botId: currentBot.id,
       autoSpeak: currentBot.autoSpeak,
-      focused: AppState.currentState === "active" && navigation.isFocused(),
-      snapshotReady: snap?.botId === currentBot.id && !showingSaved,
+      focused: allowed,
+      snapshotReady,
       lastSpokenBotId: autoSpokenBotId.current,
       lastSpokenMessageId: autoSpoken.current,
-      runStatus: snap?.run?.status,
+      runStatus: run?.status,
       messages: snap?.messages ?? [],
     });
     if (decision.action === "seed") {
       autoSpokenBotId.current = currentBot.id;
       autoSpoken.current = decision.messageId;
+      if (!inProgress) replies.abandon();
       return;
     }
-    if (decision.action !== "speak") return;
+    if (decision.action !== "speak") {
+      if (!inProgress && !replies.streaming) replies.abandon();
+      return;
+    }
     autoSpokenBotId.current = currentBot.id;
     autoSpoken.current = decision.messageId;
-    void speakText(decision.text, {
-      botId: currentBot.id,
-      speaker: {
-        name: currentBot.name,
-        color: resolvePersonaColorDef(currentBot.id, currentBot.color).light,
-      },
-    }).catch(() => undefined);
+    replies.finish(decision.text);
   }, [
+    background,
     botId,
     inGroup,
     currentBot,
@@ -75,7 +129,7 @@ export function useAutoSpeakReply({
     showingSaved,
     snap?.botId,
     snap?.messages,
-    snap?.run?.status,
+    snap?.run,
   ]);
 
   const speakFinishedReplyRef = useRef(speakFinishedReply);
@@ -89,7 +143,62 @@ export function useAutoSpeakReply({
     return () => appState.remove();
   }, [speakFinishedReply]);
 
+  // A new chat starts clean: nothing half-read carries over from the last one.
+  useEffect(() => () => replySpeaker.current?.abandon(), [botId]);
+
+  // With background reading on, a reply on its way keeps Atlas alive behind other apps. Started
+  // while Atlas is still in front: Android refuses to start it from the background.
+  const waitingName = currentBot?.name;
+  const waiting = Boolean(
+    background &&
+      currentBot?.autoSpeak &&
+      !inGroup &&
+      snap?.botId === currentBot?.id &&
+      snap?.run &&
+      IN_PROGRESS_RUN_STATUSES.has(snap.run.status),
+  );
+  useEffect(() => {
+    if (!waiting) return;
+    keepWaitingForReply({
+      title: waitingName ?? t("Bot"),
+      text: t("Waiting for the reply"),
+    });
+    return () => keepWaitingForReply(null);
+  }, [waiting, waitingName, locale, t]);
+
   return speakFinishedReplyRef;
+}
+
+/**
+ * Whether the chat's live stream should stay open with Atlas in the background: background
+ * reading is on, this bot reads its replies aloud, and one is being written now.
+ */
+export function useKeepLiveForSpeech({
+  inGroup,
+  currentBot,
+  snap,
+}: {
+  inGroup: boolean;
+  currentBot?: MobileBot;
+  snap: MobileSnapshot | null;
+}): boolean {
+  const background = useBackgroundAutoSpeak();
+  return Boolean(
+    background &&
+      !inGroup &&
+      currentBot?.autoSpeak &&
+      snap?.botId === currentBot.id &&
+      snap?.run &&
+      IN_PROGRESS_RUN_STATUSES.has(snap.run.status),
+  );
+}
+
+function speechIdentity(bot: MobileBot | undefined) {
+  if (!bot) return {};
+  return {
+    botId: bot.id,
+    speaker: { name: bot.name, color: resolvePersonaColorDef(bot.id, bot.color).light },
+  };
 }
 
 /** Reads the chat aloud from one message on, each bot reply in its speaker's voice. */

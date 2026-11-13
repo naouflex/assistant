@@ -49,7 +49,12 @@ import { useThreadSend } from "../../lib/thread-send";
 import { directChatRunStatus, threadGroupMembers } from "../../lib/thread-snapshot";
 import { useThreadSync } from "../../lib/thread-sync";
 import { useThreadTranscript } from "../../lib/thread-transcript";
-import { useAutoSpeakReply, useSpeakMessages, useThreadVoiceCall } from "../../lib/thread-voice";
+import {
+  useAutoSpeakReply,
+  useKeepLiveForSpeech,
+  useSpeakMessages,
+  useThreadVoiceCall,
+} from "../../lib/thread-voice";
 import { liveEndRunError } from "../../lib/thread-window";
 import { FailedSendBubble } from "../failed-send-bubble";
 import type { MarkdownArtifactPreviewTarget } from "../markdown-artifact-preview";
@@ -274,6 +279,8 @@ export function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId:
     snap,
     showingSaved,
   });
+  // A reply being read aloud in the background keeps its live stream open behind other apps.
+  const keepLiveForSpeech = useKeepLiveForSpeech({ inGroup, currentBot, snap });
 
   useEffect(() => {
     void rpc("agentSkills/list")
@@ -326,7 +333,7 @@ export function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId:
     groupId,
     messageId,
     readOnly,
-    foreground,
+    foreground: foreground || keepLiveForSpeech,
     sessionEpoch,
     activeBotId,
     activeGroupId,

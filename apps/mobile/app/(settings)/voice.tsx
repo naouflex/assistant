@@ -1,11 +1,11 @@
 import type { VoiceCatalogEntry, VoiceCredential, VoiceInfo, VoiceStatus } from "@atlas/contracts";
 import {
   DEFAULT_COMPATIBLE_STT_MODEL,
-  SELF_HOSTED_TTS_MODEL_PLACEHOLDER,
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   OPENROUTER_VOICE_PROVIDER_ID,
+  SELF_HOSTED_TTS_MODEL_PLACEHOLDER,
 } from "@atlas/contracts";
 import { fetchFresh, writeSaved } from "@atlas/core/query";
 import { isCancelledError } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -42,6 +43,7 @@ import { settingsRpc, settingsTarget } from "../../lib/settings-target";
 import { useSideInsets } from "../../lib/side-insets";
 import { errorText } from "../../lib/user-error";
 import { speakText } from "../../lib/voice";
+import { saveBackgroundAutoSpeak, useBackgroundAutoSpeak } from "../../lib/voice-background";
 
 type VoiceField = "voiceId" | "speechModel" | "baseUrl" | "ttsModel" | "sttModel";
 
@@ -114,6 +116,7 @@ export default function VoiceSettings() {
   const [deviceVoice, setDeviceVoice] = useState(false);
   const [deviceVoiceReady, setDeviceVoiceReady] = useState(!deviceSettings);
   const [callSounds, setCallSounds] = useState<boolean | null>(null);
+  const backgroundAutoSpeak = useBackgroundAutoSpeak();
   const [waitSound, setWaitSound] = useState<boolean | null>(null);
   // Prevent stale reads from overwriting a saved preference.
   const soundPrefsRevision = useRef(0);
@@ -243,6 +246,14 @@ export default function VoiceSettings() {
   async function toggleWaitSound(next: boolean) {
     if (waitSound === null) return;
     await saveSoundPref(next, setWaitSound, saveWaitSoundEnabled);
+  }
+
+  async function toggleBackgroundAutoSpeak(next: boolean) {
+    try {
+      await saveBackgroundAutoSpeak(next);
+    } catch (err) {
+      setError(errorText(err, t("Could not save that preference")));
+    }
   }
 
   async function toggleCallSounds(next: boolean) {
@@ -702,6 +713,23 @@ export default function VoiceSettings() {
                 onValueChange={(next) => void toggleWaitSound(next)}
               />
             </View>
+            {Platform.OS === "android" ? (
+              <View style={[styles.groupRow, styles.groupDivider]}>
+                <View style={styles.rowCopy}>
+                  <Text style={styles.cardTitle}>{t("Read replies in the background")}</Text>
+                  <Text style={styles.rowCaption}>
+                    {t(
+                      "Bots with auto-speak keep reading new replies after you leave Atlas. A notification shows while one is on its way.",
+                    )}
+                  </Text>
+                </View>
+                <NativeSwitch
+                  accessibilityLabel={t("Read replies in the background")}
+                  value={backgroundAutoSpeak}
+                  onValueChange={(next) => void toggleBackgroundAutoSpeak(next)}
+                />
+              </View>
+            ) : null}
           </View>
         ) : null}
       </ScrollView>
@@ -730,6 +758,7 @@ function createVoiceStyles() {
     },
     rowCopy: { flex: 1 },
     cardTitle: { color: native.label, fontSize: 16 },
+    rowCaption: { color: native.secondaryLabel, fontSize: 13, lineHeight: 18, marginTop: 2 },
     fieldLabel: { color: native.label, marginTop: 16 },
     input: {
       marginTop: 8,

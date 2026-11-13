@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => ({
   loadDevice: vi.fn(),
   reads: [] as string[],
   t: (text: string) => text,
+  background: false,
+  saveBackground: vi.fn(),
 }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("expo-router", () => ({
@@ -54,6 +56,10 @@ vi.mock("./device-voice", () => ({
   saveDeviceVoiceEnabled: vi.fn(),
 }));
 vi.mock("./voice", () => ({ speakText: vi.fn() }));
+vi.mock("./voice-background", () => ({
+  saveBackgroundAutoSpeak: mocks.saveBackground,
+  useBackgroundAutoSpeak: () => mocks.background,
+}));
 vi.mock("./i18n", () => ({ t: mocks.t, useI18n: () => ({ t: mocks.t }) }));
 vi.mock("./appearance", () => ({ mobileTokens: () => ({ destructive: "red" }) }));
 vi.mock("./native", () => ({ native: {}, useThemedStyles: (factory: () => unknown) => factory() }));
@@ -97,6 +103,7 @@ vi.mock("react-native", () => {
         {children}
       </button>
     ),
+    Platform: { OS: "android" },
     StyleSheet: { create: (styles: unknown) => styles },
     useWindowDimensions: () => ({ fontScale: 1 }),
   };
@@ -260,4 +267,17 @@ it("keeps a device-voice read error after Retry reloads the providers", async ()
   await act(async () => retry()!.click());
   expect(container.textContent).toContain("ElevenLabs");
   expect(container.textContent).toContain("device read failed");
+});
+
+it("turns background auto-speak on, and says so when saving fails", async () => {
+  mocks.saveBackground.mockResolvedValueOnce(undefined);
+  await render();
+  const row = toggle("Read replies in the background");
+  expect(row.checked).toBe(false);
+  await act(async () => row.click());
+  expect(mocks.saveBackground).toHaveBeenCalledWith(true);
+
+  mocks.saveBackground.mockRejectedValueOnce(new Error("Keychain locked"));
+  await act(async () => toggle("Read replies in the background").click());
+  expect(container.textContent).toContain("Keychain locked");
 });
