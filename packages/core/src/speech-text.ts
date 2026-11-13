@@ -53,6 +53,15 @@ export function speakable(input: string): string {
     describeCodeBlock(fence),
   );
 
+  text = withoutSilentMarker(text);
+  // A step chip's repeat count ("user_computer_shell ×2") and a line of bare tool names are
+  // working indicators, not prose.
+  text = text.replace(/(?<=[\p{L}\p{N}_])\s?×\d+\b/gu, "");
+  text = text.replace(
+    /^\s*[a-z][a-z0-9]*(?:_[a-z0-9]+)+(?:\s*,\s*[a-z][a-z0-9]*(?:_[a-z0-9]+)+)*\s*$/gm,
+    "",
+  );
+
   text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, (_m, alt: string) =>
     alt ? `. (image: ${alt}) ` : ". (an image) ",
   );
@@ -102,6 +111,8 @@ export function speakable(input: string): string {
   text = text.replace(/\s+([.,!?;:])/g, "$1");
   text = text.replace(/(?:\.\s*){2,}/g, ". ");
   text = text.replace(/,\s*\./g, ".");
+  // Dropped lines leave their full stops behind.
+  text = text.replace(/^\s*(?:[.,;:]\s+)+/, "");
   text = text.trim();
 
   return /[\p{L}\p{N}]/u.test(text) ? text : "";
@@ -234,27 +245,30 @@ export function narrateTool(toolName: string): string | null {
   return /^[\w .:/-]+$/.test(short) ? `running ${short}` : null;
 }
 
-export function speechFromBlocks(blocks: MessageBlock[]): string {
+/**
+ * Only what the bot wrote for the reader is spoken: its reply prose and any question it asks.
+ * Tool chips, step summaries ("User computer shell ×2"), provider activity lines, status
+ * metadata, computer and agent cards are working indicators the eye skims; a voice reading
+ * them aloud is noise.
+ */
+export function speechFromBlocks(blocks: readonly MessageBlock[]): string {
   return blocks
     .map((block) => {
-      if (block.kind === "text" || block.kind === "progress" || block.kind === "meta")
-        return block.text;
+      if (block.kind === "text") return block.text;
+      // Live narration counts as reply text; an activity line is the provider's tool status.
+      if (block.kind === "progress") return block.activity ? "" : block.text;
       if (block.kind === "ask") return block.text;
-      if (block.kind === "cloud_agent")
-        return `${block.title}: ${block.status}${block.prUrl ? ` ${block.prUrl}` : ""}`;
-      if (block.kind === "computer") return block.text;
-      if (block.kind === "subagent") {
-        if (block.status === "running") return `${block.name} is working on ${block.task}`;
-        if (block.status === "failed") return `${block.name} failed`;
-        return block.result || `${block.name} finished`;
-      }
-      if (block.kind === "card") {
-        return block.lines.map((line) => `${line.k}: ${line.v}`).join(". ");
-      }
+      if (block.kind === "choice") return block.question;
       return "";
     })
+    .map((text) => withoutSilentMarker(text).trim())
     .filter(Boolean)
     .join("\n");
+}
+
+/** The runtime's "stay silent" sentinel is never meant to be heard, even mid-text. */
+function withoutSilentMarker(text: string): string {
+  return text.replace(/(?<!\w)NO_RESPONSE(?:\s*NO_RESPONSE)*(?!\w)/g, " ");
 }
 
 // Without its accent "si" is Spanish for "if", so only "sí" says yes. `\b` only knows

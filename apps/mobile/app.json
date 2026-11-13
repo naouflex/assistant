@@ -25,7 +25,7 @@
       [
         "expo-audio",
         {
-          "enableBackgroundPlayback": false,
+          "enableBackgroundPlayback": true,
           "microphonePermission": "Atlas uses the microphone for voice calls with your bots."
         }
       ],
@@ -100,7 +100,8 @@
         "NSLocalNetworkUsageDescription": "Atlas connects to a self-hosted Atlas server on your local network.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {

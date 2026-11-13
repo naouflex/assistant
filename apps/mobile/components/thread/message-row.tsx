@@ -19,6 +19,7 @@ import { messageHasInlineControls, quotableMessageSegments } from "../../lib/mes
 import { messageRowLayout } from "../../lib/message-row-layout";
 import { useMobileTokens, useResolvedAppearance } from "../../lib/native";
 import { selectableTextFromMarkdown } from "../../lib/selectable-text";
+import { spokenMessageText } from "../../lib/spoken-text";
 import { ThreadReadOnlyContext } from "../../lib/thread-read-only";
 import type { UserBubble } from "../../lib/user-bubble";
 import { BotAvatar } from "../bot-avatar";
@@ -174,7 +175,7 @@ export const MessageRow = memo(function MessageRow({
       quotableMessageSegments(message.role, message.blocks).length > 0;
     const includeReact = !readOnly && canReactToThreadMessage(message);
     // The call already reads replies aloud; a second voice would talk over it.
-    const includeSpeak = message.role === "bot" && !onCall && Boolean(blockText(message));
+    const includeSpeak = message.role === "bot" && !onCall && Boolean(spokenMessageText(message));
     const includeSelect = messageText.trim().length > 0;
     // Any sent message can be marked unread; the next open starts New at the first reply from it.
     const includeUnread = !readOnly && !markedUnread && canMarkMessageUnread(message);

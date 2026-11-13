@@ -23,13 +23,7 @@ import { File } from "expo-file-system";
 import { useSyncExternalStore } from "react";
 import { AppState, Platform } from "react-native";
 import type { ApiRequestContext, MobileSnapshot } from "./api";
-import {
-  applyMobileThreadEvent,
-  blockText,
-  captureApiRequestContext,
-  rpc,
-  subscribeThread,
-} from "./api";
+import { applyMobileThreadEvent, captureApiRequestContext, rpc, subscribeThread } from "./api";
 import type { CallCue } from "./call-sounds";
 import {
   playCallCue,
@@ -44,6 +38,7 @@ import { deviceLanguage, getActiveUiLocale, t } from "./i18n";
 import { reportMobileError } from "./monitoring";
 import { deleteQuietly, transcribeVoiceClip } from "./provider-dictation";
 import { currentSessionGeneration, subscribeSessionGeneration } from "./session";
+import { spokenMessageText } from "./spoken-text";
 import { errorText } from "./user-error";
 import type { SpeechOwner } from "./voice";
 import { createSpeechOwner, speakText, stopSpeaking } from "./voice";
@@ -965,7 +960,7 @@ function watchReplies(
             // nothing about this one.
             const fromAnotherRun = Boolean(message.runId && message.runId !== run?.id);
             if (!fromAnotherRun && working && !isInterimCallUpdate(message)) return;
-            const text = blockText(message).trim();
+            const text = spokenMessageText(message);
             if (!text) return;
             lastSeen = message.id;
             onNewReply(message.id, text, message.runId);

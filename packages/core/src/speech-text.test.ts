@@ -300,3 +300,83 @@ describe("spokenDecision", () => {
     expect(spokenDecision("dale los permisos de admin")).toBeNull();
   });
 });
+
+describe("speech keeps working indicators out", () => {
+  it("speaks the reply, not its tool steps, activity line, or status cards", () => {
+    const text = speechFromBlocks([
+      { kind: "steps", steps: [{ label: "User computer shell", count: 2 }] },
+      { kind: "progress", text: "Running user_computer_shell", activity: true },
+      { kind: "meta", text: "Created by Chief" },
+      { kind: "computer", state: "running", text: "Computer is busy" },
+      {
+        kind: "subagent",
+        agentId: "a1",
+        name: "Scout",
+        task: "check the logs",
+        status: "running",
+      },
+      {
+        kind: "cloud_agent",
+        agentId: "c1",
+        title: "Fix login",
+        status: "finished",
+        url: "https://cursor.com/agents/c1",
+        prUrl: "https://github.com/o/r/pull/1",
+      },
+      { kind: "card", lines: [{ k: "Status", v: "ok" }] },
+      { kind: "text", text: "The disk has 4 GB free now." },
+    ]);
+    expect(text).toBe("The disk has 4 GB free now.");
+    expect(speakable(text)).toBe("The disk has 4 GB free now.");
+  });
+
+  it("keeps live narration and questions, which are the bot's own words", () => {
+    expect(
+      speechFromBlocks([
+        { kind: "progress", text: "Checking the logs first." },
+        { kind: "ask", text: "Restart the worker?", status: "pending" },
+        {
+          kind: "choice",
+          question: "Which branch?",
+          options: [{ id: "a", letter: "A", label: "main" }],
+        },
+      ]),
+    ).toBe("Checking the logs first.\nRestart the worker?\nWhich branch?");
+  });
+
+  it("never speaks the silent-reply sentinel", () => {
+    expect(speechFromBlocks([{ kind: "text", text: "NO_RESPONSE" }])).toBe("");
+    expect(speechFromBlocks([{ kind: "text", text: "Done. NO_RESPONSE" }])).toBe("Done.");
+    expect(speakable("NO_RESPONSENO_RESPONSE")).toBe("");
+    expect(speakable("All set. NO_RESPONSE")).toBe("All set.");
+  });
+
+  it("drops step chips and bare tool names that reach plain text", () => {
+    expect(speakable("user_computer_shell ×2, web_search\nAll green.")).toBe("All green.");
+    expect(speakable("User computer shell ×2")).toBe("User computer shell");
+    expect(speakable("user_computer_shell\n\nThe build passed.")).toBe("The build passed.");
+  });
+
+  it("keeps ordinary prose, multiplication and identifiers inside a sentence", () => {
+    expect(speakable("A 3 × 4 grid")).toBe("A 3 × 4 grid");
+    expect(speakable("I renamed user_id in the schema.")).toBe("I renamed user_id in the schema.");
+  });
+
+  it("drops code, links and markdown from a reply", () => {
+    const text = speechFromBlocks([
+      {
+        kind: "text",
+        text: "**Fixed** it, see [the PR](https://github.com/o/r/pull/2):\n\n```ts\nconst a = 1;\n```",
+      },
+    ]);
+    const out = speakable(text);
+    expect(out).toContain("Fixed it, see the PR");
+    expect(out).not.toContain("https");
+    expect(out).not.toContain("const a");
+    expect(out).not.toContain("**");
+  });
+});
+
+it("keeps a leading dot that belongs to a word", () => {
+  expect(speakable(".NET 9 is installed.")).toBe(".NET 9 is installed.");
+});

@@ -4,7 +4,7 @@ import type { RefObject } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { Alert, AppState } from "react-native";
 import type { MobileBot, MobileMessage, MobileSnapshot } from "./api";
-import { blockText, rpc } from "./api";
+import { rpc } from "./api";
 import { nextAutoSpeakAction } from "./auto-speak";
 import { findSwitchTarget, ringOnArrival, takeRingOnArrival } from "./bot-switch";
 import { setCallProviderTranscribe, startCall } from "./call-session";
@@ -12,21 +12,12 @@ import { loadDeviceVoiceEnabled } from "./device-voice";
 import { available as dictationAvailable } from "./dictation";
 import { useI18n } from "./i18n";
 import { currentSessionGeneration } from "./session";
+import { spokenMessageText } from "./spoken-text";
 import { speakerColorFor } from "./thread-message-text";
 import { errorText } from "./user-error";
 import { speakQueue, speakText } from "./voice";
 import { probeProviderTranscribe, resolveVoiceCallPlan } from "./voice-call-entry";
 import { onShortcutVoiceChat, takeShortcutVoiceChat } from "./voice-chat-intent";
-
-const ATTACHMENT_PLACEHOLDER_LINE = /^\[(?:image|file|chart): .*\]$/;
-
-function speakableMessageText(message: MobileMessage): string {
-  return blockText(message)
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !ATTACHMENT_PLACEHOLDER_LINE.test(line))
-    .join("\n");
-}
 
 /**
  * Reads a bot's finished reply aloud when the bot has auto-speak on and its chat is in front.
@@ -123,7 +114,7 @@ export function useSpeakMessages({
       const fromHere = startIndex === -1 ? [message] : visibleMessages.slice(startIndex);
       const items = fromHere.flatMap((candidate) => {
         if (candidate.role !== "bot") return [];
-        const text = speakableMessageText(candidate);
+        const text = spokenMessageText(candidate);
         if (!text) return [];
         const speakerBotId = candidate.botId ?? botId ?? members?.[0]?.botId ?? "";
         return [

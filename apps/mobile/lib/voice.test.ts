@@ -12,12 +12,12 @@ import {
   pauseVoicePlayback,
   playSpeechClip,
   resumeVoicePlayback,
+  setVoiceBackgroundPlayback,
   speakQueue,
   speakText,
   speakUtterance,
   speakWithDeviceVoice,
   speechClipType,
-  setVoiceBackgroundPlayback,
   stopSpeaking,
   stopVoicePlayback,
   subscribeVoicePlayback,
@@ -26,6 +26,17 @@ import {
 vi.mock("expo-localization", () => ({ getLocales: () => [{ languageTag: "en-US" }] }));
 
 vi.mock("./ai-consent", () => ({ promptAiConsent: vi.fn() }));
+const playbackBackground = vi.hoisted(() => ({
+  keepPlaybackInBackground: vi.fn(),
+  stopListeners: [] as Array<() => void>,
+}));
+vi.mock("./playback-background", () => ({
+  keepPlaybackInBackground: playbackBackground.keepPlaybackInBackground,
+  onPlaybackStopRequested: (listener: () => void) => {
+    playbackBackground.stopListeners.push(listener);
+    return () => undefined;
+  },
+}));
 vi.mock("expo-file-system", () => ({
   File: class {
     uri = "file:///cache/atlas-voice.mp3";
@@ -81,6 +92,33 @@ class FakeAudio {
 }
 
 describe("mobile speech", () => {
+  it("holds the background playback service while a reply is read, but not during a call", () => {
+    playbackBackground.keepPlaybackInBackground.mockClear();
+    stopVoicePlayback();
+    void speakText("Hello there", { botId: "bot-bg" }).catch(() => undefined);
+    expect(playbackBackground.keepPlaybackInBackground).toHaveBeenCalledWith(true, undefined);
+    stopVoicePlayback();
+    expect(playbackBackground.keepPlaybackInBackground).toHaveBeenLastCalledWith(false, undefined);
+
+    setVoiceBackgroundPlayback(true);
+    try {
+      playbackBackground.keepPlaybackInBackground.mockClear();
+      void speakText("On a call", { botId: "bot-bg" }).catch(() => undefined);
+      expect(playbackBackground.keepPlaybackInBackground).toHaveBeenCalledWith(false, undefined);
+      expect(playbackBackground.keepPlaybackInBackground).not.toHaveBeenCalledWith(true, undefined);
+      stopVoicePlayback();
+    } finally {
+      setVoiceBackgroundPlayback(false);
+    }
+  });
+
+  it("stops speech when the notification's Stop is tapped", () => {
+    void speakText("Long reply", { botId: "bot-stop" }).catch(() => undefined);
+    expect(getVoicePlaybackState().status).toBe("playing");
+    for (const listener of playbackBackground.stopListeners) listener();
+    expect(getVoicePlaybackState().status).toBe("idle");
+  });
+
   it("keeps the call on a recording session so leaving the app does not drop the microphone", async () => {
     vi.mocked(setAudioModeAsync).mockClear();
     try {
@@ -810,7 +848,7 @@ describe("hosted voice playback controls", () => {
       expect(setAudioModeAsync).toHaveBeenCalledWith({
         playsInSilentMode: true,
         interruptionMode: "mixWithOthers",
-        shouldPlayInBackground: false,
+        shouldPlayInBackground: true,
       });
 
       pauseVoicePlayback();

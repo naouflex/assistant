@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="atlas_playback_channel">朗讀</string>
+  <string name="atlas_playback_title">Atlas</string>
+  <string name="atlas_playback_text">正在朗讀回覆</string>
+  <string name="atlas_playback_stop">停止</string>
+</resources>

@@ -18,6 +18,7 @@ import { aiConsentCoalesceKey, captureApiRequestContext, rpc } from "./api";
 import { voiceForBot } from "./bot-voices";
 import { loadDeviceVoiceEnabled } from "./device-voice";
 import { t } from "./i18n";
+import { keepPlaybackInBackground, onPlaybackStopRequested } from "./playback-background";
 import { fetchServer } from "./server-headers";
 import { errorText, voiceAccountErrorText } from "./user-error";
 
@@ -73,6 +74,12 @@ function setPlayback(next: VoicePlaybackState, control: VoiceControl | null) {
       : next;
   activeControl = control;
   for (const listener of playbackListeners) listener();
+  // A call holds its own microphone service; anything else read aloud holds a playback one,
+  // so locking the phone or switching apps does not cut the reply off.
+  keepPlaybackInBackground(
+    playback.status !== "idle" && !playsInBackground,
+    playback.speaker?.name,
+  );
 }
 
 export function getVoicePlaybackState(): VoicePlaybackState {
@@ -108,18 +115,20 @@ export function stopSpeaking(owner?: SpeechOwner): void {
   stopVoicePlayback();
 }
 
+/** True while a call is up: its replies share the call's recording session and service. */
 let playsInBackground = false;
 
 /**
- * Audio mode for whatever is about to play. A call stays a recording session:
- * switching to playback-only while a reply plays drops the microphone, and it
- * stays dropped once the app leaves.
+ * Audio mode for whatever is about to play. A reply keeps playing when the app leaves the
+ * screen: the user stops it from the dock or the notification, not by locking the phone.
+ * A call stays a recording session: switching to playback-only while a reply plays drops
+ * the microphone, and it stays dropped once the app leaves.
  */
 function playbackAudioMode() {
   return {
     playsInSilentMode: true as const,
     interruptionMode: "mixWithOthers" as const,
-    shouldPlayInBackground: playsInBackground,
+    shouldPlayInBackground: true as const,
     ...(playsInBackground ? { allowsRecording: true as const } : {}),
   };
 }
@@ -132,6 +141,7 @@ function playbackAudioMode() {
  */
 export function setVoiceBackgroundPlayback(enabled: boolean): void {
   playsInBackground = enabled;
+  keepPlaybackInBackground(playback.status !== "idle" && !enabled, playback.speaker?.name);
   void setAudioModeAsync(playbackAudioMode()).catch(() => undefined);
 }
 
@@ -696,3 +706,6 @@ function bytesToBase64(bytes: Uint8Array): string {
   }
   return btoa(binary);
 }
+
+// The notification's Stop (or a headset / lock-screen control) ends whatever is being read.
+onPlaybackStopRequested(() => stopVoicePlayback());

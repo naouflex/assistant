@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="atlas_playback_channel">Reading aloud</string>
+  <string name="atlas_playback_title">Atlas</string>
+  <string name="atlas_playback_text">Reading a reply aloud</string>
+  <string name="atlas_playback_stop">Stop</string>
+</resources>

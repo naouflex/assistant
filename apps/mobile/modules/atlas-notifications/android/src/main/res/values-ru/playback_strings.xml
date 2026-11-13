@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="atlas_playback_channel">Чтение вслух</string>
+  <string name="atlas_playback_title">Atlas</string>
+  <string name="atlas_playback_text">Читает ответ вслух</string>
+  <string name="atlas_playback_stop">Стоп</string>
+</resources>

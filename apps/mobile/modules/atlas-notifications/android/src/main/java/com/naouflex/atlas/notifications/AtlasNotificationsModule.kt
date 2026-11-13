@@ -13,6 +13,16 @@ class AtlasNotificationsModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("AtlasNotifications")
 
+    Events("onPlaybackStop")
+
+    OnCreate {
+      AtlasPlaybackService.onStopRequested = { sendEvent("onPlaybackStop", mapOf<String, Any?>()) }
+    }
+
+    OnDestroy {
+      AtlasPlaybackService.onStopRequested = null
+    }
+
     AsyncFunction("getSettings") {
       NotificationStorage(context()).settings.toMap()
     }
@@ -76,6 +86,14 @@ class AtlasNotificationsModule : Module() {
 
     AsyncFunction("stopCall") {
       AtlasCallService.stop(context())
+    }
+
+    AsyncFunction("startPlayback") { title: String, promise: Promise ->
+      AtlasPlaybackService.start(context(), title) { started -> promise.resolve(started) }
+    }
+
+    AsyncFunction("stopPlayback") {
+      AtlasPlaybackService.stop(context())
     }
 
     AsyncFunction("openSettings") {
