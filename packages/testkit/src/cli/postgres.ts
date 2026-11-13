@@ -65,8 +65,10 @@ export async function startDisposablePostgres(signal?: AbortSignal): Promise<Dis
     stop: () =>
       new Promise<void>((resolve) => {
         // Best effort: a leftover database only costs disk on the developer's own server.
-        execFile("psql", [admin.toString(), "-qc", `DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`], () =>
-          resolve(),
+        execFile(
+          "psql",
+          [admin.toString(), "-qc", `DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`],
+          () => resolve(),
         );
       }),
   };
