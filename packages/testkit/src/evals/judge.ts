@@ -33,7 +33,7 @@ export function createEvalJudge(
         if (event.type === "text") text += event.text;
         else if (event.type === "tool") throw new Error("Judge attempted a tool call");
       }
-      const value: unknown = JSON.parse(text);
+      const value: unknown = JSON.parse(verdictJson(text));
       if (
         !value ||
         typeof value !== "object" ||
@@ -49,4 +49,18 @@ export function createEvalJudge(
       await runtime.abort(id);
     }
   };
+}
+
+/**
+ * The verdict object, also when a model fences it in a code block or adds a sentence around it.
+ * Anything else is left for JSON.parse to reject, so a malformed verdict still fails closed.
+ */
+export function verdictJson(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) return trimmed;
+  const fenced = trimmed.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if (fenced) return fenced[1]!;
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  return start >= 0 && end > start ? trimmed.slice(start, end + 1) : trimmed;
 }

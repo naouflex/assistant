@@ -1,6 +1,6 @@
 import type { AgentRunRequest, AgentRuntime, AgentRuntimeEvent } from "@atlas/adapter-kit";
 import { describe, expect, it, vi } from "vitest";
-import { createEvalJudge } from "./judge.js";
+import { createEvalJudge, verdictJson } from "./judge.js";
 import { SpendBudget } from "./measurement.js";
 
 function fixture(events: AgentRuntimeEvent[]) {
@@ -79,5 +79,15 @@ describe("semantic judge boundary", () => {
     expect(budget.usedUsd).toBeCloseTo(0.4);
     expect(budget.reservedUsd).toBe(0);
     expect(() => budget.reserve(40_000, 40_000, undefined, judgePrices)).toThrow("spend cap");
+  });
+});
+
+describe("verdictJson", () => {
+  it("reads fenced or prefaced verdicts and leaves malformed text to fail", () => {
+    const verdict = '{"pass":true,"reason":"ok"}';
+    expect(verdictJson(verdict)).toBe(verdict);
+    expect(verdictJson(`\`\`\`json\n${verdict}\n\`\`\``)).toBe(verdict);
+    expect(verdictJson(`The memory is correct. ${verdict}`)).toBe(verdict);
+    expect(() => JSON.parse(verdictJson("The memory is correct."))).toThrow();
   });
 });
