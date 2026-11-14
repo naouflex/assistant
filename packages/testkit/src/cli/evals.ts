@@ -31,7 +31,7 @@ import { HISTORY_FIXTURE_VERSION } from "../evals/history-fixtures.js";
 import type { DiagnosticToolObservation, HistoryDiagnostic } from "../evals/history-observer.js";
 import { observeSyntheticHistory } from "../evals/history-observer.js";
 import type { EvalJudge, JudgeInput } from "../evals/judge.js";
-import { createEvalJudge } from "../evals/judge.js";
+import { calibrationVerdict, createEvalJudge } from "../evals/judge.js";
 import type { CacheDecisionMeasurement, EvalPricing, MeasuredCall } from "../evals/measurement.js";
 import { measureCalls, SpendBudget, validatePricing } from "../evals/measurement.js";
 import {
@@ -212,7 +212,7 @@ async function main() {
       provider: string;
       rubricVersion: string;
       pricing: EvalPricing;
-      calibration: Array<{ expected: boolean; pass: boolean; reason: string }>;
+      calibration: Array<{ expected: boolean; pass: boolean; reason: string; votes?: boolean[] }>;
       modelCalls: number;
       costUsd: number | null;
     },
@@ -398,11 +398,17 @@ async function main() {
     };
     try {
       for (const anchor of suiteJudge.calibration) {
-        const verdict = await judge(anchor.input, AbortSignal.timeout(60_000));
+        const verdict = await calibrationVerdict(
+          judge,
+          anchor.input,
+          anchor.pass,
+          AbortSignal.timeout(180_000),
+        );
         report.judge.calibration.push({
           expected: anchor.pass,
           pass: verdict.pass,
           reason: verdict.reason,
+          ...(verdict.votes.length > 1 ? { votes: verdict.votes } : {}),
         });
         save();
         if (verdict.pass !== anchor.pass)

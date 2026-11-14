@@ -64,3 +64,24 @@ export function verdictJson(text: string): string {
   const end = trimmed.lastIndexOf("}");
   return start >= 0 && end > start ? trimmed.slice(start, end + 1) : trimmed;
 }
+
+export type CalibrationVerdict = Judgment & { votes: boolean[] };
+
+/**
+ * A calibration label agrees on the first verdict, or, when that one disagrees, on a majority
+ * of three. A judge that is merely noisy on a borderline label is still qualified; one that
+ * reads the rubric differently fails twice more and stays disqualified.
+ */
+export async function calibrationVerdict(
+  judge: EvalJudge,
+  input: JudgeInput,
+  expected: boolean,
+  signal: AbortSignal,
+): Promise<CalibrationVerdict> {
+  const first = await judge(input, signal);
+  if (first.pass === expected) return { ...first, votes: [first.pass] };
+  const verdicts = [first, await judge(input, signal), await judge(input, signal)];
+  const votes = verdicts.map((verdict) => verdict.pass);
+  const pass = votes.filter(Boolean).length >= 2;
+  return { pass, reason: verdicts.find((verdict) => verdict.pass === pass)!.reason, votes };
+}

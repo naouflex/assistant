@@ -1,6 +1,6 @@
 import type { AgentRunRequest, AgentRuntime, AgentRuntimeEvent } from "@atlas/adapter-kit";
 import { describe, expect, it, vi } from "vitest";
-import { createEvalJudge, verdictJson } from "./judge.js";
+import { calibrationVerdict, createEvalJudge, verdictJson } from "./judge.js";
 import { SpendBudget } from "./measurement.js";
 
 function fixture(events: AgentRuntimeEvent[]) {
@@ -89,5 +89,36 @@ describe("verdictJson", () => {
     expect(verdictJson(`\`\`\`json\n${verdict}\n\`\`\``)).toBe(verdict);
     expect(verdictJson(`The memory is correct. ${verdict}`)).toBe(verdict);
     expect(() => JSON.parse(verdictJson("The memory is correct."))).toThrow();
+  });
+});
+
+describe("calibrationVerdict", () => {
+  const input = { rubric: "r", evidence: {} };
+  const scripted = (...passes: boolean[]) => {
+    let call = 0;
+    const judge = vi.fn(async () => ({ pass: passes[call++]!, reason: `v${call}` }));
+    return judge;
+  };
+
+  it("takes an agreeing first verdict without asking again", async () => {
+    const judge = scripted(true);
+    await expect(
+      calibrationVerdict(judge, input, true, AbortSignal.timeout(1000)),
+    ).resolves.toEqual({ pass: true, reason: "v1", votes: [true] });
+    expect(judge).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a majority of three settle a noisy first verdict", async () => {
+    const judge = scripted(false, true, true);
+    await expect(
+      calibrationVerdict(judge, input, true, AbortSignal.timeout(1000)),
+    ).resolves.toEqual({ pass: true, reason: "v2", votes: [false, true, true] });
+  });
+
+  it("keeps a judge that disagrees twice disqualified", async () => {
+    const judge = scripted(false, true, false);
+    const verdict = await calibrationVerdict(judge, input, true, AbortSignal.timeout(1000));
+    expect(verdict.pass).toBe(false);
+    expect(verdict.votes).toEqual([false, true, false]);
   });
 });
