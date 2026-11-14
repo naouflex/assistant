@@ -681,6 +681,26 @@ async function main() {
               ...(scenario.routine || scenario.steps.some((step) => "wakeRoutine" in step)
                 ? witnesses
                 : {}),
+              ...(() => {
+                // The agent's own workspace is replayed like the owner's PC, from the same world.
+                if (values["simulate-computer"] && scenario.replayWorld)
+                  sandbox.simulate = createWorldSimulator({
+                    runtime,
+                    model: {
+                      ...connection,
+                      id: connection.modelId!,
+                      allowPrivateEndpoint: true,
+                      maxImagesPerPrompt: connection.maxImagesPerPrompt ?? undefined,
+                      maxTokens: 4096,
+                    },
+                    caseId: scenario.id,
+                    world: scenario.replayWorld,
+                    cacheFile: values["simulate-computer"],
+                    fallback: REPLAY_COMPUTER_OUTPUT,
+                    machine: "box",
+                  });
+                return {};
+              })(),
               ...(scenario.userComputer
                 ? {
                     userDevices: new UserDeviceEmulator({

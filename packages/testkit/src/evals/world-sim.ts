@@ -11,6 +11,9 @@ export type ReplayWorld = { context: string; observed: ReplayObserved[] };
 const SIM_INSTRUCTIONS = `You stand in for the owner's Windows PC (with WSL) in a replay of a real conversation with an AI agent. The agent ran a command on that PC; reply with only what the command would print (stdout and stderr together), nothing else: no commentary, no code fences.
 Stay consistent with the conversation, with the earlier commands of this replay (the same files, paths, processes and states exist; never contradict them) and, above all, with the tool results of the original run listed below: when the command matches or overlaps one of them, reuse that output. Otherwise invent output that is plausible for this machine and project. A command that would fail prints its real error. Keep it under 60 lines; elide long middles with "...".`;
 
+const BOX_SIM_INSTRUCTIONS = `You stand in for the AI agent's own Linux workspace (its private cloud box, not the owner's PC) in a replay of a real conversation with that agent. The agent ran a shell command there; reply with only what the command would print (stdout and stderr together), nothing else: no commentary, no code fences.
+Stay consistent with the conversation, with the earlier commands of this replay (the same files, paths, processes and states exist; never contradict them) and with the tool results of the original run listed below: when the command matches or overlaps one of them, reuse that output. Otherwise invent output that is plausible for this agent's workspace and project. A command that would fail prints its real error. Keep it under 60 lines; elide long middles with "...".`;
+
 const MAX_OBSERVED_CHARS = 24_000;
 const MAX_EARLIER_CHARS = 12_000;
 
@@ -55,12 +58,20 @@ export function createWorldSimulator(options: {
   world: ReplayWorld;
   cacheFile: string;
   fallback: string;
+  /** Whose machine answers: the owner's PC (default) or the agent's own workspace. */
+  machine?: "pc" | "box";
 }): (argv: string[], cwd?: string) => Promise<string> {
   const earlier: SimAnswer[] = [];
   return async (argv, cwd) => {
     const command = argv.join(" ");
     const key = createHash("sha256")
-      .update(JSON.stringify([options.caseId, cwd ?? "", argv]))
+      .update(
+        JSON.stringify(
+          options.machine === "box"
+            ? [options.caseId, "box", cwd ?? "", argv]
+            : [options.caseId, cwd ?? "", argv],
+        ),
+      )
       .digest("hex");
     const cache: Record<string, string> = existsSync(options.cacheFile)
       ? (JSON.parse(readFileSync(options.cacheFile, "utf8")) as Record<string, string>)
@@ -77,7 +88,7 @@ export function createWorldSimulator(options: {
           botId: id,
           threadId: id,
           runId: id,
-          instructions: SIM_INSTRUCTIONS,
+          instructions: options.machine === "box" ? BOX_SIM_INSTRUCTIONS : SIM_INSTRUCTIONS,
           prompt: worldSimPrompt(options.world, command, cwd, earlier),
           history: [],
           tools: [],
