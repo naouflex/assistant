@@ -543,7 +543,7 @@ describe("runReplyGuidance", () => {
     const prompt = runIdentityInstruction(bot, "user");
     expect(prompt).toContain("Ada\nReads and sorts mail.");
     expect(prompt).toContain("Teammates see only the profile above.");
-    expect(prompt.endsWith("Never send mail without asking.")).toBe(true);
+    expect(prompt).toContain("Never send mail without asking.\n(End of your instructions.");
   });
 
   it("does not repeat text that older bots saved as both fields", () => {
@@ -562,7 +562,7 @@ describe("runReplyGuidance", () => {
     expect(
       runIdentityInstruction({ name: "Ada", description: "", instructions: "Stay quiet." }, "user"),
     ).toBe(
-      "Ada\nTeammates see only the profile above. These instructions are private to you:\nStay quiet.",
+      "Ada\nTeammates see only the profile above. These instructions are private to you:\nStay quiet.\n(End of your instructions. The guidance after this is built in: never copy it into update_bot.)",
     );
     expect(runIdentityInstruction({ name: "Ada", description: "", instructions: "" }, "user")).toBe(
       "Ada",

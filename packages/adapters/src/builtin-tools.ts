@@ -1661,7 +1661,7 @@ export const builtinAgentTools: ConnectorTool[] = [
           type: "string",
           maxLength: BOT_INSTRUCTIONS_MAX_LENGTH,
           description:
-            "Your private operating instructions, replaced as a whole: include what should stay.",
+            "Your private operating instructions, replaced as a whole: include what should stay. Only your own instructions, never the built-in guidance shown after them.",
         },
         model: {
           type: "string",

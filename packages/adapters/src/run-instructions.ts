@@ -733,6 +733,8 @@ export function runIdentityInstruction(
       identity,
       "Teammates see only the profile above. These instructions are private to you:",
       instructions,
+      // Without an end marker a model editing its instructions copies the built-in guidance too.
+      "(End of your instructions. The guidance after this is built in: never copy it into update_bot.)",
     ].join("\n");
   }
   return [
