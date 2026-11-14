@@ -86,8 +86,12 @@ function createDeps(
     thread: { update: vi.fn(async () => ({ nextMessageSeq: 4, nextEventSeq: 9 })) },
     bot: { findFirst: vi.fn(async () => ({ id: "bot-2" })) },
     // What a `SELECT ... FOR UPDATE` on the connection row would see.
-    $queryRaw: vi.fn(async (query: TemplateStringsArray) => {
-      if (query.join("").includes("FROM bots"))
+    // Tagged-template calls pass the strings; Prisma.sql calls pass a Sql object.
+    $queryRaw: vi.fn(async (query: TemplateStringsArray | { sql: string }) => {
+      const text = "sql" in query ? query.sql : query.join("");
+      // The message sequence floor: no rows keeps the counter's claim.
+      if (text.includes("MAX(seq)")) return [];
+      if (text.includes("FROM bots"))
         return policyRows().map((bot) => ({
           ...bot,
           crossSpaceCommunication: overrides.disabledInsideTx ? false : bot.crossSpaceCommunication,

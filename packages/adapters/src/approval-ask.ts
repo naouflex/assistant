@@ -4,9 +4,12 @@ import { BOT_INSTRUCTIONS_MAX_LENGTH } from "@atlas/contracts";
 import {
   batchActions,
   CARD_TITLE_ESCAPED_CHARACTERS,
+  connectorToolSendsMessage,
   instructionUpdateDiff,
+  messageDraftFields,
   messagingProviderName,
   redactSecrets,
+  riskyShellCommand,
   sanitizeMessagingLabel,
   toolRequiresExplicitApproval,
 } from "@atlas/core";
@@ -155,6 +158,27 @@ export function buildApprovalAskBlock(
       ],
     };
   }
+  const risk = toolName === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
+  if (risk) {
+    const cwd = typeof args.cwd === "string" && args.cwd.trim() ? `cd ${args.cwd.trim()}\n` : "";
+    // A risky command asks every time, so the card offers no "always allow".
+    return {
+      kind: "ask",
+      approvalEffectId: effectId,
+      text: `Run this risky command? It ${risk}.`,
+      detail: truncate(
+        redactSecrets(`${cwd}${String(args.command ?? "")}`, secrets),
+        MAX_APPROVAL_DETAIL_LENGTH,
+      ),
+      detailFormat: "code",
+      status: "pending",
+      actions: [
+        { id: "allow", label: "Allow once" },
+        { id: "deny", label: "Deny" },
+      ],
+    };
+  }
+  const draft = sendDraft(toolName, args, secrets, options?.batch);
   const fetchSite = webFetchSite(toolName, args);
   const summary = describeApprovalAction(toolName, args, options?.batch);
   const detail = formatApprovalDetail(toolName, args, options?.reviewReason, options?.batch);
@@ -171,9 +195,14 @@ export function buildApprovalAskBlock(
     ),
     detail: safeDetail ? truncate(safeDetail, MAX_APPROVAL_DETAIL_LENGTH) : undefined,
     ...(fetchSite ? { site: fetchSite } : {}),
+    ...(draft ? { draft: { fields: draft } } : {}),
     status: "pending",
-    actions:
-      toolName === "create_space"
+    actions: draft
+      ? [
+          { id: "allow", label: "Send" },
+          { id: "deny", label: "Discard" },
+        ]
+      : toolName === "create_space"
         ? [
             { id: "allow", label: "Create space", outcome: "created" },
             { id: "deny", label: "Cancel", outcome: "cancelled" },
@@ -385,4 +414,21 @@ function screenActionLine(value: unknown): string {
     default:
       return `${String(action.kind ?? "action")}${at}`;
   }
+}
+
+/**
+ * The editable draft for a confirm-before-send card. A draft holding a secret stays read-only: the
+ * card would show it redacted, and sending the redacted text would change the message.
+ */
+function sendDraft(
+  toolName: string,
+  args: Record<string, unknown>,
+  secrets: string[],
+  batch?: ToolBatch,
+) {
+  if (batch || !connectorToolSendsMessage(toolName)) return undefined;
+  const fields = messageDraftFields(args);
+  if (!fields?.every((field) => redactSecrets(field.value, secrets) === field.value))
+    return undefined;
+  return fields;
 }

@@ -23,6 +23,7 @@ import {
   redactSecrets,
   repeatsDeniedAction,
   resolveActionApprovalForTools,
+  riskyShellCommand,
   toolRequiresApproval,
   toolRequiresExplicitApproval,
   toolSpendsMoney,
@@ -252,6 +253,8 @@ export async function gateToolCall(
     Boolean(args.purchase.trim()) &&
     (nextApprovedTool === name || Boolean(approvedEffectKey));
   const spendsMoney = !paidReplay && toolSpendsMoney(name, viaConnector);
+  // A shell command that cannot be undone (rm -rf, force push, sudo, DROP DATABASE) waits for a person.
+  const riskyShell = name === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
   const requiresApprovalByDefault = paidReplay
     ? false
     : request.heldForApproval ||
@@ -260,6 +263,7 @@ export async function gateToolCall(
       siteGate === "new" ||
       unidentifiedAction ||
       spendsMoney ||
+      Boolean(riskyShell) ||
       approvalToolNames.some((toolName) =>
         toolRequiresApproval(toolName, viaConnector, declaredReadOnlyFor(toolName)),
       );
@@ -270,6 +274,7 @@ export async function gateToolCall(
     scheduleNamesNewSite ||
     requiresUnattendedApproval ||
     toolRequiresExplicitApproval(name) ||
+    Boolean(riskyShell) ||
     // Confirm before send: outbound email and messages always wait for the owner.
     (viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName)));
   // Never ask runs everything else: only another owner's connection could have been steered into it.
@@ -338,7 +343,7 @@ export async function gateToolCall(
           reviewOnly: connectorReadGated,
           checkerConfigured,
           newDestination: siteGate === "new",
-          alwaysAsk: spendsMoney,
+          alwaysAsk: spendsMoney || Boolean(riskyShell),
         });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {

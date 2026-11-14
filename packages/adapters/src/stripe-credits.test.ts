@@ -444,7 +444,7 @@ describe("Stripe prepaid model credits", () => {
     expect(body.get("payment_behavior")).toBe("error_if_incomplete");
     expect(body.get("metadata[rakazo_credit_cents]")).toBe("2000");
     expect(requests.find((r) => r.params.has("product_data[name]"))?.params.get("lookup_key")).toBe(
-      "atlas_monthly_credits_2000",
+      "rakazo_monthly_credits_2000",
     );
   });
   it("names a change to an ended monthly plan as having no plan to change", async () => {
