@@ -459,9 +459,9 @@ describe("shared Linux desktop lifecycle", () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toContain("computer screen transport failed to stop");
     expect(result.stderr).toContain("revoking tokens and continuing");
-    expect(readdirSync(path.join(root, "sockets")).filter((name) => name.startsWith("control-1"))).toEqual(
-      [],
-    );
+    expect(
+      readdirSync(path.join(root, "sockets")).filter((name) => name.startsWith("control-1")),
+    ).toEqual([]);
   });
 
   it.each([DEFAULT_DESKTOP_ENV, env])(

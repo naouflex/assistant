@@ -13,7 +13,6 @@ import type {
   TerminalRequest,
 } from "@atlas/adapter-kit";
 import type { DesktopEnvironment } from "@atlas/core/node/desktop-runtime";
-import { getLogger } from "@atlas/logging";
 import {
   BROWSER_APPLICATIONS,
   BROWSER_STILL_RUNNING_EXIT,
@@ -29,6 +28,7 @@ import {
   shellQuote,
   stopAllDesktopBrowsersCommand,
 } from "@atlas/core/node/desktop-runtime";
+import { getLogger } from "@atlas/logging";
 import {
   BrowserStillRunningError,
   BrowserStoppedReleaseError,
@@ -94,7 +94,9 @@ export function onBotScreen(
 
 /** Provider SDKs supply only command execution, workspace paths, and protected port URLs. */
 
-function screenTransportStopFailed(result: { code?: number; stderr?: string; stdout?: string } | undefined) {
+function screenTransportStopFailed(
+  result: { code?: number; stderr?: string; stdout?: string } | undefined,
+) {
   if (!result) return false;
   return /computer screen transport failed to stop|computer screen transport could not be signalled/.test(
     `${result.stderr ?? ""}\n${result.stdout ?? ""}`,
@@ -325,8 +327,7 @@ export class LinuxDesktop {
       const control = await this.host
         .run(computer, desktopControlCommand(key, context.screenLeaseId, env, false), context)
         .catch(() => undefined);
-      if (control?.code === 0 || control?.code === 75 || screenTransportStopFailed(control))
-        return;
+      if (control?.code === 0 || control?.code === 75 || screenTransportStopFailed(control)) return;
     }
     // A stale release is a successful no-op. A failed stop must retain the slot
     // for retry. Once the browser has stopped, a later slot-cleanup error must
