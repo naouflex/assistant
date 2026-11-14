@@ -331,9 +331,7 @@ function buildPiCatalog(): PiCatalogEntry[] {
           ? { placeholder: true }
           : { images: model.input.includes("image") }),
         ...(probeBaseUrl ? { catalogProbe: true } : {}),
-        ...(staticCatalogSupportsFastTier(provider.id, model.id)
-          ? { supportsFastTier: true }
-          : {}),
+        ...(staticCatalogSupportsFastTier(provider.id, model.id) ? { supportsFastTier: true } : {}),
       });
     }
   }

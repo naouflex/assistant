@@ -6,8 +6,8 @@ import {
   OPENAI_CODEX_CHATGPT_SUBSCRIPTION_EXCLUDED_MODEL_IDS,
 } from "./pi-catalog-availability.js";
 import { listPiCatalog } from "./pi-models.js";
-import { XAI_COMPOSER_25_MODEL_ID } from "./pi-xai-composer-model.js";
 import { CHATGPT_OAUTH_PROVIDER, XAI_OAUTH_PROVIDER } from "./pi-oauth.js";
+import { XAI_COMPOSER_25_MODEL_ID } from "./pi-xai-composer-model.js";
 
 describe("openai-codex catalog availability", () => {
   const spark = "gpt-5.3-codex-spark";

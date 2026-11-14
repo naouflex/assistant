@@ -365,6 +365,84 @@ export const TOOL_CHOICE_DEFINITIONS: ToolChoiceCase[] = [
     expect: { calls: [{ tool: "schedule_create" }] },
   },
   {
+    id: "reminder-at-time",
+    area: "reminders",
+    kind: "guard",
+    purpose: "A one-time reminder at a clock time lands at that time in the user's timezone.",
+    userTimezone: "Europe/Paris",
+    prompt: "Remind me tomorrow at 8am to call the bank.",
+    expect: {
+      calls: [{ tool: "schedule_create" }],
+      routine: { oneShot: true, localTime: "08:00", dayOffset: 1, timezone: "Europe/Paris" },
+    },
+  },
+  {
+    id: "reminder-wake-up",
+    area: "reminders",
+    kind: "guard",
+    purpose: "Wake me up is a one-time alarm that rings the user, not a refusal.",
+    userTimezone: "Europe/Paris",
+    prompt: "Wake me up tomorrow at 7.",
+    expect: {
+      calls: [{ tool: "schedule_create" }],
+      routine: { oneShot: true, localTime: "07:00", dayOffset: 1, prompt: ["~call_user", "~ring"] },
+    },
+  },
+  {
+    id: "reminder-relative",
+    area: "reminders",
+    kind: "guard",
+    purpose: "A relative reminder fires that many minutes later.",
+    userTimezone: "Europe/Paris",
+    prompt: "Remind me in 20 minutes to take the pizza out.",
+    expect: {
+      calls: [{ tool: "schedule_create" }],
+      routine: { oneShot: true, minutesFromNow: 20 },
+    },
+  },
+  {
+    id: "reminder-french",
+    area: "reminders",
+    kind: "guard",
+    purpose: "A French reminder with a 24-hour time.",
+    userTimezone: "Europe/Paris",
+    prompt: "Rappelle-moi demain à 18h d'appeler maman.",
+    expect: {
+      calls: [{ tool: "schedule_create" }],
+      routine: { oneShot: true, localTime: "18:00", dayOffset: 1 },
+    },
+  },
+  {
+    id: "reminder-self-wake",
+    area: "reminders",
+    kind: "guard",
+    purpose:
+      "Checking back later schedules a one-time wake of the bot instead of waiting or promising.",
+    userTimezone: "Europe/Paris",
+    prompt:
+      "I just started a long backup on my server. Check back in 15 minutes and tell me whether it finished.",
+    expect: {
+      calls: [{ tool: "schedule_create" }],
+      routine: { oneShot: true, minutesFromNow: 15 },
+    },
+  },
+  {
+    id: "reminder-wake-weekdays",
+    area: "reminders",
+    kind: "guard",
+    purpose: "A recurring wake-up keeps the local time across days.",
+    userTimezone: "Europe/Paris",
+    prompt: "Wake me up every weekday at 6:45.",
+    expect: {
+      calls: [{ tool: "schedule_create" }],
+      routine: {
+        oneShot: false,
+        cron: ["45 6 * * 1-5", "~45 6 * * mon-fri"],
+        timezone: "Europe/Paris",
+      },
+    },
+  },
+  {
     id: "schedule-list",
     area: "schedules",
     kind: "guard",

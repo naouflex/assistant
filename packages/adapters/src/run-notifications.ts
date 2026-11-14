@@ -103,6 +103,23 @@ export async function notifyRun(
     });
 }
 
+/**
+ * How a finished routine run is announced: under the routine's name, and urgent when it is a
+ * one-time reminder, which is due at this moment. Null when the run is not a routine's.
+ */
+export async function routineNotice(
+  prisma: PrismaClient,
+  run: { trigger: string; routineId?: string | null },
+): Promise<{ name: string; urgent: boolean } | null> {
+  if (run.trigger !== "routine" || !run.routineId) return null;
+  const routine = await prisma.routine.findUnique({
+    where: { id: run.routineId },
+    select: { name: true, crons: true },
+  });
+  if (!routine) return null;
+  return { name: routine.name, urgent: routine.crons.length === 1 && routine.crons[0] === "@once" };
+}
+
 export function runSendsFinishNotification(trigger: string): boolean {
   return trigger !== "created" && !isBackgroundRunTrigger(trigger);
 }

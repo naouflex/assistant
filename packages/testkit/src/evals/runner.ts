@@ -208,6 +208,11 @@ export async function runTrial(
       // Direct synthetic fixture state, so setup never depends on the behavior under test.
       if (scenario.botSetup)
         await prisma.bot.update({ where: { id: botId }, data: scenario.botSetup });
+      if (scenario.userTimezone)
+        await prisma.user.update({
+          where: { id: persistedBot.userId },
+          data: { timezone: scenario.userTimezone },
+        });
       if (scenario.botMemory) {
         const documents = await rpc<Array<{ id: string; path: string }>>(
           app,
@@ -734,7 +739,7 @@ export async function runTrial(
           reply: returned.length ? returned.join("\n") : null,
         });
       }
-      if (scenario.routine && "wakeRoutine" in step) {
+      if ("wakeRoutine" in step) {
         const messages = await prisma.message.findMany({
           where: { runId, role: "bot" },
           select: { blocks: true },
@@ -777,7 +782,15 @@ export async function runTrial(
     });
     const routines = await prisma.routine.findMany({
       where: { botId },
-      select: { name: true, prompt: true, crons: true, active: true },
+      select: {
+        name: true,
+        prompt: true,
+        crons: true,
+        active: true,
+        timezone: true,
+        nextRunAt: true,
+        createdAt: true,
+      },
     });
     await captureTools();
     const finalStep = scenario.steps.length;
@@ -790,7 +803,11 @@ export async function runTrial(
       records: services.records,
       notes: services.notes,
       calls: services.calls,
-      routines,
+      routines: routines.map((routine) => ({
+        ...routine,
+        nextRunAt: routine.nextRunAt?.toISOString() ?? null,
+        createdAt: routine.createdAt.toISOString(),
+      })),
       memory: memories.map((m) => m.content).join("\n"),
       approvalPending,
       clarificationPending,

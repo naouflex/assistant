@@ -17,9 +17,9 @@ describe("Atlas skill", () => {
       const slug =
         url === atlasPublicDoc("docs.md")
           ? publishedSlugs[0]
-          : new RegExp(`^${atlasPublicDoc("docs/").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([\\w-]+)\\.md$`).exec(
-              url,
-            )?.[1];
+          : new RegExp(
+              `^${atlasPublicDoc("docs/").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([\\w-]+)\\.md$`,
+            ).exec(url)?.[1];
       expect(publishedSlugs, url).toContain(slug);
       expect(existsSync(repoFile(`docs/${slug}.md`)), url).toBe(true);
     }

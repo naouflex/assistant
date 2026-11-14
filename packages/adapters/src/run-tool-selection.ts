@@ -159,7 +159,14 @@ export const PAGE_BROWSER_TOOL_NAMES = new Set([
 
 const TURN_TOOL_MIN = 8;
 const TURN_TOOL_MAX = 12;
-const ALWAYS_LISTED_TOOLS = ["ask_user", "message_user", "shell", "web_search", "read_file", "write_file"];
+const ALWAYS_LISTED_TOOLS = [
+  "ask_user",
+  "message_user",
+  "shell",
+  "web_search",
+  "read_file",
+  "write_file",
+];
 
 const FRENCH_TOOL_WORDS: Record<string, string> = {
   memoire: "memory",
@@ -186,7 +193,9 @@ function foldMatchText(value: string): string {
  * List about 8–12 tools that match this turn. The rest stay deferred behind find_tool.
  * A short list is left whole.
  */
-export function focusTurnTools<T extends { name: string; description?: string; deferred?: boolean }>(
+export function focusTurnTools<
+  T extends { name: string; description?: string; deferred?: boolean },
+>(
   tools: readonly T[],
   input: { prompt: string; recentText?: string },
 ): Array<T & { deferred?: boolean }> {

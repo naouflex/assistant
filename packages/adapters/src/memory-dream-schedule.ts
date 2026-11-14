@@ -1,5 +1,5 @@
-import { memoryDreamJob } from "@atlas/adapter-kit";
 import type { JobPublisher } from "@atlas/adapter-kit";
+import { memoryDreamJob } from "@atlas/adapter-kit";
 import type { PrismaClient } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 

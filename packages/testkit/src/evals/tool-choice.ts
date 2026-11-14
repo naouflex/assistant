@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import type { Criterion, EvalCase, Evidence } from "./cases.js";
 
-export const TOOL_CHOICE_FIXTURE_VERSION = "tool-choice-v2";
+export const TOOL_CHOICE_FIXTURE_VERSION = "tool-choice-v3";
 
 /**
  * A string starting with `~` matches case-insensitively as a substring, `*` matches any present
@@ -36,6 +36,25 @@ const ExpectSchema = z
     bot: z.record(z.string(), MatcherSchema).optional(),
     /** Account settings after the turn. */
     user: z.record(z.string(), MatcherSchema).optional(),
+    /** A routine of the bot must match all of these after the turn. */
+    routine: z
+      .object({
+        oneShot: z.boolean().optional(),
+        /** Local wall-clock time of the next run in the routine's timezone, "HH:MM". */
+        localTime: z
+          .string()
+          .regex(/^\d{2}:\d{2}$/)
+          .optional(),
+        /** Local days between the turn and the next run: 0 today, 1 tomorrow. */
+        dayOffset: z.number().int().min(0).optional(),
+        /** The next run is this many minutes after the turn, give or take two. */
+        minutesFromNow: z.number().positive().optional(),
+        timezone: MatcherSchema.optional(),
+        cron: MatcherSchema.optional(),
+        prompt: MatcherSchema.optional(),
+      })
+      .strict()
+      .optional(),
     /** The turn must leave the bot's and the account's settings as they were. */
     settingsUnchanged: z.literal(true).optional(),
   })
@@ -60,6 +79,8 @@ export const ToolChoiceCaseSchema = z
     kind: z.enum(["guard", "control"]),
     purpose: z.string().min(1),
     bot: BotSetupSchema.optional(),
+    /** The account's saved IANA timezone for the case; the harness default is UTC. */
+    userTimezone: z.string().optional(),
     /** Earlier user turns, run for real before the graded prompt. */
     priorTurns: z.array(z.string().min(1)).optional(),
     /** Clear the conversation after the prior turns, so only durable state carries over. */
@@ -74,6 +95,7 @@ export const ToolChoiceCaseSchema = z
       Boolean(
         expect.calls?.length ||
           expect.anyOf ||
+          expect.routine ||
           expect.order ||
           Object.keys({ ...expect.bot, ...expect.user }).length,
       ),
@@ -157,6 +179,11 @@ export function gradeToolChoice(expect: ToolChoiceExpect, evidence: Evidence): C
       id: "use_tool names only real tools",
       pass: calls.every((call) => call.name !== "use_tool"),
     });
+  if (expect.routine)
+    criteria.push({
+      id: `routine ${JSON.stringify(expect.routine)}`,
+      pass: evidence.routines.some((routine) => routineMatches(expect.routine!, routine)),
+    });
   criteria.push(...stateCriteria("bot", expect.bot, evidence.settings.bot));
   criteria.push(...stateCriteria("user", expect.user, evidence.settings.user));
   if (expect.settingsUnchanged)
@@ -180,6 +207,59 @@ function isSettingsRead(calls: Evidence["toolCalls"], name: string) {
     );
 }
 
+type RoutineExpectation = NonNullable<ToolChoiceExpect["routine"]>;
+
+function localParts(iso: string, timeZone: string) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(iso))
+      .map((part) => [part.type, part.value]),
+  );
+  return {
+    day: Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)),
+    time: `${parts.hour}:${parts.minute}`,
+  };
+}
+
+/** Whether a stored routine has the timing a reminder request asked for. */
+export function routineMatches(
+  expected: RoutineExpectation,
+  routine: Evidence["routines"][number],
+): boolean {
+  const oneShot = routine.crons.length === 1 && routine.crons[0] === "@once";
+  if (expected.oneShot !== undefined && expected.oneShot !== oneShot) return false;
+  if (expected.timezone !== undefined && !matches(expected.timezone, routine.timezone))
+    return false;
+  if (expected.cron !== undefined && !routine.crons.some((cron) => matches(expected.cron!, cron)))
+    return false;
+  if (expected.prompt !== undefined && !matches(expected.prompt, routine.prompt)) return false;
+  const timed =
+    expected.localTime !== undefined ||
+    expected.dayOffset !== undefined ||
+    expected.minutesFromNow !== undefined;
+  if (!timed) return true;
+  if (!routine.nextRunAt || !routine.createdAt || !routine.timezone) return false;
+  const next = localParts(routine.nextRunAt, routine.timezone);
+  if (expected.localTime !== undefined && next.time !== expected.localTime) return false;
+  if (expected.dayOffset !== undefined) {
+    const created = localParts(routine.createdAt, routine.timezone);
+    if (Math.round((next.day - created.day) / 86_400_000) !== expected.dayOffset) return false;
+  }
+  if (expected.minutesFromNow !== undefined) {
+    const minutes = (Date.parse(routine.nextRunAt) - Date.parse(routine.createdAt)) / 60_000;
+    if (Math.abs(minutes - expected.minutesFromNow) > 2) return false;
+  }
+  return true;
+}
+
 export function toolChoiceEvalCase(definition: ToolChoiceCase): EvalCase {
   const parsed = ToolChoiceCaseSchema.parse(definition);
   return {
@@ -188,6 +268,7 @@ export function toolChoiceEvalCase(definition: ToolChoiceCase): EvalCase {
     connections: [],
     pauseEndsTurn: true,
     ...(parsed.bot ? { botSetup: parsed.bot } : {}),
+    ...(parsed.userTimezone ? { userTimezone: parsed.userTimezone } : {}),
     steps: [
       ...(parsed.priorTurns ?? []).map((ask) => ({ ask })),
       ...(parsed.clearBeforePrompt ? [{ clear: true as const }] : []),

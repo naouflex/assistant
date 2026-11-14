@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { messagingTools } from "./run-tools-messaging.js";
 import { publishMessage } from "./run-messages.js";
+import { messagingTools } from "./run-tools-messaging.js";
 
 vi.mock("./run-messages.js", () => ({
   publishMessage: vi.fn(async () => ({ id: "reaction-1" })),

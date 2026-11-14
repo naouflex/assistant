@@ -867,6 +867,8 @@ export interface NotificationMessage {
   groupId?: string;
   /** Unread chats to show on the app icon, when the sender knows them. */
   badge?: number;
+  /** A reminder the user set for this moment: pushed at high priority with sound. */
+  urgent?: boolean;
 }
 
 /** A product-authored transactional email, independent of its delivery vendor. */

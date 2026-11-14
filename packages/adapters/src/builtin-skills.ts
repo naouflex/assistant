@@ -3,7 +3,10 @@ import { buildSkillMd } from "@atlas/core";
 
 const ATLAS_DOCS: ReadonlyArray<readonly [topics: string, url: string]> = [
   ["Getting started, first bot, what Atlas does", atlasPublicDoc("docs.md")],
-  ["Creating bots, chatting, bot settings, sidebar, search", atlasPublicDoc("docs/bots-and-chats.md")],
+  [
+    "Creating bots, chatting, bot settings, sidebar, search",
+    atlasPublicDoc("docs/bots-and-chats.md"),
+  ],
   ["Importing an OpenClaw, Hermes or ChatGPT agent", atlasPublicDoc("docs/import-an-agent.md")],
   [
     "Connecting apps and integrations (Gmail, GitHub, MCP tools)",

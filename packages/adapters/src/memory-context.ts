@@ -11,8 +11,7 @@ import { byteLength, truncateUtf8 } from "./utf8.js";
 export const AGENT_PROFILE_MAX_BYTES = 2 * 1024;
 
 /** Room for headings around a full user profile and a full bot index. */
-export const AGENT_MEMORY_PROMPT_MAX_BYTES =
-  AGENT_PROFILE_MAX_BYTES + BOT_MEMORY_MAX_BYTES + 512;
+export const AGENT_MEMORY_PROMPT_MAX_BYTES = AGENT_PROFILE_MAX_BYTES + BOT_MEMORY_MAX_BYTES + 512;
 
 /** @deprecated Use AGENT_PROFILE_MAX_BYTES; kept for callers that still import the old name. */
 export const AGENT_MEMORY_MAX_BYTES = AGENT_PROFILE_MAX_BYTES;
@@ -58,7 +57,9 @@ export function buildAgentMemoryPrompt(
   };
   if (input.length === 0) return { plan };
 
-  const profile = input.filter((document) => isProfileMemoryDocument(document.scope, document.path));
+  const profile = input.filter((document) =>
+    isProfileMemoryDocument(document.scope, document.path),
+  );
   for (const document of input) {
     if (!isProfileMemoryDocument(document.scope, document.path)) {
       plan.omitted.push(leaveOut(document));

@@ -101,6 +101,27 @@ describe("expo push", () => {
     expect(JSON.parse(String(init.body))).toMatchObject({ badge: 4 });
   });
 
+  it("rings a due reminder at high priority with sound, and leaves other pushes quiet", async () => {
+    const tokens = new MemoryPushTokenStore();
+    await tokens.save("user-1", "ExponentPushToken[test]");
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(jsonResponse({ data: { status: "ok", id: "ticket" } })),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const push = new ExpoPushProvider(tokens);
+    const base = { kind: "completion", body: "Call the bank", botId: "b", threadId: "t" } as const;
+    await push.send({ ...base, title: "Chief: Call the bank", urgent: true }, notifyContext);
+    await push.send({ ...base, title: "Chief finished" }, notifyContext);
+    const [urgent, quiet] = fetchMock.mock.calls.map(([, init]) =>
+      JSON.parse(String((init as RequestInit).body)),
+    );
+    expect(urgent).toMatchObject({ priority: "high", sound: "default" });
+    expect(quiet).not.toHaveProperty("priority");
+    expect(quiet).not.toHaveProperty("sound");
+  });
+
   it("posts to Expo when a token is registered", async () => {
     const tokens = new MemoryPushTokenStore();
     await tokens.save("user-1", "ExponentPushToken[test]");

@@ -47,12 +47,14 @@ describe("local answer thinking", () => {
     },
   );
 
-  it.each(["What's your name again?", "Who is my dentist?", "Thanks.", "What files are in the home folder?"])(
-    "does not force a web search: %s",
-    (text) => {
-      expect(needsWebLookup(text)).toBe(false);
-    },
-  );
+  it.each([
+    "What's your name again?",
+    "Who is my dentist?",
+    "Thanks.",
+    "What files are in the home folder?",
+  ])("does not force a web search: %s", (text) => {
+    expect(needsWebLookup(text)).toBe(false);
+  });
 
   it("leaves a hosted model's level alone", () => {
     expect(

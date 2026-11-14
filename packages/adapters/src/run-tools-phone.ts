@@ -151,8 +151,7 @@ export function phoneActionFor(
           return "action must be list, open, dismiss, or activate.";
         const key = typeof args.key === "string" ? args.key.trim() : "";
         const button = typeof args.button === "string" ? args.button.trim() : "";
-        if (verb !== "list" && !key)
-          return "phone_notifications needs key from a previous list.";
+        if (verb !== "list" && !key) return "phone_notifications needs key from a previous list.";
         if (key.length > PHONE_NOTIFICATION_KEY_MAX)
           return `key must be at most ${PHONE_NOTIFICATION_KEY_MAX} characters.`;
         if (verb === "activate" && !button)

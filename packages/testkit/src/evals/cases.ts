@@ -27,7 +27,16 @@ export type Evidence = {
   records: EvalServices["records"];
   notes: EvalServices["notes"];
   calls: ServiceCall[];
-  routines: Array<{ name: string; prompt: string; crons: string[]; active: boolean }>;
+  routines: Array<{
+    name: string;
+    prompt: string;
+    crons: string[];
+    active: boolean;
+    timezone?: string;
+    /** ISO instants; nextRunAt is null once a one-time routine has run. */
+    nextRunAt?: string | null;
+    createdAt?: string;
+  }>;
   memory: string;
   approvalPending: boolean;
   clarificationPending?: boolean;
@@ -70,6 +79,8 @@ export type EvalCase = {
   pauseEndsTurn?: true;
   /** Synthetic bot state written before the first step. */
   botSetup?: BotSetup;
+  /** The account's saved IANA timezone; the harness default is UTC. */
+  userTimezone?: string;
   /** The bot's MEMORY.md, written through the memory API before the first step. */
   botMemory?: string;
   taughtSkill?: true;
@@ -460,6 +471,39 @@ export const EVAL_CASES: EvalCase[] = [
         noWrites(e),
       ];
     },
+  },
+  {
+    id: "reminder-fires",
+    purpose:
+      "A one-time reminder fires as an urgent push named after the reminder, and the reply carries it.",
+    userTimezone: "Europe/Paris",
+    steps: [{ ask: "Remind me in 30 minutes to stretch my legs." }, { wakeRoutine: true }],
+    grade: (e) => {
+      const run = e.routineRuns?.[0];
+      const push = run?.notifications.find((n) => n.kind === "completion");
+      return [
+        check("one-shot-routine", e.routines.length === 1 && e.routines[0]!.crons[0] === "@once"),
+        check("reply-reminds", Boolean(run && /stretch/i.test(run.text))),
+        check("urgent-push", push?.urgent === true),
+        check(
+          "push-names-reminder",
+          Boolean(push && e.routines[0] && push.title.includes(e.routines[0].name)),
+        ),
+      ];
+    },
+  },
+  {
+    id: "wake-up-rings",
+    purpose: "A wake-up reminder rings the user with a call when it fires.",
+    userTimezone: "Europe/Paris",
+    steps: [{ ask: "Wake me up tomorrow at 7." }, { wakeRoutine: true }],
+    grade: (e) => [
+      check("one-shot-routine", e.routines.length === 1 && e.routines[0]!.crons[0] === "@once"),
+      check(
+        "rings-on-wake",
+        e.toolCalls.some((call) => call.step === 2 && call.name === "call_user"),
+      ),
+    ],
   },
   {
     id: "release-routine",

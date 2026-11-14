@@ -114,9 +114,7 @@ async function requestConnection(
       })
     : null;
   const requesterFirst = sanitizeMessagingLabel(
-    displayName(requesterOwner?.name, "")
-      .split(/\s+/)[0]
-      ?.trim() || "Someone",
+    displayName(requesterOwner?.name, "").split(/\s+/)[0]?.trim() || "Someone",
   );
 
   const inviteKey = `connect:${sender.id}:${target.id}`;

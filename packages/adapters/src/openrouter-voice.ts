@@ -42,6 +42,7 @@ const MODEL_ID_PATTERN = /^[\w.:/@+-]+$/;
 /** Visible ASCII only, so a key can never break the Authorization header. */
 const API_KEY_PATTERN = /^[\x21-\x7e]+$/;
 const MAX_SERVER_DETAIL_LENGTH = 160;
+
 /**
  * A model that lists no voices still has to be selectable. For providers whose default
  * is stable when omitted, speech omits this id. Fish Audio on OpenRouter does not: each

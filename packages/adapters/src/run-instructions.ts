@@ -368,7 +368,7 @@ function toolUsageLine(parts: {
       ? "Use remember for short durable facts in MEMORY.md; use remember with journal: true for dated event notes. Call search_memory with keywords when you need notes that are not in the profile."
       : undefined,
     builtinOffered(disabled, "schedule_create")
-      ? "When the user asks for something recurring or timed (every morning, remind me, let me know when), create it with schedule_create; when a recurring need is only implied, offer one."
+      ? "When the user asks for something recurring or timed (every morning, remind me, wake me up, let me know when), create it with schedule_create; when a recurring need is only implied, offer one. A wake-up rings the user: its prompt says to call them with call_user. Never say you will check, report or follow up later unless you schedule it now with schedule_create; otherwise do it in this turn."
       : undefined,
     scratchpadClause(disabled),
     builtinOffered(disabled, "request_takeover")

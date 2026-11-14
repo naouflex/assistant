@@ -181,6 +181,8 @@ export class ExpoPushProvider implements NotificationProvider {
       collapseId: message.threadId,
       tag: message.threadId,
       ...(message.badge === undefined ? {} : { badge: message.badge }),
+      // A reminder is due now: wake the device and play the default sound instead of a silent card.
+      ...(message.urgent ? { priority: "high", sound: "default" } : {}),
       data: expoPushData(message, context.spaceId, randomUUID()),
     };
     const { status, body } = await this.postWithBackoff(EXPO_PUSH_URL, payload, context.signal);

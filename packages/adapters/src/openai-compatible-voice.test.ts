@@ -117,9 +117,9 @@ describe("serializeOpenAiCompatibleVoiceSecret", () => {
       ttsModel: "kokoro",
       sttModel: "whisper-1",
     });
-    expect(() =>
-      serializeAsOwner({ baseUrl: "http://192.168.1.21:8880" }, keyed),
-    ).toThrow(/Enter a speech model id/);
+    expect(() => serializeAsOwner({ baseUrl: "http://192.168.1.21:8880" }, keyed)).toThrow(
+      /Enter a speech model id/,
+    );
     const moved = parseOpenAiCompatibleVoiceSecret(
       serializeAsOwner({ baseUrl: "http://192.168.1.21:8880", ttsModel: "next-tts" }, keyed),
     );

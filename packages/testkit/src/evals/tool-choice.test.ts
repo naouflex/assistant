@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Evidence } from "./cases.js";
 import { EMPTY_SETTINGS } from "./cases.js";
-import { gradeToolChoice, loadToolChoiceCases } from "./tool-choice.js";
+import { gradeToolChoice, loadToolChoiceCases, routineMatches } from "./tool-choice.js";
 import { TOOL_CHOICE_CASES, TOOL_CHOICE_DEFINITIONS } from "./tool-choice-cases.js";
 
 function evidence(overrides: Partial<Evidence> = {}): Evidence {
@@ -187,5 +187,37 @@ describe("tool-choice grading", () => {
       ]),
     );
     expect(() => loadToolChoiceCases(file)).toThrow(/guard needs/);
+  });
+});
+
+describe("routineMatches", () => {
+  const routine = {
+    name: "Bank",
+    prompt: "Remind the user to call the bank.",
+    crons: ["@once"],
+    active: true,
+    timezone: "Europe/Paris",
+    // 22:30 Paris on Nov 14, then 08:00 Paris on Nov 15.
+    createdAt: "2026-11-14T21:30:00.000Z",
+    nextRunAt: "2026-11-15T07:00:00.000Z",
+  };
+
+  it("reads the next run as local wall-clock time and day", () => {
+    expect(routineMatches({ oneShot: true, localTime: "08:00", dayOffset: 1 }, routine)).toBe(true);
+    expect(routineMatches({ localTime: "07:00" }, routine)).toBe(false);
+    expect(routineMatches({ dayOffset: 0 }, routine)).toBe(false);
+    expect(routineMatches({ oneShot: false }, routine)).toBe(false);
+  });
+
+  it("checks relative delays within two minutes", () => {
+    const soon = { ...routine, nextRunAt: "2026-11-14T21:51:00.000Z" };
+    expect(routineMatches({ minutesFromNow: 20 }, soon)).toBe(true);
+    expect(routineMatches({ minutesFromNow: 30 }, soon)).toBe(false);
+  });
+
+  it("matches the prompt and cron by substring", () => {
+    expect(routineMatches({ prompt: ["~call_user", "~bank"] }, routine)).toBe(true);
+    expect(routineMatches({ cron: "45 6 * * 1-5" }, routine)).toBe(false);
+    expect(routineMatches({ localTime: "08:00" }, { ...routine, nextRunAt: null })).toBe(false);
   });
 });

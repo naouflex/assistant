@@ -166,13 +166,14 @@ describe("editMemory", () => {
 });
 
 describe("isJournalFlag", () => {
-  it("accepts boolean true and the string \"true\" models sometimes send", () => {
+  it('accepts boolean true and the string "true" models sometimes send', () => {
     expect(isJournalFlag(true)).toBe(true);
     expect(isJournalFlag("true")).toBe(true);
     expect(isJournalFlag(" TRUE ")).toBe(true);
   });
 
   it("rejects everything else", () => {
-    for (const v of [false, "false", undefined, null, "", 1, "yes"]) expect(isJournalFlag(v)).toBe(false);
+    for (const v of [false, "false", undefined, null, "", 1, "yes"])
+      expect(isJournalFlag(v)).toBe(false);
   });
 });

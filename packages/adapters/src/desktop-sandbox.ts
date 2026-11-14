@@ -38,7 +38,6 @@ import {
 } from "./computer-support.js";
 import type { NativeProcessTree } from "./desktop-process-tree.js";
 import { spawnOwnedCommand } from "./desktop-process-tree.js";
-import { ProcessOutputDecoder } from "./process-output-text.js";
 import { isAllowedDesktopPath, normalizeDesktopWorkspacePath } from "./desktop-sandbox-paths.js";
 import type { Win32FileHandle } from "./desktop-sandbox-win32-path.js";
 import {
@@ -50,6 +49,7 @@ import {
   win32NtRelativeAvailable,
 } from "./desktop-sandbox-win32-path.js";
 import { removeOwnedWorkspaceChildren } from "./desktop-workspace-cleanup.js";
+import { ProcessOutputDecoder } from "./process-output-text.js";
 import { hostCommandEnvironment } from "./sandbox-command-environment.js";
 import { shouldSkipPortableWorkspaceFile } from "./workspace-save-policy.js";
 

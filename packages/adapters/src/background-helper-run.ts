@@ -1,6 +1,6 @@
+import type { JobPublisher } from "@atlas/adapter-kit";
 import { runContinueJob } from "@atlas/adapter-kit";
 import { ACTIVE_RUN_STATUSES } from "@atlas/core";
-import type { JobPublisher } from "@atlas/adapter-kit";
 import type { PrismaClient } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 

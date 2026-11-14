@@ -24,12 +24,14 @@ import { RunHistoryWriteError, recordUsage } from "@atlas/db";
 import { getLogger } from "@atlas/logging";
 import { sanitizedError } from "@atlas/logging/monitoring";
 import { isToolPauseResult } from "./approval-effect.js";
+import {
+  cancelQueuedBackgroundHelpers,
+  releaseBackgroundHelpers,
+} from "./background-helper-run.js";
 import { returnBotMessageOutcome } from "./bot-messages.js";
 import { scheduleComputerSleep } from "./computer-idle.js";
 import { holdComputerExecutionLeaseForTakeover } from "./computer-lifecycle.js";
 import { resolveBotWorkspacePath } from "./computer-support.js";
-import { cancelQueuedBackgroundHelpers, releaseBackgroundHelpers } from "./background-helper-run.js";
-import { closePlanScratchpadItems } from "./scratchpad-seed.js";
 import { shouldEnqueueCompactionNow } from "./history-compaction.js";
 import { maybeScheduleMemoryDream } from "./memory-dream-schedule.js";
 import {
@@ -46,6 +48,7 @@ import {
   completionNotificationBody,
   completionNotificationPreview,
   notifyRun,
+  routineNotice,
   runSendsFinishNotification,
   subagentMarksUnread,
 } from "./run-notifications.js";
@@ -69,6 +72,7 @@ import {
 import { scheduleRoutineRetry } from "./run-routines.js";
 import { applyTool } from "./run-tools.js";
 import { withRuntimeCleanup } from "./runtime-stream.js";
+import { closePlanScratchpadItems } from "./scratchpad-seed.js";
 import {
   peerReplyWithoutSentinel,
   stripNoResponseReply,
@@ -93,6 +97,7 @@ import {
   STEERING_RESET_MIN_GAP_MS,
   STEERING_RESETS_MAX_PER_RUN,
 } from "./user-progress.js";
+
 type RuntimeEvent<T extends AgentRuntimeEvent["type"]> = Extract<AgentRuntimeEvent, { type: T }>;
 
 /**
@@ -826,12 +831,20 @@ export async function completeRun(ctx: RunContext) {
   }
   const notifyBody = completionNotificationPreview(text);
   if (runSendsFinishNotification(run.trigger) && notifyBody && !completed.continuationRunId) {
+    // A reminder announces itself, not "finished": the push is the reminder.
+    const routine = await routineNotice(deps.prisma, run).catch((error) => {
+      getLogger().error("routine notice lookup", error);
+      return null;
+    });
     await notifyRun(deps, run, {
       kind: "completion",
-      title: `${displayName(bot.name, "Bot")} finished`,
+      title: routine
+        ? `${displayName(bot.name, "Bot")}: ${routine.name}`
+        : `${displayName(bot.name, "Bot")} finished`,
       body: notifyBody,
       botId: bot.id,
       threadId: thread.id,
+      ...(routine?.urgent ? { urgent: true } : {}),
     });
   }
   // Last, and never fatal: the run is already finalized, so a failure here must not reach

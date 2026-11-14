@@ -155,8 +155,18 @@ describe("local server status", () => {
     });
     expect(ollama).toMatchObject({ kind: "ollama", reachable: true, contextWindow: null });
     expect(ollama?.models).toEqual([
-      expect.objectContaining({ id: "gemma3:4b", contextWindow: 8192, large: false, loadState: "loaded" }),
-      expect.objectContaining({ id: "qwen3:30b-a3b", contextWindow: null, large: true, loadState: "unloaded" }),
+      expect.objectContaining({
+        id: "gemma3:4b",
+        contextWindow: 8192,
+        large: false,
+        loadState: "loaded",
+      }),
+      expect.objectContaining({
+        id: "qwen3:30b-a3b",
+        contextWindow: null,
+        large: true,
+        loadState: "unloaded",
+      }),
     ]);
     expect(gone).toMatchObject({ reachable: false, kind: "unknown", models: [] });
   });
@@ -182,7 +192,9 @@ describe("local server status", () => {
       if (url.endsWith("/models/load")) return json({ success: true });
       return json({}, false);
     }) as unknown as typeof fetch;
-    const { loadLocalModel, localServerStatus: status } = await import("./local-model-discovery.js");
+    const { loadLocalModel, localServerStatus: status } = await import(
+      "./local-model-discovery.js"
+    );
     const [server] = await status({ ATLAS_LOCAL_MODELS_URL: LLAMA }, fetchImpl);
     expect(server?.models.map((model) => [model.id, model.loadState])).toEqual([
       ["qwen3.5:9B", "loaded"],

@@ -39,15 +39,7 @@ describe("agent memory context", () => {
     const read = vi.fn(async ({ scope }: { scope: "bot" | "user" }) =>
       snapshot(
         scope === "bot"
-          ? [
-              document(
-                "new",
-                "MEMORY.md",
-                `${"🙂".repeat(80)}`,
-                1,
-                "2026-08-15T12:00:00.000Z",
-              ),
-            ]
+          ? [document("new", "MEMORY.md", `${"🙂".repeat(80)}`, 1, "2026-08-15T12:00:00.000Z")]
           : [],
       ),
     );
@@ -68,7 +60,13 @@ describe("agent memory context", () => {
           ? [document("bot", "MEMORY.md", "bot profile", 2, "2026-08-14T12:00:00.000Z")]
           : [
               document("user", "USER.md", "user profile", 1, "2026-08-15T12:00:00.000Z"),
-              document("journal", "journal/2026-01-01.md", "older note", 1, "2026-01-01T00:00:00.000Z"),
+              document(
+                "journal",
+                "journal/2026-01-01.md",
+                "older note",
+                1,
+                "2026-01-01T00:00:00.000Z",
+              ),
             ],
       ),
     );
