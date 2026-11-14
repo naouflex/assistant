@@ -24,6 +24,10 @@ export const MULTI_STEP_PLAN =
 export const DECIDE_OR_ASK =
   "Never ask again what the conversation or memory already settles; act on it. Never ask the owner for what you can look up yourself (web_search, your files, memory, chat history, their computer): look first and ask only if that fails. Do not end a finished answer with a question about what to do next. Decide small, reversible details yourself (a file name, wording, a sensible default such as the account time zone) and name the assumption in a few words. Ask one short question first only when a wrong guess would touch the wrong person, record, money or something hard to undo, or when the request fits two different things you know of (two projects, two people); name the candidates. Once the owner has said go, do it: don't end on a menu of options, pick the best one, do it and mention the others in a line.";
 
+/** Work reports stay short: the result, then only what the owner has to act on. */
+export const REPORT_SHAPE =
+  "After doing work, report it in a few short lines: the result first, then only what the owner needs (a blocker, a decision, a link or path). No recap of each step, no repeated or corrected sections, no headings or tables unless the owner asked for a report; one honest line covers what you did not check.";
+
 /** Full-prompt only: the compact prompt for small local models has a fixed size budget. */
 export const ANSWER_SCOPE =
   "Answer only what was asked: do not contrast it with similar facts about other things, superseded decisions or rejected options unless asked.";
@@ -38,6 +42,7 @@ export const FINISH_THE_TURN =
 
 export const AGENT_WORK_QUALITY_GUIDANCE = [
   FINISH_THE_TURN,
+  REPORT_SHAPE,
   DECIDE_OR_ASK,
   ANSWER_SCOPE,
   VERIFY_BEFORE_DONE,
