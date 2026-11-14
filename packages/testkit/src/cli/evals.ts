@@ -40,7 +40,11 @@ import {
   MEMORY_JUDGE_CALIBRATION,
   MEMORY_JUDGE_VERSION,
 } from "../evals/memory.js";
-import { loadReplayCases, REAL_REPLAY_VERSION } from "../evals/real-replay.js";
+import {
+  loadReplayCases,
+  REAL_REPLAY_VERSION,
+  REPLAY_COMPUTER_OUTPUT,
+} from "../evals/real-replay.js";
 import { emptyTrial, redact, summarize, validateControls } from "../evals/report.js";
 import {
   SILENCE_EVAL_CASES,
@@ -576,7 +580,7 @@ async function main() {
     // Import runtime modules only after generation; their barrel exports load Prisma.
     const { createApp } = await import("@atlas/api/app");
     const { runTrial } = await import("../evals/runner.js");
-    const { dispatcherFetch, PiAgentRuntime } = await import("@atlas/adapters");
+    const { dispatcherFetch, PiAgentRuntime, UserDeviceEmulator } = await import("@atlas/adapters");
     const { EvalSandboxProvider } = await import("../evals/sandbox.js");
     const { observeToolCalls } = await import("../evals/tool-calls.js");
     for (let i = 0; i < trials.length; i++) {
@@ -672,6 +676,14 @@ async function main() {
               // Routine runs, seeded or authored then woken, are graded on what they notify.
               ...(scenario.routine || scenario.steps.some((step) => "wakeRoutine" in step)
                 ? witnesses
+                : {}),
+              ...(scenario.userComputer
+                ? {
+                    userDevices: new UserDeviceEmulator({
+                      windows: true,
+                      output: REPLAY_COMPUTER_OUTPUT,
+                    }),
+                  }
                 : {}),
               messagingOpenSignup: false,
               defaultProvider: connection.provider,

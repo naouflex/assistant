@@ -77,6 +77,11 @@ export type EvalCase = {
   connections?: string[];
   /** A run waiting on the user (a choice, a secret, an approval) ends its step instead of failing. */
   pauseEndsTurn?: true;
+  /**
+   * The owner's Windows PC is connected and its shell already allowed in this space, as for
+   * someone who works through it every day. Commands print a fixed line; nothing runs.
+   */
+  userComputer?: "windows";
   /** Synthetic bot state written before the first step. */
   botSetup?: BotSetup;
   /** The account's saved IANA timezone; the harness default is UTC. */

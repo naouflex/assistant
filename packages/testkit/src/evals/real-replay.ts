@@ -8,7 +8,11 @@ import { scrubTurnText } from "./real-turns.js";
  * export stays on the operator's machine; tools run against the eval's fake services, so only the
  * comparison between two code revisions on the same export is meaningful.
  */
-export const REAL_REPLAY_VERSION = "real-replay-v1";
+export const REAL_REPLAY_VERSION = "real-replay-v2";
+
+/** What every command on the replayed owner's PC prints: the real output is not part of the export. */
+export const REPLAY_COMPUTER_OUTPUT =
+  "(replay: the command ran on the owner's PC; its output is not available in this replay)\n";
 
 export type ReplayTurn = {
   id: string;
@@ -32,6 +36,8 @@ export function replayEvalCase(turn: ReplayTurn): EvalCase {
     purpose: `[replay] a real turn of ${turn.bot}`,
     connections: [],
     pauseEndsTurn: true,
+    // Most real turns work through the owner's PC; without it every one of them stalls the same way.
+    userComputer: "windows",
     ...(turn.botInstructions?.trim()
       ? { botSetup: { instructions: scrubTurnText(turn.botInstructions) } }
       : {}),

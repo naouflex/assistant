@@ -383,6 +383,46 @@ export async function runTrial(
         },
       });
     }
+    if (scenario.userComputer) {
+      // "Allow in this space" given before this chat, as the owner of a working PC has done.
+      const actor = actors[actors.length - 1]!;
+      const thread = await prisma.thread.findUniqueOrThrow({
+        where: { botId },
+        select: { id: true },
+      });
+      const task = await prisma.task.create({
+        data: {
+          spaceId: actor.spaceId,
+          userId: actor.userId,
+          botId,
+          threadId: thread.id,
+          prompt: "Earlier work on the owner's computer",
+          status: "completed",
+        },
+      });
+      const earlier = await prisma.run.create({
+        data: {
+          spaceId: actor.spaceId,
+          userId: actor.userId,
+          botId,
+          threadId: thread.id,
+          taskId: task.id,
+          status: "completed",
+          trigger: "user",
+          completedAt: new Date(Date.UTC(2026, 0, 1)),
+        },
+      });
+      await prisma.externalEffect.create({
+        data: {
+          spaceId: actor.spaceId,
+          runId: earlier.id,
+          kind: "user_computer_shell",
+          idempotencyKey: `eval-allowed-shell-${earlier.id}`,
+          status: "completed",
+          request: { command: "hostname" },
+        },
+      });
+    }
     if (scenario.taughtSkill) {
       // Human-authored fixture setup via the same API as the teaching UI; no model work is prefilled.
       await rpc(app, cookie, "computer/boot", { botId });

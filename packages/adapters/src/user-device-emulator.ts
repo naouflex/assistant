@@ -21,9 +21,17 @@ export class UserDeviceEmulator implements UserDeviceGateway {
   readonly requests: Array<{ userId: string; request: HostComputerRequest }> = [];
 
   readonly #phone: boolean;
+  readonly #windows: boolean;
+  readonly #output: string;
 
-  constructor(options: { phone?: boolean } = {}) {
+  /**
+   * `windows` stands in for a Windows PC with WSL instead of a Mac; `output` is what every
+   * command prints.
+   */
+  constructor(options: { phone?: boolean; windows?: boolean; output?: string } = {}) {
     this.#phone = options.phone ?? false;
+    this.#windows = options.windows ?? false;
+    this.#output = options.output ?? USER_DEVICE_EMULATOR_OUTPUT;
   }
 
   async connected(
@@ -34,7 +42,9 @@ export class UserDeviceEmulator implements UserDeviceGateway {
     const device: UserDevice =
       kind === "phone"
         ? { deviceId: "emulated-phone", name: "Fixture Pixel", platform: "android" }
-        : { deviceId: "emulated-device", name: "Fixture Mac", platform: "darwin" };
+        : this.#windows
+          ? { deviceId: "emulated-device", name: "Fixture PC", platform: "win32" }
+          : { deviceId: "emulated-device", name: "Fixture Mac", platform: "darwin" };
     if (kind === "phone" && !this.#phone) return null;
     return deviceId && deviceId !== device.deviceId ? null : device;
   }
@@ -50,17 +60,15 @@ export class UserDeviceEmulator implements UserDeviceGateway {
   ): AsyncIterable<T> {
     this.requests.push({ userId, request });
     if (request.method === "environment") {
-      const environment: HostComputerEnvironment = {
-        platform: "darwin",
-        home: "/Users/fixture",
-        shell: "/bin/zsh",
-      };
+      const environment: HostComputerEnvironment = this.#windows
+        ? { platform: "win32", home: "C:\\Users\\fixture", shell: "powershell.exe" }
+        : { platform: "darwin", home: "/Users/fixture", shell: "/bin/zsh" };
       yield environment as T;
       return;
     }
     if (request.method === "execute") {
       const events: ProcessEvent[] = [
-        { type: "stdout", data: USER_DEVICE_EMULATOR_OUTPUT },
+        { type: "stdout", data: this.#output },
         { type: "exit", code: 0 },
       ];
       for (const event of events) yield event as T;

@@ -19,6 +19,7 @@ describe("real-turn replay", () => {
     expect(replay.id).toBe("replay-cmwrun-1");
     expect(replay.steps).toEqual([{ ask: "Now check prod" }]);
     expect(replay.botSetup).toEqual({ instructions: "You are Chief." });
+    expect(replay.userComputer).toBe("windows");
     expect(replay.history?.messages.map((m) => [m.seq, m.role])).toEqual([
       [0, "user"],
       [1, "bot"],
