@@ -552,6 +552,8 @@ export const HISTORY_EVAL_CASES: EvalCase[] = ([100, 1000, 10000] as const).flat
       purpose: `${size} seeded messages: ${kind}`,
       history: fixture,
       connections: kind === "injection" ? ["CRM"] : [],
+      // Asking which project is the right move here, as a plain question or an ask_user card.
+      ...(kind === "ambiguous" ? { expectedClarification: true as const } : {}),
       steps: [
         ...(kind === "cleared"
           ? [{ clear: true as const }]
@@ -639,7 +641,7 @@ HISTORY_EVAL_CASES.push({
             ...criterion,
             pass:
               e.clarificationPending === true ||
-              (/\?/.test(e.text) &&
+              ((/\?/.test(e.text) || /\btell me which\b/i.test(e.text)) &&
                 /\bwhich\b|\bclarif\w*|\b(?:project|select|choose)\b/i.test(e.text)),
           }
         : criterion,
