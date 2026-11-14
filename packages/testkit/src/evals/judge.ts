@@ -57,12 +57,28 @@ export function createEvalJudge(
  */
 export function verdictJson(text: string): string {
   const trimmed = text.trim();
-  if (trimmed.startsWith("{")) return trimmed;
+  if (trimmed.startsWith("{")) return firstObject(trimmed) ?? trimmed;
   const fenced = trimmed.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
   if (fenced) return fenced[1]!;
   const start = trimmed.indexOf("{");
   const end = trimmed.lastIndexOf("}");
   return start >= 0 && end > start ? trimmed.slice(start, end + 1) : trimmed;
+}
+
+/** The first balanced JSON object at the start of the text, ignoring braces inside strings. */
+function firstObject(text: string): string | undefined {
+  let depth = 0;
+  let inString = false;
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (inString) {
+      if (char === "\\") index++;
+      else if (char === '"') inString = false;
+    } else if (char === '"') inString = true;
+    else if (char === "{") depth++;
+    else if (char === "}" && --depth === 0) return text.slice(0, index + 1);
+  }
+  return undefined;
 }
 
 export type CalibrationVerdict = Judgment & { votes: boolean[] };

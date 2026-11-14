@@ -83,6 +83,15 @@ describe("semantic judge boundary", () => {
 });
 
 describe("verdictJson", () => {
+  it("drops text a judge adds after the verdict, even with braces in its reason", () => {
+    const verdict = '{"pass": true, "reason": "Says \\"done {ok}\\" plainly."}';
+    expect(verdictJson(`${verdict}\n\nNote: {extra}`)).toBe(verdict);
+    expect(JSON.parse(verdictJson(`${verdict}\nThanks.`))).toEqual({
+      pass: true,
+      reason: 'Says "done {ok}" plainly.',
+    });
+  });
+
   it("reads fenced or prefaced verdicts and leaves malformed text to fail", () => {
     const verdict = '{"pass":true,"reason":"ok"}';
     expect(verdictJson(verdict)).toBe(verdict);
