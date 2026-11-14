@@ -1,15 +1,16 @@
 import { MessageReactionSchema } from "@atlas/contracts";
-import { isBackgroundRunTrigger, redactSecrets } from "@atlas/core";
+import { displayName, isBackgroundRunTrigger, redactSecrets } from "@atlas/core";
 import {
   connectAgent,
   messageConnectedAgent,
   respondAgentConnection,
 } from "./agent-connections.js";
+import { queueBackgroundHelper } from "./background-helper-run.js";
 import { messageBot } from "./bot-messages.js";
 import { endCallFromTool, requestUserCall } from "./call-request.js";
-import { queueBackgroundHelper } from "./background-helper-run.js";
 import { handoffToGroupBot } from "./group-handoff.js";
 import { publishMessage } from "./run-messages.js";
+import { notifyRun } from "./run-notifications.js";
 import {
   canPublishDurableProgress,
   flushProgress,
@@ -40,12 +41,23 @@ export const messagingTools: ToolHandlers = {
     ) {
       return call.finish({ error: "Calls require a one-to-one chat." });
     }
-    return call.finish(
-      await requestUserCall(deps, run, {
-        reason: String(args.reason ?? ""),
-        opening: String(args.opening ?? ""),
-      }),
-    );
+    const reason = String(args.reason ?? "");
+    const result = await requestUserCall(deps, run, {
+      reason,
+      opening: String(args.opening ?? ""),
+    });
+    // The ring is a chat event, so a closed app would miss it: push it too, loud, so a
+    // wake-up call or an urgent call reaches a phone in a pocket.
+    if ("ok" in result)
+      await notifyRun(deps, run, {
+        kind: "help",
+        title: `${displayName(ctx.bot.name, "Bot")} is calling`,
+        body: reason,
+        botId: run.botId,
+        threadId: run.threadId,
+        urgent: true,
+      });
+    return call.finish(result);
   },
   async end_call(ctx, call) {
     const { deps, run, bot, thread } = ctx;

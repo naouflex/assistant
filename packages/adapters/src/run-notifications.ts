@@ -65,7 +65,12 @@ export async function notifyRun(
     (isBackgroundRunTrigger(run.trigger) && message.kind !== "help" && message.kind !== "takeover")
   )
     return;
-  const routineId = message.kind === "failure" ? run.routineId : null;
+  // A failure, and a reminder the user set, follow the routine's own notify setting rather
+  // than the bot's "notify when finished".
+  const routineId =
+    message.kind === "failure" || (message.urgent && message.kind === "completion")
+      ? run.routineId
+      : null;
   const notice = await runNotice(deps.prisma, run, routineId).catch((error) => {
     if (options.retryOnFailure) throw error;
     getLogger().error("notification preference lookup", error);
