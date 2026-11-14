@@ -96,22 +96,3 @@ export function endsOnSafeOffer(text: string): boolean {
 
 export const SAFE_OFFER_PROMPT =
   "Your reply ends by offering a retry, a check or a search and waiting for the owner's go. A safe, read-only or reversible step needs no go-ahead: do it now with your tools and answer with the result. Keep the question only if the step changes, sends, spends or restarts something, or truly needs the owner's choice.";
-
-/**
- * One review before a tool-using turn ends: the agent checks its own last reply against the ask
- * and either confirms it with OK, which is never shown, or keeps working and adds what changed.
- */
-export const SELF_CHECK_PROMPT =
-  "Before this turn ends, check your last reply. 1) Did it fully do what the owner asked in their last message? 2) Does it end on a question, an offer or a next step you could settle yourself with your tools (a retry, a read-only check, a search, a reversible edit)? 3) Does it state as fact anything no tool result or message in this conversation shows? If all is fine, reply with exactly OK and nothing else. Otherwise fix it now: use your tools to finish, then write only what changes or adds to your last reply, without repeating it. Don't delete, deploy, spend or send anything without the owner's go-ahead.";
-
-/** Whether a self-check answer only confirms the reply it reviewed. */
-export function selfCheckConfirms(text: string): boolean {
-  return /^\W*ok\W*$/i.test(text.trim()) || !text.trim();
-}
-
-/** Self-check runs on turns that used tools when ATLAS_SELF_CHECK=on (one extra model call). */
-export function selfCheckEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.ATLAS_SELF_CHECK?.trim().toLowerCase() === "on";
-}
-
-export const SELF_CHECK_MIN_TOOL_CALLS = 2;
