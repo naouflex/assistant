@@ -133,6 +133,7 @@ import { optionChoiceNote } from "./option-choice.js";
 import { paymentWalletConnected } from "./payment-wallets.js";
 import { isRetiredModelCredentialError } from "./pi-oauth.js";
 import { loadPurchaseRedactions } from "./purchase-service.js";
+import { recallNote } from "./recall-question.js";
 import { loadReplyContext, messageToAgentHistoryText } from "./reply-context.js";
 import { backOffRoutineAfterAccountError } from "./routine-backoff.js";
 import { lateRoutineRunInstruction } from "./routine-lateness.js";
@@ -1705,6 +1706,9 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                 askUserOffered: tools.some((tool) => tool.name === "ask_user"),
                 voiceCall: Boolean(voiceCall),
               })
+            : undefined,
+          run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
+            ? recallNote(taskPrompt, { voiceCall: Boolean(voiceCall) })
             : undefined,
           run.trigger === "user" || run.trigger === "follow_up" || run.trigger === "messaging"
             ? ownFilesNote(taskPrompt, {

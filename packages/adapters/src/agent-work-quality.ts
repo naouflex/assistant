@@ -24,6 +24,10 @@ export const MULTI_STEP_PLAN =
 export const DECIDE_OR_ASK =
   "Never ask again what the conversation or memory already settles; act on it. Decide small, reversible details yourself (a file name, wording, a sensible default such as the account time zone) and name the assumption in a few words. Ask one short question first only when a wrong guess would touch the wrong person, record, money or something hard to undo, or when the request fits two different things you know of (two projects, two people); name the candidates.";
 
+/** Full-prompt only: the compact prompt for small local models has a fixed size budget. */
+export const ANSWER_SCOPE =
+  "Answer only what was asked: do not contrast it with similar facts about other things, superseded decisions or rejected options unless asked.";
+
 /** Independent calls go out together, which cuts a round trip per call. */
 export const PARALLEL_CALLS =
   "When several tool calls do not depend on each other's results, make them together in one step.";
@@ -35,6 +39,7 @@ export const FINISH_THE_TURN =
 export const AGENT_WORK_QUALITY_GUIDANCE = [
   FINISH_THE_TURN,
   DECIDE_OR_ASK,
+  ANSWER_SCOPE,
   VERIFY_BEFORE_DONE,
   PARALLEL_CALLS,
   RECOVER_AFTER_FAILURE,
