@@ -8,6 +8,8 @@ describe("recall questions", () => {
     "What was that Aurora calibration label again?",
     "What was the password for Aurora?",
     "Remind me of the Aurora batch size.",
+    "What is the approved Aurora launch day and theme? Give only the current decision.",
+    "What is the calibration label?",
     "Qu'est-ce qu'on avait choisi comme thème ?",
     "Rappelle-moi la taille du lot.",
   ])("notices %s", (text) => {

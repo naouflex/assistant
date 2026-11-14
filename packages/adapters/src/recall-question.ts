@@ -7,6 +7,9 @@
 const RECALL_PATTERNS: readonly RegExp[] = [
   /\b(did|have|had) (we|i|you) (choose|chose|pick|picked|decide|decided|agree|agreed|select|selected|settle|settled|say|said|discuss|discussed|mention|mentioned|tell|told)\b/i,
   /\bwe (chose|picked|decided|agreed|selected|settled on|discussed)\b/i,
+  /\b(approved|agreed|decided|chosen|settled|planned)\b[^?]{0,80}\?/i,
+  // A short question about "the" or "our" something usually means the one already discussed.
+  /^\s*what (is|are|was|were) (the|our|my) [^?]{1,60}\?\s*$/i,
   // "Remind me of the batch size", not "remind me every weekday at 8:30".
   /\bremind me (of|what|which|who|how|where|why)\b/i,
   /\b(do you remember|do you recall)\b/i,
@@ -24,7 +27,7 @@ export function isRecallQuestion(text: string | undefined): boolean {
 }
 
 export const RECALL_NOTE =
-  "This asks about something from earlier. Answer with that fact for the thing named, on its own: do not mention similar facts about other things, or options that were replaced or rejected. If it was never discussed, say so without listing what was. If several things fit and the question does not say which, ask which one.";
+  "If this asks about something from earlier in the conversation, answer with that fact for the thing named, on its own: do not mention similar facts about other things, or options that were replaced or rejected. If it was never discussed, say so without listing what was. If several things fit and the question does not say which, ask which one.";
 
 /** The per-turn note for a recall question, or undefined. */
 export function recallNote(
