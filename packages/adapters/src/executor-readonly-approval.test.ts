@@ -1274,6 +1274,25 @@ describe("Composio batches", () => {
     expect(f.pauseRunForInput).toHaveBeenCalledOnce();
   });
 
+  it.each(["user", "routine"])(
+    "asks the owner for a send even in Never ask (%s run)",
+    async (trigger) => {
+      const f = batchFixture({ skipApprovals: true, trigger });
+      f.setCalls([{ args: batch("GMAIL_SEND_EMAIL"), executionId: "call-1" }]);
+      await f.run();
+      // Confirm before send: the draft waits for the owner instead of going out unseen.
+      expect(f.execute).not.toHaveBeenCalled();
+      expect(f.pauseRunForInput).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("still runs a non-send action in Never ask", async () => {
+    const f = batchFixture({ skipApprovals: true });
+    f.setCalls([{ args: batch("GMAIL_CREATE_EMAIL_DRAFT"), executionId: "call-1" }]);
+    await f.run();
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+  });
+
   it("matches tool and category rules on the actions, whatever the batch tool is called", async () => {
     for (const rule of [
       { effect: "require_approval", matchKind: "tool", matchValue: "GMAIL_SEND_EMAIL" },

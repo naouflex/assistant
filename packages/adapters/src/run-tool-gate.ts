@@ -255,6 +255,10 @@ export async function gateToolCall(
   const spendsMoney = !paidReplay && toolSpendsMoney(name, viaConnector);
   // A shell command that cannot be undone (rm -rf, force push, sudo, DROP DATABASE) waits for a person.
   const riskyShell = name === "shell" ? riskyShellCommand(String(args.command ?? "")) : undefined;
+  // Confirm before send: outbound email and messages always wait for the owner, even in Never
+  // ask and in routines, where the card waits in the chat and the owner is notified.
+  const sendsMessage =
+    viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName));
   const requiresApprovalByDefault = paidReplay
     ? false
     : request.heldForApproval ||
@@ -275,8 +279,7 @@ export async function gateToolCall(
     requiresUnattendedApproval ||
     toolRequiresExplicitApproval(name) ||
     Boolean(riskyShell) ||
-    // Confirm before send: outbound email and messages always wait for the owner.
-    (viaConnector && approvalToolNames.some((toolName) => connectorToolSendsMessage(toolName)));
+    sendsMessage;
   // Never ask runs everything else: only another owner's connection could have been steered into it.
   const guardedInNeverAsk = name === "respond_agent_connection";
   const resolvedRules = resolveActionApprovalForTools({
@@ -343,7 +346,7 @@ export async function gateToolCall(
           reviewOnly: connectorReadGated,
           checkerConfigured,
           newDestination: siteGate === "new",
-          alwaysAsk: spendsMoney || Boolean(riskyShell),
+          alwaysAsk: spendsMoney || Boolean(riskyShell) || sendsMessage,
         });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {
