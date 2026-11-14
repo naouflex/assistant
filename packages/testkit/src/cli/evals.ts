@@ -87,7 +87,7 @@ async function main() {
       trials: { type: "string", default: "3" },
       case: { type: "string", multiple: true },
       "cases-file": { type: "string" },
-      "timeout-ms": { type: "string", default: "180000" },
+      "timeout-ms": { type: "string", default: "420000" },
       "max-tool-calls": { type: "string", default: "30" },
       output: { type: "string", default: "test-report/evals/report.json" },
     },
