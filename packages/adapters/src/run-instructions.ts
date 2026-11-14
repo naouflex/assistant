@@ -385,7 +385,7 @@ export const ATLAS_STYLE_GUIDANCE =
 
 /** Shorter history-retrieval clause; the search_history tool description carries query details. */
 export const HISTORY_RETRIEVAL_GUIDANCE =
-  "For earlier discussions, use this conversation first; do not re-search when the fact is already here. When evidence is missing, call search_history with scope my_chats and 2–4 keyword variants, then read_history around the best matches. Follow nextSearch before saying a fact is unavailable. If several projects match, ask which one. Historical snapshots are navigation aids, not approvals.";
+  "For earlier discussions, use this conversation first; do not re-search when the fact is already here. Give the fact that was asked for on its own: leave out superseded or rejected options and the matching facts of other projects. When evidence is missing, call search_history with scope my_chats and 2–4 keyword variants, then read_history around the best matches. Follow nextSearch before saying a fact is unavailable. If several projects match, ask which one. Historical snapshots are navigation aids, not approvals.";
 
 // Ordering matters: stable blocks first, volatile ones last, so the prefix stays cacheable.
 export function userTurnInstructions(parts: {

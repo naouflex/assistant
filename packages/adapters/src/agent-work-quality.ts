@@ -3,7 +3,7 @@
  * that already confirms the effect is the evidence; content the bot produced still gets checked.
  */
 export const VERIFY_BEFORE_DONE =
-  "Claim success only from evidence. A tool result that confirms the effect (ok, the saved path, the created id or next run) is enough: do not re-read, re-list or re-fetch it just to double-check. When success depends on content you produced, check it: run the code or test, or open the page you changed.";
+  "Claim success only from evidence. A tool result that confirms the effect (ok, the saved path, the created id or next run) is enough: report it, without re-reading, re-listing or re-fetching just to double-check, and without describing checks you skipped. When success depends on content you produced, check it: run the code or test, or open the page you changed.";
 
 /** Recover once with a different approach, then report attempts. */
 export const RECOVER_AFTER_FAILURE =
