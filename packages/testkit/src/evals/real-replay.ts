@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { EvalCase } from "./cases.js";
 import { scrubTurnText } from "./real-turns.js";
+import type { ReplayObserved } from "./world-sim.js";
 
 /**
  * Replays exported real turns on the current code: the recent conversation is seeded as history,
@@ -20,6 +21,8 @@ export type ReplayTurn = {
   botInstructions?: string | null;
   context: Array<{ role: string; text: string }>;
   user: string;
+  /** The original run's tool calls, for `--simulate-computer`. */
+  observed?: ReplayObserved[];
 };
 
 export function replayEvalCase(turn: ReplayTurn): EvalCase {
@@ -38,6 +41,17 @@ export function replayEvalCase(turn: ReplayTurn): EvalCase {
     pauseEndsTurn: true,
     // Most real turns work through the owner's PC; without it every one of them stalls the same way.
     userComputer: "windows",
+    replayWorld: {
+      context: [
+        ...history.map((m) => `${m.role}: ${m.text}`),
+        `user: ${scrubTurnText(turn.user)}`,
+      ].join("\n\n"),
+      observed: (turn.observed ?? []).map((call) => ({
+        name: call.name,
+        input: scrubTurnText(call.input),
+        output: scrubTurnText(call.output),
+      })),
+    },
     ...(turn.botInstructions?.trim()
       ? { botSetup: { instructions: scrubTurnText(turn.botInstructions) } }
       : {}),

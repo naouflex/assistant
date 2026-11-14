@@ -82,6 +82,8 @@ export type EvalCase = {
    * someone who works through it every day. Commands print a fixed line; nothing runs.
    */
   userComputer?: "windows";
+  /** For replayed turns: what a simulated owner's PC answers from (see world-sim.ts). */
+  replayWorld?: import("./world-sim.js").ReplayWorld;
   /** Synthetic bot state written before the first step. */
   botSetup?: BotSetup;
   /** The account's saved IANA timezone; the harness default is UTC. */

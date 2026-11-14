@@ -22,13 +22,19 @@ export class UserDeviceEmulator implements UserDeviceGateway {
 
   readonly #phone: boolean;
   readonly #windows: boolean;
-  readonly #output: string;
+  readonly #output: string | ((argv: string[], cwd?: string) => Promise<string>);
 
   /**
    * `windows` stands in for a Windows PC with WSL instead of a Mac; `output` is what every
-   * command prints.
+   * command prints, or a function that answers each command.
    */
-  constructor(options: { phone?: boolean; windows?: boolean; output?: string } = {}) {
+  constructor(
+    options: {
+      phone?: boolean;
+      windows?: boolean;
+      output?: string | ((argv: string[], cwd?: string) => Promise<string>);
+    } = {},
+  ) {
     this.#phone = options.phone ?? false;
     this.#windows = options.windows ?? false;
     this.#output = options.output ?? USER_DEVICE_EMULATOR_OUTPUT;
@@ -68,7 +74,13 @@ export class UserDeviceEmulator implements UserDeviceGateway {
     }
     if (request.method === "execute") {
       const events: ProcessEvent[] = [
-        { type: "stdout", data: this.#output },
+        {
+          type: "stdout",
+          data:
+            typeof this.#output === "string"
+              ? this.#output
+              : await this.#output(request.command.argv, request.command.cwd),
+        },
         { type: "exit", code: 0 },
       ];
       for (const event of events) yield event as T;

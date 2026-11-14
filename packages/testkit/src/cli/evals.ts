@@ -76,6 +76,7 @@ async function main() {
       list: { type: "boolean", default: false },
       connection: { type: "string" },
       "judge-connection": { type: "string" },
+      "simulate-computer": { type: "string" },
       "judge-pricing": { type: "string" },
       provider: { type: "string" },
       model: { type: "string" },
@@ -582,6 +583,7 @@ async function main() {
     const { runTrial } = await import("../evals/runner.js");
     const { dispatcherFetch, PiAgentRuntime, UserDeviceEmulator } = await import("@atlas/adapters");
     const { EvalSandboxProvider } = await import("../evals/sandbox.js");
+    const { createWorldSimulator } = await import("../evals/world-sim.js");
     const { observeToolCalls } = await import("../evals/tool-calls.js");
     for (let i = 0; i < trials.length; i++) {
       if (stopRequested) {
@@ -681,7 +683,23 @@ async function main() {
                 ? {
                     userDevices: new UserDeviceEmulator({
                       windows: true,
-                      output: REPLAY_COMPUTER_OUTPUT,
+                      output:
+                        values["simulate-computer"] && scenario.replayWorld
+                          ? createWorldSimulator({
+                              runtime,
+                              model: {
+                                ...connection,
+                                id: connection.modelId!,
+                                allowPrivateEndpoint: true,
+                                maxImagesPerPrompt: connection.maxImagesPerPrompt ?? undefined,
+                                maxTokens: 4096,
+                              },
+                              caseId: scenario.id,
+                              world: scenario.replayWorld,
+                              cacheFile: values["simulate-computer"],
+                              fallback: REPLAY_COMPUTER_OUTPUT,
+                            })
+                          : REPLAY_COMPUTER_OUTPUT,
                     }),
                   }
                 : {}),
