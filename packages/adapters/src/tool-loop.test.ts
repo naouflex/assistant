@@ -9,6 +9,7 @@ import {
   MAX_CONSECUTIVE_OVER_LIMIT_ACTION_CALLS,
   noProgressNote,
   overLimitStopText,
+  toolBudgetNote,
   toolCallStreakLength,
   toolResultFingerprint,
   unproductiveToolResult,
@@ -318,5 +319,14 @@ describe("no-progress note", () => {
       details: { code: 1 },
     });
     expect(withToolNote("plain", "rethink")).toBe("plain");
+  });
+});
+
+describe("toolBudgetNote", () => {
+  it("warns once, five calls before the limit", () => {
+    expect(toolBudgetNote(25, 30)).toContain("25 of 30");
+    expect(toolBudgetNote(24, 30)).toBeUndefined();
+    expect(toolBudgetNote(26, 30)).toBeUndefined();
+    expect(toolBudgetNote(3, 8)).toBeUndefined();
   });
 });

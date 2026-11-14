@@ -168,6 +168,12 @@ export function noProgressNote(count: number): string | undefined {
   return `[Atlas: your last ${count} tool calls in a row failed or returned nothing. Don't try another variation of the same idea. Check your assumptions first (right computer, shell or WSL, path, account, permission), then try a clearly different approach, or stop and tell the user what you tried, what each attempt showed and what you need from them.]`;
 }
 
+/** Five calls before the per-turn limit, the model is told to wrap up instead of being cut off. */
+export function toolBudgetNote(count: number, limit: number): string | undefined {
+  if (limit < 10 || count !== limit - 5) return undefined;
+  return `[Atlas: ${count} of ${limit} tool calls used this turn; the turn stops at ${limit}. Use the rest only to finish or verify, then answer with what you found, what you changed and what is left.]`;
+}
+
 /** Adds a note for the model after a tool's own output, keeping the result's shape. */
 export function withToolNote<T>(result: T, note: string): T {
   if (!result || typeof result !== "object") return result;

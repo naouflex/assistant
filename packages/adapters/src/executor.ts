@@ -132,6 +132,7 @@ import { usesNativeShell } from "./native-shell.js";
 import { optionChoiceNote } from "./option-choice.js";
 import { paymentWalletConnected } from "./payment-wallets.js";
 import { isRetiredModelCredentialError } from "./pi-oauth.js";
+import { maxToolCallsPerTurn } from "./pi-runtime-tools.js";
 import { loadPurchaseRedactions } from "./purchase-service.js";
 import { quotedContentNote } from "./quoted-content-note.js";
 import { recallNote } from "./recall-question.js";
@@ -242,6 +243,7 @@ import { appendToolCompletionAudit } from "./tool-completion-audit.js";
 import {
   advanceUnproductiveCalls,
   noProgressNote,
+  toolBudgetNote,
   toolResultFingerprint,
   unproductiveToolResult,
   withToolNote,
@@ -1526,6 +1528,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           toolCallStreak: { key: undefined, count: 0 },
           overLimitActionCalls: 0,
           unproductiveToolCalls: 0,
+          toolCallsThisTurn: 0,
           toolResults: new Map(),
           tainted: initiallyTainted,
           ownerSettingsRefused: false,
@@ -2101,7 +2104,13 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                       state.unproductiveToolCalls,
                       unproductiveToolResult(result),
                     );
-                    const note = noProgressNote(state.unproductiveToolCalls);
+                    state.toolCallsThisTurn += 1;
+                    const note = [
+                      noProgressNote(state.unproductiveToolCalls),
+                      toolBudgetNote(state.toolCallsThisTurn, maxToolCallsPerTurn()),
+                    ]
+                      .filter(Boolean)
+                      .join("\n");
                     return note ? withToolNote(result, note) : result;
                   },
               ...(helperModel ? { helperModel } : {}),

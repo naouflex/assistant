@@ -171,6 +171,8 @@ export interface RunState {
   overLimitActionCalls: number;
   /** Consecutive calls that failed or returned nothing, whatever their input. */
   unproductiveToolCalls: number;
+  /** Tool calls the executor ran this turn, for the note five calls before the limit. */
+  toolCallsThisTurn: number;
   /**
    * Whether outside content has entered the run. A run someone else started begins tainted,
    * and so does a later attempt, including one with restored untrusted tool results.
