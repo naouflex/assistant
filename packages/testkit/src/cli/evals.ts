@@ -40,6 +40,7 @@ import {
   MEMORY_JUDGE_CALIBRATION,
   MEMORY_JUDGE_VERSION,
 } from "../evals/memory.js";
+import { loadReplayCases, REAL_REPLAY_VERSION } from "../evals/real-replay.js";
 import { emptyTrial, redact, summarize, validateControls } from "../evals/report.js";
 import {
   SILENCE_EVAL_CASES,
@@ -86,8 +87,10 @@ async function main() {
       output: { type: "string", default: "test-report/evals/report.json" },
     },
   });
-  if (values["cases-file"] && values.suite !== "tool-choice")
-    throw new Error("--cases-file adds tool-choice cases; use --suite tool-choice");
+  if (values["cases-file"] && values.suite !== "tool-choice" && values.suite !== "replay")
+    throw new Error(
+      "--cases-file adds tool-choice or replay cases; use --suite tool-choice or replay",
+    );
   if (values.suite === "approval")
     return runApprovalSuite(values, {
       codeRevision: codeRevision(),
@@ -125,6 +128,8 @@ async function main() {
       judge: { version: GROUP_JUDGE_VERSION, calibration: GROUP_JUDGE_CALIBRATION },
     },
     "tool-choice": { cases: TOOL_CHOICE_CASES, fixtureVersion: TOOL_CHOICE_FIXTURE_VERSION },
+    // Real turns exported locally and passed with --cases-file; graded afterwards.
+    replay: { cases: [], fixtureVersion: REAL_REPLAY_VERSION },
     conduct: {
       cases: CONDUCT_EVAL_CASES,
       fixtureVersion: CONDUCT_FIXTURE_VERSION,
@@ -133,11 +138,15 @@ async function main() {
   };
   if (!Object.hasOwn(suites, values.suite!))
     throw new Error(
-      "Unknown suite; use product, history, group, silence, deliberation, memory, conduct, tool-choice, or approval",
+      "Unknown suite; use product, history, group, silence, deliberation, memory, conduct, tool-choice, replay, or approval",
     );
   const suite = suites[values.suite!]!;
   const suiteJudge = suite.judge;
-  const extraCases = values["cases-file"] ? loadToolChoiceCases(values["cases-file"]) : [];
+  const extraCases = values["cases-file"]
+    ? values.suite === "replay"
+      ? loadReplayCases(values["cases-file"])
+      : loadToolChoiceCases(values["cases-file"])
+    : [];
   const cases = [...suite.cases, ...extraCases];
   const fixtureVersion = extraCases.length
     ? `${suite.fixtureVersion}+${extraCases.length}-local`
