@@ -169,6 +169,8 @@ export interface RunState {
   toolResults: Map<string, string>;
   /** Consecutive `computer_act`/`browser_act` batches over the action limit, this one included. */
   overLimitActionCalls: number;
+  /** Consecutive calls that failed or returned nothing, whatever their input. */
+  unproductiveToolCalls: number;
   /**
    * Whether outside content has entered the run. A run someone else started begins tainted,
    * and so does a later attempt, including one with restored untrusted tool results.

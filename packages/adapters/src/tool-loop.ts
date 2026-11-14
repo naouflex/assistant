@@ -139,3 +139,39 @@ export function advanceToolCallLoopGuard(
       (next.shapeCount ?? 0) >= MAX_CONSECUTIVE_SIMILAR_TOOL_CALLS,
   };
 }
+
+// Different calls that keep failing are a loop too, one the identical-call guard can't see:
+// twenty-seven searches for a folder, each a little different, none finding it.
+const NO_PROGRESS_NOTE_EVERY = 5;
+
+/** Whether a call got the agent nowhere: it failed, exited non-zero, or printed nothing. */
+export function unproductiveToolResult(result: unknown): boolean {
+  if (toolResultError(result) !== undefined) return true;
+  const record = result && typeof result === "object" ? (result as Record<string, unknown>) : {};
+  const details = (
+    record.details && typeof record.details === "object" ? record.details : record
+  ) as Record<string, unknown>;
+  const code = typeof details.code === "number" ? details.code : details.exitCode;
+  if (typeof code === "number" && code !== 0) return true;
+  if (details.running === true || !("stdout" in details)) return false;
+  return !String(details.stdout ?? "").trim() && !String(details.stderr ?? "").trim();
+}
+
+/** Consecutive unproductive calls, this one included; a call that got somewhere resets it. */
+export function advanceUnproductiveCalls(count: number, unproductive: boolean): number {
+  return unproductive ? count + 1 : 0;
+}
+
+/** Every fifth unproductive call in a row, the model is told to stop and rethink. */
+export function noProgressNote(count: number): string | undefined {
+  if (count < NO_PROGRESS_NOTE_EVERY || count % NO_PROGRESS_NOTE_EVERY !== 0) return undefined;
+  return `[Atlas: your last ${count} tool calls in a row failed or returned nothing. Don't try another variation of the same idea. Check your assumptions first (right computer, shell or WSL, path, account, permission), then try a clearly different approach, or stop and tell the user what you tried, what each attempt showed and what you need from them.]`;
+}
+
+/** Adds a note for the model after a tool's own output, keeping the result's shape. */
+export function withToolNote<T>(result: T, note: string): T {
+  if (!result || typeof result !== "object") return result;
+  const content = (result as { content?: unknown }).content;
+  if (!Array.isArray(content)) return result;
+  return { ...result, content: [...content, { type: "text", text: note }] };
+}

@@ -3,12 +3,16 @@ import { observationToolResult } from "./computer-tools.js";
 import {
   advanceOverLimitActionCalls,
   advanceToolCallLoopGuard,
+  advanceUnproductiveCalls,
   isLoopGuardStopText,
   loopGuardStopText,
   MAX_CONSECUTIVE_OVER_LIMIT_ACTION_CALLS,
+  noProgressNote,
   overLimitStopText,
   toolCallStreakLength,
   toolResultFingerprint,
+  unproductiveToolResult,
+  withToolNote,
 } from "./tool-loop.js";
 
 const answer = (text: string) => toolResultFingerprint({ content: [{ type: "text", text }] });
@@ -269,5 +273,50 @@ describe("overLimitStopText", () => {
     expect(text).toContain("with too many actions 4 times in a row");
     expect(text).not.toContain("same input");
     expect(isLoopGuardStopText(text)).toBe(true);
+  });
+});
+
+describe("no-progress note", () => {
+  it("counts failures, non-zero exits and empty output as getting nowhere", () => {
+    expect(unproductiveToolResult({ content: [], details: { error: "boom" } })).toBe(true);
+    expect(
+      unproductiveToolResult({ content: [], details: { stdout: "x", stderr: "", code: 1 } }),
+    ).toBe(true);
+    expect(
+      unproductiveToolResult({ content: [], details: { stdout: " ", stderr: "", code: 0 } }),
+    ).toBe(true);
+    expect(
+      unproductiveToolResult({ content: [], details: { stdout: "a.txt", stderr: "", code: 0 } }),
+    ).toBe(false);
+    expect(
+      unproductiveToolResult({ content: [], details: { stdout: "", code: null, running: true } }),
+    ).toBe(false);
+    expect(
+      unproductiveToolResult({ content: [{ type: "text", text: "ok" }], details: { ok: true } }),
+    ).toBe(false);
+  });
+
+  it("tells the model to rethink every fifth unproductive call in a row", () => {
+    let count = 0;
+    const notes: number[] = [];
+    for (let call = 1; call <= 11; call++) {
+      count = advanceUnproductiveCalls(count, true);
+      if (noProgressNote(count)) notes.push(call);
+    }
+    expect(notes).toEqual([5, 10]);
+    expect(advanceUnproductiveCalls(count, false)).toBe(0);
+    expect(noProgressNote(5)).toContain("last 5 tool calls");
+  });
+
+  it("adds the note after the tool's own output", () => {
+    const result = { content: [{ type: "text", text: "nothing" }], details: { code: 1 } };
+    expect(withToolNote(result, "rethink")).toEqual({
+      content: [
+        { type: "text", text: "nothing" },
+        { type: "text", text: "rethink" },
+      ],
+      details: { code: 1 },
+    });
+    expect(withToolNote("plain", "rethink")).toBe("plain");
   });
 });

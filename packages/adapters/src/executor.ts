@@ -51,7 +51,7 @@ import { enrichLogContext, getLogger } from "@atlas/logging";
 import { sanitizedError } from "@atlas/logging/monitoring";
 import { formatAgentEnvironmentInstruction } from "./agent-environment.js";
 import { localAnswerThinking } from "./answer-quality.js";
-import { createApprovedEffectReplayQueue } from "./approval-effect.js";
+import { createApprovedEffectReplayQueue, isToolPauseResult } from "./approval-effect.js";
 import { PARTIAL_REPLY_NOTE } from "./automated-messages.js";
 import { BACKGROUND_WAKE_DELAY_MS, helperParentStillRunning } from "./background-helper-run.js";
 import { loadBotMessageContext } from "./bot-messages.js";
@@ -239,7 +239,13 @@ import {
 } from "./thread-artifacts.js";
 import { loadAgentTicketContext } from "./ticket-context.js";
 import { appendToolCompletionAudit } from "./tool-completion-audit.js";
-import { toolResultFingerprint } from "./tool-loop.js";
+import {
+  advanceUnproductiveCalls,
+  noProgressNote,
+  toolResultFingerprint,
+  unproductiveToolResult,
+  withToolNote,
+} from "./tool-loop.js";
 import { voiceActionNote } from "./voice-action.js";
 import { createWebProvider } from "./web-provider-factory.js";
 
@@ -1519,6 +1525,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           },
           toolCallStreak: { key: undefined, count: 0 },
           overLimitActionCalls: 0,
+          unproductiveToolCalls: 0,
           toolResults: new Map(),
           tainted: initiallyTainted,
           ownerSettingsRefused: false,
@@ -2078,8 +2085,25 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
               emptyResponseText,
               executeTool: scripted
                 ? undefined
-                : (name, args, executionId, route, observer) =>
-                    applyTool(ctx, name, args, executionId, route, observer),
+                : async (name, args, executionId, route, observer) => {
+                    let result: Awaited<ReturnType<typeof applyTool>>;
+                    try {
+                      result = await applyTool(ctx, name, args, executionId, route, observer);
+                    } catch (error) {
+                      state.unproductiveToolCalls = advanceUnproductiveCalls(
+                        state.unproductiveToolCalls,
+                        true,
+                      );
+                      throw error;
+                    }
+                    if (isToolPauseResult(result)) return result;
+                    state.unproductiveToolCalls = advanceUnproductiveCalls(
+                      state.unproductiveToolCalls,
+                      unproductiveToolResult(result),
+                    );
+                    const note = noProgressNote(state.unproductiveToolCalls);
+                    return note ? withToolNote(result, note) : result;
+                  },
               ...(helperModel ? { helperModel } : {}),
               resolveModel: scripted
                 ? undefined
