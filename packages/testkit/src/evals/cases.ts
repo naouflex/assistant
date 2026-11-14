@@ -365,7 +365,8 @@ export const EVAL_CASES: EvalCase[] = [
           "exactly-one-correct-note",
           e.notes.length === 1 &&
             e.notes[0]?.recordId === "customer-1" &&
-            e.notes[0]?.text === "Delivery confirmed for Monday.",
+            // The trailing period ends the user's sentence; a note without it is the same note.
+            e.notes[0]?.text.replace(/\.\s*$/, "") === "Delivery confirmed for Monday",
         ),
         check("fault-exercised", i >= 0),
         check(

@@ -27,7 +27,7 @@ export function isRecallQuestion(text: string | undefined): boolean {
 }
 
 export const RECALL_NOTE =
-  "If this asks about something from earlier in the conversation, answer with that fact for the thing named, on its own: do not mention similar facts about other things, or options that were replaced or rejected. If it was never discussed, say so without listing what was. If several things fit and the question does not say which, ask which one.";
+  "If this asks about something from earlier in the conversation, answer with that fact for the thing named, on its own: do not mention similar facts about other things, or options that were replaced or rejected. If it was never discussed, say so without listing what was. If several things fit and the question does not say which, ask which one by naming the things only: do not give any of their values.";
 
 /** The per-turn note for a recall question, or undefined. */
 export function recallNote(
