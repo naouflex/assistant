@@ -570,10 +570,12 @@ async function main() {
       STRIPE_WEBHOOK_SECRET: "",
       STRIPE_PRICE_ID: "",
     });
-    execFileSync("pnpm", ["--filter", "@atlas/db", "generate"], {
-      stdio: "pipe",
-      timeout: 120_000,
-    });
+    // A second eval in the same checkout would regenerate the client under one already running.
+    if (process.env.ATLAS_EVAL_SKIP_GENERATE !== "1")
+      execFileSync("pnpm", ["--filter", "@atlas/db", "generate"], {
+        stdio: "pipe",
+        timeout: 120_000,
+      });
     execFileSync("pnpm", ["--filter", "@atlas/db", "exec", "prisma", "migrate", "deploy"], {
       stdio: "pipe",
       timeout: 120_000,
