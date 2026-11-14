@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { announcesWorkOnly, doneMismatch } from "./done-check.js";
+import { announcesWorkOnly, doneMismatch, endsOnAnnouncedWork } from "./done-check.js";
 
 describe("doneMismatch", () => {
   it("nudges once-worthy text when a tool failed and the reply claims success", () => {
@@ -73,5 +73,30 @@ describe("announced work", () => {
       `Let me explain. ${"The logs show three restarts. ".repeat(10)}`,
     ])
       expect(announcesWorkOnly(reply), reply).toBe(false);
+  });
+});
+
+describe("endsOnAnnouncedWork", () => {
+  const body =
+    "The landing crash came from the flare logic: below 30 ft the pitch target jumped. ".repeat(4);
+  it("flags a long reply that ends on the next step", () => {
+    expect(
+      endsOnAnnouncedWork(`${body}\n\nNext I'll re-check the log and then launch the flight.`),
+    ).toBe(true);
+    expect(
+      endsOnAnnouncedWork(`${body}\n\nTests pass. I'll now sync to Windows and relaunch.`),
+    ).toBe(true);
+    expect(
+      endsOnAnnouncedWork(`${body}\n\nJe vais relancer le vol et vérifier l'atterrissage.`),
+    ).toBe(true);
+  });
+  it("leaves replies that wait on the owner, ask, or are short", () => {
+    expect(endsOnAnnouncedWork(`${body}\n\nOnce you say go, I'll launch the flight.`)).toBe(false);
+    expect(endsOnAnnouncedWork(`${body}\n\nI'll deploy if you confirm.`)).toBe(false);
+    expect(endsOnAnnouncedWork(`${body}\n\nShould I launch the flight?`)).toBe(false);
+    expect(endsOnAnnouncedWork(`${body}\n\nThe fix is committed and the flight landed.`)).toBe(
+      false,
+    );
+    expect(endsOnAnnouncedWork("Next I'll launch the flight.")).toBe(false);
   });
 });

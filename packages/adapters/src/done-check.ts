@@ -45,5 +45,30 @@ export function announcesWorkOnly(text: string): boolean {
   return ANNOUNCES_WORK.test(reply);
 }
 
+const ENDS_ON_NEXT_STEP =
+  /^(?:(?:next|then|now|after that|ensuite|maintenant)[,:]?\s+)?(?:i(?:'|’)ll|i will|i(?:'|’)m going to|je vais)\s+(?:now\s+|then\s+|next\s+)?(?:re-?)?(?:check|run|launch|fix|make|apply|start|deploy|read|compare|sync|build|test|write|update|retry|try|look|pull|push|commit|verify|install|restart|patch|change|add|open|fly|investigate|dig|search|fetch|corriger|lancer|vérifier|relancer|regarder|déployer)\b/i;
+const WAITS_ON_OWNER =
+  /\b(?:once you|if you|when you|after you|unless you|your (?:go|ok|okay|approval|yes|answer|reply)|reply|say (?:so|go|yes|the word)|tell me|let me know|approve|confirm|si tu|quand tu|dès que tu|dis-moi|ton (?:feu vert|ok|accord))\b/i;
+
+/**
+ * A longer reply whose last paragraph only says what the agent will do next, with no question
+ * and nothing it waits on from the owner: the turn would end with that step undone.
+ */
+export function endsOnAnnouncedWork(text: string): boolean {
+  const reply = text.trim();
+  if (reply.length <= 240) return false;
+  const last = reply
+    .split(/\n\s*\n/)
+    .pop()!
+    .trim();
+  if (!last || last.length > 300 || last.includes("?") || WAITS_ON_OWNER.test(last)) return false;
+  return last
+    .split(/(?<=[.!])\s+/)
+    .some((sentence) => ENDS_ON_NEXT_STEP.test(sentence.replace(/^[*_>-]+\s*/, "")));
+}
+
+export const NEXT_STEP_PROMPT =
+  "Your reply ends on what you will do next, and the turn ends there, so it would not happen. If nothing needs the owner, do it now with your tools and answer with the result; if something blocks you or needs the owner's go-ahead, say that instead.";
+
 export const ANNOUNCED_WORK_PROMPT =
   "Your reply only says what you are about to do, and the turn ends there, so nothing would happen. Do it now with your tools and answer with the result; if something blocks you, say what.";

@@ -45,7 +45,13 @@ import { automated, withAutomatedLabels } from "./automated-messages.js";
 import { partitionTools } from "./builtin-tool-bridge.js";
 import { LOCAL_PAYLOAD_DUMP_ENV } from "./chat-completions-compat.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
-import { ANNOUNCED_WORK_PROMPT, announcesWorkOnly, doneMismatch } from "./done-check.js";
+import {
+  ANNOUNCED_WORK_PROMPT,
+  announcesWorkOnly,
+  doneMismatch,
+  endsOnAnnouncedWork,
+  NEXT_STEP_PROMPT,
+} from "./done-check.js";
 import { exactArithmetic } from "./exact-arithmetic.js";
 import { neutralizeSpeakerLabels } from "./history-speakers.js";
 import { withDeferredCallsRouted } from "./pi-deferred-tool-calls.js";
@@ -923,17 +929,18 @@ export class PiAgentRuntime implements AgentRuntime {
                 agent.followUp({ role: "user", content: nudge, timestamp: Date.now() });
               }
             }
-            // Once a turn: a last message that only announces work would leave it undone.
+            // Once a turn: a last message that only announces work, or ends on the next step it
+            // will take, would leave that work undone.
             if (
               !messageHasToolCall(event.message) &&
               !host.announcedNudged &&
               !host.pausePending &&
-              announcesWorkOnly(text)
+              (announcesWorkOnly(text) || endsOnAnnouncedWork(text))
             ) {
               host.announcedNudged = true;
               agent.followUp({
                 role: "user",
-                content: ANNOUNCED_WORK_PROMPT,
+                content: announcesWorkOnly(text) ? ANNOUNCED_WORK_PROMPT : NEXT_STEP_PROMPT,
                 timestamp: Date.now(),
               });
             }
