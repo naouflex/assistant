@@ -45,7 +45,7 @@ import { automated, withAutomatedLabels } from "./automated-messages.js";
 import { partitionTools } from "./builtin-tool-bridge.js";
 import { LOCAL_PAYLOAD_DUMP_ENV } from "./chat-completions-compat.js";
 import { withCloudflareAuth } from "./cloudflare-ai-gateway.js";
-import { doneMismatch } from "./done-check.js";
+import { ANNOUNCED_WORK_PROMPT, announcesWorkOnly, doneMismatch } from "./done-check.js";
 import { exactArithmetic } from "./exact-arithmetic.js";
 import { neutralizeSpeakerLabels } from "./history-speakers.js";
 import { withDeferredCallsRouted } from "./pi-deferred-tool-calls.js";
@@ -922,6 +922,20 @@ export class PiAgentRuntime implements AgentRuntime {
                 host.doneNudged = true;
                 agent.followUp({ role: "user", content: nudge, timestamp: Date.now() });
               }
+            }
+            // Once a turn: a last message that only announces work would leave it undone.
+            if (
+              !messageHasToolCall(event.message) &&
+              !host.announcedNudged &&
+              !host.pausePending &&
+              announcesWorkOnly(text)
+            ) {
+              host.announcedNudged = true;
+              agent.followUp({
+                role: "user",
+                content: ANNOUNCED_WORK_PROMPT,
+                timestamp: Date.now(),
+              });
             }
             // The completed text can hold more of a continuation than arrived as deltas, so its
             // repeat of the cut reply is judged on all of it.

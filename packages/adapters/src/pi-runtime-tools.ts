@@ -779,6 +779,8 @@ export interface ToolHost {
   toolOutcomes?: Array<{ name: string; ok: boolean; error?: string; target?: string }>;
   /** One correction was already sent after a claimed success. */
   doneNudged?: boolean;
+  /** One push was already sent after a reply that only announced work. */
+  announcedNudged?: boolean;
   /** Shared fallback uniqueness when the model omits toolCallId (nested hosts reuse this). */
   toolCallSeq: { value: number };
   abortTurn(): void;
