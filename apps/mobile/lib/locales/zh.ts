@@ -1,4 +1,6 @@
 export const ZH_MESSAGES: Record<string, string> = {
+  "{bot} is waking you up": "{bot} 正在叫醒你",
+  "Reminder from {bot}": "来自 {bot} 的提醒",
   "How other bots see it": "其他机器人如何了解它",
   "Share to": "分享到",
   "{count} files": "{count} 个文件",

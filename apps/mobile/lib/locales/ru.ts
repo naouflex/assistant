@@ -1,4 +1,6 @@
 export const RU_MESSAGES: Record<string, string> = {
+  "{bot} is waking you up": "{bot} будит вас",
+  "Reminder from {bot}": "Напоминание от {bot}",
   "How other bots see it": "Как его видят другие боты",
   "Share to": "Отправить в",
   "{count} files": "Файлов: {count}",

@@ -175,6 +175,8 @@ export async function clearSessionToken(): Promise<boolean> {
   const clearingScope = invalidateSessionCaches();
   const clearingToken = clearStoredSessionToken(generation);
   await stopLiveNotifications(true).catch(() => undefined);
+  // The next account must not get this one's wake-ups.
+  await import("./alarm-sync").then((alarms) => alarms.clearPhoneAlarms()).catch(() => undefined);
   const tokenCleared = await clearingToken;
   await clearingScope;
   if (generation === sessionGeneration) publishSessionGeneration();

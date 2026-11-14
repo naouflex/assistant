@@ -1,6 +1,11 @@
 {
-  "platforms": ["android"],
+  "platforms": [
+    "android"
+  ],
   "android": {
-    "modules": ["com.naouflex.atlas.notifications.AtlasNotificationsModule"]
+    "modules": [
+      "com.naouflex.atlas.notifications.AtlasNotificationsModule",
+      "com.naouflex.atlas.notifications.AtlasAlarmsModule"
+    ]
   }
 }

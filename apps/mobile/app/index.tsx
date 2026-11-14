@@ -35,6 +35,7 @@ import { useUnreadJumpPills } from "../components/unread-jump-overlay";
 import { fetchSpaceActivity } from "../lib/activity";
 import { loadActivityMode, saveActivityMode } from "../lib/activity-mode";
 import { readableGutters } from "../lib/adaptive-layout";
+import { syncPhoneAlarms } from "../lib/alarm-sync";
 import type { MobileBot, MobileBotSection, MobileGroup, MobileMe, MobileSpace } from "../lib/api";
 import {
   currentApiBase,
@@ -80,7 +81,11 @@ import { iosAtLeast } from "../lib/native-controls";
 import type { OrganizeTarget } from "../lib/organize-target";
 import { findOrganizeTarget } from "../lib/organize-target";
 import { offerPasskeyOnce } from "../lib/passkey";
-import { ACTIVITY_POLL_INTERVAL_MS, INBOX_POLL_INTERVAL_MS } from "../lib/poll-cadence";
+import {
+  ACTIVITY_POLL_INTERVAL_MS,
+  ALARM_SYNC_INTERVAL_MS,
+  INBOX_POLL_INTERVAL_MS,
+} from "../lib/poll-cadence";
 import { registerPushToken } from "../lib/push";
 import { loadSavedInbox, saveInbox } from "../lib/saved-chats";
 import {
@@ -330,6 +335,9 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
     if (!hasSession || onShareSelect) return;
     void registerPushToken().catch(() => undefined);
   }, [hasSession, onShareSelect]);
+
+  // Reminders and wake-ups the bots set go off on this phone even when no push arrives.
+  useForegroundPoll(syncPhoneAlarms, ALARM_SYNC_INTERVAL_MS, hasSession && !onShareSelect);
 
   // Show the inbox saved on this device until the first live load replaces it.
   useEffect(() => {

@@ -1,4 +1,6 @@
 export const NL_MESSAGES: Record<string, string> = {
+  "{bot} is waking you up": "{bot} maakt je wakker",
+  "Reminder from {bot}": "Herinnering van {bot}",
   "How other bots see it": "Hoe andere bots deze zien",
   "Share to": "Delen met",
   "{count} files": "{count} bestanden",
