@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import type { Criterion, EvalCase, Evidence } from "./cases.js";
 
-export const TOOL_CHOICE_FIXTURE_VERSION = "tool-choice-v1";
+export const TOOL_CHOICE_FIXTURE_VERSION = "tool-choice-v2";
 
 /**
  * A string starting with `~` matches case-insensitively as a substring, `*` matches any present
@@ -149,10 +149,13 @@ export function gradeToolChoice(expect: ToolChoiceExpect, evidence: Evidence): C
       id: `at most ${max} ${tool}`,
       pass: names.filter((name) => name === tool).length <= max,
     });
+  // The runtime runs a deferred tool called by name, or through use_tool, with the same schema
+  // validation and approvals as after find_tool, so looking it up first is optional. A use_tool
+  // call left unresolved named no real tool.
   if (calls.some((call) => call.viaUseTool || call.name === "use_tool"))
     criteria.push({
-      id: "use_tool runs only tools find_tool loaded",
-      pass: calls.every((call) => call.name !== "use_tool" && (!call.viaUseTool || call.loaded)),
+      id: "use_tool names only real tools",
+      pass: calls.every((call) => call.name !== "use_tool"),
     });
   criteria.push(...stateCriteria("bot", expect.bot, evidence.settings.bot));
   criteria.push(...stateCriteria("user", expect.user, evidence.settings.user));

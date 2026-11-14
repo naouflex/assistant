@@ -76,17 +76,14 @@ describe("tool-choice grading", () => {
     expect(passes(gradeToolChoice({ maxCalls: { find: 1 } }, evidence({ toolCalls })))).toBe(false);
   });
 
-  it("grades use_tool calls as the tool they ran, and only on tools find_tool loaded", () => {
-    const found = { step: 2, name: "find_tool", args: { query: "chart" } };
+  it("grades use_tool calls as the tool they ran, with or without a lookup", () => {
     const plot = { step: 2, name: "render_plot", args: {}, viaUseTool: true };
-    const expect_ = { order: ["find_tool", "render_plot"] };
+    const expect_ = { calls: [{ tool: "render_plot" }] };
     const grade = (toolCalls: Evidence["toolCalls"]) =>
       passes(gradeToolChoice(expect_, evidence({ toolCalls })));
-    expect(grade([found, { ...plot, loaded: true }])).toBe(true);
-    expect(grade([found, { ...plot, loaded: false }])).toBe(false);
-    expect(grade([found, { ...plot, loaded: true }, { step: 2, name: "use_tool", args: {} }])).toBe(
-      false,
-    );
+    expect(grade([{ ...plot, loaded: true }])).toBe(true);
+    expect(grade([{ ...plot, loaded: false }])).toBe(true);
+    expect(grade([plot, { step: 2, name: "use_tool", args: { name: "made_up" } }])).toBe(false);
     expect(passes(gradeToolChoice({ notCalls: ["find_tool"] }, evidence()))).toBe(true);
   });
 

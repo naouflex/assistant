@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ANSWER_EVAL_CASES, ANSWER_JUDGE_CALIBRATION, ANSWER_JUDGE_VERSION } from "./answers.js";
-import { EMPTY_SETTINGS, type Evidence } from "./cases.js";
+import type { Evidence } from "./cases.js";
+import { EMPTY_SETTINGS } from "./cases.js";
 import { EvalServices } from "./services.js";
 
 function evidence(patch: Partial<Evidence> = {}): Evidence {
