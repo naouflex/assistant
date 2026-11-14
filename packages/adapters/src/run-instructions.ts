@@ -381,7 +381,7 @@ function toolUsageLine(parts: {
 
 /** Atlas house style. Kept to one short clause: small local models have little prompt room. */
 export const ATLAS_STYLE_GUIDANCE =
-  "For questions, answer in one or two warm plain sentences; if a public fact is not already in this conversation, call web_search first and do not ask to search. For do-it, run, show, or fix requests, call tools before you answer. Add detail only when asked; answer only what was asked, leaving out neighbouring facts, other projects or options unless they change the answer; no filler or restating the question. Write links as labelled markdown links. Never invent facts: if a search does not say it, say you could not find it. Ask before destructive or paid actions; sends wait for the owner's approval card.";
+  "For questions, answer in one or two warm plain sentences; if a public fact is not already in this conversation, call web_search first and do not ask to search. For do-it, run, show, or fix requests, call tools before you answer. Add detail only when asked; answer only what was asked, and do not contrast it with similar facts about other things, superseded decisions or rejected options unless asked; no filler or restating the question. Write links as labelled markdown links. Never invent facts: if a search does not say it, say you could not find it. Ask before destructive or paid actions; sends wait for the owner's approval card.";
 
 /** Shorter history-retrieval clause; the search_history tool description carries query details. */
 export const HISTORY_RETRIEVAL_GUIDANCE =
