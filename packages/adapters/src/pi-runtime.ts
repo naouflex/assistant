@@ -50,7 +50,9 @@ import {
   announcesWorkOnly,
   doneMismatch,
   endsOnAnnouncedWork,
+  endsOnSafeOffer,
   NEXT_STEP_PROMPT,
+  SAFE_OFFER_PROMPT,
 } from "./done-check.js";
 import { exactArithmetic } from "./exact-arithmetic.js";
 import { neutralizeSpeakerLabels } from "./history-speakers.js";
@@ -935,12 +937,16 @@ export class PiAgentRuntime implements AgentRuntime {
               !messageHasToolCall(event.message) &&
               !host.announcedNudged &&
               !host.pausePending &&
-              (announcesWorkOnly(text) || endsOnAnnouncedWork(text))
+              (announcesWorkOnly(text) || endsOnAnnouncedWork(text) || endsOnSafeOffer(text))
             ) {
               host.announcedNudged = true;
               agent.followUp({
                 role: "user",
-                content: announcesWorkOnly(text) ? ANNOUNCED_WORK_PROMPT : NEXT_STEP_PROMPT,
+                content: announcesWorkOnly(text)
+                  ? ANNOUNCED_WORK_PROMPT
+                  : endsOnAnnouncedWork(text)
+                    ? NEXT_STEP_PROMPT
+                    : SAFE_OFFER_PROMPT,
                 timestamp: Date.now(),
               });
             }

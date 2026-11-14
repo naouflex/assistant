@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { announcesWorkOnly, doneMismatch, endsOnAnnouncedWork } from "./done-check.js";
+import {
+  announcesWorkOnly,
+  doneMismatch,
+  endsOnAnnouncedWork,
+  endsOnSafeOffer,
+} from "./done-check.js";
 
 describe("doneMismatch", () => {
   it("nudges once-worthy text when a tool failed and the reply claims success", () => {
@@ -98,5 +103,30 @@ describe("endsOnAnnouncedWork", () => {
       false,
     );
     expect(endsOnAnnouncedWork("Next I'll launch the flight.")).toBe(false);
+  });
+});
+
+describe("endsOnSafeOffer", () => {
+  const body = "I checked the logs and the controller stopped at 14:02.";
+  it("catches offers of a retry, a check or a search", () => {
+    expect(
+      endsOnSafeOffer(`${body}\n\nTell me to retry, and I'll check live prices in the browser.`),
+    ).toBe(true);
+    expect(
+      endsOnSafeOffer(
+        `${body}\n\nIf you want me to read the logs through razer now, say so and I'll try it once.`,
+      ),
+    ).toBe(true);
+    expect(endsOnSafeOffer(`${body}\n\nDis-moi si je dois vérifier les logs.`)).toBe(true);
+  });
+  it("keeps asks for steps that change, send or restart something", () => {
+    expect(
+      endsOnSafeOffer(`${body}\n\nSay go and I'll restart the controller and check the log.`),
+    ).toBe(false);
+    expect(endsOnSafeOffer(`${body}\n\nWant me to send it to Sam?`)).toBe(false);
+    expect(endsOnSafeOffer(`${body}\n\nShould I deploy it now?`)).toBe(false);
+  });
+  it("ignores replies that end on a result", () => {
+    expect(endsOnSafeOffer(`${body}\n\nThe fix is committed and the tests pass.`)).toBe(false);
   });
 });

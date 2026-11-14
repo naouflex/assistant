@@ -72,3 +72,27 @@ export const NEXT_STEP_PROMPT =
 
 export const ANNOUNCED_WORK_PROMPT =
   "Your reply only says what you are about to do, and the turn ends there, so nothing would happen. Do it now with your tools and answer with the result; if something blocks you, say what.";
+
+const OFFERS_SAFE_STEP =
+  /\b(?:say (?:so|go|yes|the word)|tell me (?:to|if you want)|if you(?:'d| would)? (?:want|like) me to|want me to|shall i|should i|reply (?:with )?["“']?(?:go|yes)|dis-moi si|veux-tu que je|tu veux que je)\b/i;
+const SAFE_STEP =
+  /\b(?:retry|try (?:it|again|once)|re-?check|check|look|read|search|re-?run|verify|fetch|browse|investigate|diagnose|compare|find|inspect|vérifier|regarder|chercher|réessayer)\b/i;
+const RISKY_STEP =
+  /\b(?:delete|remove|drop|wipe|restart|reboot|kill|stop|deploy|push|merge|pay|buy|purchase|order|send|email|post|publish|reset|overwrite|install|uninstall|force|rm|supprimer|redémarrer|envoyer|acheter|déployer)\b/i;
+
+/**
+ * The last paragraph offers a retry, a read-only check or a search and waits for the owner's go:
+ * the agent could have done it. Steps that change, send, spend or restart anything keep the ask.
+ */
+export function endsOnSafeOffer(text: string): boolean {
+  const last = text
+    .trim()
+    .split(/\n\s*\n/)
+    .pop()!
+    .trim();
+  if (!last || last.length > 400 || !OFFERS_SAFE_STEP.test(last)) return false;
+  return SAFE_STEP.test(last) && !RISKY_STEP.test(last);
+}
+
+export const SAFE_OFFER_PROMPT =
+  "Your reply ends by offering a retry, a check or a search and waiting for the owner's go. A safe, read-only or reversible step needs no go-ahead: do it now with your tools and answer with the result. Keep the question only if the step changes, sends, spends or restarts something, or truly needs the owner's choice.";
