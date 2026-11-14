@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { observationToolResult } from "./computer-tools.js";
 import {
   advanceOverLimitActionCalls,
+  advanceRepeatFailure,
+  repeatFailureNote,
   advanceToolCallLoopGuard,
   advanceUnproductiveCalls,
   isLoopGuardStopText,
@@ -328,5 +330,23 @@ describe("toolBudgetNote", () => {
     expect(toolBudgetNote(24, 30)).toBeUndefined();
     expect(toolBudgetNote(26, 30)).toBeUndefined();
     expect(toolBudgetNote(3, 8)).toBeUndefined();
+  });
+});
+
+describe("repeatFailureNote", () => {
+  it("nudges on the second identical failure only", () => {
+    const args = { command: "ls /nope" };
+    const first = advanceRepeatFailure({ failures: 0 }, "pc_shell", args, true);
+    expect(repeatFailureNote(first)).toBeUndefined();
+    const second = advanceRepeatFailure(first, "pc_shell", args, true);
+    expect(repeatFailureNote(second)).toContain("exact call twice");
+    const third = advanceRepeatFailure(second, "pc_shell", args, true);
+    expect(repeatFailureNote(third)).toBeUndefined();
+  });
+
+  it("starts over on different arguments or a success", () => {
+    const first = advanceRepeatFailure({ failures: 0 }, "pc_shell", { command: "a" }, true);
+    expect(advanceRepeatFailure(first, "pc_shell", { command: "b" }, true).failures).toBe(1);
+    expect(advanceRepeatFailure(first, "pc_shell", { command: "a" }, false).failures).toBe(0);
   });
 });

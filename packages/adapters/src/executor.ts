@@ -243,6 +243,8 @@ import { appendToolCompletionAudit } from "./tool-completion-audit.js";
 import {
   advanceUnproductiveCalls,
   noProgressNote,
+  advanceRepeatFailure,
+  repeatFailureNote,
   toolBudgetNote,
   toolResultFingerprint,
   unproductiveToolResult,
@@ -1529,6 +1531,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           overLimitActionCalls: 0,
           unproductiveToolCalls: 0,
           toolCallsThisTurn: 0,
+          repeatFailure: { failures: 0 },
           toolResults: new Map(),
           tainted: initiallyTainted,
           ownerSettingsRefused: false,
@@ -2105,7 +2108,14 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                       unproductiveToolResult(result),
                     );
                     state.toolCallsThisTurn += 1;
+                    state.repeatFailure = advanceRepeatFailure(
+                      state.repeatFailure,
+                      name,
+                      args,
+                      unproductiveToolResult(result),
+                    );
                     const note = [
+                      repeatFailureNote(state.repeatFailure),
                       noProgressNote(state.unproductiveToolCalls),
                       toolBudgetNote(state.toolCallsThisTurn, maxToolCallsPerTurn()),
                     ]

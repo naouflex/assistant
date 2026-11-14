@@ -168,6 +168,32 @@ export function noProgressNote(count: number): string | undefined {
   return `[Atlas: your last ${count} tool calls in a row failed or returned nothing. Don't try another variation of the same idea. Check your assumptions first (right computer, shell or WSL, path, account, permission), then try a clearly different approach, or stop and tell the user what you tried, what each attempt showed and what you need from them.]`;
 }
 
+/** The last call and how many times in a row that exact call has failed. */
+export type RepeatFailure = { key?: string; failures: number };
+
+/** Exact same tool and arguments failing again counts up; anything else starts over. */
+export function advanceRepeatFailure(
+  previous: RepeatFailure,
+  name: string,
+  args: unknown,
+  failed: boolean,
+): RepeatFailure {
+  const key = createHash("sha256")
+    .update(`${name}\u0000${JSON.stringify(args) ?? ""}`)
+    .digest("hex");
+  if (!failed) return { key, failures: 0 };
+  return { key, failures: previous.key === key ? previous.failures + 1 : 1 };
+}
+
+/**
+ * The second identical failure gets an early nudge, well before the loop guard ends the run at
+ * six: a repeat of the exact call that just failed almost never succeeds.
+ */
+export function repeatFailureNote(repeat: RepeatFailure): string | undefined {
+  if (repeat.failures !== 2) return undefined;
+  return "[Atlas: you just ran this exact call twice and it failed or returned nothing both times. Don't run it again unchanged. Read the error, fix the cause (arguments, path, quoting, tool, computer) or use a different route; if nothing else is available, tell the user what failed and what you need.]";
+}
+
 /** Five calls before the per-turn limit, the model is told to wrap up instead of being cut off. */
 export function toolBudgetNote(count: number, limit: number): string | undefined {
   if (limit < 10 || count !== limit - 5) return undefined;

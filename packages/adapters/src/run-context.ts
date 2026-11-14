@@ -40,7 +40,7 @@ import { subagentMarksUnread } from "./run-notifications.js";
 import { secretPausedToolResult } from "./run-secret.js";
 import type { createRunTrustLoaders } from "./run-trust.js";
 import type { inferScript } from "./scripted-runtime.js";
-import type { LoopGuardStreak } from "./tool-loop.js";
+import type { LoopGuardStreak, RepeatFailure } from "./tool-loop.js";
 import { restoreTurnCheckpoint, unresolvedTurnCheckpointCalls } from "./turn-checkpoint.js";
 
 export type RunningHelper = Omit<Extract<MessageBlock, { kind: "subagent" }>, "kind">;
@@ -173,6 +173,8 @@ export interface RunState {
   unproductiveToolCalls: number;
   /** Tool calls the executor ran this turn, for the note five calls before the limit. */
   toolCallsThisTurn: number;
+  /** The last tool call and how many times in a row it failed unchanged. */
+  repeatFailure: RepeatFailure;
   /**
    * Whether outside content has entered the run. A run someone else started begins tainted,
    * and so does a later attempt, including one with restored untrusted tool results.
