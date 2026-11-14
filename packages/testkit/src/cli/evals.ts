@@ -660,7 +660,10 @@ async function main() {
               wakeupDriver: "memory",
               composio,
               messaging,
-              ...(scenario.routine ? witnesses : {}),
+              // Routine runs, seeded or authored then woken, are graded on what they notify.
+              ...(scenario.routine || scenario.steps.some((step) => "wakeRoutine" in step)
+                ? witnesses
+                : {}),
               messagingOpenSignup: false,
               defaultProvider: connection.provider,
               defaultModel: connection.modelId!,

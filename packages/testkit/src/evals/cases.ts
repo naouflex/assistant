@@ -484,6 +484,11 @@ export const EVAL_CASES: EvalCase[] = [
       return [
         check("one-shot-routine", e.routines.length === 1 && e.routines[0]!.crons[0] === "@once"),
         check("reply-reminds", Boolean(run && /stretch/i.test(run.text))),
+        // Ringing is for wake-ups; an ordinary reminder is a message and a push.
+        check(
+          "no-call-for-plain-reminder",
+          !e.toolCalls.some((call) => call.step === 2 && call.name === "call_user"),
+        ),
         check("urgent-push", push?.urgent === true),
         check(
           "push-names-reminder",
