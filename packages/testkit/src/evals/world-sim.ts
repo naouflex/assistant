@@ -97,13 +97,18 @@ export function createWorldSimulator(options: {
       return options.fallback;
     }
     const output = text.trim() ? `${text.trim()}\n` : options.fallback;
-    const latest: Record<string, string> = existsSync(options.cacheFile)
-      ? (JSON.parse(readFileSync(options.cacheFile, "utf8")) as Record<string, string>)
-      : {};
-    // Write then rename, so a replay running alongside never reads a half-written cache.
-    const temp = `${options.cacheFile}.${id}.tmp`;
-    writeFileSync(temp, JSON.stringify({ ...latest, [key]: output }), { mode: 0o600 });
-    renameSync(temp, options.cacheFile);
+    try {
+      const latest: Record<string, string> = existsSync(options.cacheFile)
+        ? (JSON.parse(readFileSync(options.cacheFile, "utf8")) as Record<string, string>)
+        : {};
+      // Write then rename, so a replay running alongside never reads a half-written cache.
+      const temp = `${options.cacheFile}.${id}.tmp`;
+      writeFileSync(temp, JSON.stringify({ ...latest, [key]: output }), { mode: 0o600 });
+      renameSync(temp, options.cacheFile);
+    } catch (error) {
+      // A cache problem is the harness's, never the agent's: the answer still goes back to it.
+      console.error(`simulated computer cache write failed: ${(error as Error).message}`);
+    }
     earlier.push({ command, output });
     return output;
   };
