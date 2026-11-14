@@ -12,17 +12,13 @@ describe("focusTurnTools", () => {
   it("lists about a dozen tools and defers the rest behind search", () => {
     const focused = focusTurnTools(tools, { prompt: "open the browser and snapshot the page" });
     const { listed, deferred } = partitionTools(focused);
-    const names = listed
-      .map((tool) => tool.name)
-      .filter((name) => name !== "find_tool" && name !== "use_tool");
+    const names = listed.map((tool) => tool.name).filter((name) => name !== "find_tool" && name !== "use_tool");
     expect(names.length).toBeGreaterThanOrEqual(8);
     expect(names.length).toBeLessThanOrEqual(12);
     expect(names).toContain("shell");
     expect(names).toContain("web_search");
     expect(deferred.length).toBeGreaterThan(0);
-    expect(listed.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(["find_tool", "use_tool"]),
-    );
+    expect(listed.map((tool) => tool.name)).toEqual(expect.arrayContaining(["find_tool", "use_tool"]));
   });
 
   it("matches French words that carry accents", () => {

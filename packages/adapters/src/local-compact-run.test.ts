@@ -118,7 +118,9 @@ describe("compact local runs", () => {
     expect(deferred.map((tool) => tool.name)).toContain("render_plot");
     expect(names).toContain("schedule_create");
     expect(names).toContain("search_memory");
-    expect(listedBytes(listed)).toBeLessThan(listedBytes(partitionTools(ownerChat).listed) * 0.65);
+    expect(listedBytes(listed)).toBeLessThan(
+      listedBytes(partitionTools(ownerChat).listed) * 0.65,
+    );
     // The deferred marker is in-process only.
     expect(JSON.stringify(namedAgentTools(listed))).not.toContain('"deferred"');
   });

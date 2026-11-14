@@ -44,8 +44,6 @@ describe("doneMismatch", () => {
   });
 
   it("stays quiet when every tool succeeded", () => {
-    expect(
-      doneMismatch("Done — I saved the file.", [{ name: "write_file", ok: true }]),
-    ).toBeUndefined();
+    expect(doneMismatch("Done — I saved the file.", [{ name: "write_file", ok: true }])).toBeUndefined();
   });
 });

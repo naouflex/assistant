@@ -38,11 +38,7 @@ export function journalPathForEntry(
   return `journal/${day}.md`;
 }
 
-export function appendJournalEntry(
-  existing: string,
-  entry: string,
-  maxBytes = MEMORY_JOURNAL_DAY_MAX_BYTES,
-): { content: string } | { error: string } {
+export function appendJournalEntry(existing: string, entry: string, maxBytes = MEMORY_JOURNAL_DAY_MAX_BYTES): { content: string } | { error: string } {
   const line = entry.trim().replace(/\r\n/g, "\n");
   if (!line) return { error: "content is required" };
   const current = existing.replace(/\r\n/g, "\n");

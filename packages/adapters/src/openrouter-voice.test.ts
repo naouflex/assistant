@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  DEFAULT_OPENROUTER_FISH_VOICE_ID,
   DEFAULT_OPENROUTER_STT_MODEL,
   DEFAULT_OPENROUTER_TTS_MODEL,
+  DEFAULT_OPENROUTER_FISH_VOICE_ID,
   OPENROUTER_DEFAULT_VOICE_ID,
   OpenRouterVoiceProvider,
   parseOpenRouterVoiceSecret,

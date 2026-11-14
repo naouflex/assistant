@@ -8,15 +8,10 @@ import { readHistory, searchHistory } from "@atlas/db";
 import { sharedMemorySaveError } from "./builtin-tools.js";
 import { redactConnectorPayload } from "./connector-safety.js";
 import { MAX_RECALLED_MEMORIES } from "./history-compaction.js";
-import {
-  appendJournalEntry,
-  editMemory,
-  isJournalFlag,
-  journalPathForEntry,
-} from "./memory-tools.js";
+import { appendJournalEntry, editMemory, isJournalFlag, journalPathForEntry } from "./memory-tools.js";
+import { userTimeZone } from "./schedule-tools.js";
 import type { RunContext } from "./run-context.js";
 import type { ToolCall, ToolHandlers } from "./run-tool-gate.js";
-import { userTimeZone } from "./schedule-tools.js";
 
 /** Cross-chat history requires a surviving direct human request in this app thread. */
 export function historyMyChatsAllowed(
@@ -75,11 +70,7 @@ export const memoryTools: ToolHandlers = {
     const { args } = call;
     if (isJournalFlag(args.journal)) {
       const fact = String(args.content ?? "");
-      const path = journalPathForEntry(
-        fact,
-        new Date(),
-        await userTimeZone(deps.prisma, run.userId),
-      );
+      const path = journalPathForEntry(fact, new Date(), await userTimeZone(deps.prisma, run.userId));
       for (let attempt = 1; ; attempt += 1) {
         const snapshot = await deps.memory.read({ scope: "bot", botId: bot.id, path }, context);
         const existing = snapshot.documents[0];

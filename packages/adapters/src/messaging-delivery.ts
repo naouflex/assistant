@@ -180,7 +180,10 @@ async function mirrorChannelRun(
     where: { id: identity.userId },
     select: { name: true },
   });
-  const firstName = displayName(owner?.name, "").split(/\s+/)[0]?.trim() || "Owner";
+  const firstName =
+    displayName(owner?.name, "")
+      .split(/\s+/)[0]
+      ?.trim() || "Owner";
   const fromLabel = `${firstName}'s agent`;
 
   const replies = await deps.prisma.message.findMany({

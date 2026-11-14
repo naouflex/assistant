@@ -28,12 +28,7 @@ describe("background helpers", () => {
     const create = vi.fn();
     const result = await queueBackgroundHelper(
       { prisma: { run: { findFirst: vi.fn(), create } }, jobs: { enqueue: vi.fn() } } as never,
-      {
-        parentRun: { ...parent, trigger: "follow_up" },
-        name: "nested",
-        task: "again",
-        executionId: "1",
-      },
+      { parentRun: { ...parent, trigger: "follow_up" }, name: "nested", task: "again", executionId: "1" },
     );
     expect(result).toEqual({ error: "A follow-up run cannot start a background helper." });
     expect(create).not.toHaveBeenCalled();

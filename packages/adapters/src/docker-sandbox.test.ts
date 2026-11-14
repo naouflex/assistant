@@ -1,5 +1,5 @@
-import type { ProcessEvent } from "@atlas/adapter-kit";
 import { SandboxUnreachableError } from "@atlas/adapter-kit";
+import type { ProcessEvent } from "@atlas/adapter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DockerSandboxProvider,
@@ -32,9 +32,9 @@ describe("Docker sandbox", () => {
       }),
     );
     const provider = new DockerSandboxProvider("http://127.0.0.1:7091", "test-token");
-    await expect(
-      provider.provision({ botId: "bot", homePath: "/home" }, context),
-    ).rejects.toBeInstanceOf(SandboxUnreachableError);
+    await expect(provider.provision({ botId: "bot", homePath: "/home" }, context)).rejects.toBeInstanceOf(
+      SandboxUnreachableError,
+    );
   });
 
   it("leaves an aborted supervisor call aborted", async () => {
@@ -45,9 +45,7 @@ describe("Docker sandbox", () => {
       }),
     );
     const provider = new DockerSandboxProvider("http://127.0.0.1:7091", "test-token");
-    await expect(
-      provider.provision({ botId: "bot", homePath: "/home" }, context),
-    ).rejects.toMatchObject({
+    await expect(provider.provision({ botId: "bot", homePath: "/home" }, context)).rejects.toMatchObject({
       name: "AbortError",
     });
   });

@@ -364,7 +364,10 @@ export class RemoteDesktopSandboxProvider implements SandboxProvider {
   /** The browser never sees this. The screen proxy adds it when it dials a private E2B host. */
   private async protectE2BTraffic<
     T extends { url: string | null; headers?: Record<string, string> },
-  >(computer: ComputerRef, session: T): Promise<T> {
+  >(
+    computer: ComputerRef,
+    session: T,
+  ): Promise<T> {
     if (this.config.id !== "e2b" || !session.url) return session;
     const token = (await this.box(computer)).trafficAccessToken?.trim();
     if (!token) return session;

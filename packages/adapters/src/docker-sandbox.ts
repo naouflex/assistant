@@ -1,4 +1,5 @@
 import path from "node:path";
+import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import type {
   AdapterContext,
   CommandRequest,
@@ -17,7 +18,6 @@ import type {
   ScreenSession,
   TerminalRequest,
 } from "@atlas/adapter-kit";
-import { SandboxUnreachableError } from "@atlas/adapter-kit";
 import {
   boundedSandboxCommandTimeoutMs,
   cancelResponseBody,

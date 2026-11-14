@@ -21,13 +21,13 @@ import {
   MAX_TRANSCRIPT_CHARS,
   measuredPromptChars,
   nextCompactionBatchRange,
+  shouldEnqueueCompactionNow,
   recordHistoryCompactAttemptsExhausted,
   SUMMARIZE_TIMEOUT_BASE_CHARS,
   SUMMARIZE_TIMEOUT_MAX_MS,
   SUMMARIZE_TIMEOUT_MIN_MS,
   selectCompactedHistory,
   shouldEnqueueCompaction,
-  shouldEnqueueCompactionNow,
   summarizeTimeoutMs,
 } from "./history-compaction.js";
 

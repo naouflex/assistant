@@ -42,9 +42,7 @@ describe("phone actions", () => {
     expect(phoneActionFor("phone_shell", { command: "ls", termux: true })).toEqual({
       action: { op: "shell", command: "ls", timeoutMs: expect.any(Number), termux: true },
     });
-    expect(
-      phoneActionFor("phone_shell", { command: "settings get global wifi_on", privileged: true }),
-    ).toEqual({
+    expect(phoneActionFor("phone_shell", { command: "settings get global wifi_on", privileged: true })).toEqual({
       action: {
         op: "shell",
         command: "settings get global wifi_on",
@@ -56,12 +54,7 @@ describe("phone actions", () => {
       action: { op: "notifications", verb: "list" },
     });
     expect(
-      phoneActionFor("phone_notifications", {
-        action: "activate",
-        key: " n1 ",
-        button: "Reply",
-        text: "ok",
-      }),
+      phoneActionFor("phone_notifications", { action: "activate", key: " n1 ", button: "Reply", text: "ok" }),
     ).toEqual({
       action: { op: "notifications", verb: "activate", key: "n1", button: "Reply", text: "ok" },
     });
@@ -79,9 +72,7 @@ describe("phone actions", () => {
     expect(phoneActionFor("phone_shell", { command: "" })).toEqual({
       error: "command must be 1 to 65536 characters.",
     });
-    expect(
-      phoneActionFor("phone_shell", { command: "id", termux: true, privileged: true }),
-    ).toEqual({
+    expect(phoneActionFor("phone_shell", { command: "id", termux: true, privileged: true })).toEqual({
       error: "phone_shell takes termux or privileged, not both.",
     });
     expect(phoneActionFor("phone_notifications", { action: "dismiss" })).toEqual({

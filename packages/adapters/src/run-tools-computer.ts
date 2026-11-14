@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { SandboxProvider } from "@atlas/adapter-kit";
 import { SandboxUnreachableError } from "@atlas/adapter-kit";
+import type { SandboxProvider } from "@atlas/adapter-kit";
 import type { ComputerCommand } from "@atlas/contracts";
 import { COMPUTER_COMMAND_OUTPUT_MAX_CHARS } from "@atlas/contracts";
 import { redactSecrets, sandboxCommandTimeoutMs } from "@atlas/core";

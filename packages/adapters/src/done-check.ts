@@ -21,8 +21,7 @@ export function latestToolOutcomes(outcomes: readonly ToolOutcome[]): ToolOutcom
 /** A nudge when the reply claims success and a tool's last result this turn did not. */
 export function doneMismatch(text: string, outcomes: readonly ToolOutcome[]): string | undefined {
   const failed = latestToolOutcomes(outcomes).filter((outcome) => !outcome.ok);
-  if (failed.length === 0 || !SUCCESS_CLAIM.test(text) || ADMITS_FAILURE.test(text))
-    return undefined;
+  if (failed.length === 0 || !SUCCESS_CLAIM.test(text) || ADMITS_FAILURE.test(text)) return undefined;
   const lines = failed
     .slice(0, 4)
     .map(

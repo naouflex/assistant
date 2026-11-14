@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { asksToDoTheJob, DO_THE_JOB_NOTE, doTheJobNote } from "./do-the-job.js";
+import { DO_THE_JOB_NOTE, asksToDoTheJob, doTheJobNote } from "./do-the-job.js";
 
 const offered = { toolsOffered: true };
 

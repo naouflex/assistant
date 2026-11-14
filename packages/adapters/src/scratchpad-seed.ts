@@ -24,9 +24,7 @@ export function parseScratchpadSeeds(text: string): string[] {
   const fromLines = trimmed
     .split(/\n+/)
     .map((line) => LIST_LINE.exec(line.trim())?.[1]?.trim())
-    .filter((title): title is string =>
-      Boolean(title && title.length >= MIN_TITLE && looksLikeTask(title)),
-    );
+    .filter((title): title is string => Boolean(title && title.length >= MIN_TITLE && looksLikeTask(title)));
   if (fromLines.length >= 2) return dedupe(fromLines);
   return [];
 }

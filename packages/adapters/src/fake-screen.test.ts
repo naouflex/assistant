@@ -1,5 +1,8 @@
 import { connect } from "node:net";
-import { addScreenProxyCapability, openScreenCapability } from "@atlas/core/node/screen-capability";
+import {
+  addScreenProxyCapability,
+  openScreenCapability,
+} from "@atlas/core/node/screen-capability";
 import { afterEach, describe, expect, it } from "vitest";
 import { FakeScreenServer } from "./fake-screen.js";
 
