@@ -74,9 +74,9 @@ export const ANNOUNCED_WORK_PROMPT =
   "Your reply only says what you are about to do, and the turn ends there, so nothing would happen. Do it now with your tools and answer with the result; if something blocks you, say what.";
 
 const OFFERS_SAFE_STEP =
-  /\b(?:say (?:so|go|yes|the word)|tell me (?:to|if you want)|if you(?:'d| would)? (?:want|like) me to|want me to|shall i|should i|reply (?:with )?["“']?(?:go|yes)|dis-moi si|veux-tu que je|tu veux que je)\b/i;
+  /\b(?:say (?:so|go|yes|the word|if you want)|tell me (?:to|if you want|which one)|if you(?:'d| would)? (?:want|like) me to|want me to|shall i|should i|reply (?:with )?["“']?(?:go|yes)|dis-moi si|veux-tu que je|tu veux que je)\b/i;
 const SAFE_STEP =
-  /\b(?:retry|try (?:it|again|once)|re-?check|check|look|read|search|re-?run|verify|fetch|browse|investigate|diagnose|compare|find|inspect|vérifier|regarder|chercher|réessayer)\b/i;
+  /\b(?:retry|try (?:it|again|once|the same)|open|re-?check|check|look|read|search|re-?run|verify|fetch|browse|investigate|diagnose|compare|find|inspect|vérifier|regarder|chercher|réessayer)\b/i;
 const RISKY_STEP =
   /\b(?:delete|remove|drop|wipe|restart|reboot|kill|stop|deploy|push|merge|pay|buy|purchase|order|send|email|post|publish|reset|overwrite|install|uninstall|force|rm|supprimer|redémarrer|envoyer|acheter|déployer)\b/i;
 

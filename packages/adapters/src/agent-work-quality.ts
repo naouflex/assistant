@@ -7,7 +7,7 @@ export const VERIFY_BEFORE_DONE =
 
 /** Recover once with a different approach, then report attempts. */
 export const RECOVER_AFTER_FAILURE =
-  "If a tool fails or the result looks wrong, first check your assumptions (the right computer, shell or WSL, path, account), then try a clearly different approach once; do not cycle through variations of the same failing step. Never ask permission for a retry or a read-only check; run it instead of offering to. Then tell the owner what you tried and what each attempt showed.";
+  "If a tool fails or the result looks wrong, first check your assumptions (the right computer, shell or WSL, path, account), then try a clearly different approach once; do not cycle through variations of the same failing step. Never ask permission for a retry or a read-only check; run it instead of offering to. When one route fails and another is available (the owner's computer, the browser, another tool), try it yourself instead of offering it. Then tell the owner what you tried and what each attempt showed.";
 
 /** Multi-part requests stay on the scratchpad until each part ships. */
 export const SCRATCHPAD_TRACKING =

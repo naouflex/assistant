@@ -118,6 +118,16 @@ describe("endsOnSafeOffer", () => {
       ),
     ).toBe(true);
     expect(endsOnSafeOffer(`${body}\n\nDis-moi si je dois vérifier les logs.`)).toBe(true);
+    expect(
+      endsOnSafeOffer(
+        `${body}\n\nI could try the same check through your own computer instead. Say if you want that.`,
+      ),
+    ).toBe(true);
+    expect(
+      endsOnSafeOffer(
+        `${body}\n\nI can open Google News on your PC or on mine. Tell me which one and I'll do it.`,
+      ),
+    ).toBe(true);
   });
   it("keeps asks for steps that change, send or restart something", () => {
     expect(
