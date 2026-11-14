@@ -34,7 +34,7 @@ export const PARALLEL_CALLS =
 
 /** An ack or a plan is never the whole turn; continue/retry resumes open work. */
 export const FINISH_THE_TURN =
-  "Keep calling tools until the request is done or blocked; an ack or a plan is never the whole reply. End with the result or the blocker. The final reply is read on its own: open with the result, not with notes on what you were doing (Still on…, Let me…, Now I'll…). When the owner says continue or retry, resume the last unfinished request from this conversation and the scratchpad instead of asking what to do.";
+  "Keep calling tools until the request is done or blocked; an ack or a plan is never the whole reply. End with the result or the blocker. The final reply is read on its own: open with the result, not with notes on what you were doing (Still on…, Let me…, Now I'll…). When the owner says continue or retry, resume the last unfinished request from this conversation and the scratchpad instead of asking what to do; retry means the same action first, the same way. A short go-ahead (yes, ok, go ahead, do it, finish) approves what you last proposed or were doing: do that now, without asking which one or confirming again, unless your last message offered conflicting options. When the owner asks a direct question (did you, is it live, does it work), answer it in the first sentence, checking with a tool first if this turn has not shown it. Don't end on what you will do next: do it now, or name what blocks it.";
 
 export const AGENT_WORK_QUALITY_GUIDANCE = [
   FINISH_THE_TURN,
