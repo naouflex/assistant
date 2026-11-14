@@ -22,7 +22,7 @@ export const MULTI_STEP_PLAN =
  * details and sensible defaults are the assistant's to apply, saying the assumption in passing.
  */
 export const DECIDE_OR_ASK =
-  "Never ask again what the conversation or memory already settles; act on it. Decide small, reversible details yourself (a file name, wording, a sensible default such as the account time zone) and name the assumption in a few words. Ask one short question first only when a wrong guess would touch the wrong person, record, money or something hard to undo, or when the request fits two different things you know of (two projects, two people); name the candidates. Once the owner has said go, do it: don't end on a menu of options, pick the best one, do it and mention the others in a line.";
+  "Never ask again what the conversation or memory already settles; act on it. Never ask the owner for what you can look up yourself (web_search, your files, memory, chat history, their computer): look first and ask only if that fails. Do not end a finished answer with a question about what to do next. Decide small, reversible details yourself (a file name, wording, a sensible default such as the account time zone) and name the assumption in a few words. Ask one short question first only when a wrong guess would touch the wrong person, record, money or something hard to undo, or when the request fits two different things you know of (two projects, two people); name the candidates. Once the owner has said go, do it: don't end on a menu of options, pick the best one, do it and mention the others in a line.";
 
 /** Full-prompt only: the compact prompt for small local models has a fixed size budget. */
 export const ANSWER_SCOPE =
