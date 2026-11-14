@@ -53,6 +53,10 @@ import {
   endsOnSafeOffer,
   NEXT_STEP_PROMPT,
   SAFE_OFFER_PROMPT,
+  SELF_CHECK_MIN_TOOL_CALLS,
+  SELF_CHECK_PROMPT,
+  selfCheckConfirms,
+  selfCheckEnabled,
 } from "./done-check.js";
 import { exactArithmetic } from "./exact-arithmetic.js";
 import { neutralizeSpeakerLabels } from "./history-speakers.js";
@@ -698,6 +702,9 @@ export class PiAgentRuntime implements AgentRuntime {
           request.tools.some((tool) => tool.name === "web_search") &&
           needsWebLookup(request.utterance ?? request.prompt);
         let silentToolContinuations = 0;
+        // One self-review per turn; its answer is held until it ends, and a bare OK is dropped.
+        let selfCheck: "none" | "pending" | "done" = "none";
+        let selfCheckHeld = "";
         let writeFileSucceeded = false;
         let attachFileCalled = false;
         let attachNudged = false;
@@ -785,6 +792,8 @@ export class PiAgentRuntime implements AgentRuntime {
             const delta = event.assistantMessageEvent.delta;
             if (delta && withholdSearchAnswer && toolCalls === 0) {
               // Held until web_search runs, or until the one follow-up is spent.
+            } else if (delta && selfCheck === "pending") {
+              selfCheckHeld += delta;
             } else if (delta) {
               if (toolActivityShowing) {
                 // Real text replaces the activity line instead of appending to it.
@@ -922,6 +931,29 @@ export class PiAgentRuntime implements AgentRuntime {
               }
             }
           }
+          if (
+            event.type === "message_end" &&
+            event.message.role === "assistant" &&
+            selfCheck === "pending"
+          ) {
+            const text = assistantText(event.message) || selfCheckHeld;
+            selfCheckHeld = "";
+            selfCheck = "done";
+            if (messageHasToolCall(event.message)) {
+              // It went back to work: its narration is shown, and later messages stream as usual.
+              if (text.trim()) {
+                const lead = streamed ? "\n\n" : "";
+                streamed += lead + text;
+                queue.push({ type: "text", text: lead + text });
+              }
+            } else if (!selfCheckConfirms(text)) {
+              const lead = streamed ? "\n\n" : "";
+              streamed += lead + text;
+              queue.push({ type: "text", text: lead + text });
+            }
+            currentMessageStreamed = "";
+            return;
+          }
           if (event.type === "message_end" && event.message.role === "assistant") {
             const text = assistantText(event.message);
             if (!messageHasToolCall(event.message) && !host.doneNudged && text.trim()) {
@@ -940,6 +972,7 @@ export class PiAgentRuntime implements AgentRuntime {
               (announcesWorkOnly(text) || endsOnAnnouncedWork(text) || endsOnSafeOffer(text))
             ) {
               host.announcedNudged = true;
+              selfCheck = "done";
               agent.followUp({
                 role: "user",
                 content: announcesWorkOnly(text)
@@ -949,6 +982,26 @@ export class PiAgentRuntime implements AgentRuntime {
                     : SAFE_OFFER_PROMPT,
                 timestamp: Date.now(),
               });
+            }
+            // Once a turn that used tools: the agent reviews its own final reply (done? ends on
+            // something it could settle itself? claims backed?) before the turn ends.
+            if (
+              selfCheck === "none" &&
+              selfCheckEnabled() &&
+              !messageHasToolCall(event.message) &&
+              text.trim() &&
+              toolCalls >= SELF_CHECK_MIN_TOOL_CALLS &&
+              !host.pausePending &&
+              !host.toolCallBudget.exceeded &&
+              !request.allowSilentEmpty &&
+              !joinCutReply &&
+              !limitContinuation &&
+              !agent.hasQueuedMessages() &&
+              !(request.instructions ?? "").includes("You are on a live voice call")
+            ) {
+              selfCheck = "pending";
+              selfCheckHeld = "";
+              agent.followUp({ role: "user", content: SELF_CHECK_PROMPT, timestamp: Date.now() });
             }
             // The completed text can hold more of a continuation than arrived as deltas, so its
             // repeat of the cut reply is judged on all of it.

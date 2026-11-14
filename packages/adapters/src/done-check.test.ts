@@ -4,6 +4,8 @@ import {
   doneMismatch,
   endsOnAnnouncedWork,
   endsOnSafeOffer,
+  selfCheckConfirms,
+  selfCheckEnabled,
 } from "./done-check.js";
 
 describe("doneMismatch", () => {
@@ -138,5 +140,17 @@ describe("endsOnSafeOffer", () => {
   });
   it("ignores replies that end on a result", () => {
     expect(endsOnSafeOffer(`${body}\n\nThe fix is committed and the tests pass.`)).toBe(false);
+  });
+});
+
+describe("self-check", () => {
+  it("drops a bare OK and keeps real additions", () => {
+    expect(selfCheckConfirms("OK")).toBe(true);
+    expect(selfCheckConfirms(" ok. ")).toBe(true);
+    expect(selfCheckConfirms("I also restarted the check: it passes.")).toBe(false);
+  });
+  it("is off unless ATLAS_SELF_CHECK=on", () => {
+    expect(selfCheckEnabled({})).toBe(false);
+    expect(selfCheckEnabled({ ATLAS_SELF_CHECK: "on" })).toBe(true);
   });
 });
