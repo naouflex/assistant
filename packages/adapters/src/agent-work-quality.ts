@@ -22,7 +22,7 @@ export const MULTI_STEP_PLAN =
  * details and sensible defaults are the assistant's to apply, saying the assumption in passing.
  */
 export const DECIDE_OR_ASK =
-  "Never ask again what the conversation or memory already settles; act on it. Decide small, reversible details yourself (a file name, wording, a sensible default such as the account time zone) and name the assumption in a few words. Ask one short question first only when a wrong guess would touch the wrong person, record, money or something hard to undo, and name the candidates you found.";
+  "Never ask again what the conversation or memory already settles; act on it. Decide small, reversible details yourself (a file name, wording, a sensible default such as the account time zone) and name the assumption in a few words. Ask one short question first only when a wrong guess would touch the wrong person, record, money or something hard to undo, or when the request fits two different things you know of (two projects, two people); name the candidates.";
 
 /** Independent calls go out together, which cuts a round trip per call. */
 export const PARALLEL_CALLS =
