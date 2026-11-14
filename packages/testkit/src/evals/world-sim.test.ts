@@ -20,6 +20,14 @@ describe("world simulator", () => {
     expect(prompt).toContain("(cwd /srv)\nsystemctl status bot");
   });
 
+  it("shows the answers this replay already gave, so later commands stay consistent", () => {
+    const prompt = worldSimPrompt(world, "cat bot.log", undefined, [
+      { command: "ls /srv", output: "bot.log\nconfig.yml" },
+    ]);
+    expect(prompt).toContain("## Earlier commands in this replay\n### ls /srv\nbot.log");
+    expect(worldSimPrompt(world, "ls")).not.toContain("Earlier commands");
+  });
+
   it("caches answers by case and command, and falls back when the model fails", async () => {
     let calls = 0;
     const runtime = {
