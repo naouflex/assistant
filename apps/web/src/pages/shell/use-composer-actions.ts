@@ -33,6 +33,7 @@ import { readSeenRunErrorIds, rememberSeenRunErrorId } from "../../lib/run-error
 import {
   applyThreadSendReceipt,
   clearActiveThreadRuns,
+  retryableRunText,
   threadRunError,
 } from "../../lib/thread-events";
 import { errorText } from "../../lib/user-error";
@@ -137,6 +138,12 @@ export function useComposerActions({
   const runError = threadRunError(activeSnapshot, dismissedRunErrorIds);
   const displayedRunError = !sendError ? runError : null;
   const displayedRunErrorId = displayedRunError ? (activeSnapshot?.run?.id ?? null) : null;
+  // Resending carries the composer's pending attachments and group routing, so retry only a
+  // plain bot chat with nothing waiting to attach.
+  const retryRunText =
+    displayedRunError && !inGroup && activePendingAttachments.length === 0
+      ? retryableRunText(activeSnapshot)
+      : null;
   const handleRunErrorPresented = useCallback((runId: string) => {
     rememberSeenRunErrorId(runId);
   }, []);
@@ -573,6 +580,7 @@ export function useComposerActions({
     sending,
     sentCount,
     sendMessage,
+    retryRunText,
     stopRun,
     answerMessage,
     reactToMessage,

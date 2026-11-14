@@ -128,6 +128,24 @@ export function threadRunError(
   return run.error ?? null;
 }
 
+/**
+ * The words to send again after a failed run, or null. Only a run that failed before replying to a
+ * plain-text user message qualifies: attachments, cards and later replies are not resent.
+ */
+export function retryableRunText(snapshot: ThreadSnapshot | null): string | null {
+  if (snapshot?.run?.status !== "failed" || snapshot.run.trigger !== "user") return null;
+  const last = snapshot.messages
+    .filter((message) => !message.id.startsWith("progress:") && !message.id.startsWith("subagent:"))
+    .at(-1);
+  if (last?.role !== "user" || last.blocks.length === 0) return null;
+  if (!last.blocks.every((block) => block.kind === "text")) return null;
+  const text = last.blocks
+    .map((block) => (block.kind === "text" ? block.text : ""))
+    .join("")
+    .trim();
+  return text || null;
+}
+
 export function clearActiveThreadRuns(snapshot: ThreadSnapshot): ThreadSnapshot {
   const runIds = new Set(activeThreadRuns(snapshot).map((run) => run.id));
   const computer = snapshot.computer?.busyBotName

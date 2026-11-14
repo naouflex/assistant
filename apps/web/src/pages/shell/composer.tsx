@@ -66,6 +66,7 @@ export const Composer = memo(function Composer({
   onOpenModels,
   onOpenConnections,
   runError,
+  retryText,
   runErrorId,
   onRunErrorPresented,
   onDismissError,
@@ -100,6 +101,8 @@ export const Composer = memo(function Composer({
   onOpenModels: () => void;
   onOpenConnections: () => void;
   runError: string | null;
+  /** The failed turn's words, when sending them again is safe. */
+  retryText?: string | null;
   runErrorId: string | null;
   onRunErrorPresented: (runId: string) => void;
   onDismissError: () => void;
@@ -587,6 +590,14 @@ export const Composer = memo(function Composer({
         onOpenModels={onOpenModels}
         onOpenConnections={onOpenConnections}
         onDismissError={onDismissError}
+        onRetry={
+          retryText && !sending && !disabled
+            ? () => {
+                onDismissError();
+                void onSend(retryText, [], newClientId());
+              }
+            : undefined
+        }
         textareaRef={textareaRef}
       />
       {replyTarget ? (

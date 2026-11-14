@@ -48,6 +48,7 @@ import {
   subscribeBotsSidebarDensity,
 } from "../lib/bots-sidebar-density-pref";
 import { readBotsSidebarCollapsed, writeBotsSidebarCollapsed } from "../lib/bots-sidebar-pref";
+import type { NotificationChatTarget } from "../lib/browser-notifications";
 import { setCallMinimized, startCall, useCallSession } from "../lib/call-session";
 import {
   getComposerEnterToSend,
@@ -92,7 +93,6 @@ import { BotsSidebarLayout } from "./shell/sidebar-layout";
 import { SidebarRoster } from "./shell/sidebar-roster";
 import { commitSpaceRename, countUnreadChats, sidebarGroupsForSpaces } from "./shell/space-sidebar";
 import { Transcript } from "./shell/transcript";
-import type { NotificationChatTarget } from "../lib/browser-notifications";
 import { useBrowserNotifications } from "./shell/use-browser-notifications";
 import { useChatRead } from "./shell/use-chat-read";
 import { useComposerActions } from "./shell/use-composer-actions";
@@ -1149,6 +1149,7 @@ function SpaceShell() {
                 ) : undefined
               }
               runError={composer.displayedRunError}
+              retryText={composer.retryRunText}
               runErrorId={composer.displayedRunErrorId}
               onRunErrorPresented={composer.handleRunErrorPresented}
               onDismissError={composer.dismissComposerError}

@@ -17,6 +17,7 @@ export function ComposerError({
   onOpenModels,
   onOpenConnections,
   onDismissError,
+  onRetry,
   textareaRef,
 }: {
   sendError: string | null;
@@ -29,6 +30,8 @@ export function ComposerError({
   onOpenModels: () => void;
   onOpenConnections: () => void;
   onDismissError: () => void;
+  /** Sends the failed turn's words again; offered only for a failure retrying can fix. */
+  onRetry?: () => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }) {
   const { t } = useLingui();
@@ -126,6 +129,11 @@ export function ComposerError({
           }
         : null;
 
+  const retryAction =
+    !sendError && !recoveryAction && onRetry && runErrorRetryable(normalizedRunError)
+      ? { label: t`Try again`, onClick: onRetry }
+      : null;
+
   const warning = Boolean(sendError) && imageConfirmation;
   return sendError || runError ? (
     <div
@@ -180,6 +188,19 @@ export function ComposerError({
             </button>
           </>
         ) : null}
+        {retryAction ? (
+          <>
+            {" "}
+            <button
+              type="button"
+              data-testid="composer-error-retry"
+              onClick={retryAction.onClick}
+              className="font-medium underline underline-offset-2 hover:text-foreground"
+            >
+              {retryAction.label}
+            </button>
+          </>
+        ) : null}
         {!sendError && runError ? (
           <details key={runError} className="mt-1">
             <summary className="w-fit cursor-pointer">{t`Details`}</summary>
@@ -203,4 +224,16 @@ export function ComposerError({
       </button>
     </div>
   ) : null;
+}
+
+/**
+ * Whether sending the same words again could succeed: a rate limit, a provider hiccup or an
+ * unusable model response. A key, credit, plan, model or context problem needs a change first.
+ */
+export function runErrorRetryable(
+  error: { recovery?: string; kind?: string; period?: string } | null,
+): boolean {
+  if (!error || error.recovery) return false;
+  if (error.period && error.period !== "none") return false;
+  return error.kind === undefined || error.kind === "rate" || error.kind === "output";
 }
